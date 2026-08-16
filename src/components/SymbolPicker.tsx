@@ -2,39 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
 import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
 import { useI18n } from '../i18n'
+import { Sparkline } from './Sparkline'
 
 const UP = 'var(--up)'
 const DOWN = 'var(--down)'
 
 function fmtPrice(v: number) {
   return v >= 1000 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(4)
-}
-
-/** 迷你图 SVG path（纯函数，可单测）：归一化到 w×h 画布 */
-export function buildSparkPath(points: number[], w: number, h: number): string {
-  let min = Infinity
-  let max = -Infinity
-  for (const p of points) {
-    if (p < min) min = p
-    if (p > max) max = p
-  }
-  const range = max - min || 1
-  const step = w / (points.length - 1)
-  return points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)},${(h - 1 - ((p - min) / range) * (h - 2)).toFixed(1)}`)
-    .join(' ')
-}
-
-function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2) return <span style={{ color: 'var(--text-faint)' }}>…</span>
-  const w = 76
-  const h = 22
-  const color = points[points.length - 1] >= points[0] ? UP : DOWN
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ flexShrink: 0 }}>
-      <path d={buildSparkPath(points, w, h)} fill="none" stroke={color} strokeWidth={1.5} />
-    </svg>
-  )
 }
 
 interface SymbolPickerProps {

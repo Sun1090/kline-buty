@@ -10,6 +10,7 @@ import { IndicatorSettings } from './components/IndicatorSettings'
 import { ReplayBar } from './components/ReplayBar'
 import { useKlineData } from './hooks/useKlineData'
 import { useMarketStats } from './hooks/useMarketStats'
+import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from './indicators/params'
@@ -20,6 +21,7 @@ import { DrawingToolbar } from './components/DrawingToolbar'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { DepthChart } from './components/DepthChart'
+import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
 import type { Position } from './position/pnl'
@@ -95,6 +97,7 @@ export function App() {
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [depthOpen, setDepthOpen] = useState(false)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
+  const [sentimentOpen, setSentimentOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
@@ -159,6 +162,7 @@ export function App() {
     navigator.serviceWorker.controller.postMessage({ type: 'alerts', alerts: alertsApi.alerts, lang })
   }, [alertsApi.alerts, lang])
   const depth = useDepth(symbol)
+  const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
 
   const commitDrawing = (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => {
@@ -421,6 +425,21 @@ export function App() {
           {t('panel.vp')}
         </button>
         <button
+          onClick={() => setSentimentOpen((v) => !v)}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid #2a2e39',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: sentimentOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: sentimentOpen ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+          title={t('panel.sentimentTitle')}
+        >
+          {t('panel.sentiment')}
+        </button>
+        <button
           onClick={() =>
             setReplay((r) => r ?? createReplay(candles.length, Math.max(0, candles.length - 300)))
           }
@@ -524,6 +543,7 @@ export function App() {
       )}
       {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
       {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
+      {sentimentOpen && <SentimentPanel data={sentiment} />}
       <main style={{ flex: 1, minHeight: 0 }}>
         {layout === 'pair' ? (
           <ChartPair
