@@ -139,6 +139,8 @@ export const zh = {
     textPlaceholder: '文本内容',
     screenshot: '截图',
     screenshotTitle: '截图分享',
+    screenshotRegion: '框选',
+    regionHint: '拖拽框选图表区域，松开导出 PNG',
   },
   symbol: {
     searchPlaceholder: '搜索交易对…',
@@ -416,6 +418,8 @@ export const en: Messages = {
     textPlaceholder: 'Text content',
     screenshot: 'Shot',
     screenshotTitle: 'Share screenshot',
+    screenshotRegion: 'Crop',
+    regionHint: 'Drag a region on the chart, release to export PNG',
   },
   symbol: {
     searchPlaceholder: 'Search symbols…',
@@ -691,6 +695,8 @@ export const ja: Messages = {
     textPlaceholder: 'テキスト内容',
     screenshot: 'スクショ',
     screenshotTitle: 'スクリーンショット共有',
+    screenshotRegion: '範囲指定',
+    regionHint: 'チャートの領域をドラッグ選択、離すと PNG を書き出し',
   },
   symbol: {
     searchPlaceholder: '銘柄を検索…',
@@ -967,6 +973,8 @@ export const ko: Messages = {
     textPlaceholder: '텍스트 내용',
     screenshot: '캡처',
     screenshotTitle: '스크린샷 공유',
+    screenshotRegion: '영역 선택',
+    regionHint: '차트 영역을 드래그로 선택하고 놓으면 PNG 내보내기',
   },
   symbol: {
     searchPlaceholder: '종목 검색…',
@@ -1254,6 +1262,8 @@ export const es: Messages = {
     textPlaceholder: 'Contenido del texto',
     screenshot: 'Captura',
     screenshotTitle: 'Compartir captura',
+    screenshotRegion: 'Recortar',
+    regionHint: 'Arrastra para seleccionar una zona del gráfico y suelta para exportar PNG',
   },
   symbol: {
     searchPlaceholder: 'Buscar símbolos…',

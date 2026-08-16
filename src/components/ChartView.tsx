@@ -140,6 +140,19 @@ export function ChartView({
   onDrawingSelectRef.current = onDrawingSelect
   const onDrawingUpdateRef = useRef(onDrawingUpdate)
   onDrawingUpdateRef.current = onDrawingUpdate
+  const [regionSelecting, setRegionSelecting] = useState(false)
+  const regionCaptureRef = useRef<(rect: { x: number; y: number; w: number; h: number }) => void>(
+    () => {},
+  )
+  regionCaptureRef.current = (rect) => {
+    const dataUrl = apiRef.current?.takeScreenshot(rect)
+    if (!dataUrl) return
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = `${symbol}_${period}_region.png`
+    a.click()
+    setRegionSelecting(false)
+  }
 
   // 外部可见区间指令（多图同步）：与本地值不同才写入，防回环
   const lastExternalRef = useRef('')
@@ -182,6 +195,7 @@ export function ChartView({
           }
         : null,
     )
+    api.onRegionCapture((rect) => regionCaptureRef.current?.(rect))
 
     let lastLoadAt = 0
     const unsubRange = api.subscribeVisibleRange((from, to) => {
@@ -545,6 +559,52 @@ export function ChartView({
       >
         {t('drawing.screenshot')}
       </button>
+      <button
+        onClick={() => {
+          if (regionSelecting) {
+            apiRef.current?.cancelRegionSelect()
+            setRegionSelecting(false)
+          } else {
+            setRegionSelecting(true)
+            apiRef.current?.startRegionSelect()
+          }
+        }}
+        title={t('drawing.screenshotRegion')}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 92,
+          padding: '3px 10px',
+          fontSize: 11,
+          border: '1px solid #2a2e39',
+          borderRadius: 4,
+          cursor: 'pointer',
+          background: regionSelecting ? 'rgba(41,98,255,0.25)' : 'var(--panel)',
+          color: regionSelecting ? '#4e9cf5' : 'var(--text-dim)',
+          zIndex: 6,
+        }}
+      >
+        {t('drawing.screenshotRegion')}
+      </button>
+      {regionSelecting && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '4px 12px',
+            fontSize: 11,
+            borderRadius: 4,
+            background: 'rgba(41,98,255,0.9)',
+            color: '#fff',
+            pointerEvents: 'none',
+            zIndex: 7,
+          }}
+        >
+          {t('drawing.regionHint')}
+        </div>
+      )}
       {tooltipInfo && (
         <div
           style={{
