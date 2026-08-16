@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, afterEach } from 'vitest'
 import { cleanup, render, screen, fireEvent } from '@testing-library/react'
-import { zh, en, localeFor, chartLabelsFor, type MessageKey } from '../messages'
+import { zh, en, ja, ko, localeFor, chartLabelsFor, titleFor, type Lang, type MessageKey } from '../messages'
 import { I18nProvider, useI18n, DEFAULT_LANG, translate, makeT } from '../index'
 import type { ReactNode } from 'react'
 
@@ -11,21 +11,27 @@ afterEach(() => {
 })
 
 describe('字典完整性', () => {
-  it('en 与 zh 键完全一致（结构对齐）', () => {
+  it('en/ja/ko 与 zh 键完全一致（结构对齐，4 语）', () => {
     const collect = (obj: Record<string, unknown>, prefix = ''): string[] =>
       Object.entries(obj).flatMap(([k, v]) =>
         typeof v === 'string' ? [prefix ? `${prefix}.${k}` : k] : collect(v as Record<string, unknown>, prefix ? `${prefix}.${k}` : k),
       )
-    expect(collect(en as unknown as Record<string, unknown>).sort()).toEqual(
-      collect(zh as unknown as Record<string, unknown>).sort(),
-    )
+    const zhKeys = collect(zh as unknown as Record<string, unknown>).sort()
+    for (const dict of [en, ja, ko]) {
+      expect(collect(dict as unknown as Record<string, unknown>).sort()).toEqual(zhKeys)
+    }
   })
 
-  it('en 与 zh 类型同构（编译期已保证，运行期抽查叶子数量）', () => {
+  it('4 语字典叶子数量一致（>100 键）', () => {
     const leafCount = (obj: Record<string, unknown>): number =>
       Object.values(obj).reduce<number>((n, v) => n + (typeof v === 'string' ? 1 : leafCount(v as Record<string, unknown>)), 0)
-    expect(leafCount(en as unknown as Record<string, unknown>)).toBeGreaterThan(50)
-    expect(leafCount(zh as unknown as Record<string, unknown>)).toBe(leafCount(en as unknown as Record<string, unknown>))
+    for (const dict of [zh, en, ja, ko]) {
+      expect(leafCount(dict as unknown as Record<string, unknown>)).toBeGreaterThan(100)
+    }
+    const base = leafCount(zh as unknown as Record<string, unknown>)
+    for (const dict of [en, ja, ko]) {
+      expect(leafCount(dict as unknown as Record<string, unknown>)).toBe(base)
+    }
   })
 
   it('插值：替换 {param} 占位符', () => {
@@ -38,9 +44,11 @@ describe('字典完整性', () => {
     expect(translate(zh, 'common')).toBe('common')
   })
 
-  it('localeFor 映射', () => {
+  it('localeFor 映射（4 语）', () => {
     expect(localeFor('zh-CN')).toBe('zh-CN')
     expect(localeFor('en')).toBe('en-US')
+    expect(localeFor('ja')).toBe('ja-JP')
+    expect(localeFor('ko')).toBe('ko-KR')
   })
 
   it('图表渲染层标签：文本标注默认文案 + 仓位线标签', () => {
@@ -57,6 +65,15 @@ describe('字典完整性', () => {
   it('chartLabelsFor 按语言取 adapter 标签（无硬编码）', () => {
     expect(chartLabelsFor('zh-CN')).toEqual({ defaultText: '文本', entry: '开仓', tp: '止盈', sl: '止损' })
     expect(chartLabelsFor('en')).toEqual({ defaultText: 'Text', entry: 'Entry', tp: 'TP', sl: 'SL' })
+    expect(chartLabelsFor('ja')).toEqual({ defaultText: 'テキスト', entry: 'エントリー', tp: '利確 (TP)', sl: '損切り (SL)' })
+    expect(chartLabelsFor('ko')).toEqual({ defaultText: '텍스트', entry: '진입', tp: '익절 (TP)', sl: '손절 (SL)' })
+  })
+
+  it('titleFor 按语言取页面标题', () => {
+    expect(titleFor('zh-CN')).toBe('Kline Buty · 实时 K 线')
+    expect(titleFor('en')).toBe('Kline Buty · Live Candles')
+    expect(titleFor('ja')).toBe('Kline Buty · リアルタイム K 線')
+    expect(titleFor('ko')).toBe('Kline Buty · 실시간 K 라인')
   })
 })
 
@@ -71,15 +88,17 @@ function Probe({ children }: { children?: ReactNode }) {
   )
 }
 
+const CYCLE: Lang[] = ['zh-CN', 'en', 'ja', 'ko']
+
 function Toggle() {
   const { lang, setLang } = useI18n()
   return (
-    <button onClick={() => setLang(lang === 'zh-CN' ? 'en' : 'zh-CN')}>toggle</button>
+    <button onClick={() => setLang(CYCLE[(CYCLE.indexOf(lang) + 1) % CYCLE.length])}>toggle</button>
   )
 }
 
 describe('I18nProvider / useI18n', () => {
-  it('默认中文；切换后文案变英文并持久化', () => {
+  it('默认中文；4 语循环切换后文案切换并持久化', () => {
     render(
       <I18nProvider>
         <Probe>
@@ -89,20 +108,39 @@ describe('I18nProvider / useI18n', () => {
     )
     expect(screen.getByTestId('lang').textContent).toBe('zh-CN')
     expect(screen.getByTestId('live').textContent).toBe('实时')
+    // 中文 → EN
     fireEvent.click(screen.getByText('toggle'))
     expect(screen.getByTestId('lang').textContent).toBe('en')
     expect(screen.getByTestId('live').textContent).toBe('Live')
     expect(localStorage.getItem('kline-buty:lang')).toBe('en')
+    // EN → 日本語
+    fireEvent.click(screen.getByText('toggle'))
+    expect(screen.getByTestId('lang').textContent).toBe('ja')
+    expect(screen.getByTestId('live').textContent).toBe('リアルタイム')
+    expect(localStorage.getItem('kline-buty:lang')).toBe('ja')
+    // 日本語 → 한국어
+    fireEvent.click(screen.getByText('toggle'))
+    expect(screen.getByTestId('lang').textContent).toBe('ko')
+    expect(screen.getByTestId('live').textContent).toBe('실시간')
+    expect(localStorage.getItem('kline-buty:lang')).toBe('ko')
   })
 
-  it('持久化的语言在重新挂载时恢复', () => {
+  it('持久化的语言在重新挂载时恢复（含 ja/ko）', () => {
     localStorage.setItem('kline-buty:lang', 'en')
-    render(
+    const { unmount } = render(
       <I18nProvider>
         <Probe />
       </I18nProvider>,
     )
     expect(screen.getByTestId('live').textContent).toBe('Live')
+    unmount()
+    localStorage.setItem('kline-buty:lang', 'ja')
+    render(
+      <I18nProvider>
+        <Probe />
+      </I18nProvider>,
+    )
+    expect(screen.getByTestId('live').textContent).toBe('リアルタイム')
   })
 
   it('无 Provider 时兜底为中文（组件可独立测试）', () => {
@@ -111,9 +149,11 @@ describe('I18nProvider / useI18n', () => {
     expect(screen.getByTestId('live').textContent).toBe('实时')
   })
 
-  it('makeT 返回可复用函数', () => {
+  it('makeT 返回可复用函数（4 语）', () => {
     const t = makeT(en)
     expect(t('group.main')).toBe('Main')
+    expect(makeT(ja)('group.main')).toBe('メイン')
+    expect(makeT(ko)('group.main')).toBe('메인')
   })
 
   it('DEFAULT_LANG 为 zh-CN（既有测试默认语言）', () => {

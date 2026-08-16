@@ -45,6 +45,8 @@ self.addEventListener('fetch', (event) => {
 const NOTIFY_TEXT = {
   'zh-CN': { title: 'Kline Buty · 价格提醒', above: '已到达', below: '已跌破' },
   en: { title: 'Kline Buty · Price alert', above: 'reached', below: 'broke below' },
+  ja: { title: 'Kline Buty · 価格アラート', above: 'に到達', below: 'を下回りました' },
+  ko: { title: 'Kline Buty · 가격 알림', above: '도달', below: '하락' },
 }
 
 let alerts = []
@@ -55,7 +57,7 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'alerts') {
     alerts = event.data.alerts ?? []
     notified = new Set()
-    if (event.data.lang === 'zh-CN' || event.data.lang === 'en') lang = event.data.lang
+    if (event.data.lang === 'zh-CN' || event.data.lang === 'en' || event.data.lang === 'ja' || event.data.lang === 'ko') lang = event.data.lang
   }
 })
 

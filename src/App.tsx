@@ -30,7 +30,7 @@ import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { ThemePicker } from './components/ThemePicker'
-import { useI18n, type MessageKey } from './i18n'
+import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 
 const STATUS_TEXT: Record<string, MessageKey> = {
@@ -85,6 +85,9 @@ function optionLabel(
 
 export function App() {
   const { t, lang, setLang } = useI18n()
+  // 语言循环切换：中文 → EN → 日本語 → 한국어
+  const LANGS: Lang[] = ['zh-CN', 'en', 'ja', 'ko']
+  const LANG_LABELS: Record<Lang, string> = { 'zh-CN': '中文', en: 'EN', ja: '日本語', ko: '한국어' }
   const [symbol, setSymbol] = usePersistedState('symbol', 'BTCUSDT')
   const [period, setPeriod] = usePersistedState<Period>('period', '1m')
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
@@ -543,7 +546,7 @@ export function App() {
           {isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
         </button>
         <button
-          onClick={() => setLang(lang === 'zh-CN' ? 'en' : 'zh-CN')}
+          onClick={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
           title={t('lang.switchTo')}
           style={{
             padding: '3px 8px',
@@ -555,7 +558,7 @@ export function App() {
             color: 'var(--text-dim)',
           }}
         >
-          {lang === 'zh-CN' ? 'EN' : '中文'}
+          {LANG_LABELS[lang]}
         </button>
         <button
           onClick={copyShareLink}

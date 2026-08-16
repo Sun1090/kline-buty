@@ -1,9 +1,9 @@
-/** 界面文案字典（zh-CN / en）。
+/** 界面文案字典（zh-CN / en / ja / ko）。
  * 结构：嵌套对象，叶子为字符串；支持 {name} 插值。
  * en 以 typeof zh 约束，保证键完全对齐（编译期校验）。
  */
 
-export type Lang = 'zh-CN' | 'en'
+export type Lang = 'zh-CN' | 'en' | 'ja' | 'ko'
 
 export const zh = {
   common: {
@@ -54,7 +54,7 @@ export const zh = {
     '1M': '月',
   },
   lang: {
-    switchTo: '语言切换（中/EN）',
+    switchTo: '切换语言（中/EN/日/韩）',
   },
   theme: {
     switchTitle: '切换主题',
@@ -251,6 +251,8 @@ export const zh = {
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
     titleEn: 'Kline Buty · Live Candles',
+    titleJa: 'Kline Buty · リアルタイム K 線',
+    titleKo: 'Kline Buty · 실시간 K 라인',
   },
 }
 
@@ -305,7 +307,7 @@ export const en: Messages = {
     '1M': '1M',
   },
   lang: {
-    switchTo: 'Switch language (中/EN)',
+    switchTo: 'Switch language (4)',
   },
   theme: {
     switchTitle: 'Toggle theme',
@@ -502,8 +504,515 @@ export const en: Messages = {
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
     titleEn: 'Kline Buty · Live Candles',
+    titleJa: 'Kline Buty · リアルタイム K 線',
+    titleKo: 'Kline Buty · 실시간 K 라인',
   },
 }
+
+export const ja: Messages = {
+  common: {
+    none: 'なし',
+    price: '価格',
+    delete: '削除',
+    cancel: 'キャンセル',
+    confirm: 'OK',
+    retry: '再試行',
+  },
+  status: {
+    loading: '履歴データを読み込み中…',
+    connecting: 'リアルタイム行情に接続中…',
+    live: 'リアルタイム',
+    reconnecting: '再接続中…',
+    closed: '接続が切断されました',
+    error: '読み込み失敗',
+    chartError: '行情データの読み込みに失敗しました：ネットワークまたはデータソースを確認してください',
+    noData: 'データなし',
+    depthLoading: '板情報を読み込み中…',
+    vpNotEnough: 'データ不足',
+    replayNotEnough: 'データ不足（30 本以上必要）',
+  },
+  chartType: {
+    candlestick: 'ローソク',
+    line: '折れ線',
+    area: 'エリア',
+  },
+  group: {
+    type: 'タイプ',
+    main: 'メイン',
+    sub: 'サブ',
+  },
+  period: {
+    '1s': '1秒',
+    '1m': '1分',
+    '3m': '3分',
+    '5m': '5分',
+    '15m': '15分',
+    '30m': '30分',
+    '1h': '1時間',
+    '2h': '2時間',
+    '4h': '4時間',
+    '12h': '12時間',
+    '1d': '日足',
+    '3d': '3日',
+    '1w': '週足',
+    '1M': '月足',
+  },
+  lang: {
+    switchTo: '言語切替（4 言語）',
+  },
+  theme: {
+    switchTitle: 'テーマ切替',
+    toLight: 'ライト',
+    toDark: 'ダーク',
+    pickTitle: 'テーマカープリセット（アクセント/上昇・下落色）',
+    presetClassic: 'クラシックブルー',
+    presetAShare: '赤上昇・緑下落',
+    presetPurple: 'パープル',
+    presetTeal: 'ティール',
+  },
+  layout: {
+    switchTitle: 'レイアウト切替（1枚/2枚/4枚）',
+    single: '1枚',
+    pair: '2枚',
+    quad: '4枚',
+  },
+  fullscreen: {
+    enter: '全画面',
+    exit: '全画面終了',
+  },
+  panel: {
+    position: 'ポジション',
+    positionTitle: 'シミュレーションポジション（エントリー/TP/SL ライン）',
+    alerts: 'アラート',
+    alertsTitle: '価格アラート',
+    depth: '板情報',
+    depthTitle: '板情報デプス',
+    vp: 'VPVR',
+    vpTitle: '出来高プロファイル（VPVR）',
+    settings: '設定',
+    sentiment: 'センチメント',
+    sentimentTitle: 'デリバティブセンチメント（ロング/ショート、テイカー、OI）',
+  },
+  sentiment: {
+    globalRatio: '全口座ロング/ショート比',
+    topTraderRatio: '大口トレーダー比率',
+    takerRatio: 'テイカー売買比',
+    openInterest: 'OI 24h',
+    long: 'ロング',
+    buy: '買い',
+    loading: '読み込み中…',
+  },
+  share: {
+    title: '現在の銘柄・時間足の共有リンクをコピー',
+    copy: '共有',
+    copied: 'コピー済み',
+    exportTitle: '現在の銘柄/時間足の K 線 CSV をエクスポート（有効な指標列を含む）',
+    export: 'エクスポート',
+    exported: 'エクスポート済み',
+  },
+  replay: {
+    start: 'リプレイ',
+    title: '履歴を 1 本ずつ再生',
+    play: '再生',
+    pause: '一時停止',
+    exit: 'リプレイ終了',
+  },
+  drawing: {
+    group: '描画',
+    mouse: 'マウス',
+    horizontal: '水平線',
+    trend: 'トレンドライン',
+    channel: 'チャネル',
+    fib: 'フィボナッチ',
+    text: 'テキスト',
+    defaultText: 'テキスト',
+    rect: '矩形',
+    ellipse: '楕円',
+    circle: '円',
+    triangle: '三角形',
+    arc: '円弧',
+    ray: 'レイ',
+    fibext: 'フィボナッチ拡張',
+    fibfan: 'フィボナッチ扇形',
+    pricelabel: '価格ラベル',
+    arrow: '矢印',
+    editText: 'テキスト編集',
+    textPlaceholder: 'テキスト内容',
+    screenshot: 'スクショ',
+    screenshotTitle: 'スクリーンショット共有',
+  },
+  symbol: {
+    searchPlaceholder: '銘柄を検索…',
+    popular: '人気',
+    favorites: 'お気に入り',
+    favoriteAdd: 'お気に入りに追加',
+    favoriteRemove: 'お気に入りから削除',
+    searchResults: '検索結果 {count}',
+    noMatch: '一致する銘柄なし',
+  },
+  indicator: {
+    settings: '指標パラメータ',
+    noParams: 'この指標に調整可能なパラメータはありません',
+    maPeriods: '{name} 周期（カンマ区切り）',
+    bollPeriod: 'BOLL 周期',
+    bollMult: 'BOLL 標準偏差倍率',
+    macdFast: 'MACD 短期線',
+    macdSlow: 'MACD 長期線',
+    macdSignal: 'MACD シグナル',
+    kdjN: 'KDJ N',
+    kdjM1: 'KDJ M1',
+    kdjM2: 'KDJ M2',
+    rsiPeriod: 'RSI 周期',
+    wrPeriod: 'WR 周期',
+    obvMaPeriod: 'OBV 平滑化（1=生値）',
+    atrPeriod: 'ATR 周期',
+    dmiPeriod: 'DMI 周期',
+    cciPeriod: 'CCI 周期',
+    psyPeriod: 'PSY 周期',
+    stochK: 'STOCH %K 周期',
+    stochSmooth: 'STOCH 平滑化',
+    stochD: 'STOCH %D 周期',
+    rocPeriod: 'ROC 周期',
+    momPeriod: 'MOM 周期',
+    sarAfStart: 'SAR 初期加速',
+    sarAfStep: 'SAR 加速ステップ',
+    sarAfMax: 'SAR 加速上限',
+    ichimokuTenkan: '転換線周期',
+    ichimokuKijun: '基準線周期',
+    ichimokuSpanB: '先行帯B周期',
+    ichimokuDisplacement: '先行スパン移動周期',
+    sar: 'SAR',
+    ichimoku: '一目均衡表',
+  },
+  stats: {
+    lastPrice: '最新価格',
+    change24h: '24h 変動',
+    high24h: '24h 高値',
+    low24h: '24h 安値',
+    volume24h: '24h 出来高',
+    fundingRate: '資金調達率',
+    openInterest: '未決済建玉',
+    markPrice: 'マーク価格',
+  },
+  position: {
+    title: 'シミュレーションポジション',
+    close: '決済',
+    long: 'ロング',
+    short: 'ショート',
+    entry: 'エントリー価格',
+    market: '現在価格',
+    quantity: '数量',
+    tpPct: 'TP%',
+    slPct: 'SL%',
+    tpLine: 'TP ライン',
+    slLine: 'SL ライン',
+    floatingPnl: '浮動損益',
+    open: 'エントリー',
+    lineEntry: 'エントリー',
+    lineTp: '利確 (TP)',
+    lineSl: '損切り (SL)',
+  },
+  alert: {
+    title: '価格アラート · {symbol}',
+    granted: '通知オン',
+    unsupported: 'この環境では通知を利用できません',
+    enable: '通知を有効化',
+    above: '価格 ≥',
+    below: '価格 ≤',
+    add: 'アラート追加',
+    none: 'アラートなし',
+    triggered: '発動済み',
+    reset: 'リセット',
+    notifyTitle: 'Kline Buty · 価格アラート',
+    notifyAbove: '{symbol} が {price} に到達',
+    notifyBelow: '{symbol} が {price} を下回りました',
+  },
+  tooltip: {
+    open: '始',
+    high: '高',
+    low: '安',
+    close: '終',
+    volume: '出来高',
+  },
+  depth: {
+    title: '板情報デプス · {symbol}（リアルタイム）',
+    bid: '買い',
+    ask: '売り',
+  },
+  volumeProfile: {
+    title: '出来高プロファイル（直近 300 本）· {symbol}',
+    poc: 'POC ≈ {price}',
+    bidVol: '買い出来高',
+    askVol: '売り出来高',
+    pocLabel: 'POC',
+  },
+  offline: {
+    text: 'ネットワークが切断され、行情の更新を停止しました。復旧後は自動再接続します',
+  },
+  errorBoundary: {
+    title: 'チャート描画エラー',
+  },
+  app: {
+    titleZh: 'Kline Buty · 实时 K 线',
+    titleEn: 'Kline Buty · Live Candles',
+    titleJa: 'Kline Buty · リアルタイム K 線',
+    titleKo: 'Kline Buty · 실시간 K 라인',
+  },
+}
+
+
+export const ko: Messages = {
+  common: {
+    none: '없음',
+    price: '가격',
+    delete: '삭제',
+    cancel: '취소',
+    confirm: '확인',
+    retry: '재시도',
+  },
+  status: {
+    loading: '과거 데이터 불러오는 중…',
+    connecting: '실시간 시세 연결 중…',
+    live: '실시간',
+    reconnecting: '재연결 중…',
+    closed: '연결 끊김',
+    error: '불러오기 실패',
+    chartError: '시세 데이터를 불러오지 못했습니다: 네트워크 또는 데이터 소스를 확인하세요',
+    noData: '데이터 없음',
+    depthLoading: '호가창 불러오는 중…',
+    vpNotEnough: '데이터 부족',
+    replayNotEnough: '데이터 부족 (30개 이상 필요)',
+  },
+  chartType: {
+    candlestick: '캔들',
+    line: '라인',
+    area: '영역',
+  },
+  group: {
+    type: '유형',
+    main: '메인',
+    sub: '보조',
+  },
+  period: {
+    '1s': '1초',
+    '1m': '1분',
+    '3m': '3분',
+    '5m': '5분',
+    '15m': '15분',
+    '30m': '30분',
+    '1h': '1시간',
+    '2h': '2시간',
+    '4h': '4시간',
+    '12h': '12시간',
+    '1d': '일',
+    '3d': '3일',
+    '1w': '주',
+    '1M': '월',
+  },
+  lang: {
+    switchTo: '언어 전환 (4개 언어)',
+  },
+  theme: {
+    switchTitle: '테마 전환',
+    toLight: '라이트',
+    toDark: '다크',
+    pickTitle: '테마 색상 프리셋 (강조/상승·하락 색상)',
+    presetClassic: '클래식 블루',
+    presetAShare: '빨강 상승·초록 하락',
+    presetPurple: '퍼플',
+    presetTeal: '틸',
+  },
+  layout: {
+    switchTitle: '레이아웃 전환 (단일/2개/4개)',
+    single: '단일',
+    pair: '2개',
+    quad: '4개',
+  },
+  fullscreen: {
+    enter: '전체화면',
+    exit: '전체화면 종료',
+  },
+  panel: {
+    position: '포지션',
+    positionTitle: '모의 포지션 (진입/TP/SL 라인)',
+    alerts: '알림',
+    alertsTitle: '가격 알림',
+    depth: '호가',
+    depthTitle: '호가창 깊이',
+    vp: 'VPVR',
+    vpTitle: '거래량 프로파일 (VPVR)',
+    settings: '설정',
+    sentiment: '심리',
+    sentimentTitle: '파생 심리 (롱/숏, 테이커, 미청산)',
+  },
+  sentiment: {
+    globalRatio: '전체 계정 롱/숏 비율',
+    topTraderRatio: '대형 트레이더 비율',
+    takerRatio: '테이커 매수/매도 비율',
+    openInterest: 'OI 24h',
+    long: '롱',
+    buy: '매수',
+    loading: '불러오는 중…',
+  },
+  share: {
+    title: '현재 종목/주기의 공유 링크 복사',
+    copy: '공유',
+    copied: '복사됨',
+    exportTitle: '현재 종목/주기의 K라인 CSV 내보내기 (활성 지표 열 포함)',
+    export: '내보내기',
+    exported: '내보냄',
+  },
+  replay: {
+    start: '다시보기',
+    title: '과거 캔들 단계별 재생',
+    play: '재생',
+    pause: '일시정지',
+    exit: '다시보기 종료',
+  },
+  drawing: {
+    group: '그리기',
+    mouse: '마우스',
+    horizontal: '수평선',
+    trend: '추세선',
+    channel: '채널',
+    fib: '피보나치',
+    text: '텍스트',
+    defaultText: '텍스트',
+    rect: '사각형',
+    ellipse: '타원',
+    circle: '원',
+    triangle: '삼각형',
+    arc: '호',
+    ray: '레이',
+    fibext: '피보나치 확장',
+    fibfan: '피보나치 팬',
+    pricelabel: '가격 라벨',
+    arrow: '화살표',
+    editText: '텍스트 편집',
+    textPlaceholder: '텍스트 내용',
+    screenshot: '캡처',
+    screenshotTitle: '스크린샷 공유',
+  },
+  symbol: {
+    searchPlaceholder: '종목 검색…',
+    popular: '인기',
+    favorites: '즐겨찾기',
+    favoriteAdd: '즐겨찾기에 추가',
+    favoriteRemove: '즐겨찾기에서 제거',
+    searchResults: '검색 결과 {count}',
+    noMatch: '일치하는 종목 없음',
+  },
+  indicator: {
+    settings: '지표 파라미터',
+    noParams: '이 지표에는 조정 가능한 파라미터가 없습니다',
+    maPeriods: '{name} 주기 (쉼표 구분)',
+    bollPeriod: 'BOLL 주기',
+    bollMult: 'BOLL 표준편차 배수',
+    macdFast: 'MACD 빠른선',
+    macdSlow: 'MACD 느린선',
+    macdSignal: 'MACD 시그널',
+    kdjN: 'KDJ N',
+    kdjM1: 'KDJ M1',
+    kdjM2: 'KDJ M2',
+    rsiPeriod: 'RSI 주기',
+    wrPeriod: 'WR 주기',
+    obvMaPeriod: 'OBV 평활 (1=원본)',
+    atrPeriod: 'ATR 주기',
+    dmiPeriod: 'DMI 주기',
+    cciPeriod: 'CCI 주기',
+    psyPeriod: 'PSY 주기',
+    stochK: 'STOCH %K 주기',
+    stochSmooth: 'STOCH 평활',
+    stochD: 'STOCH %D 주기',
+    rocPeriod: 'ROC 주기',
+    momPeriod: 'MOM 주기',
+    sarAfStart: 'SAR 초기 AF',
+    sarAfStep: 'SAR AF 단계',
+    sarAfMax: 'SAR AF 최대',
+    ichimokuTenkan: '전환선 주기',
+    ichimokuKijun: '기준선 주기',
+    ichimokuSpanB: '선행스팬B 주기',
+    ichimokuDisplacement: '스팬 이동 주기',
+    sar: 'SAR',
+    ichimoku: '일목균형표',
+  },
+  stats: {
+    lastPrice: '최신가',
+    change24h: '24h 변동',
+    high24h: '24h 고가',
+    low24h: '24h 저가',
+    volume24h: '24h 거래량',
+    fundingRate: '펀딩 비율',
+    openInterest: '미청산 계약',
+    markPrice: '마크 가격',
+  },
+  position: {
+    title: '모의 포지션',
+    close: '청산',
+    long: '롱',
+    short: '숏',
+    entry: '진입가',
+    market: '현재가',
+    quantity: '수량',
+    tpPct: 'TP%',
+    slPct: 'SL%',
+    tpLine: 'TP 라인',
+    slLine: 'SL 라인',
+    floatingPnl: '평가손익',
+    open: '진입',
+    lineEntry: '진입',
+    lineTp: '익절 (TP)',
+    lineSl: '손절 (SL)',
+  },
+  alert: {
+    title: '가격 알림 · {symbol}',
+    granted: '알림 켜짐',
+    unsupported: '이 환경에서는 알림을 지원하지 않습니다',
+    enable: '알림 활성화',
+    above: '가격 ≥',
+    below: '가격 ≤',
+    add: '알림 추가',
+    none: '알림 없음',
+    triggered: '트리거됨',
+    reset: '초기화',
+    notifyTitle: 'Kline Buty · 가격 알림',
+    notifyAbove: '{symbol} 이(가) {price} 에 도달',
+    notifyBelow: '{symbol} 이(가) {price} 아래로 하락',
+  },
+  tooltip: {
+    open: '시가',
+    high: '고가',
+    low: '저가',
+    close: '종가',
+    volume: '거래량',
+  },
+  depth: {
+    title: '호가창 · {symbol} (실시간)',
+    bid: '매수',
+    ask: '매도',
+  },
+  volumeProfile: {
+    title: '거래량 프로파일 (최근 300개) · {symbol}',
+    poc: 'POC ≈ {price}',
+    bidVol: '매수량',
+    askVol: '매도량',
+    pocLabel: 'POC',
+  },
+  offline: {
+    text: '네트워크가 끊겨 시세 업데이트가 중지되었습니다. 복구되면 자동으로 재연결됩니다',
+  },
+  errorBoundary: {
+    title: '차트 렌더링 오류',
+  },
+  app: {
+    titleZh: 'Kline Buty · 实时 K 线',
+    titleEn: 'Kline Buty · Live Candles',
+    titleJa: 'Kline Buty · リアルタイム K 線',
+    titleKo: 'Kline Buty · 실시간 K 라인',
+  },
+}
+
+
 
 /** 扁平叶子键（如 "status.loading"），带类型提示 */
 type LeafKeyOf<T, Prefix extends string = ''> = {
@@ -516,13 +1025,22 @@ type LeafKeyOf<T, Prefix extends string = ''> = {
 
 export type MessageKey = LeafKeyOf<Messages>
 
-export const DICTIONARIES: Record<Lang, Messages> = { 'zh-CN': zh, en }
+export const DICTIONARIES: Record<Lang, Messages> = { 'zh-CN': zh, en, ja, ko }
 
 export const DEFAULT_LANG: Lang = 'zh-CN'
 
 /** 语言 → Intl locale（日期/数字格式化用） */
 export function localeFor(lang: Lang): string {
-  return lang === 'zh-CN' ? 'zh-CN' : 'en-US'
+  switch (lang) {
+    case 'zh-CN':
+      return 'zh-CN'
+    case 'en':
+      return 'en-US'
+    case 'ja':
+      return 'ja-JP'
+    case 'ko':
+      return 'ko-KR'
+  }
 }
 
 /** 图表渲染层（adapter）所需的本地化标签：文本标注默认文案 + 仓位线标签 */
@@ -541,4 +1059,17 @@ export function chartLabelsFor(lang: Lang): ChartLabels {
     tp: m.position.lineTp,
     sl: m.position.lineSl,
   }
+}
+
+
+/** 页面标题：按当前语言从 app 区块取对应 title 键 */
+const TITLE_KEYS: Record<Lang, 'titleZh' | 'titleEn' | 'titleJa' | 'titleKo'> = {
+  'zh-CN': 'titleZh',
+  en: 'titleEn',
+  ja: 'titleJa',
+  ko: 'titleKo',
+}
+
+export function titleFor(lang: Lang): string {
+  return DICTIONARIES[lang].app[TITLE_KEYS[lang]]
 }
