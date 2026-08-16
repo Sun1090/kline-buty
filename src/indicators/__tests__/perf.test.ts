@@ -5,6 +5,7 @@ import { calcBOLL } from '../boll'
 import { calcMACD } from '../macd'
 import { calcKDJ } from '../kdj'
 import { calcRSI } from '../rsi'
+import { cullWindow, shouldCull } from '../../chart/cull'
 
 const N = 20_000
 
@@ -57,5 +58,21 @@ describe('指标引擎性能基线（20k 根）', () => {
     const elapsed = performance.now() - t0
     console.log(`  全部指标一次刷新: ${elapsed.toFixed(1)}ms`)
     expect(elapsed).toBeLessThan(250)
+  })
+
+  it('窗口裁剪热路径：20k 数据滚动 100 次 cullWindow 重算 < 10ms（滚动零重载依赖）', () => {
+    const len = 20_000
+    expect(shouldCull(len)).toBe(true)
+    const t0 = performance.now()
+    let w = cullWindow(len, { from: 8000, to: 9000 })
+    for (let i = 1; i <= 100; i++) {
+      w = cullWindow(len, { from: 8000 + i * 10, to: 9000 + i * 10 })
+    }
+    const elapsed = performance.now() - t0
+    console.log(`  cullWindow×100: ${elapsed.toFixed(1)}ms`)
+    expect(w.start).toBeGreaterThanOrEqual(0)
+    expect(w.end).toBeLessThanOrEqual(len)
+    expect(w.end - w.start).toBeGreaterThan(0)
+    expect(elapsed).toBeLessThan(10)
   })
 })

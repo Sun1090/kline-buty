@@ -1234,6 +1234,24 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('大数据量：?perf=20000 合成 2 万根 → 渲染 + 拖拽平移无异常（窗口裁剪）', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/?perf=20000')
+    await expect(page.locator('canvas').first()).toBeVisible({ timeout: 30_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 拖拽图表中心 → 平移：验证 2 万根窗口裁剪下滚动交互无异常
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.5)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.5, { steps: 6 })
+    await page.mouse.up()
+    await page.waitForTimeout(800)
+    expect(errors).toHaveLength(0)
+  })
+
   test('画线：速度线（拖 A→B → 4 段渲染 + 落库保方向）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
+import { cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
@@ -126,6 +127,16 @@ export function ChartView({
   const apiRef = useRef<ChartApi | null>(null)
   const prevDataRef = useRef<Candle[] | null>(null)
   const keyRef = useRef('')
+  /** 大数据量窗口裁剪状态（全量坐标 [start,end)），null = 不裁剪 */
+  const [cull, setCull] = useState<CullWindow | null>(null)
+  const cullRef = useRef<CullWindow | null>(null)
+  cullRef.current = cull
+  /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
+  const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
+  /** 装载窗口生成时的全量数据长度：窗口贴尾沿时实时新帧自然流入 */
+  const fullLenAtCullRef = useRef(0)
+  /** 当前全量数据长度（渲染期同步，供可见区间回调读取） */
+  const dataLenRef = useRef(0)
   const [tooltip, setTooltip] = useState<Tooltip | null>(null)
 
   const hasMoreRef = useRef(hasMore)
@@ -157,14 +168,15 @@ export function ChartView({
     setRegionSelecting(false)
   }
 
-  // 外部可见区间指令（多图同步）：与本地值不同才写入，防回环
+  // 外部可见区间指令（多图同步）：全局坐标 → 当前窗口局部坐标，与本地值不同才写入防回环
   const lastExternalRef = useRef('')
   useEffect(() => {
     if (!externalRange || !apiRef.current) return
     const sig = `${externalRange.from}:${externalRange.to}`
     if (sig === lastExternalRef.current) return
     lastExternalRef.current = sig
-    apiRef.current.setVisibleRange(externalRange)
+    const cur = cullRef.current
+    apiRef.current.setVisibleRange(cur ? localRange(cur, externalRange) : externalRange)
   }, [externalRange])
 
   // 回放模式只取 [0, cursor] 区间；实时模式全量
@@ -172,6 +184,21 @@ export function ChartView({
     () => (replay ? candles.slice(0, replay.cursor + 1) : candles),
     [candles, replay],
   )
+
+  // 大数据量窗口裁剪：超过阈值只装载可见区间 + 余量，滚动到边缘再重载
+  const windowData = useMemo(() => {
+    if (!cull) return replayData
+    const len = replayData.length
+    // 窗口整体在数据之外（如回放起点游标很小时残留的旧窗口）→ 退回全量，避免空切片
+    if (cull.start >= len) return replayData
+    const start = Math.max(0, cull.start)
+    // 窗口装载时即贴着数据尾沿（覆盖到末尾）：实时新帧/新 K 线自然流入窗口，
+    // 走增量 updateCandle 路径，避免每 tick 全量重载
+    const atTail = cull.end >= fullLenAtCullRef.current
+    const end = atTail ? len : Math.min(cull.end, len)
+    return replayData.slice(start, Math.max(start, end))
+  }, [replayData, cull])
+  dataLenRef.current = replayData.length
 
   // ---- 图表实例与事件订阅（一次创建） ----
   useEffect(() => {
@@ -203,13 +230,31 @@ export function ChartView({
     let lastLoadAt = 0
     const unsubRange = api.subscribeVisibleRange((from, to) => {
       const now = Date.now()
+      // 局部索引 → 全局索引（叠加裁剪窗口偏移）
+      const base = cullRef.current?.start ?? 0
+      const gFrom = base + from
+      const gTo = base + to
+      lastVisibleRef.current = { from: gFrom, to: gTo }
+      const len = dataLenRef.current
+      // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
+      if (shouldCull(len)) {
+        const target = cullWindow(len, { from: gFrom, to: gTo })
+        const cur = cullRef.current
+        if (!cur || target.start !== cur.start || target.end !== cur.end) {
+          fullLenAtCullRef.current = len
+          setCull(target)
+        }
+      } else if (cullRef.current) {
+        fullLenAtCullRef.current = 0
+        setCull(null)
+      }
       if (!replayRef.current) {
-        if (from <= 2 && hasMoreRef.current && now - lastLoadAt > LOAD_MORE_COOLDOWN_MS) {
+        if (gFrom <= 2 && hasMoreRef.current && now - lastLoadAt > LOAD_MORE_COOLDOWN_MS) {
           lastLoadAt = now
           onLoadMoreRef.current()
         }
       }
-      onViewRangeChangeRef.current?.({ from, to })
+      onViewRangeChangeRef.current?.({ from: gFrom, to: gTo })
     })
 
     return () => {
@@ -239,13 +284,13 @@ export function ChartView({
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {
     if (mainIndicator === 'ma')
-      return { lines: indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(replayData, p) })) }
+      return { lines: indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(windowData, p) })) }
     if (mainIndicator === 'ema') {
-      const closes = replayData.map((c) => ({ time: c.time, value: c.close }))
+      const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
       return { lines: indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })) }
     }
     if (mainIndicator === 'boll') {
-      const b = bollToLines(calcBOLL(replayData, indicatorParams.bollPeriod, indicatorParams.bollMult))
+      const b = bollToLines(calcBOLL(windowData, indicatorParams.bollPeriod, indicatorParams.bollMult))
       return {
         lines: [
           { id: 'BOLL_UPPER', points: b.upper },
@@ -254,17 +299,17 @@ export function ChartView({
         ],
       }
     }
-    if (mainIndicator === 'vwap') return { lines: [{ id: 'VWAP', points: calcVWAP(replayData) }] }
+    if (mainIndicator === 'vwap') return { lines: [{ id: 'VWAP', points: calcVWAP(windowData) }] }
     if (mainIndicator === 'sar') {
       // SAR 圆点：多头在价格下方（涨色），空头在价格上方（跌色）
-      const sar = calcSAR(replayData, indicatorParams.sarAfStart, indicatorParams.sarAfStep, indicatorParams.sarAfMax)
+      const sar = calcSAR(windowData, indicatorParams.sarAfStart, indicatorParams.sarAfStep, indicatorParams.sarAfMax)
       return {
         lines: [],
         markers: sar.map((p) => ({ time: p.time, price: p.value, color: p.bull ? UP : DOWN })),
       }
     }
     if (mainIndicator === 'ichimoku') {
-      const r = calcIchimoku(replayData, {
+      const r = calcIchimoku(windowData, {
         tenkanPeriod: indicatorParams.ichimokuTenkan,
         kijunPeriod: indicatorParams.ichimokuKijun,
         senkouBPeriod: indicatorParams.ichimokuSpanB,
@@ -288,13 +333,13 @@ export function ChartView({
       }
     }
     return { lines: [] }
-  }, [replayData, mainIndicator, indicatorParams, period, themeMode])
+  }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
   const subData = useMemo(() => {
     if (subIndicator === 'volume') {
       return {
         kind: 'volume' as const,
-        hist: replayData.map((c) => ({
+        hist: windowData.map((c) => ({
           time: c.time,
           value: c.volume,
           color: c.close >= c.open ? UP : DOWN,
@@ -302,7 +347,7 @@ export function ChartView({
       }
     }
     if (subIndicator === 'macd') {
-      const macd = calcMACD(replayData, indicatorParams.macdFast, indicatorParams.macdSlow, indicatorParams.macdSignal)
+      const macd = calcMACD(windowData, indicatorParams.macdFast, indicatorParams.macdSlow, indicatorParams.macdSignal)
       return {
         kind: 'macd' as const,
         hist: macd.map((p) => ({ time: p.time, value: p.hist, color: p.hist >= 0 ? UP : DOWN })),
@@ -313,7 +358,7 @@ export function ChartView({
       }
     }
     if (subIndicator === 'kdj') {
-      const kdj = calcKDJ(replayData, indicatorParams.kdjN, indicatorParams.kdjM1, indicatorParams.kdjM2)
+      const kdj = calcKDJ(windowData, indicatorParams.kdjN, indicatorParams.kdjM1, indicatorParams.kdjM2)
       return {
         kind: 'kdj' as const,
         lines: [
@@ -326,7 +371,7 @@ export function ChartView({
     if (subIndicator === 'rsi') {
       return {
         kind: 'rsi' as const,
-        lines: [{ id: 'RSI', points: calcRSI(replayData, indicatorParams.rsiPeriod) }],
+        lines: [{ id: 'RSI', points: calcRSI(windowData, indicatorParams.rsiPeriod) }],
         markers: [
           { price: 70, color: DOWN },
           { price: 30, color: UP },
@@ -336,7 +381,7 @@ export function ChartView({
     if (subIndicator === 'wr') {
       return {
         kind: 'wr' as const,
-        lines: [{ id: 'WR', points: calcWR(replayData, indicatorParams.wrPeriod) }],
+        lines: [{ id: 'WR', points: calcWR(windowData, indicatorParams.wrPeriod) }],
         markers: [
           { price: 20, color: UP },
           { price: 80, color: DOWN },
@@ -344,13 +389,13 @@ export function ChartView({
       }
     }
     if (subIndicator === 'obv') {
-      return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(replayData, indicatorParams.obvMaPeriod) }] }
+      return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(windowData, indicatorParams.obvMaPeriod) }] }
     }
     if (subIndicator === 'atr') {
-      return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(replayData, indicatorParams.atrPeriod) }] }
+      return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(windowData, indicatorParams.atrPeriod) }] }
     }
     if (subIndicator === 'dmi') {
-      const dmi = calcDMI(replayData, indicatorParams.dmiPeriod)
+      const dmi = calcDMI(windowData, indicatorParams.dmiPeriod)
       return {
         kind: 'dmi' as const,
         lines: [
@@ -363,7 +408,7 @@ export function ChartView({
     if (subIndicator === 'cci') {
       return {
         kind: 'cci' as const,
-        lines: [{ id: 'CCI', points: calcCCI(replayData, indicatorParams.cciPeriod) }],
+        lines: [{ id: 'CCI', points: calcCCI(windowData, indicatorParams.cciPeriod) }],
         markers: [
           { price: 100, color: DOWN },
           { price: -100, color: UP },
@@ -373,7 +418,7 @@ export function ChartView({
     if (subIndicator === 'psy') {
       return {
         kind: 'psy' as const,
-        lines: [{ id: 'PSY', points: calcPSY(replayData, indicatorParams.psyPeriod) }],
+        lines: [{ id: 'PSY', points: calcPSY(windowData, indicatorParams.psyPeriod) }],
         markers: [
           { price: 75, color: DOWN },
           { price: 25, color: UP },
@@ -381,7 +426,7 @@ export function ChartView({
       }
     }
     if (subIndicator === 'stoch') {
-      const { k, d } = calcSTOCH(replayData, indicatorParams.stochK, indicatorParams.stochSmooth, indicatorParams.stochD)
+      const { k, d } = calcSTOCH(windowData, indicatorParams.stochK, indicatorParams.stochSmooth, indicatorParams.stochD)
       return {
         kind: 'stoch' as const,
         lines: [
@@ -393,21 +438,21 @@ export function ChartView({
     if (subIndicator === 'roc') {
       return {
         kind: 'roc' as const,
-        lines: [{ id: 'ROC', points: calcROC(replayData, indicatorParams.rocPeriod) }],
+        lines: [{ id: 'ROC', points: calcROC(windowData, indicatorParams.rocPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
     if (subIndicator === 'mom') {
       return {
         kind: 'mom' as const,
-        lines: [{ id: 'MOM', points: calcMOM(replayData, indicatorParams.momPeriod) }],
+        lines: [{ id: 'MOM', points: calcMOM(windowData, indicatorParams.momPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
     return null
-  }, [replayData, subIndicator, indicatorParams])
+  }, [windowData, subIndicator, indicatorParams])
 
-  // ---- 数据装载（增量/全量 + 指标重绘） ----
+  // ---- 数据装载（窗口装载 / 增量 updateCandle + 指标重绘） ----
   useEffect(() => {
     const api = apiRef.current
     if (!api) return
@@ -419,30 +464,55 @@ export function ChartView({
     const enteringReplay = !prevReplay && replay !== null
     const exitingReplay = prevReplay !== null && replay === null
     prevReplayRef.current = replay
+    const cur = cullRef.current
+    const fullLen = dataLenRef.current
+    const view = lastVisibleRef.current
+    // 进入/退出回放，或可见区间越出当前装载窗口 → 整窗重载
+    const needReload =
+      enteringReplay ||
+      exitingReplay ||
+      (shouldCull(fullLen) && (!cur || !view || !windowCovers(cur, view)))
     const prefixSame =
       !!prev &&
       prev.length > 0 &&
-      replayData.length >= prev.length &&
-      replayData[prev.length - 1]?.time === prev[prev.length - 1].time
+      windowData.length >= prev.length &&
+      windowData[prev.length - 1]?.time === prev[prev.length - 1].time
 
-    if (keyChanged || !prev || prev.length === 0 || enteringReplay || exitingReplay) {
-      api.setCandles(replayData)
-      api.fitContent()
+    if (keyChanged || !prev || prev.length === 0 || needReload) {
+      api.setCandles(windowData)
+      // 换品种 / 进入回放 / 退出回放 / 首个裁剪窗口 → 适配全量
+      if (keyChanged || enteringReplay || exitingReplay || (!cur && shouldCull(fullLen))) {
+        api.fitContent()
+      } else if (cur) {
+        // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回局部坐标
+        const v = lastVisibleRef.current
+        if (v) {
+          api.setVisibleRange(localRange(cur, v))
+          if (replay) api.scrollToRealTime()
+        }
+      }
     } else if (prefixSame) {
-      for (let i = prev.length - 1; i < replayData.length; i++) api.updateCandle(replayData[i])
+      // 增量：实时新帧/新 K 线逐根 updateCandle，避免整窗重载
+      for (let i = prev.length - 1; i < windowData.length; i++) api.updateCandle(windowData[i])
       // 回放播放推进时跟随最新，seek/实时增量不打扰用户视图
-      if (replay && replayData.length > prev.length) api.scrollToRealTime()
+      if (replay && windowData.length > prev.length) api.scrollToRealTime()
     } else {
       // 回放 seek 后退等乱序：全量装载并适配
-      api.setCandles(replayData)
-      if (replay) api.fitContent()
+      api.setCandles(windowData)
+      if (cur) {
+        const v = lastVisibleRef.current
+        if (v) api.setVisibleRange(localRange(cur, v))
+        if (replay) api.scrollToRealTime()
+      } else if (replay) {
+        api.fitContent()
+      }
     }
 
     api.setChartType(chartType)
     api.setMainIndicator(mainData)
     if (subData) api.setSubIndicator(subData)
-    prevDataRef.current = replayData
-  }, [replayData, mainData, subData, symbol, period, chartType, replay])
+    prevDataRef.current = windowData
+  }, [windowData, mainData, subData, symbol, period, chartType, replay, cull])
 
   // 仓位线独立 effect：拖拽高频更新时避免触发指标/数据装载
   useEffect(() => {
@@ -474,7 +544,7 @@ export function ChartView({
   }, [themeMode, colorPreset])
 
   // ---- 十字光标信息窗内容 ----
-  const candleByTime = useMemo(() => new Map(replayData.map((c) => [c.time, c])), [replayData])
+  const candleByTime = useMemo(() => new Map(windowData.map((c) => [c.time, c])), [windowData])
   const lineMaps = useMemo(
     () => new Map(mainData.lines.map((l) => [l.id, new Map(l.points.map((p) => [p.time, p.value]))])),
     [mainData],
