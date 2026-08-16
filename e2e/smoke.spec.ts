@@ -299,6 +299,29 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText(/盘口深度/)).toHaveCount(0)
   })
 
+  test('深度图 hover：十字线 + 买卖累计明细工具提示', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: '深度' }).click()
+    const svg = page.getByTestId('depth-chart')
+    await expect(svg).toBeVisible({ timeout: 15_000 })
+    const box = await svg.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+    // hover 到图表中部 → 十字线 + 工具提示出现
+    await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5)
+    await expect(page.getByTestId('depth-crosshair')).toHaveCount(1, { timeout: 5_000 })
+    const tip = page.getByTestId('depth-tooltip')
+    await expect(tip).toBeVisible({ timeout: 5_000 })
+    // 工具提示含买/卖累计文案
+    await expect(tip.getByText(/买 [\d.]+[KM]?/)).toBeVisible()
+    await expect(tip.getByText(/卖 [\d.]+[KM]?/)).toBeVisible()
+    // 移出图表 → 工具提示与十字线消失
+    await page.mouse.move(10, 10)
+    await expect(page.getByTestId('depth-tooltip')).toHaveCount(0, { timeout: 5_000 })
+    await expect(page.getByTestId('depth-crosshair')).toHaveCount(0)
+  })
+
 
   test('盘口订单簿：开合 + 买卖档位/价差渲染', async ({ page }) => {
     await page.goto('/')
