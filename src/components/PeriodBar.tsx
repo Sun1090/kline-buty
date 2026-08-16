@@ -9,7 +9,7 @@ interface PeriodBarProps {
 export function PeriodBar({ value, onChange }: PeriodBarProps) {
   const { t } = useI18n()
   return (
-    <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+    <div className="scroll-toolbar" style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
       {PERIODS.map((p) => (
         <button
           key={p.value}

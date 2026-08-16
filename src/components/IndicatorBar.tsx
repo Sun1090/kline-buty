@@ -7,7 +7,7 @@ interface IndicatorBarProps {
 
 export function IndicatorBar({ group, options, value, onChange }: IndicatorBarProps) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div className="scroll-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap', overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
       <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{group}</span>
       {options.map((o) => (
         <button
