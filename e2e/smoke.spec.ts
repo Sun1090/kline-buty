@@ -65,6 +65,45 @@ async function findDrawnLineCenter(page: Page): Promise<{ x: number; y: number }
   })
 }
 
+/** 扫描画线 overlay，返回蓝色选中锚点的位置：which='max' 取最右侧（尾锚点），'min' 取最左侧（首锚点） */
+async function findDrawingAnchor(
+  page: Page,
+  which: 'max' | 'min',
+): Promise<{ x: number; y: number } | null> {
+  return page.evaluate((w) => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return null
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return null
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    const dpr = window.devicePixelRatio || 1
+    const rect = overlay.getBoundingClientRect()
+    const pts: { x: number; y: number }[] = []
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4
+        const r = img[i]
+        const g = img[i + 1]
+        const b = img[i + 2]
+        const a = img[i + 3]
+        // 选中蓝 #4e9cf5（含抗锯齿容差）
+        if (a > 100 && b > 190 && g > 110 && g < 200 && r < 130) pts.push({ x: x / dpr, y: y / dpr })
+      }
+    }
+    if (!pts.length) return null
+    const ext = w === 'max' ? Math.max(...pts.map((p) => p.x)) : Math.min(...pts.map((p) => p.x))
+    const near = pts.filter((p) => (w === 'max' ? p.x > ext - 8 : p.x < ext + 8))
+    if (!near.length) return null
+    const sx = near.reduce((s, p) => s + p.x, 0) / near.length
+    const sy = near.reduce((s, p) => s + p.y, 0) / near.length
+    return { x: rect.left + sx, y: rect.top + sy }
+  }, which)
+}
+
 test.describe('K 线应用冒烟', () => {
   test('页面加载 → 实时行情 + 图表渲染', async ({ page }) => {
     await page.goto('/')
@@ -293,6 +332,131 @@ test.describe('K 线应用冒烟', () => {
             dP0 === dP1 &&
             (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
           )
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true)
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：趋势线 → 拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 画一条趋势线（左→右，锚点按时间排序）
+    await page.getByRole('button', { name: '趋势线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.points).toHaveLength(2)
+
+    // 切回鼠标 → 拖拽最右侧（尾）锚点
+    await page.getByRole('button', { name: '鼠标' }).click()
+    await expect.poll(() => findDrawingAnchor(page, 'max'), { timeout: 5000 }).not.toBeNull()
+    const anchor = (await findDrawingAnchor(page, 'max'))!
+    await page.mouse.move(anchor.x, anchor.y)
+    await page.mouse.down()
+    await page.mouse.move(anchor.x + box!.width * 0.08, anchor.y + box!.height * 0.05, { steps: 4 })
+    await page.mouse.up()
+
+    // 仅尾锚点变化：首锚点保持不变，尾锚点移动（区别于整线平移）
+    await expect
+      .poll(
+        async () => {
+          const after = await readFirst()
+          if (!after || after.points.length !== 2) return false
+          const headSame = after.points[0].time === before!.points[0].time && after.points[0].price === before!.points[0].price
+          const tailMoved =
+            after.points[1].time !== before!.points[1].time ||
+            after.points[1].price !== before!.points[1].price
+          return after.id === before!.id && headSame && tailMoved
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true)
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：射线 → 拖拽锚点 → 方向点保留 + 顺序不变 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 画一条射线：锚点 → 方向点（向右上延伸）
+    await page.getByRole('button', { name: '射线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.points).toHaveLength(2)
+
+    // 切回鼠标 → 拖拽最左侧（首）锚点
+    await page.getByRole('button', { name: '鼠标' }).click()
+    await expect.poll(() => findDrawingAnchor(page, 'min'), { timeout: 5000 }).not.toBeNull()
+    const anchor = (await findDrawingAnchor(page, 'min'))!
+    await page.mouse.move(anchor.x, anchor.y)
+    await page.mouse.down()
+    await page.mouse.move(anchor.x - box!.width * 0.06, anchor.y + box!.height * 0.08, { steps: 4 })
+    await page.mouse.up()
+
+    // 锚点移动，方向点保留在第二位（射线顺序敏感）
+    await expect
+      .poll(
+        async () => {
+          const after = await readFirst()
+          if (!after || after.points.length !== 2) return false
+          const dirSame =
+            after.points[1].time === before!.points[1].time && after.points[1].price === before!.points[1].price
+          const anchorMoved =
+            after.points[0].time !== before!.points[0].time ||
+            after.points[0].price !== before!.points[0].price
+          return after.id === before!.id && dirSame && anchorMoved
         },
         { timeout: 10_000 },
       )
