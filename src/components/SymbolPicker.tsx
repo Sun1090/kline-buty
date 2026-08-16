@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
-
-export const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT']
+import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
 
 const UP = 'var(--up)'
 const DOWN = 'var(--down)'
@@ -44,8 +43,10 @@ interface SymbolPickerProps {
 
 export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
-  const { snapshots, loading } = useMarketSnapshots(SYMBOLS)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const { snapshots } = useMarketSnapshots(POPULAR_SYMBOLS)
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -55,6 +56,16 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
+  // 打开时聚焦搜索框
+  useEffect(() => {
+    if (open) {
+      setQuery('')
+      setTimeout(() => searchRef.current?.focus(), 50)
+    }
+  }, [open])
+
+  const filtered = useFilteredSymbols(query)
+
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
@@ -63,7 +74,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
           padding: '5px 10px',
           fontSize: 13,
           borderRadius: 4,
-          border: '1px solid #2a2e39',
+          border: '1px solid var(--border)',
           background: 'var(--panel)',
           color: 'var(--text)',
           cursor: 'pointer',
@@ -80,47 +91,97 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             right: 0,
             zIndex: 100,
             background: 'var(--panel)',
-            border: '1px solid #2a2e39',
+            border: '1px solid var(--border)',
             borderRadius: 8,
             padding: '6px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-            minWidth: 280,
+            minWidth: 320,
           }}
         >
-          {loading && (
-            <div style={{ padding: '10px', color: 'var(--text-faint)', fontSize: 12 }}>加载行情…</div>
-          )}
-          {SYMBOLS.map((s) => {
-            const snap = snapshots[s]
-            const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
-            return (
-              <div
-                key={s}
-                onClick={() => {
-                  onChange(s)
-                  setOpen(false)
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '6px 8px',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  background: s === value ? 'rgba(41,98,255,0.15)' : 'transparent',
-                }}
-              >
-                <span style={{ width: 74, fontWeight: 600, fontSize: 13 }}>{s.replace('USDT', '/USDT')}</span>
-                <span style={{ width: 64, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-                  {snap ? fmtPrice(snap.price) : '—'}
-                </span>
-                <span style={{ width: 56, textAlign: 'right', fontSize: 12, color: changeColor }}>
-                  {snap ? `${snap.changePct.toFixed(2)}%` : '—'}
-                </span>
-                {snap ? <Sparkline points={snap.spark} /> : <span style={{ width: 76 }} />}
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索交易对…"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '6px 8px',
+              fontSize: 12,
+              borderRadius: 4,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+              marginBottom: 6,
+            }}
+          />
+          <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+            {query === '' && (
+              <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>常用</div>
+            )}
+            {query === '' &&
+              POPULAR_SYMBOLS.map((s) => {
+                const snap = snapshots[s]
+                const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
+                return (
+                  <div
+                    key={s}
+                    onClick={() => {
+                      onChange(s)
+                      setOpen(false)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '6px 8px',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      background: s === value ? 'rgba(41,98,255,0.15)' : 'transparent',
+                    }}
+                  >
+                    <span style={{ width: 74, fontWeight: 600, fontSize: 13 }}>{s.replace('USDT', '/USDT')}</span>
+                    <span style={{ width: 64, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                      {snap ? fmtPrice(snap.price) : '—'}
+                    </span>
+                    <span style={{ width: 56, textAlign: 'right', fontSize: 12, color: changeColor }}>
+                      {snap ? `${snap.changePct.toFixed(2)}%` : '—'}
+                    </span>
+                    {snap ? <Sparkline points={snap.spark} /> : <span style={{ width: 76 }} />}
+                  </div>
+                )
+              })}
+            {query !== '' && (
+              <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>
+                搜索结果 {filtered.length}
               </div>
-            )
-          })}
+            )}
+            {query !== '' &&
+              filtered.map((s) => (
+                <div
+                  key={s}
+                  onClick={() => {
+                    onChange(s)
+                    setOpen(false)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '6px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    background: s === value ? 'rgba(41,98,255,0.15)' : 'transparent',
+                  }}
+                >
+                  {s.replace('USDT', '/USDT')}
+                </div>
+              ))}
+            {query !== '' && filtered.length === 0 && (
+              <div style={{ color: 'var(--text-faint)', fontSize: 12, padding: '8px 6px' }}>无匹配交易对</div>
+            )}
+          </div>
         </div>
       )}
     </div>

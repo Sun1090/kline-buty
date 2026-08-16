@@ -107,3 +107,4 @@ export async function fetchOpenInterest(symbol: string): Promise<number> {
   const d = (await res.json()) as { openInterest: string }
   return Number(d.openInterest)
 }
+
