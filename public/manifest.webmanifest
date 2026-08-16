@@ -1,0 +1,17 @@
+{
+  "name": "Kline Buty",
+  "short_name": "Kline",
+  "description": "实时 K 线图表：蜡烛图、技术指标、市场回放、双图联动、模拟仓位",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#131722",
+  "theme_color": "#131722",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
