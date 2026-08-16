@@ -156,3 +156,45 @@ test('移动端：触屏拖动显示十字光标（OHLC 可读，抬起清除）
   expect(after).toBeLessThan(during)
   expect(errs).toHaveLength(0)
 })
+
+test('移动端：五语 UI 完整（html lang 同步 + MobileHeader 弹层无 i18n 键泄漏）', async ({ page }) => {
+  // 语言代码 → 期望 html lang / 更多按钮文案
+  const LANGS: [string, string, string][] = [
+    ['zh-CN', 'zh-CN', '更多'],
+    ['en', 'en', 'More'],
+    ['ja', 'ja', 'その他'],
+    ['ko', 'ko', '더보기'],
+    ['es', 'es', 'Más'],
+  ]
+  // i18n 词典顶层键前缀：命中说明有未翻译键泄漏到 UI
+  const leakRe =
+    /\b(?:common|status|chartType|group|period|lang|theme|layout|fullscreen|panel|sentiment|share|replay|drawing|symbol|indicator|stats|position|alert|tooltip|depth|orderBook|trade|quickOrder|volumeProfile|offline|errorBoundary|shortcuts|app)\.[a-zA-Z0-9_.]+\b/
+
+  for (const [code, htmlLang, moreLabel] of LANGS) {
+    await page.goto('/')
+    await page.evaluate((l) => localStorage.setItem('kline-buty:lang', l), code)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    // html lang 与语言同步
+    expect(await page.evaluate(() => document.documentElement.lang)).toBe(htmlLang)
+    // 更多弹层：含本语「更多」文案 + 无键泄漏
+    await page.getByTestId('mobile-more').tap()
+    await page.waitForTimeout(600)
+    const moreText = await page.getByTestId('mobile-panel-more').innerText()
+    expect(moreText).toContain(moreLabel)
+    expect(moreText).not.toMatch(leakRe)
+    // 画线弹层：无键泄漏
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.waitForTimeout(500)
+    const drawText = await page.getByTestId('mobile-panel-drawing').innerText()
+    expect(drawText).not.toMatch(leakRe)
+    // 类型弹层：无键泄漏
+    await page.getByTestId('mobile-menu-type').tap()
+    await page.waitForTimeout(400)
+    const typeText = await page.getByTestId('mobile-panel-type').innerText()
+    expect(typeText).not.toMatch(leakRe)
+    // 关闭面板（点图表区域）
+    await page.touchscreen.tap(195, 700)
+    await page.waitForTimeout(300)
+  }
+})
