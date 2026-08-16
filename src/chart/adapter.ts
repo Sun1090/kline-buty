@@ -35,7 +35,7 @@ export interface DrawingCallbacks {
 
 /** 副图指标数据（UI 层计算，本层渲染） */
 export interface SubIndicatorData {
-  kind: 'volume' | 'macd' | 'kdj' | 'rsi'
+  kind: 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy'
   hist?: { time: number; value: number; color?: string }[]
   lines?: { id: string; points: ValuePoint[] }[]
   markers?: { price: number; color: string }[]
@@ -112,6 +112,14 @@ const SUB_LINE_COLORS: Record<string, string> = {
   D: '#4e9cf5',
   J: '#e45f9d',
   RSI: '#9aa7b5',
+  WR: '#9aa7b5',
+  OBV: '#f5c02f',
+  ATR: '#9aa7b5',
+  PDI: '#26a69a',
+  MDI: '#ef5350',
+  ADX: '#f5c02f',
+  CCI: '#9aa7b5',
+  PSY: '#4e9cf5',
 }
 
 const SUB_PANE_HEIGHT = 90

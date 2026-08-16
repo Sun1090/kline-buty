@@ -49,6 +49,12 @@ const SUB_OPTIONS = [
   { value: 'macd', label: 'MACD' },
   { value: 'kdj', label: 'KDJ' },
   { value: 'rsi', label: 'RSI' },
+  { value: 'wr', label: 'WR' },
+  { value: 'obv', label: 'OBV' },
+  { value: 'atr', label: 'ATR' },
+  { value: 'dmi', label: 'DMI' },
+  { value: 'cci', label: 'CCI' },
+  { value: 'psy', label: 'PSY' },
   { value: 'none', label: '无' },
 ]
 
@@ -79,10 +85,17 @@ export function App() {
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Service Worker 注册（生产环境）
+  // Service Worker 注册（生产环境）+ 通知点击定位交易对
   useEffect(() => {
     if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
     void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'focus-symbol' && typeof e.data.symbol === 'string') {
+        setSymbol(e.data.symbol)
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker.removeEventListener('message', onMsg)
   }, [])
 
   // 多图模式不支持回放（时间轴同步与游标冲突）
@@ -94,15 +107,6 @@ export function App() {
   useEffect(() => {
     applyTheme(themeMode)
   }, [themeMode])
-
-  // 回放播放器：每 500ms 按速度推进
-  useEffect(() => {
-    if (!replay?.playing) return
-    const timer = window.setInterval(() => {
-      setReplay((r) => (r ? tickReplay(r, r.speed) : r))
-    }, 500)
-    return () => window.clearInterval(timer)
-  }, [replay?.playing])
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
@@ -119,6 +123,19 @@ export function App() {
   }
   const { state, hasMore, loadMore } = useKlineData(symbol, period)
   const { candles, status, error } = state
+
+  // 回放播放器：每 500ms 按速度推进；接近开头时自动加载更早历史
+  useEffect(() => {
+    if (!replay?.playing) return
+    const timer = window.setInterval(() => {
+      setReplay((r) => {
+        if (!r) return r
+        if (r.cursor < 50) void loadMore()
+        return tickReplay(r, r.speed)
+      })
+    }, 500)
+    return () => window.clearInterval(timer)
+  }, [replay?.playing, loadMore])
   const stats = useMarketStats(symbol)
   const alertsApi = usePriceAlerts(
     candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,

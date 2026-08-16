@@ -26,10 +26,31 @@ function loadAlerts(): PriceAlert[] {
   }
 }
 
+/** 触发提示音（WebAudio 合成，不依赖音频文件；被浏览器策略拦截时静默） */
+export function playAlertBeep() {
+  try {
+    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!Ctor) return
+    const ctx = new Ctor()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.25, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.4)
+    osc.onended = () => void ctx.close().catch(() => {})
+  } catch {
+    /* noop */
+  }
+}
+
 /**
  * 价格提醒：
  * - 持久化到 localStorage
- * - 外部传入最新价（symbol + price），满足条件的未触发提醒 → 浏览器通知
+ * - 外部传入最新价（symbol + price），满足条件的未触发提醒 → 浏览器通知 + 提示音
  * - 一次性触发（triggered 标记）
  */
 export function usePriceAlerts(
@@ -92,11 +113,13 @@ export function usePriceAlerts(
         new Notification('Kline Buty · 价格提醒', {
           body: `${a.symbol} ${a.direction === 'above' ? '已到达' : '已跌破'} ${a.price}`,
           tag: a.id,
+          data: { symbol: a.symbol },
         })
       } catch {
         /* 通知失败不阻塞 */
       }
     }
+    playAlertBeep()
     const triggeredIds = new Set(due.map((a) => a.id))
     persistRef.current(
       alertsRef.current.map((a) => (triggeredIds.has(a.id) ? { ...a, triggered: true } : a)),
