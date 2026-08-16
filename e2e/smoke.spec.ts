@@ -316,6 +316,34 @@ test.describe('K 线应用冒烟', () => {
   })
 
 
+  test('盘口联动：hover 档位 → 主图参考价格线出现，移出清除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await page.getByRole('button', { name: '盘口' }).click()
+    const row = page.getByTestId('ob-bid').first()
+    await expect(row).toBeVisible({ timeout: 20_000 })
+    // 主图 canvas 上 accent 色（#2962ff）像素数
+    const accentPx = () =>
+      page.evaluate(() => {
+        const c = document.querySelectorAll('canvas')[0]
+        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data
+        let n = 0
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3]
+          if (a > 60 && r > 25 && r < 70 && g > 80 && g < 120 && b > 220) n++
+        }
+        return n
+      })
+    const box = await row.boundingBox()
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+    await expect.poll(() => accentPx(), { timeout: 10_000 }).toBeGreaterThan(200)
+    // 移出盘口面板 → 参考线清除
+    await page.mouse.move(10, 10)
+    await expect.poll(() => accentPx(), { timeout: 10_000 }).toBeLessThan(50)
+  })
+
+
   test('情绪面板：开合 + 四类指标标题可见（数据可加载中）', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

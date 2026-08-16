@@ -7,6 +7,8 @@ import { useI18n } from '../i18n'
 interface OrderBookProps {
   symbol: string
   depth: DepthSnapshot | null
+  /** hover 档位时上报价格（移出传 null），联动主图参考线 */
+  onHoverPrice?: (price: number | null) => void
 }
 
 const BID = 'var(--up)'
@@ -17,11 +19,22 @@ function fmtPrice(v: number) {
   return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
 }
 
-function Row({ row, side }: { row: OrderBookRow; side: 'bid' | 'ask' }) {
+function Row({
+  row,
+  side,
+  onHoverPrice,
+}: {
+  row: OrderBookRow
+  side: 'bid' | 'ask'
+  onHoverPrice?: (price: number | null) => void
+}) {
   const color = side === 'bid' ? BID : ASK
   return (
     <div
       data-testid={`ob-${side}`}
+      data-price={row.price}
+      onMouseEnter={() => onHoverPrice?.(row.price)}
+      onMouseLeave={() => onHoverPrice?.(null)}
       style={{
         position: 'relative',
         display: 'grid',
@@ -29,6 +42,7 @@ function Row({ row, side }: { row: OrderBookRow; side: 'bid' | 'ask' }) {
         padding: '1px 8px',
         fontSize: 11,
         fontVariantNumeric: 'tabular-nums',
+        cursor: 'crosshair',
       }}
     >
       <div
@@ -49,7 +63,7 @@ function Row({ row, side }: { row: OrderBookRow; side: 'bid' | 'ask' }) {
 }
 
 /** 盘口订单簿：卖盘（上）/ 价差 / 买盘（下），含累计量与占比比例条 */
-export function OrderBook({ symbol, depth }: OrderBookProps) {
+export function OrderBook({ symbol, depth, onHoverPrice }: OrderBookProps) {
   const { t } = useI18n()
   const data = useMemo(() => orderBookRows(depth ?? { bids: [], asks: [] }, LIMIT), [depth])
   const hasData = data.bids.length > 0 && data.asks.length > 0
@@ -88,7 +102,7 @@ export function OrderBook({ symbol, depth }: OrderBookProps) {
       ) : (
         <>
           {data.asks.map((r) => (
-            <Row key={`a${r.price}`} row={r} side="ask" />
+            <Row key={`a${r.price}`} row={r} side="ask" onHoverPrice={onHoverPrice} />
           ))}
           <div
             data-testid="ob-spread"
@@ -107,7 +121,7 @@ export function OrderBook({ symbol, depth }: OrderBookProps) {
             <span />
           </div>
           {data.bids.map((r) => (
-            <Row key={`b${r.price}`} row={r} side="bid" />
+            <Row key={`b${r.price}`} row={r} side="bid" onHoverPrice={onHoverPrice} />
           ))}
         </>
       )}
