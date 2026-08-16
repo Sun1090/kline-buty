@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
-import { THEMES } from '../theme'
+import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcMACD } from '../indicators/macd'
@@ -74,6 +74,8 @@ interface ChartViewProps {
   onDrawingUpdate?: (id: string, points: { time: number; price: number }[]) => void
   /** 主题模式（canvas 渲染色） */
   themeMode?: 'dark' | 'light'
+  /** 主题色预设（涨跌/强调色） */
+  colorPreset?: ColorPresetId
 }
 
 interface Tooltip {
@@ -105,9 +107,10 @@ export function ChartView({
   onDrawingSelect,
   onDrawingUpdate,
   themeMode = 'dark',
+  colorPreset = 'classic',
 }: ChartViewProps) {
   const { t, lang } = useI18n()
-  const theme = THEMES[themeMode]
+  const theme = themeFor(themeMode, colorPreset)
   const UP = theme.up
   const DOWN = theme.down
   const containerRef = useRef<HTMLDivElement>(null)
@@ -163,7 +166,7 @@ export function ChartView({
       setTooltip({ x, y, time })
     })
     api.setPositionDragHandler(onPositionDrag ?? null)
-    api.setTheme(themeMode)
+    api.setTheme(themeMode, colorPreset)
     api.setDrawingCallbacks(
       onDrawingCommit || onDrawingSelect || onDrawingUpdate
         ? {
@@ -424,10 +427,10 @@ export function ChartView({
     apiRef.current?.setSelectedDrawing?.(selectedDrawingId ?? null)
   }, [selectedDrawingId])
 
-  // 主题切换
+  // 主题切换（模式 + 色预设）
   useEffect(() => {
-    apiRef.current?.setTheme(themeMode)
-  }, [themeMode])
+    apiRef.current?.setTheme(themeMode, colorPreset)
+  }, [themeMode, colorPreset])
 
   // ---- 十字光标信息窗内容 ----
   const candleByTime = useMemo(() => new Map(replayData.map((c) => [c.time, c])), [replayData])

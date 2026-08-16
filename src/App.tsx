@@ -28,7 +28,8 @@ import { OfflineBanner } from './components/OfflineBanner'
 import type { Position } from './position/pnl'
 import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
-import { applyTheme, type ThemeMode } from './theme'
+import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
+import { ThemePicker } from './components/ThemePicker'
 import { useI18n, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 
@@ -92,6 +93,7 @@ export function App() {
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
   const [layout, setLayout] = usePersistedState<'single' | 'pair' | 'quad'>('layout', 'single')
   const [themeMode, setThemeMode] = usePersistedState<ThemeMode>('theme', 'dark')
+  const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
@@ -127,10 +129,10 @@ export function App() {
     if (layout !== 'single') setReplay(null)
   }, [layout])
 
-  // 主题应用（CSS 变量 + meta）
+  // 主题应用（模式 + 色预设 → CSS 变量 + meta）
   useEffect(() => {
-    applyTheme(themeMode)
-  }, [themeMode])
+    applyTheme(themeMode, colorPreset)
+  }, [themeMode, colorPreset])
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
@@ -416,6 +418,7 @@ export function App() {
         >
           {themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
         </button>
+        <ThemePicker value={colorPreset} onChange={setColorPreset} />
         <button
           onClick={() => setPositionOpen((v) => !v)}
           style={{
@@ -632,6 +635,7 @@ export function App() {
             symbol={symbol}
             secondSymbol="ETHUSDT"
             themeMode={themeMode}
+            colorPreset={colorPreset}
             period={period}
             chartType={chartType}
             mainIndicator={mainIndicator}
@@ -642,6 +646,7 @@ export function App() {
           <ChartQuad
             symbols={['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']}
             themeMode={themeMode}
+            colorPreset={colorPreset}
             period={period}
             chartType={chartType}
             mainIndicator={mainIndicator}
@@ -655,6 +660,7 @@ export function App() {
             candles={candles}
             status={status}
             themeMode={themeMode}
+            colorPreset={colorPreset}
             chartType={chartType}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
