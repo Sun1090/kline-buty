@@ -221,14 +221,20 @@ export function ChartView({
     if (mainIndicator === 'vwap') return { lines: [{ id: 'VWAP', points: calcVWAP(replayData) }] }
     if (mainIndicator === 'sar') {
       // SAR 圆点：多头在价格下方（涨色），空头在价格上方（跌色）
-      const sar = calcSAR(replayData)
+      const sar = calcSAR(replayData, indicatorParams.sarAfStart, indicatorParams.sarAfStep, indicatorParams.sarAfMax)
       return {
         lines: [],
         markers: sar.map((p) => ({ time: p.time, price: p.value, color: p.bull ? UP : DOWN })),
       }
     }
     if (mainIndicator === 'ichimoku') {
-      const r = calcIchimoku(replayData, { periodSeconds: PERIOD_MS[period] / 1000 })
+      const r = calcIchimoku(replayData, {
+        tenkanPeriod: indicatorParams.ichimokuTenkan,
+        kijunPeriod: indicatorParams.ichimokuKijun,
+        senkouBPeriod: indicatorParams.ichimokuSpanB,
+        displacement: indicatorParams.ichimokuDisplacement,
+        periodSeconds: PERIOD_MS[period] / 1000,
+      })
       return {
         lines: [
           { id: 'ICH_TENKAN', points: r.tenkan },
@@ -294,7 +300,7 @@ export function ChartView({
     if (subIndicator === 'wr') {
       return {
         kind: 'wr' as const,
-        lines: [{ id: 'WR', points: calcWR(replayData) }],
+        lines: [{ id: 'WR', points: calcWR(replayData, indicatorParams.wrPeriod) }],
         markers: [
           { price: 20, color: UP },
           { price: 80, color: DOWN },
@@ -302,13 +308,13 @@ export function ChartView({
       }
     }
     if (subIndicator === 'obv') {
-      return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(replayData) }] }
+      return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(replayData, indicatorParams.obvMaPeriod) }] }
     }
     if (subIndicator === 'atr') {
-      return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(replayData) }] }
+      return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(replayData, indicatorParams.atrPeriod) }] }
     }
     if (subIndicator === 'dmi') {
-      const dmi = calcDMI(replayData)
+      const dmi = calcDMI(replayData, indicatorParams.dmiPeriod)
       return {
         kind: 'dmi' as const,
         lines: [
@@ -321,7 +327,7 @@ export function ChartView({
     if (subIndicator === 'cci') {
       return {
         kind: 'cci' as const,
-        lines: [{ id: 'CCI', points: calcCCI(replayData) }],
+        lines: [{ id: 'CCI', points: calcCCI(replayData, indicatorParams.cciPeriod) }],
         markers: [
           { price: 100, color: DOWN },
           { price: -100, color: UP },
@@ -331,7 +337,7 @@ export function ChartView({
     if (subIndicator === 'psy') {
       return {
         kind: 'psy' as const,
-        lines: [{ id: 'PSY', points: calcPSY(replayData) }],
+        lines: [{ id: 'PSY', points: calcPSY(replayData, indicatorParams.psyPeriod) }],
         markers: [
           { price: 75, color: DOWN },
           { price: 25, color: UP },

@@ -1,5 +1,5 @@
 import type { Candle } from '../chart/types'
-import type { ValuePoint } from './sma'
+import { calcSMA, type ValuePoint } from './sma'
 
 /** 威廉指标 WR(n)：超买 <20，超卖 >80（(HHV-C)/(HHV-LLV)×100） */
 export function calcWR(candles: Candle[], n = 14): ValuePoint[] {
@@ -17,8 +17,8 @@ export function calcWR(candles: Candle[], n = 14): ValuePoint[] {
   return out
 }
 
-/** 能量潮 OBV：收盘价变化方向累计成交量 */
-export function calcOBV(candles: Candle[]): ValuePoint[] {
+/** 能量潮 OBV：收盘价变化方向累计成交量；n > 1 时对 OBV 做 SMA 平滑（TradingView 的 OBV MA） */
+export function calcOBV(candles: Candle[], n = 1): ValuePoint[] {
   const out: ValuePoint[] = []
   let obv = 0
   for (let i = 0; i < candles.length; i++) {
@@ -29,6 +29,7 @@ export function calcOBV(candles: Candle[]): ValuePoint[] {
     }
     out.push({ time: candles[i].time, value: obv })
   }
+  if (n > 1) return calcSMA(out, n)
   return out
 }
 

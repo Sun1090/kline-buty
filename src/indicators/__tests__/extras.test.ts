@@ -39,6 +39,18 @@ describe('calcOBV', () => {
     const obv = calcOBV(down)
     expect(obv[1].value).toBe(-50)
   })
+  it('n=1（默认）与 n>1 平滑：输出长度一致、平滑后为窗口均值', () => {
+    // 构造 5 根持续上涨，OBV 原始值依次 0,150,350,600,900（成交量 100/150/200/250/300）
+    const up = candles.map((x) => ({ ...x }))
+    const raw = calcOBV(up, 1)
+    expect(raw.map((p) => p.value)).toEqual([0, 150, 350, 600, 900])
+    // n=3：SMA 窗口均值，前 2 根无值
+    const sm = calcOBV(up, 3)
+    expect(sm).toHaveLength(raw.length - 2)
+    expect(sm[0].value).toBeCloseTo((0 + 150 + 350) / 3)
+    expect(sm[1].value).toBeCloseTo((150 + 350 + 600) / 3)
+    expect(sm[2].value).toBeCloseTo((350 + 600 + 900) / 3)
+  })
 })
 
 describe('calcATR', () => {
