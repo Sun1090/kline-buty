@@ -144,6 +144,8 @@ export const zh = {
     macdSlow: 'MACD 慢线',
     macdSignal: 'MACD 信号',
     rsiPeriod: 'RSI 周期',
+    sar: 'SAR',
+    ichimoku: 'Ichimoku',
   },
   stats: {
     lastPrice: '最新价',
@@ -360,6 +362,8 @@ export const en: Messages = {
     macdSlow: 'MACD slow',
     macdSignal: 'MACD signal',
     rsiPeriod: 'RSI period',
+    sar: 'SAR',
+    ichimoku: 'Ichimoku',
   },
   stats: {
     lastPrice: 'Last price',

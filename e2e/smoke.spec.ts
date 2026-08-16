@@ -619,6 +619,68 @@ test.describe('K 线应用冒烟', () => {
   })
 })
 
+
+  test('主图指标：SAR 切换无异常 + Ichimoku 云带/线渲染', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // 等蜡烛像素出现（不做 reload 重试：云带断言自带 15s 轮询，避免冷启动吃掉用例超时）
+    await page.waitForFunction(
+      () => {
+        const cs = [...document.querySelectorAll('canvas')]
+        for (const c of cs) {
+          try {
+            const ctx = c.getContext('2d')
+            if (!ctx || c.width < 100) continue
+            const d = ctx.getImageData(0, 0, c.width, c.height).data
+            for (let i = 0; i < d.length; i += 200) {
+              const r = d[i]
+              const g = d[i + 1]
+              const b = d[i + 2]
+              if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+            }
+          } catch {
+            /* noop */
+          }
+        }
+        return false
+      },
+      { timeout: 30_000 },
+    )
+    // SAR：切换后不抛错（圆点走 marker 渲染路径）
+    await page.getByRole('button', { name: 'SAR', exact: true }).click()
+    await page.waitForTimeout(1200)
+    expect(errors).toHaveLength(0)
+    // Ichimoku：云带填充（0.12 涨色叠深色底 ≈ 暗青 rgb(21,40,48)）+ 先行带 B 橙线 #f57f17
+    await page.getByRole('button', { name: 'Ichimoku', exact: true }).click()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            let cloud = 0
+            let orange = 0
+            for (const c of document.querySelectorAll('canvas')) {
+              const ctx = c.getContext('2d')
+              if (!ctx || c.width < 100) continue
+              const d = ctx.getImageData(0, 0, c.width, c.height).data
+              for (let i = 0; i < d.length; i += 4) {
+                const r = d[i]
+                const g = d[i + 1]
+                const b = d[i + 2]
+                if (Math.abs(r - 21) < 14 && Math.abs(g - 40) < 14 && Math.abs(b - 48) < 14) cloud++
+                if (r > 200 && g > 80 && g < 180 && b < 80) orange++
+              }
+            }
+            return { cloud, orange }
+          }),
+        (v) => v.cloud > 60 && v.orange > 40,
+        { timeout: 15_000 },
+      )
+      .toBeTruthy()
+    expect(errors).toHaveLength(0)
+  })
+
 test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
