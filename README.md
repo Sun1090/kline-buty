@@ -60,6 +60,7 @@ npm run build                # 生产构建
 - [x] M13 自选收藏 + 分享链接：交易对星标收藏（localStorage 持久化、自选区置顶）+ 一键复制分享链接（`?symbol=&period=` URL 参数直达品种/周期、白名单校验），新增 2 个 E2E 场景
 - [x] M14 画线补齐：斐波那契扩展（3 锚点多段点击）/斐波那契扇形/价格标签/箭头，画线工具 7→11 种，新增 E2E 场景
 - [x] M15 主图指标补全：Parabolic SAR（0.02/0.02/0.2 + 反转逻辑）+ Ichimoku 云图（转换/基准/先行带 A/B/迟行 + 未来位移 26 + 涨绿跌红云带），新增 E2E 场景
+- [x] M16 指标参数全量可调：16 种指标参数面板完整覆盖（SAR 加速三参 / Ichimoku 四周期 / WR·ATR·DMI·CCI·PSY 周期 / OBV 平滑 / KDJ 三参中文化），修改即时生效 + localStorage 持久化，新增 E2E 场景
 - [x] P1-2 画线工具：水平线/趋势线/平行通道/斐波那契/矩形/射线/文本标注（overlay 图层、创建/选中/删除/改字、持久化），支持整线拖动与锚点拖拽编辑（水平/文本/斐波那契选中显示锚点）
 - [x] P1-3 盘口深度图：WS depth20@100ms 实时聚合曲线 + 最优价标记
 - [x] P1-6 周期补全：1s/3m/30m/2h/12h/3d/1M（共 14 档）
@@ -71,7 +72,7 @@ npm run build                # 生产构建
 - [x] 筹码分布（VPVR）：成交量按价格分桶、买卖量分色、密集区标记
 - [x] 四图联动：单图/双图/四图布局切换，时间轴全联动 + 防回环
 - [x] i18n 多语言：中/英文界面一键切换（字典驱动 + localStorage 持久化 + `<html lang>` 同步），画线/仓位线标签随语言联动
-- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 19 场景
+- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 20 场景
 
 ## 技术栈与结构
 

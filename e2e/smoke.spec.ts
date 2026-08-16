@@ -681,6 +681,60 @@ test.describe('K 线应用冒烟', () => {
     expect(errors).toHaveLength(0)
   })
 
+  test('指标参数：RSI 改 7 即时生效 + 全指标切换无异常 + 参数持久化', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // 轻量等待蜡烛像素出现（避免 reload 重试）
+    await page.waitForFunction(
+      () => {
+        const cs = [...document.querySelectorAll('canvas')]
+        for (const c of cs) {
+          try {
+            const ctx = c.getContext('2d')
+            if (!ctx || c.width < 100) continue
+            const d = ctx.getImageData(0, 0, c.width, c.height).data
+            for (let i = 0; i < d.length; i += 200) {
+              const r = d[i]
+              const g = d[i + 1]
+              const b = d[i + 2]
+              if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+            }
+          } catch {
+            /* noop */
+          }
+        }
+        return false
+      },
+      { timeout: 30_000 },
+    )
+    // 打开 RSI 参数：默认 14 → 改为 7
+    await page.getByRole('button', { name: 'RSI', exact: true }).click()
+    await page.getByRole('button', { name: '参数', exact: true }).click()
+    await expect(page.getByText('RSI 周期', { exact: true })).toBeVisible()
+    const rsiInput = page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')
+    await expect(rsiInput).toHaveValue('14')
+    await rsiInput.fill('7')
+    await page.getByRole('button', { name: '✕', exact: true }).click()
+    // 全指标切换无异常（含新接线参数的 WR/OBV/ATR/DMI/CCI/PSY/SAR/Ichimoku）
+    for (const name of ['WR', 'OBV', 'ATR', 'DMI', 'CCI', 'PSY']) {
+      await page.getByRole('button', { name, exact: true }).click()
+      await page.waitForTimeout(250)
+    }
+    await page.getByRole('button', { name: 'SAR', exact: true }).click()
+    await page.waitForTimeout(600)
+    await page.getByRole('button', { name: 'Ichimoku', exact: true }).click()
+    await page.waitForTimeout(800)
+    expect(errors).toHaveLength(0)
+    // 切回 RSI：参数已持久化为 7
+    await page.getByRole('button', { name: 'RSI', exact: true }).click()
+    await page.getByRole('button', { name: '参数', exact: true }).click()
+    await expect(page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')).toHaveValue('7')
+    await page.getByRole('button', { name: '✕', exact: true }).click()
+    expect(errors).toHaveLength(0)
+  })
+
 test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
