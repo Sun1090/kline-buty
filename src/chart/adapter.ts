@@ -101,6 +101,7 @@ const MAIN_LINE_COLORS: Record<string, string> = {
   BOLL_UPPER: '#e45f9d',
   BOLL_MID: '#f5c02f',
   BOLL_LOWER: '#4e9cf5',
+  VWAP: '#f57f17',
 }
 
 /** 副图指标线配色 */

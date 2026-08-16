@@ -40,6 +40,7 @@ const MAIN_OPTIONS = [
   { value: 'ma', label: 'MA' },
   { value: 'ema', label: 'EMA' },
   { value: 'boll', label: 'BOLL' },
+  { value: 'vwap', label: 'VWAP' },
   { value: 'none', label: '无' },
 ]
 

@@ -8,9 +8,10 @@ import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
+import { calcVWAP } from '../indicators/vwap'
 import type { IndicatorParams } from '../indicators/params'
 
-export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'none'
+export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'none'
 export type { ChartType }
 
@@ -186,6 +187,7 @@ export function ChartView({
         { id: 'BOLL_LOWER', points: b.lower },
       ]
     }
+    if (mainIndicator === 'vwap') return [{ id: 'VWAP', points: calcVWAP(replayData) }]
     return []
   }, [replayData, mainIndicator, indicatorParams])
 
