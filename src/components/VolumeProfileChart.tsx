@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Candle } from '../chart/types'
 import { computeVolumeProfile, pointOfControl } from '../volumeProfile/calc'
+import { useI18n } from '../i18n'
 
 interface VolumeProfileChartProps {
   symbol: string
@@ -18,6 +19,7 @@ function fmtPrice(v: number) {
 
 /** 筹码分布（VPVR）：横向柱状图，绿=买量 红=卖量，标注密集区 */
 export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps) {
+  const { t } = useI18n()
   const render = useMemo(() => {
     const profile = computeVolumeProfile(candles.slice(-300), 24)
     if (profile.length === 0) return null
@@ -32,7 +34,7 @@ export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps)
   if (!render) {
     return (
       <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-faint)', fontSize: 12 }}>
-        数据不足
+        {t('status.vpNotEnough')}
       </div>
     )
   }
@@ -50,10 +52,10 @@ export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps)
       }}
     >
       <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 2 }}>
-        筹码分布（最近 300 根）· {symbol.replace('USDT', '/USDT')}
+        {t('volumeProfile.title', { symbol: symbol.replace('USDT', '/USDT') })}
         {poc && (
           <span style={{ color: 'var(--yellow)', marginLeft: 8 }}>
-            密集区 ≈ {fmtPrice(poc.price)}
+            {t('volumeProfile.poc', { price: fmtPrice(poc.price) })}
           </span>
         )}
       </div>
@@ -76,9 +78,9 @@ export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps)
             </g>
           )
         })}
-        <text x={4} y={12} fill={BID} fontSize={9}>买量</text>
-        <text x={56} y={12} fill={ASK} fontSize={9}>卖量</text>
-        <text x={104} y={12} style={{fill: "var(--placeholder)"}} fontSize={9}>密集区</text>
+        <text x={4} y={12} fill={BID} fontSize={9}>{t('volumeProfile.bidVol')}</text>
+        <text x={56} y={12} fill={ASK} fontSize={9}>{t('volumeProfile.askVol')}</text>
+        <text x={104} y={12} style={{fill: "var(--placeholder)"}} fontSize={9}>{t('volumeProfile.pocLabel')}</text>
       </svg>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { aggregateDepth, maxTotal, bestPrice } from '../depth/aggregate'
+import { useI18n } from '../i18n'
 
 interface DepthChartProps {
   symbol: string
@@ -18,6 +19,7 @@ function fmtPrice(v: number) {
 
 /** 深度图：买盘（绿）/ 卖盘（红）累计量曲线 + 最优价标记 */
 export function DepthChart({ symbol, depth }: DepthChartProps) {
+  const { t } = useI18n()
   const render = useMemo(() => {
     if (!depth || depth.bids.length === 0 || depth.asks.length === 0) return null
     const points = aggregateDepth(depth.bids, depth.asks)
@@ -49,7 +51,7 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
   if (!render) {
     return (
       <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-faint)', fontSize: 12 }}>
-        加载盘口深度…
+        {t('status.depthLoading')}
       </div>
     )
   }
@@ -65,7 +67,7 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
       }}
     >
       <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 2 }}>
-        盘口深度 · {symbol.replace('USDT', '/USDT')}（实时）
+        {t('depth.title', { symbol: symbol.replace('USDT', '/USDT') })}
       </div>
       <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: 520 }}>
         <path d={render.bidArea} fill={BID} opacity={0.18} />
@@ -75,8 +77,8 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
         {/* 最优价分隔 */}
         <line x1={render.midX} y1={0} x2={render.midX} y2={H - 10} style={{stroke: "var(--placeholder)"}} strokeWidth={1} strokeDasharray="4 3" />
         {/* 价格标签 */}
-        <text x={6} y={14} fill={BID} fontSize={10}>买 {fmtPrice(render.bestBid)}</text>
-        <text x={W - 100} y={14} fill={ASK} fontSize={10}>卖 {fmtPrice(render.bestAsk)}</text>
+        <text x={6} y={14} fill={BID} fontSize={10}>{t('depth.bid')} {fmtPrice(render.bestBid)}</text>
+        <text x={W - 100} y={14} fill={ASK} fontSize={10}>{t('depth.ask')} {fmtPrice(render.bestAsk)}</text>
         <text x={6} y={H - 14} style={{fill: "var(--placeholder)"}} fontSize={9}>{fmtPrice(render.minPrice)}</text>
         <text x={W - 70} y={H - 14} style={{fill: "var(--placeholder)"}} fontSize={9}>{fmtPrice(render.maxPrice)}</text>
       </svg>

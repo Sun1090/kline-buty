@@ -35,6 +35,7 @@ vi.mock('../chart/adapter', () => ({
     setDrawingTool() {}
     setDrawingCallbacks() {}
     setTheme() {}
+    setLocale() {}
     fitContent() {}
     scrollToRealTime() {}
     subscribeCrosshairMove() {

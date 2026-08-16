@@ -1,4 +1,15 @@
 import { Component, type ReactNode } from 'react'
+import { makeT, DICTIONARIES, type Lang } from '../i18n'
+
+function readLang(): Lang {
+  try {
+    const v = localStorage.getItem('kline-buty:lang')
+    if (v === 'zh-CN' || v === 'en') return v
+  } catch {
+    /* noop */
+  }
+  return 'zh-CN'
+}
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -17,6 +28,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   render() {
+    const t = makeT(DICTIONARIES[readLang()])
     if (this.state.error) {
       return (
         <div
@@ -31,7 +43,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             fontSize: 13,
           }}
         >
-          <div style={{ fontSize: 15, color: 'var(--down)' }}>图表渲染出错</div>
+          <div style={{ fontSize: 15, color: 'var(--down)' }}>{t('errorBoundary.title')}</div>
           <div style={{ maxWidth: 480, textAlign: 'center', fontSize: 12, wordBreak: 'break-all' }}>
             {String(this.state.error?.message ?? this.state.error)}
           </div>
@@ -47,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               color: 'var(--text)',
             }}
           >
-            重试
+            {t('common.retry')}
           </button>
         </div>
       )

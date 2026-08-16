@@ -44,6 +44,7 @@ vi.mock('../../chart/adapter', () => {
     setDrawingTool = vi.fn()
     setDrawingCallbacks = vi.fn()
     setTheme = vi.fn()
+    setLocale = vi.fn()
     fitContent = vi.fn()
     scrollToRealTime = vi.fn()
     constructor() {

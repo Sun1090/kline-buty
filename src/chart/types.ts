@@ -1,20 +1,20 @@
 export type Period = '1s' | '1m' | '3m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '12h' | '1d' | '3d' | '1w' | '1M'
 
-export const PERIODS: { value: Period; label: string }[] = [
-  { value: '1s', label: '1秒' },
-  { value: '1m', label: '1分' },
-  { value: '3m', label: '3分' },
-  { value: '5m', label: '5分' },
-  { value: '15m', label: '15分' },
-  { value: '30m', label: '30分' },
-  { value: '1h', label: '1时' },
-  { value: '2h', label: '2时' },
-  { value: '4h', label: '4时' },
-  { value: '12h', label: '12时' },
-  { value: '1d', label: '日' },
-  { value: '3d', label: '3日' },
-  { value: '1w', label: '周' },
-  { value: '1M', label: '月' },
+export const PERIODS: { value: Period; labelKey: string }[] = [
+  { value: '1s', labelKey: 'period.1s' },
+  { value: '1m', labelKey: 'period.1m' },
+  { value: '3m', labelKey: 'period.3m' },
+  { value: '5m', labelKey: 'period.5m' },
+  { value: '15m', labelKey: 'period.15m' },
+  { value: '30m', labelKey: 'period.30m' },
+  { value: '1h', labelKey: 'period.1h' },
+  { value: '2h', labelKey: 'period.2h' },
+  { value: '4h', labelKey: 'period.4h' },
+  { value: '12h', labelKey: 'period.12h' },
+  { value: '1d', labelKey: 'period.1d' },
+  { value: '3d', labelKey: 'period.3d' },
+  { value: '1w', labelKey: 'period.1w' },
+  { value: '1M', labelKey: 'period.1M' },
 ]
 
 /** 周期 → 毫秒（分页游标计算用） */
