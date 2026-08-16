@@ -10,6 +10,7 @@ export type DrawingTool =
   | 'fibext'
   | 'fibfan'
   | 'fibtimed'
+  | 'gann'
   | 'pricelabel'
   | 'arrow'
   | 'ellipse'
@@ -92,6 +93,38 @@ export function fibFanRays(
   }))
 }
 
+/** 江恩角度线倍率（价格变化相对 A→B 竖直摆幅的倍数；1 为 1×1 主对角线） */
+export const GANN_RATIOS: { ratio: number; label: string }[] = [
+  { ratio: 1 / 8, label: '1×8' },
+  { ratio: 1 / 4, label: '1×4' },
+  { ratio: 1 / 3, label: '1×3' },
+  { ratio: 1 / 2, label: '1×2' },
+  { ratio: 1, label: '1×1' },
+  { ratio: 2, label: '2×1' },
+  { ratio: 3, label: '3×1' },
+  { ratio: 4, label: '4×1' },
+  { ratio: 8, label: '8×1' },
+]
+
+export interface GannRay {
+  ratio: number
+  label: string
+  dir: { time: number; price: number }
+}
+
+/** 江恩角度线：A 为原点，射线方向 = A→B 竖直摆幅 × 各倍率（1×1 即 A→B 本身），双向延伸由渲染层负责 */
+export function gannFanRays(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+): GannRay[] {
+  const dy = b.price - a.price
+  return GANN_RATIOS.map(({ ratio, label }) => ({
+    ratio,
+    label,
+    dir: { time: b.time, price: a.price + dy * ratio },
+  }))
+}
+
 /** 斐波那契时间线：A→B 时间区间按黄金分割分位取时间点（0 / 0.236 / 0.382 / 0.5 / 0.618 / 0.786 / 1） */
 export function fibTimeLines(
   a: { time: number },
@@ -128,7 +161,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'arrow' || type === 'circle') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle') return [a, b]
   if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
@@ -320,6 +353,19 @@ export function hitTestDrawings(
         for (const { dir } of fibFanRays(d.points[0], d.points[1])) {
           const dirPt = project(dir.time, dir.price)
           if (dirPt) dist = Math.min(dist, distToRay({ x: px, y: py }, a, dirPt))
+        }
+      }
+    } else if (d.type === 'gann') {
+      // 江恩角度线：命中任一条角度线（双向，正向射线 + A 关于方向点的镜像反向射线）
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        dist = Infinity
+        for (const { dir } of gannFanRays(d.points[0], d.points[1])) {
+          const dirPt = project(dir.time, dir.price)
+          if (!dirPt) continue
+          const back = { x: a.x - (dirPt.x - a.x), y: a.y - (dirPt.y - a.y) }
+          dist = Math.min(dist, distToRay({ x: px, y: py }, a, dirPt), distToRay({ x: px, y: py }, a, back))
         }
       }
     } else if (d.type === 'fibext') {

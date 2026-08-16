@@ -24,6 +24,7 @@ import {
   fibFanRays,
   fibPrices,
   fibTimeXs,
+  gannFanRays,
   hitTestDrawings,
   moveAnchor,
   moveDrawing,
@@ -852,6 +853,42 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.moveTo(a.x, a.y)
       ctx.lineTo(b.x, b.y)
       ctx.stroke()
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'gann') {
+      // 江恩角度线：A 为原点，双向发散 9 条角度线（1×8 … 8×1）
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      const s2 = Math.max(w, h) * 2
+      for (const { label, dir } of gannFanRays(d.points[0], d.points[1])) {
+        const dirPt = this.project(dir.time, dir.price)
+        if (!dirPt) continue
+        const dx = dirPt.x - a.x
+        const dy = dirPt.y - a.y
+        const len = Math.hypot(dx, dy)
+        if (len === 0) continue
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'bb'
+        // 双向延伸：A 两侧各画 s2 长（canvas 自动裁剪）
+        ctx.beginPath()
+        ctx.moveTo(a.x - (dx / len) * s2, a.y - (dy / len) * s2)
+        ctx.lineTo(a.x + (dx / len) * s2, a.y + (dy / len) * s2)
+        ctx.stroke()
+        this.drawLabel(ctx, dirPt.x, dirPt.y, label, 'left')
+      }
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      // 1×1 主对角线加粗
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      ctx.lineWidth = 1
       for (const p of [a, b]) {
         ctx.beginPath()
         ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
