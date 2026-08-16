@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { DepthRow } from '../depth/aggregate'
+import { detectMode, buildWsUrl } from '../data/binance/endpoints'
 
 export interface DepthSnapshot {
   bids: DepthRow[]
@@ -7,7 +8,7 @@ export interface DepthSnapshot {
 }
 
 /**
- * 盘口深度：WS depth20@100ms 实时流（经 /ws 代理），简单重连 + REST 兜底。
+ * 盘口深度：WS depth20@100ms 实时流（代理/直连自动探测），简单重连。
  */
 export function useDepth(symbol: string): DepthSnapshot | null {
   const [snapshot, setSnapshot] = useState<DepthSnapshot | null>(null)
@@ -23,22 +24,24 @@ export function useDepth(symbol: string): DepthSnapshot | null {
 
     const connect = () => {
       if (closed || !alive) return
-      const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-      ws = new WebSocket(`${protocol}://${location.host}/ws/${symbol.toLowerCase()}@depth20@100ms`)
-      ws.onmessage = (ev) => {
-        const m = JSON.parse(ev.data as string) as {
-          bids?: [string, string][]
-          asks?: [string, string][]
-        }
-        if (m.bids && m.asks) {
-          setSnapshot({ bids: mapRows(m.bids), asks: mapRows(m.asks) })
-        }
-      }
-      ws.onclose = () => {
+      void detectMode().then((mode) => {
         if (closed || !alive) return
-        reconnectTimer = window.setTimeout(connect, 2000)
-      }
-      ws.onerror = () => ws?.close()
+        ws = new WebSocket(buildWsUrl(mode, `${symbol.toLowerCase()}@depth20@100ms`))
+        ws.onmessage = (ev) => {
+          const m = JSON.parse(ev.data as string) as {
+            bids?: [string, string][]
+            asks?: [string, string][]
+          }
+          if (m.bids && m.asks) {
+            setSnapshot({ bids: mapRows(m.bids), asks: mapRows(m.asks) })
+          }
+        }
+        ws.onclose = () => {
+          if (closed || !alive) return
+          reconnectTimer = window.setTimeout(connect, 2000)
+        }
+        ws.onerror = () => ws?.close()
+      })
     }
 
     connect()

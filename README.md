@@ -15,7 +15,8 @@
 ```bash
 npm install && npm run dev   # http://localhost:5173
 npm run typecheck            # 类型检查
-npm run test                 # 单测
+npm run test                 # 单测（需 Node ≥ 22）
+npm run e2e                  # Playwright 端到端
 npm run build                # 生产构建
 ```
 
@@ -29,6 +30,7 @@ npm run build                # 生产构建
 | [docs/02-需求清单.md](docs/02-需求清单.md) | 功能分层 P0 / P1 / P2 及验收标准 |
 | [docs/03-技术方案.md](docs/03-技术方案.md) | 架构、数据流、代理策略、风险 |
 | [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
+| [docs/05-部署.md](docs/05-部署.md) | Docker/反向代理/GitHub Pages/Vercel 部署指南 |
 
 ## 当前进度
 
