@@ -12,7 +12,9 @@ import {
   type IPriceLine,
   type UTCTimestamp,
   type SeriesType,
+  type IRange,
 } from 'lightweight-charts'
+import { zoomRangeAround } from './pinchZoom'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
@@ -179,6 +181,10 @@ export class LightweightChartAdapter implements ChartApi {
   private drawingTool: DrawingTool = 'none'
   private drawingCallbacks: DrawingCallbacks | null = null
   private selectedDrawingId: string | null = null
+  /** 双指捏合纵向缩放状态（指距 / 起始价格区间） */
+  private pinch: { dist: number; range: IRange<number> } | null = null
+  /** 触屏双击重置计时 */
+  private lastTapAt = 0
   /** 画线交互：当前手势按下点（释放时作为锚点提交） */
   private drawingDown: { time: number; price: number } | null = null
   /** 多锚点工具（斐波那契扩展）已确认的锚点 */
@@ -218,6 +224,9 @@ export class LightweightChartAdapter implements ChartApi {
         minBarSpacing: 1,
       },
       rightPriceScale: { borderColor: this.theme.borderColor },
+      // 触屏交互：单指拖拽平移 + 双指捏合缩放（横向由库原生处理，纵向由 onTouchMove 补充）
+      handleScroll: { horzTouchDrag: true, vertTouchDrag: true },
+      handleScale: { pinch: true },
     })
 
     this.mainSeries = this.createMainSeries('candlestick')
@@ -242,6 +251,11 @@ export class LightweightChartAdapter implements ChartApi {
     container.addEventListener('pointerdown', this.onPointerDown)
     container.addEventListener('pointerup', this.onPointerUp)
     container.addEventListener('pointerleave', this.onPointerLeave)
+    // 双指捏合（纵向缩放）与双击重置：passive 不拦截，横向捏合仍由图表库原生处理
+    container.addEventListener('touchstart', this.onTouchStart, { passive: true })
+    container.addEventListener('touchmove', this.onTouchMove, { passive: true })
+    container.addEventListener('touchend', this.onTouchEnd, { passive: true })
+    container.addEventListener('touchcancel', this.onTouchEnd, { passive: true })
   }
 
   setDrawings(drawings: Drawing[]) {
@@ -278,6 +292,9 @@ export class LightweightChartAdapter implements ChartApi {
       },
       timeScale: { borderColor: this.theme.borderColor },
       rightPriceScale: { borderColor: this.theme.borderColor },
+      // 触屏交互：单指拖拽平移 + 双指捏合缩放（横向由库原生处理，纵向由 onTouchMove 补充）
+      handleScroll: { horzTouchDrag: true, vertTouchDrag: true },
+      handleScale: { pinch: true },
     })
     this.mainSeries.applyOptions({
       upColor: this.theme.up,
@@ -961,6 +978,56 @@ export class LightweightChartAdapter implements ChartApi {
     this.setPanEnabled(true)
     this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
     this.draw()
+  }
+
+  /** 双指按下：记录起始指距与当前价格区间（画线/拖拽中不介入） */
+  private onTouchStart = (e: TouchEvent) => {
+    this.pinch = null
+    if (this.drawingTool !== 'none' || this.dragEdit || e.touches.length !== 2) return
+    const [t1, t2] = [e.touches[0], e.touches[1]]
+    const range = this.chart.priceScale('right').getVisibleRange()
+    if (!range) return
+    this.pinch = {
+      dist: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
+      range,
+    }
+  }
+
+  /** 双指移动：按指距比例缩放价格区间，捏合中心价保持不动 */
+  private onTouchMove = (e: TouchEvent) => {
+    if (!this.pinch || this.drawingTool !== 'none' || this.dragEdit) return
+    if (e.touches.length !== 2) return
+    const [t1, t2] = [e.touches[0], e.touches[1]]
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+    if (this.pinch.dist <= 0 || dist <= 0) return
+    const factor = dist / this.pinch.dist
+    if (Math.abs(factor - 1) < 0.02) return // 微小抖动忽略
+    const scale = this.chart.priceScale('right')
+    const rect = this.container.getBoundingClientRect()
+    const midPrice = this.mainSeries.coordinateToPrice((t1.clientY + t2.clientY) / 2 - rect.top)
+    const { from, to } = this.pinch.range
+    if (midPrice === null || !isFinite(from) || !isFinite(to) || to - from <= 0) return
+    const next = zoomRangeAround(midPrice, from, to, factor)
+    if (next.to - next.from < 1e-9) return
+    // 切到手动区间，避免被 autoScale 覆盖
+    scale.setAutoScale(false)
+    scale.setVisibleRange({ from: next.from, to: next.to })
+    this.pinch = { dist, range: { from: next.from, to: next.to } }
+  }
+
+  /** 双指抬起/取消：结束捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
+  private onTouchEnd = (e: TouchEvent) => {
+    const wasPinch = !!this.pinch
+    this.pinch = null
+    if (wasPinch || e.touches.length > 0 || e.changedTouches.length !== 1) return
+    const now = Date.now()
+    if (now - this.lastTapAt < 300) {
+      this.lastTapAt = 0
+      this.chart.priceScale('right').setAutoScale(true)
+      this.chart.timeScale().resetTimeScale()
+    } else {
+      this.lastTapAt = now
+    }
   }
 
   private onPointerLeave = () => {
