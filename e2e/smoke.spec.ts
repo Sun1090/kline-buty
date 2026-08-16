@@ -300,6 +300,22 @@ test.describe('K 线应用冒烟', () => {
   })
 
 
+  test('盘口订单簿：开合 + 买卖档位/价差渲染', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: '盘口' }).click()
+    await expect(page.getByTestId('order-book')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/盘口订单簿/)).toBeVisible({ timeout: 15_000 })
+    // 等待 WS 档位数据到达：买卖各 8 档 + 价差行
+    await expect(page.getByTestId('ob-ask')).toHaveCount(8, { timeout: 15_000 })
+    await expect(page.getByTestId('ob-bid')).toHaveCount(8)
+    await expect(page.getByTestId('ob-spread')).toBeVisible()
+    // 关闭
+    await page.getByRole('button', { name: '盘口' }).click()
+    await expect(page.getByTestId('order-book')).toHaveCount(0)
+  })
+
+
   test('情绪面板：开合 + 四类指标标题可见（数据可加载中）', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

@@ -83,6 +83,9 @@ export const zh = {
     alertsTitle: '价格提醒',
     depth: '深度',
     depthTitle: '盘口深度图',
+
+    orderBook: '盘口',
+    orderBookTitle: '盘口订单簿（买卖档位）',
     vp: '筹码',
     vpTitle: '筹码分布（成交量分布 VPVR）',
     settings: '参数',
@@ -235,6 +238,12 @@ export const zh = {
     bid: '买',
     ask: '卖',
   },
+  orderBook: {
+    title: '盘口订单簿 · {symbol}',
+    qty: '数量',
+    cum: '累计',
+    spread: '价差',
+  },
   volumeProfile: {
     title: '筹码分布（最近 300 根）· {symbol}',
     poc: '密集区 ≈ {price}',
@@ -336,6 +345,9 @@ export const en: Messages = {
     alertsTitle: 'Price alerts',
     depth: 'Depth',
     depthTitle: 'Order book depth',
+
+    orderBook: 'Book',
+    orderBookTitle: 'Order book ladder',
     vp: 'VPVR',
     vpTitle: 'Volume profile (VPVR)',
     settings: 'Settings',
@@ -488,6 +500,12 @@ export const en: Messages = {
     bid: 'Bid',
     ask: 'Ask',
   },
+  orderBook: {
+    title: 'Order book · {symbol}',
+    qty: 'Qty',
+    cum: 'Total',
+    spread: 'Spread',
+  },
   volumeProfile: {
     title: 'Volume profile (last 300) · {symbol}',
     poc: 'POC ≈ {price}',
@@ -587,6 +605,9 @@ export const ja: Messages = {
     alertsTitle: '価格アラート',
     depth: '板情報',
     depthTitle: '板情報デプス',
+
+    orderBook: '板',
+    orderBookTitle: '板情報（売買レベルの一覧）',
     vp: 'VPVR',
     vpTitle: '出来高プロファイル（VPVR）',
     settings: '設定',
@@ -739,6 +760,12 @@ export const ja: Messages = {
     bid: '買い',
     ask: '売り',
   },
+  orderBook: {
+    title: '板情報オーダーブック · {symbol}',
+    qty: '数量',
+    cum: '累計',
+    spread: 'スプレッド',
+  },
   volumeProfile: {
     title: '出来高プロファイル（直近 300 本）· {symbol}',
     poc: 'POC ≈ {price}',
@@ -839,6 +866,9 @@ export const ko: Messages = {
     alertsTitle: '가격 알림',
     depth: '호가',
     depthTitle: '호가창 깊이',
+
+    orderBook: '주문장',
+    orderBookTitle: '호가 주문장 (매수/매도 호가)',
     vp: 'VPVR',
     vpTitle: '거래량 프로파일 (VPVR)',
     settings: '설정',
@@ -990,6 +1020,12 @@ export const ko: Messages = {
     title: '호가창 · {symbol} (실시간)',
     bid: '매수',
     ask: '매도',
+  },
+  orderBook: {
+    title: '호가 주문장 · {symbol}',
+    qty: '수량',
+    cum: '누적',
+    spread: '스프레드',
   },
   volumeProfile: {
     title: '거래량 프로파일 (최근 300개) · {symbol}',

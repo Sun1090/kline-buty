@@ -22,6 +22,7 @@ import { DrawingToolbar } from './components/DrawingToolbar'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { DepthChart } from './components/DepthChart'
+import { OrderBook } from './components/OrderBook'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
@@ -108,6 +109,7 @@ export function App() {
   const [positionOpen, setPositionOpen] = useState(false)
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [depthOpen, setDepthOpen] = useState(false)
+  const [orderBookOpen, setOrderBookOpen] = useState(false)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -468,6 +470,21 @@ export function App() {
           {t('panel.depth')}
         </button>
         <button
+          onClick={() => setOrderBookOpen((v) => !v)}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid #2a2e39',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: orderBookOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: orderBookOpen ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+          title={t('panel.orderBookTitle')}
+        >
+          {t('panel.orderBook')}
+        </button>
+        <button
           onClick={() => setVolumeProfileOpen((v) => !v)}
           style={{
             padding: '3px 8px',
@@ -630,6 +647,7 @@ export function App() {
         />
       )}
       {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
+      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} />}
       {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
       {sentimentOpen && <SentimentPanel data={sentiment} />}
       <main style={{ flex: 1, minHeight: 0 }}>
