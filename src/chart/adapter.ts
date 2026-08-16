@@ -228,6 +228,8 @@ export class LightweightChartAdapter implements ChartApi {
   private pinch: { dist: number; range: IRange<number> } | null = null
   /** 触屏双击重置计时 */
   private lastTapAt = 0
+  /** 单指触屏十字光标跟踪中（移动端无 hover，拖动时跟随手指显示 OHLC） */
+  private touchCrosshair = false
   /** 框选截图模式 */
   private regionSelect = false
   private regionDown: { x: number; y: number } | null = null
@@ -1235,21 +1237,30 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
-  /** 双指按下：记录起始指距与当前价格区间（画线/拖拽中不介入） */
+  /** 触屏按下：单指（非画线/非拖拽）显示十字光标跟随手指；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.pinch = null
-    if (this.drawingTool !== 'none' || this.dragEdit || e.touches.length !== 2) return
-    const [t1, t2] = [e.touches[0], e.touches[1]]
-    const range = this.chart.priceScale('right').getVisibleRange()
-    if (!range) return
-    this.pinch = {
-      dist: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
-      range,
+    if (this.drawingTool !== 'none' || this.dragEdit) return
+    if (e.touches.length === 2) {
+      this.setTouchCrosshair(false)
+      const [t1, t2] = [e.touches[0], e.touches[1]]
+      const range = this.chart.priceScale('right').getVisibleRange()
+      if (!range) return
+      this.pinch = {
+        dist: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
+        range,
+      }
+      return
     }
+    if (e.touches.length === 1) this.setTouchCrosshair(true, e.touches[0])
   }
 
-  /** 双指移动：按指距比例缩放价格区间，捏合中心价保持不动 */
+  /** 触屏移动：单指更新十字光标；双指按指距比例缩放价格区间 */
   private onTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 1 && this.touchCrosshair) {
+      this.setTouchCrosshair(true, e.touches[0])
+      return
+    }
     if (!this.pinch || this.drawingTool !== 'none' || this.dragEdit) return
     if (e.touches.length !== 2) return
     const [t1, t2] = [e.touches[0], e.touches[1]]
@@ -1270,8 +1281,9 @@ export class LightweightChartAdapter implements ChartApi {
     this.pinch = { dist, range: { from: next.from, to: next.to } }
   }
 
-  /** 双指抬起/取消：结束捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
+  /** 触屏抬起/取消：结束十字光标与捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
   private onTouchEnd = (e: TouchEvent) => {
+    if (this.touchCrosshair) this.setTouchCrosshair(false)
     const wasPinch = !!this.pinch
     this.pinch = null
     if (wasPinch || e.touches.length > 0 || e.changedTouches.length !== 1) return
@@ -1294,6 +1306,30 @@ export class LightweightChartAdapter implements ChartApi {
     }
     if (!this.drawingDown && !this.dragEdit && !this.dragKey) this.setPanEnabled(true)
     this.container.style.cursor = ''
+  }
+
+  /**
+   * 触屏十字光标：单指按下/移动时把十字光标钉在手指坐标（移动端无 hover），
+   * 抬起/捏合时清除。坐标映射失败（越界）时保持不显示。
+   */
+  private setTouchCrosshair(active: boolean, touch?: Touch) {
+    if (!active) {
+      this.touchCrosshair = false
+      this.chart.clearCrosshairPosition()
+      return
+    }
+    const rect = this.container.getBoundingClientRect()
+    const x = touch!.clientX - rect.left
+    const y = touch!.clientY - rect.top
+    const time = this.chart.timeScale().coordinateToTime(x)
+    const price = this.mainSeries.coordinateToPrice(y)
+    if (time === null || price === null) {
+      this.touchCrosshair = false
+      this.chart.clearCrosshairPosition()
+      return
+    }
+    this.touchCrosshair = true
+    this.chart.setCrosshairPosition(price, time, this.mainSeries)
   }
 
   private createMainSeries(type: ChartType): ISeriesApi<SeriesType> {
