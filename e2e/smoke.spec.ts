@@ -557,6 +557,61 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('拖拽', { exact: false })).toHaveCount(0)
   })
 
+
+  test('键盘快捷键：⌘K 搜索 / 布局 1·2·3 / M 循环指标 / ? 帮助浮层 / F 全屏', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // Ctrl+K → 搜索下拉打开且输入框聚焦
+    await page.keyboard.press('Control+k')
+    await expect(page.getByPlaceholder('搜索交易对')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('input')).toBeFocused()
+    // 输入态按 M 不应切指标（主图仍 MA）
+    await page.keyboard.type('m')
+    const maBg = await page
+      .getByRole('button', { name: 'MA', exact: true })
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(maBg).toBe('rgb(41, 98, 255)')
+    await page.keyboard.press('Escape')
+    await expect(page.getByPlaceholder('搜索交易对')).toHaveCount(0)
+    // 独立 / 也打开搜索
+    await page.keyboard.press('/')
+    await expect(page.getByPlaceholder('搜索交易对')).toBeVisible({ timeout: 5000 })
+    await page.keyboard.press('Escape')
+    // 布局 2/3/1
+    await page.keyboard.press('2')
+    await expect(page.getByTestId('layout-toggle')).toHaveText('双图')
+    await page.keyboard.press('3')
+    await expect(page.getByTestId('layout-toggle')).toHaveText('四图')
+    await page.keyboard.press('1')
+    await expect(page.getByTestId('layout-toggle')).toHaveText('单图')
+    // M 循环主图指标 MA → EMA
+    await page.keyboard.press('m')
+    await expect(page.getByRole('button', { name: 'EMA', exact: true })).toHaveCSS(
+      'background-color',
+      'rgb(41, 98, 255)',
+    )
+    // N 循环副图指标 VOL → MACD
+    await page.keyboard.press('n')
+    await expect(page.getByRole('button', { name: 'MACD', exact: true })).toHaveCSS(
+      'background-color',
+      'rgb(41, 98, 255)',
+    )
+    // ? → 帮助浮层；Esc 关闭
+    await page.keyboard.press('?')
+    await expect(page.getByTestId('shortcuts-help')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('shortcuts-help')).toHaveCount(0)
+    // F → 进入全屏再退出
+    await page.keyboard.press('f')
+    await expect
+      .poll(() => page.evaluate(() => !!document.fullscreenElement), { timeout: 5000 })
+      .toBe(true)
+    await page.keyboard.press('f')
+    await expect
+      .poll(() => page.evaluate(() => !!document.fullscreenElement), { timeout: 5000 })
+      .toBe(false)
+  })
+
   test('主题色预设：切换红涨绿跌 → CSS 变量/图表联动 + 持久化', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
