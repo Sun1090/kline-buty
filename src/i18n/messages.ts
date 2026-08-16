@@ -3,7 +3,7 @@
  * en 以 typeof zh 约束，保证键完全对齐（编译期校验）。
  */
 
-export type Lang = 'zh-CN' | 'en' | 'ja' | 'ko'
+export type Lang = 'zh-CN' | 'en' | 'ja' | 'ko' | 'es'
 
 export const zh = {
   common: {
@@ -54,7 +54,7 @@ export const zh = {
     '1M': '月',
   },
   lang: {
-    switchTo: '切换语言（中/EN/日/韩）',
+    switchTo: '切换语言（中/EN/日/韩/西）',
   },
   theme: {
     switchTitle: '切换主题',
@@ -262,6 +262,7 @@ export const zh = {
     titleEn: 'Kline Buty · Live Candles',
     titleJa: 'Kline Buty · リアルタイム K 線',
     titleKo: 'Kline Buty · 실시간 K 라인',
+    titleEs: 'Kline Buty · Velas en vivo',
   },
 }
 
@@ -316,7 +317,7 @@ export const en: Messages = {
     '1M': '1M',
   },
   lang: {
-    switchTo: 'Switch language (4)',
+    switchTo: 'Switch language (5)',
   },
   theme: {
     switchTitle: 'Toggle theme',
@@ -524,6 +525,7 @@ export const en: Messages = {
     titleEn: 'Kline Buty · Live Candles',
     titleJa: 'Kline Buty · リアルタイム K 線',
     titleKo: 'Kline Buty · 실시간 K 라인',
+    titleEs: 'Kline Buty · Velas en vivo',
   },
 }
 
@@ -576,7 +578,7 @@ export const ja: Messages = {
     '1M': '月足',
   },
   lang: {
-    switchTo: '言語切替（4 言語）',
+    switchTo: '言語切替（5 言語）',
   },
   theme: {
     switchTitle: 'テーマ切替',
@@ -784,6 +786,7 @@ export const ja: Messages = {
     titleEn: 'Kline Buty · Live Candles',
     titleJa: 'Kline Buty · リアルタイム K 線',
     titleKo: 'Kline Buty · 실시간 K 라인',
+    titleEs: 'Kline Buty · Velas en vivo',
   },
 }
 
@@ -837,7 +840,7 @@ export const ko: Messages = {
     '1M': '월',
   },
   lang: {
-    switchTo: '언어 전환 (4개 언어)',
+    switchTo: '언어 전환 (5개 언어)',
   },
   theme: {
     switchTitle: '테마 전환',
@@ -1045,6 +1048,7 @@ export const ko: Messages = {
     titleEn: 'Kline Buty · Live Candles',
     titleJa: 'Kline Buty · リアルタイム K 線',
     titleKo: 'Kline Buty · 실시간 K 라인',
+    titleEs: 'Kline Buty · Velas en vivo',
   },
 }
 
@@ -1061,7 +1065,267 @@ type LeafKeyOf<T, Prefix extends string = ''> = {
 
 export type MessageKey = LeafKeyOf<Messages>
 
-export const DICTIONARIES: Record<Lang, Messages> = { 'zh-CN': zh, en, ja, ko }
+export const es: Messages = {
+  common: {
+    none: 'Ninguno',
+    price: 'Precio',
+    delete: 'Eliminar',
+    cancel: 'Cancelar',
+    confirm: 'Aceptar',
+    retry: 'Reintentar',
+  },
+  status: {
+    loading: 'Cargando historial…',
+    connecting: 'Conectando a datos en vivo…',
+    live: 'En vivo',
+    reconnecting: 'Reconectando…',
+    closed: 'Desconectado',
+    error: 'Error al cargar',
+    chartError: 'No se pudieron cargar los datos de mercado: revisa la red o la fuente de datos',
+    noData: 'Sin datos',
+    depthLoading: 'Cargando libro de órdenes…',
+    vpNotEnough: 'Datos insuficientes',
+    replayNotEnough: 'Datos insuficientes (se necesitan ≥30 velas)',
+  },
+  chartType: {
+    candlestick: 'Velas',
+    line: 'Línea',
+    area: 'Área',
+  },
+  group: {
+    type: 'Tipo',
+    main: 'Principal',
+    sub: 'Sub',
+  },
+  period: {
+    '1s': '1s',
+    '1m': '1m',
+    '3m': '3m',
+    '5m': '5m',
+    '15m': '15m',
+    '30m': '30m',
+    '1h': '1h',
+    '2h': '2h',
+    '4h': '4h',
+    '12h': '12h',
+    '1d': '1D',
+    '3d': '3D',
+    '1w': '1W',
+    '1M': '1M',
+  },
+  lang: {
+    switchTo: 'Cambiar idioma (5)',
+  },
+  theme: {
+    switchTitle: 'Cambiar tema',
+    toLight: 'Claro',
+    toDark: 'Oscuro',
+    pickTitle: 'Presets de color del tema (acento / subida / bajada)',
+    presetClassic: 'Azul clásico',
+    presetAShare: 'Sube rojo / baja verde',
+    presetPurple: 'Púrpura',
+    presetTeal: 'Turquesa',
+  },
+  layout: {
+    switchTitle: 'Cambiar diseño (único/par/cuádruple)',
+    single: 'Único',
+    pair: 'Par',
+    quad: 'Cuádruple',
+  },
+  fullscreen: {
+    enter: 'Pantalla completa',
+    exit: 'Salir de pantalla completa',
+  },
+  panel: {
+    position: 'Posición',
+    positionTitle: 'Posición simulada (líneas entrada/TP/SL)',
+    alerts: 'Alertas',
+    alertsTitle: 'Alertas de precio',
+    depth: 'Profundidad',
+    depthTitle: 'Profundidad del libro de órdenes',
+    orderBook: 'Libro',
+    orderBookTitle: 'Escalera del libro de órdenes',
+    vp: 'VPVR',
+    vpTitle: 'Perfil de volumen (VPVR)',
+    settings: 'Ajustes',
+    sentiment: 'Sentimiento',
+    sentimentTitle: 'Sentimiento de derivados (largo/corto, taker, OI)',
+  },
+  sentiment: {
+    globalRatio: 'Largo/corto global',
+    topTraderRatio: 'Ratio de traders top',
+    takerRatio: 'Compra/venta taker',
+    openInterest: 'OI 24h',
+    long: 'Largo',
+    buy: 'Compra',
+    loading: 'Cargando…',
+  },
+  share: {
+    title: 'Copiar enlace de la moneda y el período actuales',
+    copy: 'Compartir',
+    copied: 'Copiado',
+    exportTitle: 'Exportar CSV OHLCV de la moneda/período actuales (con columnas de indicadores activos)',
+    export: 'Exportar',
+    exported: 'Exportado',
+  },
+  replay: {
+    start: 'Reproducción',
+    title: 'Reproducción histórica paso a paso',
+    play: 'Reproducir',
+    pause: 'Pausa',
+    exit: 'Salir de la reproducción',
+  },
+  drawing: {
+    group: 'Dibujar',
+    mouse: 'Ratón',
+    horizontal: 'Horizontal',
+    trend: 'Línea de tendencia',
+    channel: 'Canal',
+    fib: 'Fibonacci',
+    text: 'Texto',
+    defaultText: 'Texto',
+    rect: 'Rectángulo',
+    ellipse: 'Elipse',
+    circle: 'Círculo',
+    triangle: 'Triángulo',
+    arc: 'Arco',
+    ray: 'Rayo',
+    fibext: 'Ext. Fibonacci',
+    fibfan: 'Abanico Fib',
+    pricelabel: 'Etiqueta de precio',
+    arrow: 'Flecha',
+    editText: 'Editar texto',
+    textPlaceholder: 'Contenido del texto',
+    screenshot: 'Captura',
+    screenshotTitle: 'Compartir captura',
+  },
+  symbol: {
+    searchPlaceholder: 'Buscar símbolos…',
+    popular: 'Populares',
+    favorites: 'Favoritos',
+    favoriteAdd: 'Añadir a favoritos',
+    favoriteRemove: 'Quitar de favoritos',
+    searchResults: 'Resultados {count}',
+    noMatch: 'Sin símbolos coincidentes',
+  },
+  indicator: {
+    settings: 'Ajustes de indicadores',
+    noParams: 'Este indicador no tiene parámetros ajustables',
+    maPeriods: 'Período de {name} (separado por comas)',
+    bollPeriod: 'Período BOLL',
+    bollMult: 'Multiplicador de desviación BOLL',
+    macdFast: 'MACD rápido',
+    macdSlow: 'MACD lento',
+    macdSignal: 'Señal MACD',
+    kdjN: 'KDJ N',
+    kdjM1: 'KDJ M1',
+    kdjM2: 'KDJ M2',
+    rsiPeriod: 'Período RSI',
+    wrPeriod: 'Período WR',
+    obvMaPeriod: 'Suavizado OBV (1=crudo)',
+    atrPeriod: 'Período ATR',
+    dmiPeriod: 'Período DMI',
+    cciPeriod: 'Período CCI',
+    psyPeriod: 'Período PSY',
+    stochK: 'Período STOCH %K',
+    stochSmooth: 'Suavizado STOCH',
+    stochD: 'Período STOCH %D',
+    rocPeriod: 'Período ROC',
+    momPeriod: 'Período MOM',
+    sarAfStart: 'AF inicial SAR',
+    sarAfStep: 'Paso AF SAR',
+    sarAfMax: 'AF máx SAR',
+    ichimokuTenkan: 'Período Tenkan',
+    ichimokuKijun: 'Período Kijun',
+    ichimokuSpanB: 'Período Senkou B',
+    ichimokuDisplacement: 'Desplazamiento',
+    sar: 'SAR',
+    ichimoku: 'Ichimoku',
+  },
+  stats: {
+    lastPrice: 'Último precio',
+    change24h: 'Cambio 24h',
+    high24h: 'Máx 24h',
+    low24h: 'Mín 24h',
+    volume24h: 'Vol 24h',
+    fundingRate: 'Tasa de financiación',
+    openInterest: 'Interés abierto',
+    markPrice: 'Precio de marca',
+  },
+  position: {
+    title: 'Posición simulada',
+    close: 'Cerrar',
+    long: 'Largo',
+    short: 'Corto',
+    entry: 'Entrada',
+    market: 'Mercado',
+    quantity: 'Cant.',
+    tpPct: 'TP%',
+    slPct: 'SL%',
+    tpLine: 'Línea TP',
+    slLine: 'Línea SL',
+    floatingPnl: 'PnL flotante',
+    open: 'Abrir',
+    lineEntry: 'Entrada',
+    lineTp: 'TP',
+    lineSl: 'SL',
+  },
+  alert: {
+    title: 'Alerta de precio · {symbol}',
+    granted: 'Notificaciones activadas',
+    unsupported: 'Notificaciones no compatibles',
+    enable: 'Activar',
+    above: 'Precio ≥',
+    below: 'Precio ≤',
+    add: 'Añadir alerta',
+    none: 'Sin alertas',
+    triggered: 'Disparada',
+    reset: 'Restablecer',
+    notifyTitle: 'Kline Buty · Alerta de precio',
+    notifyAbove: '{symbol} alcanzó {price}',
+    notifyBelow: '{symbol} cayó por debajo de {price}',
+  },
+  tooltip: {
+    open: 'Abr',
+    high: 'Máx',
+    low: 'Mín',
+    close: 'Cie',
+    volume: 'Vol',
+  },
+  depth: {
+    title: 'Libro de órdenes · {symbol} (en vivo)',
+    bid: 'Compra',
+    ask: 'Venta',
+  },
+  orderBook: {
+    title: 'Libro de órdenes · {symbol}',
+    qty: 'Cant.',
+    cum: 'Total',
+    spread: 'Diferencial',
+  },
+  volumeProfile: {
+    title: 'Perfil de volumen (últimas 300) · {symbol}',
+    poc: 'POC ≈ {price}',
+    bidVol: 'Vol compra',
+    askVol: 'Vol venta',
+    pocLabel: 'POC',
+  },
+  offline: {
+    text: 'Red desconectada; actualizaciones en pausa, se reconectará automáticamente',
+  },
+  errorBoundary: {
+    title: 'Error al renderizar el gráfico',
+  },
+  app: {
+    titleZh: 'Kline Buty · 实时 K 线',
+    titleEn: 'Kline Buty · Live Candles',
+    titleJa: 'Kline Buty · リアルタイム K 線',
+    titleKo: 'Kline Buty · 실시간 K 라인',
+    titleEs: 'Kline Buty · Velas en vivo',
+  },
+}
+
+export const DICTIONARIES: Record<Lang, Messages> = { 'zh-CN': zh, en, ja, ko, es }
 
 export const DEFAULT_LANG: Lang = 'zh-CN'
 
@@ -1076,6 +1340,8 @@ export function localeFor(lang: Lang): string {
       return 'ja-JP'
     case 'ko':
       return 'ko-KR'
+    case 'es':
+      return 'es-ES'
   }
 }
 
@@ -1099,11 +1365,12 @@ export function chartLabelsFor(lang: Lang): ChartLabels {
 
 
 /** 页面标题：按当前语言从 app 区块取对应 title 键 */
-const TITLE_KEYS: Record<Lang, 'titleZh' | 'titleEn' | 'titleJa' | 'titleKo'> = {
+const TITLE_KEYS: Record<Lang, 'titleZh' | 'titleEn' | 'titleJa' | 'titleKo' | 'titleEs'> = {
   'zh-CN': 'titleZh',
   en: 'titleEn',
   ja: 'titleJa',
   ko: 'titleKo',
+  es: 'titleEs',
 }
 
 export function titleFor(lang: Lang): string {

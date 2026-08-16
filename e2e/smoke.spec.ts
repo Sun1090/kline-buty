@@ -803,7 +803,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
-  test('i18n：4 语循环切换（中/EN/日本語/한국어）→ 界面文案切换并持久化', async ({ page }) => {
+  test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
@@ -832,8 +832,13 @@ test.describe('K 线应用冒烟', () => {
     await page.reload()
     await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: '한국어', exact: true })).toBeVisible()
-    // 韩国语 → 切回中文
+    // 韩国语 → Español
     await page.getByRole('button', { name: '한국어', exact: true }).click()
+    await expect(page.getByText('En vivo', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Tipo', { exact: false }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'ES', exact: true })).toBeVisible()
+    // Español → 切回中文
+    await page.getByRole('button', { name: 'ES', exact: true }).click()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await page.evaluate(() => localStorage.clear())
     await page.reload()
