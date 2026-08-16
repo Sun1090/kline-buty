@@ -234,6 +234,10 @@ export class LightweightChartAdapter implements ChartApi {
   private pinch: { dist: number; range: IRange<number> } | null = null
   /** 触屏双击重置计时 */
   private lastTapAt = 0
+  /** 本次单指触摸是否已移动（拖动≠轻点：避免两次快速拖动误触发复位） */
+  private touchMoved = false
+  /** 单指触摸起点（判移动阈值用） */
+  private touchStartPos: { x: number; y: number } | null = null
   /** 单指触屏十字光标跟踪中（移动端无 hover，拖动时跟随手指显示 OHLC） */
   private touchCrosshair = false
   /** 框选截图模式 */
@@ -1337,6 +1341,8 @@ export class LightweightChartAdapter implements ChartApi {
   /** 触屏按下：单指（非画线/非拖拽）显示十字光标跟随手指；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.pinch = null
+    this.touchMoved = false
+    this.touchStartPos = null
     if (this.drawingTool !== 'none' || this.dragEdit) return
     if (e.touches.length === 2) {
       this.setTouchCrosshair(false)
@@ -1349,13 +1355,20 @@ export class LightweightChartAdapter implements ChartApi {
       }
       return
     }
-    if (e.touches.length === 1) this.setTouchCrosshair(true, e.touches[0])
+    if (e.touches.length === 1) {
+      this.setTouchCrosshair(true, e.touches[0])
+      this.touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
   }
 
   /** 触屏移动：单指更新十字光标；双指按指距比例缩放价格区间 */
   private onTouchMove = (e: TouchEvent) => {
     if (e.touches.length === 1 && this.touchCrosshair) {
       this.setTouchCrosshair(true, e.touches[0])
+      // 移动超过阈值视为拖动（平移/十字光标跟随），不算轻点
+      const t = e.touches[0]
+      const s0 = this.touchStartPos
+      if (s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > 10) this.touchMoved = true
       return
     }
     if (!this.pinch || this.drawingTool !== 'none' || this.dragEdit) return
@@ -1384,6 +1397,17 @@ export class LightweightChartAdapter implements ChartApi {
     const wasPinch = !!this.pinch
     this.pinch = null
     if (wasPinch || e.touches.length > 0 || e.changedTouches.length !== 1) return
+    // 画线/锚点拖拽手势不参与双击复位计数（触屏绘制由 pointer 事件驱动）
+    if (this.drawingTool !== 'none' || this.dragEdit) {
+      this.touchMoved = false
+      return
+    }
+    // 单指拖动（平移/十字光标跟随）不算轻点，避免两次快速拖动误触发复位
+    if (this.touchMoved) {
+      this.touchMoved = false
+      this.lastTapAt = 0
+      return
+    }
     const now = Date.now()
     if (now - this.lastTapAt < 300) {
       this.lastTapAt = 0

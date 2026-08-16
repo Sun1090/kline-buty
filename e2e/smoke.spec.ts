@@ -1595,4 +1595,91 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(Math.abs(after!.y - before!.y)).toBeGreaterThan(10)
     expect(errors).toHaveLength(0)
   })
+
+  test('移动端：双击复位（捏合缩放 → 快速两次拖动不误复位 → 双击恢复自适应）', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    // 画一条水平线（价格轴上部，固定价格）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '水平线', exact: true }).tap()
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.42)
+    // 切回鼠标（只读）→ 触屏手势（捏合/平移/双击）由图表接管
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '鼠标', exact: true }).tap()
+    const orig = await findDrawnLineCenter(page)
+    expect(orig).not.toBeNull()
+
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const cx = box.x + box.width * 0.5
+    const cy = box.y + box.height * 0.5
+
+    // 捏合放大（价格区间收窄 → 固定价画线明显位移）
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: cx - 40, y: cy },
+        { x: cx + 40, y: cy },
+      ],
+    })
+    // 温和捏合（价格区间收窄但画线保持可见）
+    for (let i = 1; i <= 4; i++) {
+      const spread = 40 + i * 10
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          { x: cx - spread, y: cy },
+          { x: cx + spread, y: cy },
+        ],
+      })
+      await page.waitForTimeout(50)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(500)
+    const zoomed = await findDrawnLineCenter(page)
+    expect(zoomed).not.toBeNull()
+    expect(Math.abs(zoomed!.y - orig!.y)).toBeGreaterThan(10)
+
+    // 两次快速单指拖动（平移）：不得误触发双击复位（线保持捏合后位置）
+    for (let k = 0; k < 2; k++) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+      for (let i = 1; i <= 5; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: cx - i * 14, y: cy }],
+        })
+        await page.waitForTimeout(20)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await page.waitForTimeout(30)
+    }
+    await page.waitForTimeout(400)
+    const afterPan = await findDrawnLineCenter(page)
+    expect(afterPan).not.toBeNull()
+    expect(Math.abs(afterPan!.y - orig!.y)).toBeGreaterThan(10)
+
+    // 双击（两次 300ms 内轻点）→ 复位：价格轴回自适应 → 线回到原始位置
+    for (let k = 0; k < 2; k++) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await page.waitForTimeout(60)
+    }
+    await page.waitForTimeout(600)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    const reset = await findDrawnLineCenter(page)
+    expect(reset).not.toBeNull()
+    // 复位后价格轴回自适应：线明显回到原始位置附近（须比捏合后位移收窄一半以上）
+    const resetGap = Math.abs(reset!.y - orig!.y)
+    const zoomGap = Math.abs(zoomed!.y - orig!.y)
+    expect(resetGap).toBeLessThan(zoomGap / 2)
+    expect(errors).toHaveLength(0)
+  })
 })
