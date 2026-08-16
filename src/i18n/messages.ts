@@ -15,6 +15,7 @@ export const zh = {
     retry: '重试',
     more: '更多',
   },
+  scale: { linear: '线性', log: '对数', title: '价格坐标轴：线性 / 对数' },
   status: {
     loading: '加载历史数据…',
     connecting: '连接实时行情…',
@@ -312,6 +313,7 @@ export const en: Messages = {
     retry: 'Retry',
     more: 'More',
   },
+  scale: { linear: 'Linear', log: 'Log', title: 'Price scale: Linear / Log' },
   status: {
     loading: 'Loading history…',
     connecting: 'Connecting to live data…',
@@ -607,6 +609,7 @@ export const ja: Messages = {
     retry: '再試行',
     more: 'その他',
   },
+  scale: { linear: '線形', log: '対数', title: '価格軸：線形 / 対数' },
   status: {
     loading: '履歴データを読み込み中…',
     connecting: 'リアルタイム行情に接続中…',
@@ -903,6 +906,7 @@ export const ko: Messages = {
     retry: '재시도',
     more: '더보기',
   },
+  scale: { linear: '선형', log: '로그', title: '가격 축: 선형 / 로그' },
   status: {
     loading: '과거 데이터 불러오는 중…',
     connecting: '실시간 시세 연결 중…',
@@ -1211,6 +1215,7 @@ export const es: Messages = {
     retry: 'Reintentar',
     more: 'Más',
   },
+  scale: { linear: 'Lineal', log: 'Log', title: 'Escala de precios: Lineal / Log' },
   status: {
     loading: 'Cargando historial…',
     connecting: 'Conectando a datos en vivo…',

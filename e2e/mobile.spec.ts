@@ -198,3 +198,24 @@ test('移动端：五语 UI 完整（html lang 同步 + MobileHeader 弹层无 i
     await page.waitForTimeout(300)
   }
 })
+
+test('移动端：更多面板切价格坐标轴（线性 → 对数）→ 持久化', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/')
+  await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  // 打开更多面板 → 点「线性」切到「对数」
+  await page.getByTestId('mobile-more').tap()
+  await page.waitForTimeout(600)
+  const panel = page.getByTestId('mobile-panel-more')
+  await expect(panel.getByText('线性')).toBeVisible()
+  await panel.getByText('线性').tap()
+  await page.waitForTimeout(400)
+  // 刷新后保持对数（localStorage 持久化）
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await page.getByTestId('mobile-more').tap()
+  await page.waitForTimeout(600)
+  await expect(page.getByTestId('mobile-panel-more').getByText('对数')).toBeVisible()
+  expect(errors).toHaveLength(0)
+})

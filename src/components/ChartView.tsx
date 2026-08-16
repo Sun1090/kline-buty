@@ -45,6 +45,8 @@ interface ChartViewProps {
   /** 数据加载状态（空数据时显示提示） */
   status?: string
   chartType: ChartType
+  /** 价格坐标轴模式：线性 / 对数 */
+  priceScaleMode?: 'linear' | 'log'
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -94,6 +96,7 @@ export function ChartView({
   candles,
   status,
   chartType,
+  priceScaleMode = 'linear',
   mainIndicator,
   subIndicator,
   indicatorParams,
@@ -227,6 +230,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setPeriodSeconds(PERIOD_MS[period] / 1000)
   }, [period])
+
+  // 价格坐标轴模式（线性/对数）
+  useEffect(() => {
+    apiRef.current?.setPriceScaleMode(priceScaleMode)
+  }, [priceScaleMode])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {

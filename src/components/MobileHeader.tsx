@@ -29,6 +29,8 @@ interface MobileHeaderProps {
   onPeriod: (p: Period) => void
   chartType: ChartType
   onChartType: (t: ChartType) => void
+  priceScaleMode: 'linear' | 'log'
+  onToggleScale: () => void
   mainIndicator: MainIndicatorKind
   onMainIndicator: (m: MainIndicatorKind) => void
   subIndicator: SubIndicatorKind
@@ -199,6 +201,12 @@ export function MobileHeader(props: MobileHeaderProps) {
     { label: t('panel.vp'), active: props.vpActive, onToggle: props.onToggleVp, title: t('panel.vpTitle') },
     { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: props.onToggleSentiment, title: t('panel.sentimentTitle') },
     { label: t('panel.settings'), active: props.settingsActive, onToggle: props.onToggleSettings },
+    {
+      label: props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear'),
+      active: props.priceScaleMode === 'log',
+      onToggle: props.onToggleScale,
+      title: t('scale.title'),
+    },
   ]
 
   return (

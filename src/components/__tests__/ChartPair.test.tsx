@@ -49,6 +49,7 @@ vi.mock('../../chart/adapter', () => {
     setTheme = vi.fn()
     setLocale = vi.fn()
     setPeriodSeconds = vi.fn()
+    setPriceScaleMode = vi.fn()
     fitContent = vi.fn()
     scrollToRealTime = vi.fn()
     constructor() {

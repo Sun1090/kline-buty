@@ -15,6 +15,7 @@ interface CellProps {
   symbol: string
   period: Period
   chartType: ChartType
+  priceScaleMode?: 'linear' | 'log'
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -23,7 +24,7 @@ interface CellProps {
   onViewRangeChange: (r: Range2) => void
 }
 
-function QuadCell({ symbol, period, chartType, mainIndicator, subIndicator, indicatorParams, colorPreset, externalRange, onViewRangeChange }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, colorPreset, externalRange, onViewRangeChange }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <ChartView
@@ -31,6 +32,7 @@ function QuadCell({ symbol, period, chartType, mainIndicator, subIndicator, indi
       period={period}
       candles={data.state.candles}
       chartType={chartType}
+      priceScaleMode={priceScaleMode}
       mainIndicator={mainIndicator}
       subIndicator={subIndicator}
       indicatorParams={indicatorParams}
@@ -75,6 +77,7 @@ interface QuadChartProps {
   symbols: string[]
   period: Period
   chartType: ChartType
+  priceScaleMode?: 'linear' | 'log'
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -83,9 +86,9 @@ interface QuadChartProps {
 }
 
 /** 四图联动：2×2 网格，时间轴全联动 */
-export function ChartQuad({ symbols, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic' }: QuadChartProps) {
+export function ChartQuad({ symbols, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic' }: QuadChartProps) {
   const { ranges, broadcast } = useChartSync(4)
-  const base = { period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset }
+  const base = { period, chartType, priceScaleMode, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>

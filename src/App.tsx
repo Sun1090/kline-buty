@@ -56,6 +56,7 @@ export function App() {
   const [symbol, setSymbol] = usePersistedState('symbol', 'BTCUSDT')
   const [period, setPeriod] = usePersistedState<Period>('period', '1m')
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
+  const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
@@ -339,6 +340,8 @@ export function App() {
           onPeriod={setPeriod}
           chartType={chartType}
           onChartType={setChartType}
+          priceScaleMode={priceScaleMode}
+          onToggleScale={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
           mainIndicator={mainIndicator}
           onMainIndicator={setMainIndicator}
           subIndicator={subIndicator}
@@ -406,6 +409,22 @@ export function App() {
           value={chartType}
           onChange={(v) => setChartType(v as ChartType)}
         />
+        <button
+          onClick={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
+          data-testid="scale-toggle"
+          title={t('scale.title')}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: priceScaleMode === 'log' ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: priceScaleMode === 'log' ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+        >
+          {priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}
+        </button>
         <IndicatorBar
           group={t('group.main')}
           options={MAIN_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
@@ -770,6 +789,7 @@ export function App() {
             colorPreset={colorPreset}
             period={period}
             chartType={chartType}
+            priceScaleMode={priceScaleMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -783,6 +803,7 @@ export function App() {
             colorPreset={colorPreset}
             period={period}
             chartType={chartType}
+            priceScaleMode={priceScaleMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -796,6 +817,7 @@ export function App() {
             themeMode={themeMode}
             colorPreset={colorPreset}
             chartType={chartType}
+            priceScaleMode={priceScaleMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
