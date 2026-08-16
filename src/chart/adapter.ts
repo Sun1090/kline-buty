@@ -90,6 +90,8 @@ export interface ChartApi {
   setSubIndicator(data: SubIndicatorData): void
   /** 仓位线（开仓/止盈/止损），null 清除 */
   setPositionLines(lines: PositionLines | null): void
+  /** 外部参考价格线（盘口档位 hover 联动），null 清除 */
+  setReferencePrice(price: number | null): void
   /** 仓位线拖拽回调（拖动中实时触发，UI 层同步状态） */
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
@@ -169,6 +171,7 @@ export class LightweightChartAdapter implements ChartApi {
   private currentType: ChartType = 'candlestick'
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
+  private referencePriceLine: IPriceLine | null = null
   private theme: ChartTheme = THEMES.dark
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
   private dragHandler: ((key: PositionLineKey, price: number) => void) | null = null
@@ -1139,6 +1142,29 @@ export class LightweightChartAdapter implements ChartApi {
           }),
         )
       }
+    }
+  }
+
+  /** 盘口参考价格线（accent 虚线段），hover 档位时显示，移出清除 */
+  setReferencePrice(price: number | null) {
+    if (price == null || !Number.isFinite(price)) {
+      if (this.referencePriceLine) {
+        this.mainSeries.removePriceLine(this.referencePriceLine)
+        this.referencePriceLine = null
+      }
+      return
+    }
+    if (!this.referencePriceLine) {
+      this.referencePriceLine = this.mainSeries.createPriceLine({
+        price,
+        color: this.theme.accent,
+        lineStyle: LineStyle.Dashed,
+        lineWidth: 1,
+        axisLabelVisible: true,
+        title: 'OB ',
+      })
+    } else {
+      this.referencePriceLine.applyOptions({ price })
     }
   }
 
