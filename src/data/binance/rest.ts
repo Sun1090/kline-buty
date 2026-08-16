@@ -108,3 +108,97 @@ export async function fetchOpenInterest(symbol: string): Promise<number> {
   return Number(d.openInterest)
 }
 
+
+/* ============ 衍生品情绪数据（futures/data 公开端点） ============ */
+
+export interface RatioPoint {
+  /** 毫秒时间戳 */
+  timestamp: number
+  /** 多/空账户占比（0~1） */
+  long: number
+  short: number
+  longShortRatio: number
+}
+
+/** 解析多空比数组（globalLongShortAccountRatio / topLongShortPositionRatio 同构） */
+export function parseRatioArray(raw: unknown[]): RatioPoint[] {
+  return raw.map((r) => {
+    const d = r as { timestamp: number; longAccount: string; shortAccount: string; longShortRatio: string }
+    return {
+      timestamp: d.timestamp,
+      long: Number(d.longAccount),
+      short: Number(d.shortAccount),
+      longShortRatio: Number(d.longShortRatio),
+    }
+  })
+}
+
+export interface TakerPoint {
+  timestamp: number
+  buyVol: number
+  sellVol: number
+  buySellRatio: number
+}
+
+/** 解析主动买卖量比数组（takerlongshortRatio） */
+export function parseTakerArray(raw: unknown[]): TakerPoint[] {
+  return raw.map((r) => {
+    const d = r as { timestamp: number; buyVol: string; sellVol: string; buySellRatio: string }
+    return {
+      timestamp: d.timestamp,
+      buyVol: Number(d.buyVol),
+      sellVol: Number(d.sellVol),
+      buySellRatio: Number(d.buySellRatio),
+    }
+  })
+}
+
+export interface OiPoint {
+  timestamp: number
+  oi: number
+  oiValue: number
+}
+
+/** 解析未平仓历史数组（openInterestHist，sumOpenInterest 为币数量） */
+export function parseOiArray(raw: unknown[]): OiPoint[] {
+  return raw.map((r) => {
+    const d = r as { timestamp: number; sumOpenInterest: string; sumOpenInterestValue: string }
+    return {
+      timestamp: d.timestamp,
+      oi: Number(d.sumOpenInterest),
+      oiValue: Number(d.sumOpenInterestValue),
+    }
+  })
+}
+
+/** 全账户多空持仓人数比（周期 1h，limit 条，倒序 → 升序） */
+export async function fetchGlobalLongShortRatio(symbol: string, limit = 24): Promise<RatioPoint[]> {
+  const res = await binanceGet(
+    `/futures/data/globalLongShortAccountRatio?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+  )
+  return parseRatioArray((await res.json()) as unknown[])
+}
+
+/** 大户持仓量多空比（topLongShortPositionRatio） */
+export async function fetchTopTraderPositionRatio(symbol: string, limit = 24): Promise<RatioPoint[]> {
+  const res = await binanceGet(
+    `/futures/data/topLongShortPositionRatio?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+  )
+  return parseRatioArray((await res.json()) as unknown[])
+}
+
+/** 主动买卖量比（takerlongshortRatio） */
+export async function fetchTakerBuySellRatio(symbol: string, limit = 24): Promise<TakerPoint[]> {
+  const res = await binanceGet(
+    `/futures/data/takerlongshortRatio?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+  )
+  return parseTakerArray((await res.json()) as unknown[])
+}
+
+/** 未平仓量历史（openInterestHist） */
+export async function fetchOpenInterestHistory(symbol: string, limit = 24): Promise<OiPoint[]> {
+  const res = await binanceGet(
+    `/futures/data/openInterestHist?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+  )
+  return parseOiArray((await res.json()) as unknown[])
+}

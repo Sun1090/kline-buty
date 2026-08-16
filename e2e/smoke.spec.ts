@@ -1,29 +1,38 @@
 import { test, expect, type Page } from '@playwright/test'
 
-/** 等待蜡烛真正渲染（canvas 出现涨跌色像素） */
+/** 等待蜡烛真正渲染（canvas 出现涨跌色像素）；冷启动直连慢时刷新一次重试，避免环境抖动误报 */
 async function waitCandlesRendered(page: Page) {
-  await page.waitForFunction(
-    () => {
-      const cs = [...document.querySelectorAll('canvas')]
-      for (const c of cs) {
-        try {
-          const ctx = c.getContext('2d')
-          if (!ctx || c.width < 100) continue
-          const d = ctx.getImageData(0, 0, c.width, c.height).data
-          for (let i = 0; i < d.length; i += 200) {
-            const r = d[i]
-            const g = d[i + 1]
-            const b = d[i + 2]
-            if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+  const hasCandles = () =>
+    page.waitForFunction(
+      () => {
+        const cs = [...document.querySelectorAll('canvas')]
+        for (const c of cs) {
+          try {
+            const ctx = c.getContext('2d')
+            if (!ctx || c.width < 100) continue
+            const d = ctx.getImageData(0, 0, c.width, c.height).data
+            for (let i = 0; i < d.length; i += 200) {
+              const r = d[i]
+              const g = d[i + 1]
+              const b = d[i + 2]
+              if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+            }
+          } catch {
+            /* noop */
           }
-        } catch {
-          /* noop */
         }
-      }
-      return false
-    },
-    { timeout: 20_000 },
-  )
+        return false
+      },
+      { timeout: 30_000 },
+    )
+  try {
+    await hasCandles()
+  } catch {
+    // 首次冷启动直连币安偶发慢：刷新页面重试一次
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await hasCandles()
+  }
 }
 
 /** 扫描画线 overlay 画布，返回黄色线条像素的几何中点（CSS 坐标，含容器偏移） */
@@ -102,6 +111,46 @@ async function findDrawingAnchor(
     const sy = near.reduce((s, p) => s + p.y, 0) / near.length
     return { x: rect.left + sx, y: rect.top + sy }
   }, which)
+}
+
+/**
+ * 拖拽选中画线的指定锚点（min=首锚点/max=尾锚点），直到 verify 通过或重试耗尽。
+ * 实时行情会平移图表，扫描-拖拽存在竞态：失败则重新扫描（必要时点选线中心重新选中）再拖。
+ */
+async function dragSelectedAnchorUntil(
+  page: Page,
+  which: 'min' | 'max',
+  dx: number,
+  dy: number,
+  verify: () => Promise<boolean>,
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    let anchor = await findDrawingAnchor(page, which)
+    if (!anchor) {
+      // 画线可能被取消选中：点选线中心重新选中
+      const center = await findDrawnLineCenter(page)
+      if (center) {
+        await page.mouse.move(center.x, center.y)
+        await page.mouse.click()
+        await page.waitForTimeout(300)
+        anchor = await findDrawingAnchor(page, which)
+      }
+      if (!anchor) {
+        await page.waitForTimeout(500)
+        continue
+      }
+    }
+    await page.mouse.move(anchor.x, anchor.y)
+    await page.mouse.down()
+    await page.mouse.move(anchor.x + dx, anchor.y + dy, { steps: 4 })
+    await page.mouse.up()
+    // 轮询提交结果（最多 3s）
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(500)
+      if (await verify()) return true
+    }
+  }
+  return false
 }
 
 test.describe('K 线应用冒烟', () => {
@@ -245,6 +294,18 @@ test.describe('K 线应用冒烟', () => {
   })
 
 
+  test('情绪面板：开合 + 四类指标标题可见（数据可加载中）', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: '情绪' }).click()
+    await expect(page.getByText('全账户多空比')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('大户持仓多空比')).toBeVisible()
+    await expect(page.getByText('主动买卖比')).toBeVisible()
+    await expect(page.getByText('未平仓 24h')).toBeVisible()
+    await page.getByRole('button', { name: '情绪' }).click()
+    await expect(page.getByText('全账户多空比')).toHaveCount(0)
+  })
+
   test('画线：矩形 + 射线 → 绘制 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -374,30 +435,25 @@ test.describe('K 线应用冒烟', () => {
     expect(before).not.toBeNull()
     expect(before!.points).toHaveLength(2)
 
-    // 切回鼠标 → 拖拽最右侧（尾）锚点
+    // 切回鼠标 → 拖拽最右侧（尾）锚点；实时行情会平移图表，重试直到仅尾锚点移动
     await page.getByRole('button', { name: '鼠标' }).click()
-    await expect.poll(() => findDrawingAnchor(page, 'max'), { timeout: 5000 }).not.toBeNull()
-    const anchor = (await findDrawingAnchor(page, 'max'))!
-    await page.mouse.move(anchor.x, anchor.y)
-    await page.mouse.down()
-    await page.mouse.move(anchor.x + box!.width * 0.08, anchor.y + box!.height * 0.05, { steps: 4 })
-    await page.mouse.up()
-
-    // 仅尾锚点变化：首锚点保持不变，尾锚点移动（区别于整线平移）
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 2) return false
-          const headSame = after.points[0].time === before!.points[0].time && after.points[0].price === before!.points[0].price
-          const tailMoved =
-            after.points[1].time !== before!.points[1].time ||
-            after.points[1].price !== before!.points[1].price
-          return after.id === before!.id && headSame && tailMoved
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true)
+    const tailMoved = await dragSelectedAnchorUntil(
+      page,
+      'max',
+      box!.width * 0.08,
+      box!.height * 0.05,
+      async () => {
+        const after = await readFirst()
+        if (!after || after.points.length !== 2) return false
+        const headSame =
+          after.points[0].time === before!.points[0].time && after.points[0].price === before!.points[0].price
+        const tailChanged =
+          after.points[1].time !== before!.points[1].time ||
+          after.points[1].price !== before!.points[1].price
+        return after.id === before!.id && headSame && tailChanged
+      },
+    )
+    expect(tailMoved).toBe(true)
 
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
@@ -436,31 +492,25 @@ test.describe('K 线应用冒烟', () => {
     expect(before).not.toBeNull()
     expect(before!.points).toHaveLength(2)
 
-    // 切回鼠标 → 拖拽最左侧（首）锚点
+    // 切回鼠标 → 拖拽最左侧（首）锚点；实时行情会平移图表，重试直到锚点移动且方向点保留
     await page.getByRole('button', { name: '鼠标' }).click()
-    await expect.poll(() => findDrawingAnchor(page, 'min'), { timeout: 5000 }).not.toBeNull()
-    const anchor = (await findDrawingAnchor(page, 'min'))!
-    await page.mouse.move(anchor.x, anchor.y)
-    await page.mouse.down()
-    await page.mouse.move(anchor.x - box!.width * 0.06, anchor.y + box!.height * 0.08, { steps: 4 })
-    await page.mouse.up()
-
-    // 锚点移动，方向点保留在第二位（射线顺序敏感）
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 2) return false
-          const dirSame =
-            after.points[1].time === before!.points[1].time && after.points[1].price === before!.points[1].price
-          const anchorMoved =
-            after.points[0].time !== before!.points[0].time ||
-            after.points[0].price !== before!.points[0].price
-          return after.id === before!.id && dirSame && anchorMoved
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true)
+    const anchorMoved = await dragSelectedAnchorUntil(
+      page,
+      'min',
+      -box!.width * 0.06,
+      box!.height * 0.08,
+      async () => {
+        const after = await readFirst()
+        if (!after || after.points.length !== 2) return false
+        const dirSame =
+          after.points[1].time === before!.points[1].time && after.points[1].price === before!.points[1].price
+        const anchorChanged =
+          after.points[0].time !== before!.points[0].time ||
+          after.points[0].price !== before!.points[0].price
+        return after.id === before!.id && dirSame && anchorChanged
+      },
+    )
+    expect(anchorMoved).toBe(true)
 
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)

@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchKlines, fetchTicker24h, mapKline } from '../rest'
+import {
+  fetchGlobalLongShortRatio,
+  fetchKlines,
+  fetchOpenInterestHistory,
+  fetchTicker24h,
+  mapKline,
+  parseOiArray,
+  parseRatioArray,
+  parseTakerArray,
+} from '../rest'
 import { __resetModeForTests } from '../endpoints'
 
 const rawKline = [
@@ -103,5 +112,64 @@ describe('fetchTicker24h', () => {
     expect(t.changePct).toBe(-1.234)
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
     expect(urls.find((u) => u.includes('/api/v3/ticker/24hr?symbol=BTCUSDT'))).toBeDefined()
+  })
+})
+
+describe('衍生品情绪解析纯函数', () => {
+  it('parseRatioArray：long/short 占比与比值', () => {
+    const out = parseRatioArray([
+      { symbol: 'BTCUSDT', longAccount: '0.6724', longShortRatio: '2.0525', shortAccount: '0.3276', timestamp: 1786860000000 },
+    ])
+    expect(out).toHaveLength(1)
+    expect(out[0]).toEqual({ timestamp: 1786860000000, long: 0.6724, short: 0.3276, longShortRatio: 2.0525 })
+  })
+
+  it('parseTakerArray：买卖量与比值', () => {
+    const out = parseTakerArray([
+      { buySellRatio: '0.9346', sellVol: '354.7610', buyVol: '331.5500', timestamp: 1786860000000 },
+    ])
+    expect(out[0]).toEqual({ timestamp: 1786860000000, buyVol: 331.55, sellVol: 354.761, buySellRatio: 0.9346 })
+  })
+
+  it('parseOiArray：币数量与美元价值', () => {
+    const out = parseOiArray([
+      { symbol: 'BTCUSDT', sumOpenInterest: '111331.03100000', sumOpenInterestValue: '7016972221.86800000', timestamp: 1786866300000 },
+    ])
+    expect(out[0]).toEqual({ timestamp: 1786866300000, oi: 111331.031, oiValue: 7016972221.868 })
+  })
+
+  it('fetchGlobalLongShortRatio：请求路径含 futures/data 与参数，解析结果', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { symbol: 'BTCUSDT', longAccount: '0.6724', longShortRatio: '2.0525', shortAccount: '0.3276', timestamp: 1786860000000 },
+        ],
+      }),
+    )
+    const out = await fetchGlobalLongShortRatio('BTCUSDT', 24)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    const url = urls.find((u) => u.includes('/futures/data/globalLongShortAccountRatio'))
+    expect(url).toBeDefined()
+    expect(url).toContain('symbol=BTCUSDT')
+    expect(url).toContain('period=1h')
+    expect(out[0].long).toBe(0.6724)
+  })
+
+  it('fetchOpenInterestHistory：请求路径正确', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { symbol: 'BTCUSDT', sumOpenInterest: '111331.031', sumOpenInterestValue: '7016972221.868', timestamp: 1786866300000 },
+        ],
+      }),
+    )
+    const out = await fetchOpenInterestHistory('BTCUSDT', 24)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls.find((u) => u.includes('/futures/data/openInterestHist'))).toBeDefined()
+    expect(out[0].oi).toBe(111331.031)
   })
 })
