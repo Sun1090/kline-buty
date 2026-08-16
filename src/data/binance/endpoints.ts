@@ -45,7 +45,7 @@ export function buildWsUrl(mode: EndpointMode, stream: string): string {
     const host = typeof location !== 'undefined' ? location.host : 'localhost'
     return `${protocol}://${host}/ws/${stream}`
   }
-  return `wss://stream.binance.com:443/ws/${stream}`
+  return `wss://stream.binance.com:9443/ws/${stream}`
 }
 
 /** 仅测试用：重置检测缓存 */

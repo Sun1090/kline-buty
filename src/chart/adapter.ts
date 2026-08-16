@@ -23,6 +23,7 @@ import {
   fibExtPrices,
   fibFanRays,
   fibPrices,
+  fibTimeXs,
   hitTestDrawings,
   moveAnchor,
   moveDrawing,
@@ -601,6 +602,46 @@ export class LightweightChartAdapter implements ChartApi {
           const c = this.project(pc.time, pc.price)
           if (c) this.drawAnchor(ctx, c.x, c.y)
         }
+      }
+      return
+    }
+
+    if (d.type === 'fibtimed') {
+      // 斐波那契时间线：A→B 锚点 x 之间按分位线性插值画 7 条竖线（0/1 实线，中间虚线）+ 顶部标签
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = this.project(pb.time, pb.price)
+      if (!b) return
+      const dpr = window.devicePixelRatio || 1
+      const cRect = this.container.getBoundingClientRect()
+      const paneEl = this.chart.panes()[0]?.getHTMLElement() ?? null
+      let top = 0
+      let bottom = this.overlay.height / dpr
+      if (paneEl) {
+        const pRect = paneEl.getBoundingClientRect()
+        top = pRect.top - cRect.top
+        bottom = pRect.bottom - cRect.top
+      }
+      for (const { level, x } of fibTimeXs(a.x, b.x)) {
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.lineWidth = selected ? 1.6 : 1
+        if (level === 0 || level === 1) {
+          ctx.setLineDash([])
+        } else {
+          ctx.setLineDash([4, 3])
+        }
+        ctx.beginPath()
+        ctx.moveTo(x, top)
+        ctx.lineTo(x, bottom)
+        ctx.stroke()
+        ctx.setLineDash([])
+        this.drawLabel(ctx, x, top + 7, level.toFixed(3), 'left')
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }

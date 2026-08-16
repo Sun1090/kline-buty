@@ -25,6 +25,7 @@ const TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'text', labelKey: 'drawing.text' },
   { value: 'fibext', labelKey: 'drawing.fibext' },
   { value: 'fibfan', labelKey: 'drawing.fibfan' },
+  { value: 'fibtimed', labelKey: 'drawing.fibTime' },
   { value: 'pricelabel', labelKey: 'drawing.pricelabel' },
   { value: 'arrow', labelKey: 'drawing.arrow' },
 ]

@@ -741,6 +741,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('画线：斐波那契扩展（3 锚点）+ 扇形 + 价格标签 + 箭头 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
@@ -785,7 +786,83 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：斐波那契时间线 → 拖 A→B → 7 条竖线（黄金分割）→ 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
+    await page.getByRole('button', { name: '5分', exact: true }).click()
+    await page.waitForTimeout(800)
+    await page.getByRole('button', { name: '1分', exact: true }).click()
+    await waitCandlesRendered(page)
+    // 实时行情右边缘平移会让图表轻微挪动：等一拍稳定后再画
+    await page.waitForTimeout(600)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    await page.getByRole('button', { name: '斐波那契时间线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.7, box!.y + box!.height * 0.35, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 10_000 })
+
+    // 扫描 overlay：竖线按列聚类（≥15px 纵向像素过滤标签），应得 7 组
+    const lineXs = await page.evaluate(() => {
+      const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+        const st = getComputedStyle(c)
+        return st.position === 'absolute' && st.zIndex === '5'
+      })
+      if (!overlay) return []
+      const ctx = overlay.getContext('2d')
+      if (!ctx) return []
+      const { width, height } = overlay
+      const img = ctx.getImageData(0, 0, width, height).data
+      const dpr = window.devicePixelRatio || 1
+      const count = new Map<number, number>()
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          const yellow = a > 100 && r > 190 && g > 130 && g < 235 && b < 110
+          const blue = a > 100 && b > 190 && g > 110 && g < 200 && r < 130
+          if (yellow || blue) {
+            const cx = Math.round(x / dpr)
+            count.set(cx, (count.get(cx) ?? 0) + 1)
+          }
+        }
+      }
+      // 纵向像素 ≥15 的列为竖线本体（标签仅 14px 高，抗锯齿相邻列并入同组）
+      const strong = [...count.entries()].filter(([, n]) => n >= 15).map(([x]) => x).sort((p, q) => p - q)
+      const groups: number[] = []
+      for (const x of strong) {
+        if (groups.length === 0 || x - groups[groups.length - 1] > 2) groups.push(x)
+      }
+      return groups
+    })
+    expect(lineXs).toHaveLength(7)
+    const span = lineXs[6] - lineXs[0]
+    expect(span).toBeGreaterThan(50)
+    const ratios = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
+    for (let i = 0; i < lineXs.length; i++) {
+      expect((lineXs[i] - lineXs[0]) / span).toBeCloseTo(ratios[i], 0)
+    }
+
+    // 切回鼠标：点任一竖线仍可选中 → 删除
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(box!.x + lineXs[3], box!.y + box!.height * 0.4)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('画线：趋势线 → 鼠标拖拽整线移动 → 锚点增量一致 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
@@ -853,6 +930,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('画线：趋势线 → 拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)

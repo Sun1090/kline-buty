@@ -5,6 +5,8 @@ import {
   fibExtPrices,
   fibFanRays,
   fibPrices,
+  fibTimeLines,
+  fibTimeXs,
   hitTestDrawings,
   moveAnchor,
   moveDrawing,
@@ -484,5 +486,84 @@ describe('moveAnchor（M21 三角形/圆弧）', () => {
     const d = createDrawing('arc', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'a')
     const moved = moveAnchor(d, 1, { time: -20, price: 90 })
     expect(moved.points[0].time).toBe(-20)
+  })
+})
+
+describe('fibTimeLines（M27 斐波那契时间线）', () => {
+  it('起止端点 0 / 1 恰为 A/B 时间', () => {
+    const lines = fibTimeLines({ time: 100 }, { time: 500 })
+    expect(lines).toHaveLength(FIB_LEVELS.length)
+    expect(lines[0]).toEqual({ level: 0, time: 100 })
+    expect(lines[lines.length - 1]).toEqual({ level: 1, time: 500 })
+  })
+  it('0.5 分位为中点，分位单调递增', () => {
+    const lines = fibTimeLines({ time: 1000 }, { time: 2000 })
+    const mid = lines.find((l) => l.level === 0.5)
+    expect(mid?.time).toBe(1500)
+    const times = lines.map((l) => l.time)
+    for (let i = 1; i < times.length; i++) expect(times[i]).toBeGreaterThan(times[i - 1])
+  })
+  it('无序输入（B 在 A 之前）也按时间从早到晚', () => {
+    const lines = fibTimeLines({ time: 500 }, { time: 100 })
+    expect(lines[0]).toEqual({ level: 0, time: 100 })
+    expect(lines[lines.length - 1]).toEqual({ level: 1, time: 500 })
+  })
+  it('间距按 level 精确插值（0.236 / 0.618）', () => {
+    const lines = fibTimeLines({ time: 0 }, { time: 1000 })
+    expect(lines.find((l) => l.level === 0.236)?.time).toBeCloseTo(236)
+    expect(lines.find((l) => l.level === 0.618)?.time).toBeCloseTo(618)
+    expect(lines.find((l) => l.level === 0.786)?.time).toBeCloseTo(786)
+  })
+})
+
+describe('fibTimeXs（M27 屏幕插值）', () => {
+  it('0/1 端点即 A/B x，0.5 为中点', () => {
+    const xs = fibTimeXs(100, 500)
+    expect(xs).toHaveLength(FIB_LEVELS.length)
+    expect(xs[0]).toEqual({ level: 0, x: 100 })
+    expect(xs[xs.length - 1]).toEqual({ level: 1, x: 500 })
+    expect(xs.find((l) => l.level === 0.5)?.x).toBe(300)
+  })
+  it('B 在左（x 反向）也按左小右大插值', () => {
+    const xs = fibTimeXs(500, 100)
+    expect(xs[0].x).toBe(100)
+    expect(xs[xs.length - 1].x).toBe(500)
+    expect(xs.find((l) => l.level === 0.236)?.x).toBeCloseTo(100 + 400 * 0.236)
+  })
+})
+
+describe('fibtimed（M27）', () => {
+  it('两点交互：createDrawing 归一化后按时间排序', () => {
+    const d = createDrawing('fibtimed', [{ time: 200, price: 100 }, { time: 0, price: 90 }], 'ft')
+    expect(d.points[0].time).toBe(0)
+    expect(d.points[1].time).toBe(200)
+    expect(d.points).toHaveLength(2)
+  })
+  it('moveAnchor 拖动后仍按时间重排', () => {
+    const d = createDrawing('fibtimed', [{ time: 0, price: 90 }, { time: 200, price: 100 }], 'ft')
+    const moved = moveAnchor(d, 1, { time: -50, price: 120 })
+    expect(moved.points[0].time).toBe(-50)
+    expect(moved.points[1].time).toBe(0)
+  })
+  it('moveDrawing 整线平移保留两锚点', () => {
+    const d = createDrawing('fibtimed', [{ time: 0, price: 90 }, { time: 200, price: 100 }], 'ft')
+    const moved = moveDrawing(d, 100, 5)
+    expect(moved.points.map((p) => p.time)).toEqual([100, 300])
+    expect(moved.points.map((p) => p.price)).toEqual([95, 105])
+  })
+  it('命中任意一条竖线（水平距离 ±8px）', () => {
+    const d = createDrawing('fibtimed', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'ft')
+    // project: x=time。7 条竖线 x = 0, 23.6, 38.2, 50, 61.8, 78.6, 100（任意价格 y 均可命中）
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('ft') // 0.5 竖线
+    expect(hitTestDrawings([d], 24, 10, project)).toBe('ft') // 0.236 竖线附近
+    expect(hitTestDrawings([d], 95, 300, project)).toBe('ft') // 接近 1.0 竖线
+    expect(hitTestDrawings([d], 15, 150, project)).toBeNull() // 两线之间且距两侧 >8px
+  })
+  it('拖动锚点后命中新的竖线位置', () => {
+    const d = createDrawing('fibtimed', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'ft')
+    const moved = moveAnchor(d, 1, { time: 50, price: 100 })
+    // 区间 [0,50]：竖线 0 / 11.8 / 19.1 / 25 / 30.9 / 39.3 / 50
+    expect(hitTestDrawings([moved], 25, 150, project)).toBe('ft')
+    expect(hitTestDrawings([moved], 60, 150, project)).toBeNull()
   })
 })
