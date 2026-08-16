@@ -428,10 +428,11 @@ export class LightweightChartAdapter implements ChartApi {
   private onPointerUp = () => {
     // 画线完成 → 提交
     if (this.drawingStart && this.drawingPreview) {
-      const pts = normalizePoints(
-        this.drawingTool === 'horizontal' ? 'horizontal' : (this.drawingTool as Drawing['type']),
-        [this.drawingStart, this.drawingPreview],
-      )
+      // 水平线支持单击放置（未拖动也提交）；趋势线/斐波那契需两点
+      const pts =
+        this.drawingTool === 'horizontal'
+          ? [this.drawingStart]
+          : normalizePoints(this.drawingTool as Drawing['type'], [this.drawingStart, this.drawingPreview])
       this.drawingCallbacks?.onCommit({
         type: this.drawingTool as Drawing['type'],
         points: pts,

@@ -348,7 +348,11 @@ export function ChartView({
             pointerEvents: 'none',
           }}
         >
-          {status === 'loading' ? '加载历史数据…' : '暂无数据'}
+          {status === 'loading'
+            ? '加载历史数据…'
+            : status === 'error'
+              ? '行情数据加载失败：请检查网络或数据源可达性'
+              : '暂无数据'}
         </div>
       )}
       <button

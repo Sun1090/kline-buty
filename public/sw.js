@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kline-buty-v1'
+const CACHE_NAME = 'kline-buty-v2'
 const SCOPE = self.registration.scope
 const PRECACHE = [SCOPE, SCOPE + 'index.html', SCOPE + 'manifest.webmanifest', SCOPE + 'icon.svg']
 
