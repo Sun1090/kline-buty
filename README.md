@@ -38,6 +38,7 @@ npm run build                # 生产构建
 | [docs/03-技术方案.md](docs/03-技术方案.md) | 架构、数据流、代理策略、风险 |
 | [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
 | [docs/05-部署.md](docs/05-部署.md) | Docker/反向代理/GitHub Pages/Vercel 部署指南 |
+| [docs/knowledge/README.md](docs/knowledge/README.md) | 交易知识库（从入门到入土）：现货/期货/股票/加密合约/技术分析/交易系统/避坑指南 |
 
 ## 当前进度
 
