@@ -26,6 +26,7 @@ import {
   fibTimeXs,
   gannFanRays,
   hitTestDrawings,
+  measureInfo,
   moveAnchor,
   moveDrawing,
   nearestAnchor,
@@ -33,6 +34,7 @@ import {
   requiredPoints,
   type Drawing,
   type DrawingTool,
+  type Point,
 } from '../drawings/logic'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
@@ -139,6 +141,8 @@ export interface ChartApi {
   setTheme(theme: ThemeMode, presetId?: ColorPresetId): void
   /** 切换界面语言（文本标注默认文案 / 仓位线标签随语言更新） */
   setLocale(lang: Lang): void
+  /** 设置 K 线周期秒数（量度工具标签计算根数用） */
+  setPeriodSeconds(sec: number): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -206,6 +210,10 @@ export class LightweightChartAdapter implements ChartApi {
   private markerPriceLine: IPriceLine | null = null
   private theme: ChartTheme = THEMES.dark
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
+  /** 当前 K 线周期秒数（量度标签根数） */
+  private periodSeconds = 60
+  /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
+  private lastDownDetail = 1
   private dragHandler: ((key: PositionLineKey, price: number) => void) | null = null
   private dragKey: PositionLineKey | null = null
   private hoverKey: PositionLineKey | null = null
@@ -351,6 +359,10 @@ export class LightweightChartAdapter implements ChartApi {
     this.labels = chartLabelsFor(lang)
     this.applyPositionLines()
     this.draw()
+  }
+
+  setPeriodSeconds(sec: number) {
+    this.periodSeconds = sec
   }
 
   takeScreenshot(rect?: RegionRect): string | null {
@@ -685,6 +697,46 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'polyline') {
+      // 多段折线：依次连接各锚点，顶点画小圆点
+      const pts: Point[] = [a, b]
+      for (let i = 2; i < d.points.length; i++) {
+        const p = this.project(d.points[i].time, d.points[i].price)
+        if (p) pts.push(p)
+      }
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
+      ctx.stroke()
+      for (const p of pts) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, selected ? 3 : 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'measure') {
+      // 量度：虚线连接 A→B + 锚点 + 中点标签（Δ价格 / Δ% / 根数）
+      ctx.setLineDash([5, 4])
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      ctx.setLineDash([])
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      const info = measureInfo(d.points[0], d.points[1])
+      const bars = Math.max(1, Math.round(Math.abs(d.points[1].time - d.points[0].time) / this.periodSeconds))
+      const sign = info.diff >= 0 ? '+' : ''
+      const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${bars}根`
+      this.drawLabel(ctx, (a.x + b.x) / 2, (a.y + b.y) / 2 - 8, label, 'left')
+      return
+    }
+
     if (d.type === 'rect') {
       // 矩形：半透明填充 + 边框 + 四角锚点
       const left = Math.min(a.x, b.x)
@@ -938,6 +990,7 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   private onPointerDown = (e: PointerEvent) => {
+    this.lastDownDetail = e.detail
     const rect = this.container.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
@@ -1142,6 +1195,12 @@ export class LightweightChartAdapter implements ChartApi {
       } else {
         // 多锚点工具（斐波那契扩展）：每次手势的按下点作为一个锚点，集满提交
         this.drawingPoints.push(this.drawingDown)
+        if (tool === 'polyline' && this.lastDownDetail >= 2) {
+          // 多段折线：双击（detail>=2）收尾提交
+          this.drawingCallbacks?.onCommit({ type: tool, points: this.drawingPoints })
+          this.resetDrawing()
+          return
+        }
         if (this.drawingPoints.length >= need) {
           this.drawingCallbacks?.onCommit({ type: tool, points: this.drawingPoints })
           this.resetDrawing()

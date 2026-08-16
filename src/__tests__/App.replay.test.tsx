@@ -39,6 +39,7 @@ vi.mock('../chart/adapter', () => ({
     onRegionCapture() {}
     setTheme() {}
     setLocale() {}
+    setPeriodSeconds() {}
     fitContent() {}
     scrollToRealTime() {}
     subscribeCrosshairMove() {
