@@ -1,9 +1,11 @@
-export type DrawingTool = 'none' | 'horizontal' | 'trend' | 'fib'
+export type DrawingTool = 'none' | 'horizontal' | 'trend' | 'fib' | 'channel' | 'text'
 
 export interface Drawing {
   id: string
-  type: 'horizontal' | 'trend' | 'fib'
+  type: 'horizontal' | 'trend' | 'fib' | 'channel' | 'text'
   points: { time: number; price: number }[]
+  /** 文本标注内容（仅 type === 'text'） */
+  text?: string
 }
 
 export interface Point {
@@ -15,6 +17,9 @@ export interface Point {
 export type Project = (time: number, price: number) => Point | null
 
 const HIT_THRESHOLD_PX = 8
+/** 文本标注命中框（半宽/半高，px） */
+const TEXT_HIT_HALF_W = 24
+const TEXT_HIT_HALF_H = 12
 
 /** 斐波那契回撤分位（从高位向低位） */
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
@@ -25,9 +30,21 @@ export function fibPrices(from: number, to: number): number[] {
   return FIB_LEVELS.map((l) => hi - (hi - lo) * l)
 }
 
-/** 归一化锚点：水平线只保留一点，趋势/斐波那契按时间排序 */
+/** 平行通道：基线 a→b，平行线垂直偏移 delta = b.price - a.price */
+export function channelLine(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+): { time: number; price: number }[] {
+  const delta = b.price - a.price
+  return [
+    { time: a.time, price: b.price },
+    { time: b.time, price: b.price + delta },
+  ]
+}
+
+/** 归一化锚点：水平线/文本只保留一点，两点工具按时间排序 */
 export function normalizePoints(type: Drawing['type'], pts: { time: number; price: number }[]) {
-  if (type === 'horizontal') return [pts[0]]
+  if (type === 'horizontal' || type === 'text') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
   return a.time <= b.time ? [a, b] : [b, a]
@@ -65,6 +82,20 @@ export function hitTestDrawings(
     if (d.type === 'horizontal') {
       const a = project(d.points[0].time, d.points[0].price)
       if (a) dist = Math.abs(py - a.y)
+    } else if (d.type === 'text') {
+      const a = project(d.points[0].time, d.points[0].price)
+      if (a && Math.abs(px - a.x) <= TEXT_HIT_HALF_W && Math.abs(py - a.y) <= TEXT_HIT_HALF_H) {
+        dist = Math.hypot(px - a.x, py - a.y)
+      }
+    } else if (d.type === 'channel') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const [c, e] = channelLine(d.points[0], d.points[1]).map((p) => project(p.time, p.price))
+        const base = distToSegment({ x: px, y: py }, a, b)
+        const parallel = c && e ? distToSegment({ x: px, y: py }, c, e) : Infinity
+        dist = Math.min(base, parallel)
+      }
     } else {
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)

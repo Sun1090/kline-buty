@@ -76,6 +76,8 @@ export function App() {
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
+  const [editingTextId, setEditingTextId] = useState<string | null>(null)
+  const [textDraft, setTextDraft] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
   const [position, setPosition] = useState<Position | null>(null)
@@ -156,6 +158,26 @@ export function App() {
       [symbol]: [...(prev[symbol] ?? []), created],
     }))
     setSelectedDrawingId(created.id)
+    if (d.type === 'text') {
+      setTextDraft('')
+      setEditingTextId(created.id)
+    }
+  }
+  const confirmTextDrawing = () => {
+    if (!editingTextId) return
+    const text = textDraft.trim()
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === editingTextId ? { ...d, text } : d)),
+    }))
+    setEditingTextId(null)
+    setTextDraft('')
+  }
+  const selectedDrawing = drawings.find((d) => d.id === selectedDrawingId)
+  const startEditingSelectedText = () => {
+    if (selectedDrawing?.type !== 'text') return
+    setTextDraft(selectedDrawing.text ?? '')
+    setEditingTextId(selectedDrawing.id)
   }
   const deleteSelectedDrawing = () => {
     if (!selectedDrawingId) return
@@ -229,8 +251,61 @@ export function App() {
           tool={drawingTool}
           onChange={setDrawingTool}
           selected={selectedDrawingId !== null}
+          selectedText={selectedDrawing?.type === 'text' ? selectedDrawing.text : undefined}
           onDeleteSelected={deleteSelectedDrawing}
+          onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
         />
+        {editingTextId && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <input
+              value={textDraft}
+              onChange={(e) => setTextDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmTextDrawing()
+                if (e.key === 'Escape') setEditingTextId(null)
+              }}
+              placeholder="文本内容"
+              autoFocus
+              style={{
+                width: 120,
+                fontSize: 11,
+                padding: '3px 6px',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                background: 'var(--panel)',
+                color: 'var(--text)',
+              }}
+            />
+            <button
+              onClick={confirmTextDrawing}
+              style={{
+                padding: '3px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                background: 'var(--accent)',
+                color: '#fff',
+              }}
+            >
+              确定
+            </button>
+            <button
+              onClick={() => setEditingTextId(null)}
+              style={{
+                padding: '3px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                background: 'transparent',
+                color: 'var(--text-dim)',
+              }}
+            >
+              取消
+            </button>
+          </div>
+        )}
         <button
           onClick={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           style={{
