@@ -1,0 +1,79 @@
+# Kline Buty · 实时 K 线图表
+
+对标 OKX / Binance / Bybit 的自建 K 线行情应用（Web 一期）。
+
+> **免责声明**：本项目仅用于技术学习与研究，不构成任何投资建议。加密货币交易有风险，据此操作风险自负。
+
+## 数据与版权合规
+
+- **数据来源**：币安公开行情 API（REST + WebSocket），无需 API Key。使用时请遵守[币安服务条款](https://www.binance.com/zh-CN/terms)及其数据使用限制，请勿用于商业高频抓取。
+- **图表引擎**：基于 [lightweight-charts](https://github.com/tradingview/lightweight-charts)（TradingView 出品，Apache-2.0）。按协议要求，页面内已包含 TradingView 署名（图表右下角 attribution logo）。
+- **项目许可**：MIT（见 [LICENSE](LICENSE)）。注意：本项目使用的币安数据与 TradingView 引擎均受其各自条款约束。
+
+## 快速开始
+
+```bash
+npm install && npm run dev   # http://localhost:5173
+npm run typecheck            # 类型检查
+npm run test                 # 单测
+npm run build                # 生产构建
+```
+
+数据源为**币安公开 API**（REST 历史 + WebSocket 实时），经 Vite 代理转发，前端不硬编码外部域名。
+
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [docs/01-调研报告.md](docs/01-调研报告.md) | 欧易/币安/Bybit 功能盘点、数据源选型与实测 |
+| [docs/02-需求清单.md](docs/02-需求清单.md) | 功能分层 P0 / P1 / P2 及验收标准 |
+| [docs/03-技术方案.md](docs/03-技术方案.md) | 架构、数据流、代理策略、风险 |
+| [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
+
+## 当前进度
+
+- [x] M0 调研立项（文档全部落地）
+- [x] M1 数据地基：币安 REST/WS 封装、MarketStore 去重合并、断线重连补数、代理链路实测通过
+- [x] M2 图表 MVP：蜡烛图 + 成交量副图 + MA(5/10/20) + 最新价线 + 7 档周期切换 + WS 实时跳动
+- [x] M3 指标与交互：指标引擎（MA/EMA/BOLL/MACD/KDJ/RSI 纯函数 + 单测）、副图切换、十字光标 OHLC+指标值信息窗、历史向左分页
+- [x] M4 体验补全：图表类型切换（蜡烛/折线/面积）、指标参数自定义、全屏、布局持久化（localStorage）、交易对迷你图（sparkline）
+- [x] M5 打磨交付：性能压测（2 万根：指标全刷 <60ms、图表装载 65ms、实时更新 0.4ms）、MACD O(n²) 修复 27 倍提速、真实断线恢复压测、38 项单测
+- [x] P2-3 市场回放：历史逐根回放（播放/暂停/1x-50x 变速/进度条 seek）、回放与实时数据流解耦、退出恢复实时；REST 失败自动重试
+- [x] P2-2 多图表联动：双图同屏（BTC/ETH）、时间轴双向同步 + 防回环、配置共享
+- [x] P2-4 加密数据层：资金费率/未平仓/标记价（fapi 代理）+ 行情信息条（30s 轮询）
+- [x] P2-1 订单叠加：模拟仓位（开多/开空、开仓/止盈/止损线、浮动盈亏、触发判断、价格线拖拽）
+- [x] P2-5 价格提醒：条件触发（≥/≤）、浏览器通知、一次性触发可重置、localStorage 持久化、SW 后台提醒（尽力而为）+ 离线缓存
+- [x] P2-6 移动端基础：PWA manifest + 图标 + 响应式布局（WebView 套壳可直接复用）
+- [x] P1-2 画线工具：水平线/趋势线/斐波那契回撤（overlay 图层、创建/选中/删除、持久化）
+- [x] P1-3 盘口深度图：WS depth20@100ms 实时聚合曲线 + 最优价标记
+- [x] P1-6 周期补全：1s/3m/30m/2h/12h/3d/1M（共 14 档）
+- [x] P1-7 图表截图：主图+画线图层合成 PNG 下载
+- [x] 生产部署：Dockerfile + nginx 代理（/api /ws /fapi）+ 部署文档，Docker 实测通过
+- [x] 健壮性：ErrorBoundary、离线提示 banner、空状态、REST 部分失败容错
+- [x] 键盘快捷键：`[` `]` 切周期、`Space` 回放播放/暂停、`Delete` 删除选中画线
+- [x] 浅色/深色主题：CSS 变量化 + 图表主题联动 + 持久化
+- [x] 筹码分布（VPVR）：成交量按价格分桶、买卖量分色、密集区标记
+- [x] 四图联动：单图/双图/四图布局切换，时间轴全联动 + 防回环
+- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 6 场景
+
+## 技术栈与结构
+
+React 18 + TypeScript + Vite + lightweight-charts v5（TradingView 开源，Apache-2.0）
+
+```
+src/
+├── chart/           # 领域类型 + 渲染隔离层 adapter（可替换渲染引擎）
+├── components/      # ChartView / PeriodBar / SymbolPicker
+├── data/
+│   ├── binance/     # REST 分页、WS 客户端（心跳/退避重连/补数）
+│   └── market.ts    # K 线仓库：有序缓存 + 幂等合并
+├── hooks/           # useKlineData：历史+实时编排
+└── indicators/      # 指标引擎（纯函数，M3 扩展）
+```
+
+## 设计要点
+
+- **数据层与渲染层解耦**：`ChartApi` 接口隔离 lightweight-charts，将来可自研引擎/迁移 klinecharts 零改数据层
+- **增量渲染**：WS 实时帧走 `update` 增量路径，不打断用户缩放/平移；周期切换/补数走全量路径
+- **前端相对路径规范**：所有请求走 `/api` `/ws`，生产环境换代理零改动
+- **断线自愈**：指数退避重连 + 重连后 REST 补齐缺口，仓库层幂等去重
