@@ -1,19 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Candle, Period } from '../chart/types'
-import { LightweightChartAdapter, type ChartApi, type ChartType, type PositionLines } from '../chart/adapter'
+import { PERIOD_MS, type Candle, type Period } from '../chart/types'
+import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import { THEMES } from '../theme'
-import { calcMA, calcEMA, type ValuePoint } from '../indicators/sma'
+import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
 import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY } from '../indicators/extras'
+import { calcSAR } from '../indicators/sar'
+import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n, localeFor } from '../i18n'
 
-export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'none'
+export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'none'
 export type { ChartType }
 
@@ -25,6 +27,15 @@ function fmtPrice(v: number) {
 
 function fmtVolume(v: number) {
   return v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(2)}K` : v.toFixed(0)
+}
+
+/** hex 颜色转 rgba（Ichimoku 云带半透明填充用） */
+function withAlpha(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16)
+  const r = (n >> 16) & 255
+  const g = (n >> 8) & 255
+  const b = n & 255
+  return `rgba(${r},${g},${b},${alpha})`
 }
 
 interface ChartViewProps {
@@ -190,23 +201,52 @@ export function ChartView({
   }, [lang])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
-  const mainLines = useMemo<{ id: string; points: ValuePoint[] }[]>(() => {
-    if (mainIndicator === 'ma') return indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(replayData, p) }))
+  const mainData = useMemo<MainIndicatorData>(() => {
+    if (mainIndicator === 'ma')
+      return { lines: indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(replayData, p) })) }
     if (mainIndicator === 'ema') {
       const closes = replayData.map((c) => ({ time: c.time, value: c.close }))
-      return indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) }))
+      return { lines: indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })) }
     }
     if (mainIndicator === 'boll') {
       const b = bollToLines(calcBOLL(replayData, indicatorParams.bollPeriod, indicatorParams.bollMult))
-      return [
-        { id: 'BOLL_UPPER', points: b.upper },
-        { id: 'BOLL_MID', points: b.mid },
-        { id: 'BOLL_LOWER', points: b.lower },
-      ]
+      return {
+        lines: [
+          { id: 'BOLL_UPPER', points: b.upper },
+          { id: 'BOLL_MID', points: b.mid },
+          { id: 'BOLL_LOWER', points: b.lower },
+        ],
+      }
     }
-    if (mainIndicator === 'vwap') return [{ id: 'VWAP', points: calcVWAP(replayData) }]
-    return []
-  }, [replayData, mainIndicator, indicatorParams])
+    if (mainIndicator === 'vwap') return { lines: [{ id: 'VWAP', points: calcVWAP(replayData) }] }
+    if (mainIndicator === 'sar') {
+      // SAR 圆点：多头在价格下方（涨色），空头在价格上方（跌色）
+      const sar = calcSAR(replayData)
+      return {
+        lines: [],
+        markers: sar.map((p) => ({ time: p.time, price: p.value, color: p.bull ? UP : DOWN })),
+      }
+    }
+    if (mainIndicator === 'ichimoku') {
+      const r = calcIchimoku(replayData, { periodSeconds: PERIOD_MS[period] / 1000 })
+      return {
+        lines: [
+          { id: 'ICH_TENKAN', points: r.tenkan },
+          { id: 'ICH_KIJUN', points: r.kijun },
+          { id: 'ICH_SPANA', points: r.spanA },
+          { id: 'ICH_SPANB', points: r.spanB },
+          { id: 'ICH_CHIKOU', points: r.chikou },
+        ],
+        cloud: ichimokuCloud(r).map((p) => ({
+          time: p.time,
+          top: p.top,
+          bottom: p.bottom,
+          color: p.bull ? withAlpha(UP, 0.12) : withAlpha(DOWN, 0.12),
+        })),
+      }
+    }
+    return { lines: [] }
+  }, [replayData, mainIndicator, indicatorParams, period, themeMode])
 
   const subData = useMemo(() => {
     if (subIndicator === 'volume') {
@@ -333,10 +373,10 @@ export function ChartView({
     }
 
     api.setChartType(chartType)
-    api.setMainIndicator(mainLines)
+    api.setMainIndicator(mainData)
     if (subData) api.setSubIndicator(subData)
     prevDataRef.current = replayData
-  }, [replayData, mainLines, subData, symbol, period, chartType, replay])
+  }, [replayData, mainData, subData, symbol, period, chartType, replay])
 
   // 仓位线独立 effect：拖拽高频更新时避免触发指标/数据装载
   useEffect(() => {
@@ -362,8 +402,12 @@ export function ChartView({
   // ---- 十字光标信息窗内容 ----
   const candleByTime = useMemo(() => new Map(replayData.map((c) => [c.time, c])), [replayData])
   const lineMaps = useMemo(
-    () => new Map(mainLines.map((l) => [l.id, new Map(l.points.map((p) => [p.time, p.value]))])),
-    [mainLines],
+    () => new Map(mainData.lines.map((l) => [l.id, new Map(l.points.map((p) => [p.time, p.value]))])),
+    [mainData],
+  )
+  const sarMap = useMemo(
+    () => new Map((mainData.markers ?? []).map((m) => [m.time, m.price])),
+    [mainData],
   )
   const subLineMaps = useMemo(
     () => new Map((subData?.lines ?? []).map((l) => [l.id, new Map(l.points.map((p) => [p.time, p.value]))])),
@@ -381,10 +425,12 @@ export function ChartView({
       { label: t('tooltip.close'), value: fmtPrice(c.close), color: c.close >= c.open ? UP : DOWN },
       { label: t('tooltip.volume'), value: fmtVolume(c.volume), color: 'var(--text-dim)' },
     ]
-    for (const l of mainLines) {
+    for (const l of mainData.lines) {
       const v = lineMaps.get(l.id)?.get(tooltip.time)
       if (v !== undefined) rows.push({ label: l.id, value: fmtPrice(v), color: 'var(--text)' })
     }
+    const sarV = sarMap.get(tooltip.time)
+    if (sarV !== undefined) rows.push({ label: 'SAR', value: fmtPrice(sarV), color: 'var(--text)' })
     for (const l of subData?.lines ?? []) {
       const v = subLineMaps.get(l.id)?.get(tooltip.time)
       if (v !== undefined) rows.push({ label: l.id, value: v.toFixed(2), color: 'var(--text)' })
@@ -400,7 +446,7 @@ export function ChartView({
       }
     }
     return { ...tooltip, rows }
-  }, [tooltip, candleByTime, mainLines, lineMaps, subLineMaps, subData, t])
+  }, [tooltip, candleByTime, mainData, lineMaps, sarMap, subLineMaps, subData, t])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

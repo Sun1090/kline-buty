@@ -45,6 +45,8 @@ const MAIN_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] =
   { value: 'ema', label: 'EMA' },
   { value: 'boll', label: 'BOLL' },
   { value: 'vwap', label: 'VWAP' },
+  { value: 'sar', labelKey: 'indicator.sar' },
+  { value: 'ichimoku', labelKey: 'indicator.ichimoku' },
   { value: 'none', labelKey: 'common.none' },
 ]
 

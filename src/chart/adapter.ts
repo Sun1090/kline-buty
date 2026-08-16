@@ -51,6 +51,15 @@ export interface SubIndicatorData {
   markers?: { price: number; color: string }[]
 }
 
+/** 主图指标数据（UI 层计算，本层渲染） */
+export interface MainIndicatorData {
+  lines: { id: string; points: ValuePoint[] }[]
+  /** Ichimoku 云带：spanA/spanB 之间按点着色填充（颜色由 UI 层按涨跌给 rgba） */
+  cloud?: { time: number; top: number; bottom: number; color: string }[]
+  /** SAR 圆点（每点独立颜色：多头/空头） */
+  markers?: { time: number; price: number; color: string }[]
+}
+
 /** 仓位线（模拟订单叠加）：开仓/止盈/止损三条价格线 */
 export interface PositionLines {
   entry: number
@@ -73,8 +82,8 @@ export interface ChartApi {
   fitContent(): void
   /** 时间轴滚动到最新（回放播放跟随用） */
   scrollToRealTime(): void
-  /** 主图指标（ma/ema/boll），lines 的 id 由 UI 层传入，颜色本层分配 */
-  setMainIndicator(lines: { id: string; points: ValuePoint[] }[]): void
+  /** 主图指标（ma/ema/boll/sar/ichimoku），id 由 UI 层传入，颜色本层分配 */
+  setMainIndicator(data: MainIndicatorData): void
   /** 副图指标（VOL/MACD/KDJ/RSI） */
   setSubIndicator(data: SubIndicatorData): void
   /** 仓位线（开仓/止盈/止损），null 清除 */
@@ -116,6 +125,11 @@ const MAIN_LINE_COLORS: Record<string, string> = {
   BOLL_MID: '#f5c02f',
   BOLL_LOWER: '#4e9cf5',
   VWAP: '#f57f17',
+  ICH_TENKAN: '#4e9cf5',
+  ICH_KIJUN: '#e45f9d',
+  ICH_SPANA: '#26a69a',
+  ICH_SPANB: '#f57f17',
+  ICH_CHIKOU: '#9aa7b5',
 }
 
 /** 副图指标线配色 */
@@ -143,7 +157,7 @@ export class LightweightChartAdapter implements ChartApi {
   private container: HTMLElement
   private mainSeries: ISeriesApi<SeriesType>
   private volumeSeries: ISeriesApi<'Histogram'> | null = null
-  private mainLines: ISeriesApi<'Line'>[] = []
+  private mainLines: ISeriesApi<'Line' | 'Area'>[] = []
   private subSeries: ISeriesApi<'Line' | 'Histogram'>[] = []
   private priceLine: IPriceLine | null = null
   private lastClose: number | null = null
@@ -993,9 +1007,74 @@ export class LightweightChartAdapter implements ChartApi {
     this.chart.timeScale().scrollToRealTime()
   }
 
-  setMainIndicator(lines: { id: string; points: ValuePoint[] }[]) {
+  setMainIndicator(data: MainIndicatorData) {
     for (const s of this.mainLines) this.chart.removeSeries(s)
-    this.mainLines = lines.map((l) => {
+    this.mainLines = []
+    const pane = 0
+
+    // Ichimoku 云带：上边界（max）与下边界（min）各一条面积序列，涨绿/跌红
+    if (data.cloud?.length) {
+      const up = this.chart.addSeries(
+        AreaSeries,
+        {
+          lineVisible: false,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        },
+        pane,
+      )
+      up.setData(
+        data.cloud.map((p) => ({
+          time: p.time as UTCTimestamp,
+          value: p.top,
+          topColor: p.color,
+          bottomColor: p.color,
+        })),
+      )
+      this.mainLines.push(up)
+      const down = this.chart.addSeries(
+        AreaSeries,
+        {
+          lineVisible: false,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        },
+        pane,
+      )
+      down.setData(
+        data.cloud.map((p) => ({
+          time: p.time as UTCTimestamp,
+          value: p.bottom,
+          topColor: p.color,
+          bottomColor: p.color,
+        })),
+      )
+      this.mainLines.push(down)
+    }
+
+    // SAR 圆点：单条线序列 + 逐点颜色（lineVisible:false 只留圆点标记）
+    if (data.markers?.length) {
+      const dots = this.chart.addSeries(
+        LineSeries,
+        {
+          lineVisible: false,
+          pointMarkersVisible: true,
+          pointMarkersRadius: 2.5,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        },
+        pane,
+      )
+      dots.setData(
+        data.markers.map((m) => ({ time: m.time as UTCTimestamp, value: m.price, color: m.color })),
+      )
+      this.mainLines.push(dots)
+    }
+
+    for (const l of data.lines) {
       const series = this.chart.addSeries(
         LineSeries,
         {
@@ -1005,11 +1084,11 @@ export class LightweightChartAdapter implements ChartApi {
           lastValueVisible: false,
           crosshairMarkerVisible: false,
         },
-        0,
+        pane,
       )
       series.setData(l.points.map((p) => ({ time: p.time as UTCTimestamp, value: p.value })))
-      return series
-    })
+      this.mainLines.push(series)
+    }
   }
 
   setSubIndicator(data: SubIndicatorData) {
