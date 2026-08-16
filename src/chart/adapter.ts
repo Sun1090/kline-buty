@@ -92,6 +92,8 @@ export interface ChartApi {
   setPositionLines(lines: PositionLines | null): void
   /** 外部参考价格线（盘口档位 hover 联动），null 清除 */
   setReferencePrice(price: number | null): void
+  /** 限价标记线（盘口档位点击联动，accent 实线），null 清除 */
+  setMarkerPrice(price: number | null): void
   /** 仓位线拖拽回调（拖动中实时触发，UI 层同步状态） */
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
@@ -172,6 +174,7 @@ export class LightweightChartAdapter implements ChartApi {
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
   private referencePriceLine: IPriceLine | null = null
+  private markerPriceLine: IPriceLine | null = null
   private theme: ChartTheme = THEMES.dark
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
   private dragHandler: ((key: PositionLineKey, price: number) => void) | null = null
@@ -1165,6 +1168,29 @@ export class LightweightChartAdapter implements ChartApi {
       })
     } else {
       this.referencePriceLine.applyOptions({ price })
+    }
+  }
+
+  /** 限价标记线（accent 实线 + 'LMT' 轴标签），点击档位时显示，同档再点清除 */
+  setMarkerPrice(price: number | null) {
+    if (price == null || !Number.isFinite(price)) {
+      if (this.markerPriceLine) {
+        this.mainSeries.removePriceLine(this.markerPriceLine)
+        this.markerPriceLine = null
+      }
+      return
+    }
+    if (!this.markerPriceLine) {
+      this.markerPriceLine = this.mainSeries.createPriceLine({
+        price,
+        color: this.theme.accent,
+        lineStyle: LineStyle.Solid,
+        lineWidth: 2,
+        axisLabelVisible: true,
+        title: 'LMT ',
+      })
+    } else {
+      this.markerPriceLine.applyOptions({ price })
     }
   }
 
