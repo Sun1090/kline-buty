@@ -9,14 +9,14 @@ import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
-import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY } from '../indicators/extras'
+import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC, calcMOM } from '../indicators/extras'
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n, localeFor } from '../i18n'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
-export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'none'
+export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'none'
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
@@ -342,6 +342,30 @@ export function ChartView({
           { price: 75, color: DOWN },
           { price: 25, color: UP },
         ],
+      }
+    }
+    if (subIndicator === 'stoch') {
+      const { k, d } = calcSTOCH(replayData, indicatorParams.stochK, indicatorParams.stochSmooth, indicatorParams.stochD)
+      return {
+        kind: 'stoch' as const,
+        lines: [
+          { id: 'K', points: k },
+          { id: 'D', points: d },
+        ],
+      }
+    }
+    if (subIndicator === 'roc') {
+      return {
+        kind: 'roc' as const,
+        lines: [{ id: 'ROC', points: calcROC(replayData, indicatorParams.rocPeriod) }],
+        markers: [{ price: 0, color: '#2a2e39' }],
+      }
+    }
+    if (subIndicator === 'mom') {
+      return {
+        kind: 'mom' as const,
+        lines: [{ id: 'MOM', points: calcMOM(replayData, indicatorParams.momPeriod) }],
+        markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
     return null

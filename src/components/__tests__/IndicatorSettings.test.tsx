@@ -57,6 +57,23 @@ describe('IndicatorSettings', () => {
     expect(screen.getByText(label)).toBeDefined()
   })
 
+  it.each([
+    ['stoch', 'STOCH %K 周期'],
+    ['roc', 'ROC 周期'],
+    ['mom', 'MOM 周期'],
+  ] as const)('副图 %s 显示 %s 字段', (sub, label) => {
+    setup('ma', sub)
+    expect(screen.getByText(label)).toBeDefined()
+  })
+
+  it('STOCH 三个参数均可修改', () => {
+    const { onChange } = setup('ma', 'stoch')
+    const k = inputOf('STOCH %K 周期')
+    expect(k.value).toBe('14')
+    fireEvent.change(k, { target: { value: '9' } })
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ stochK: 9 }))
+  })
+
   it('MA 周期列表输入：逗号分隔解析 + 过滤非法值', () => {
     const { onChange } = setup('ma', 'volume')
     const input = inputOf('MA 周期(逗号分隔)')
