@@ -1154,6 +1154,86 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：多段线（多次点击 + 双击收尾）→ 选中 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 多段线：依次点击 3 个顶点，最后双击收尾提交
+    // （Playwright 合成点击的 pointerdown.detail 恒为 0，双击收尾用 detail=2 的合成 PointerEvent 模拟真实浏览器双击）
+    await page.getByRole('button', { name: '多段线' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.5)
+    await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.35)
+    await page.evaluate(
+      ({ x, y }) => {
+        const el = document.elementFromPoint(x, y) ?? document.body
+        const opts = (detail: number) => ({
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          clientX: x,
+          clientY: y,
+          button: 0,
+          buttons: 1,
+          pointerId: 99,
+          pointerType: 'mouse',
+          isPrimary: true,
+          detail,
+        })
+        el.dispatchEvent(new PointerEvent('pointerdown', opts(2)))
+        el.dispatchEvent(new PointerEvent('pointerup', opts(2)))
+      },
+      { x: box!.x + box!.width * 0.85, y: box!.y + box!.height * 0.45 },
+    )
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 切回鼠标 → 点折线任一段命中选中 → 删除
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(box!.x + box!.width * 0.32, box!.y + box!.height * 0.4)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：量度（拖 A→B → Δ价格/Δ%标签）→ 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 量度：拖出 A→B（与趋势线同两点手势）
+    await page.getByRole('button', { name: '量度' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.75, box!.y + box!.height * 0.55, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 落库：2 锚点（A→B 顺序）
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
+        return arr[0] ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('measure')
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[1].time).toBeGreaterThan(saved!.points[0].time)
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())

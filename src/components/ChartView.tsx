@@ -223,6 +223,11 @@ export function ChartView({
     apiRef.current?.setLocale(lang)
   }, [lang])
 
+  // 周期秒数 → 量度工具标签（根数）
+  useEffect(() => {
+    apiRef.current?.setPeriodSeconds(PERIOD_MS[period] / 1000)
+  }, [period])
+
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {
     if (mainIndicator === 'ma')

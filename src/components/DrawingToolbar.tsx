@@ -29,6 +29,8 @@ const TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'gann', labelKey: 'drawing.gann' },
   { value: 'pricelabel', labelKey: 'drawing.pricelabel' },
   { value: 'arrow', labelKey: 'drawing.arrow' },
+  { value: 'polyline', labelKey: 'drawing.polyline' },
+  { value: 'measure', labelKey: 'drawing.measure' },
 ]
 
 export function DrawingToolbar({

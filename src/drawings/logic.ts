@@ -17,6 +17,8 @@ export type DrawingTool =
   | 'circle'
   | 'triangle'
   | 'arc'
+  | 'polyline'
+  | 'measure'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -37,6 +39,8 @@ export interface Point {
 export type Project = (time: number, price: number) => Point | null
 
 const HIT_THRESHOLD_PX = 8
+/** 多段折线最大锚点数（集满自动提交，实际交互靠双击收尾，故设大值） */
+export const POLYLINE_MAX_POINTS = 64
 /** 文本标注命中框（半宽/半高，px） */
 const TEXT_HIT_HALF_W = 24
 const TEXT_HIT_HALF_H = 12
@@ -53,6 +57,7 @@ export function fibPrices(from: number, to: number): number[] {
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return 1
+  if (type === 'polyline') return POLYLINE_MAX_POINTS
   if (type === 'fibext' || type === 'triangle') return 3
   return 2
 }
@@ -156,12 +161,21 @@ export function channelLine(
   ]
 }
 
+/** 量度：A→B 价格差与涨跌幅（保留 A→B 方向符号） */
+export function measureInfo(a: { price: number }, b: { price: number }): { diff: number; pct: number } {
+  const diff = b.price - a.price
+  const pct = a.price === 0 ? 0 : (diff / a.price) * 100
+  return { diff, pct }
+}
+
 /** 归一化锚点：单点工具只保留一点；方向敏感工具（射线/扇形/箭头/斐波那契扩展）保持原始顺序；其余两点工具按时间排序 */
 export function normalizePoints(type: DrawingType, pts: { time: number; price: number }[]) {
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle') return [a, b]
+  if (type === 'polyline') return pts
+  if (type === 'measure') return [a, b]
   if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
@@ -398,6 +412,25 @@ export function hitTestDrawings(
         dist = Infinity
         for (const { x } of fibTimeXs(a.x, b.x)) dist = Math.min(dist, Math.abs(px - x))
       }
+    } else if (d.type === 'polyline') {
+      // 多段折线：命中任一相邻线段
+      dist = Infinity
+      const projected: Point[] = []
+      for (const p of d.points) {
+        const pt = project(p.time, p.price)
+        if (pt) projected.push(pt)
+      }
+      if (projected.length === 1) {
+        dist = Math.hypot(px - projected[0].x, py - projected[0].y)
+      } else {
+        for (let i = 0; i + 1 < projected.length; i++) {
+          dist = Math.min(dist, distToSegment({ x: px, y: py }, projected[i], projected[i + 1]))
+        }
+      }
+    } else if (d.type === 'measure') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
     } else {
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)

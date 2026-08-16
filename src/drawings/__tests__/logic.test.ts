@@ -9,6 +9,7 @@ import {
   fibTimeLines,
   fibTimeXs,
   hitTestDrawings,
+  measureInfo,
   moveAnchor,
   moveDrawing,
   nearestAnchor,
@@ -604,5 +605,88 @@ describe('fibtimed（M27）', () => {
     // 区间 [0,50]：竖线 0 / 11.8 / 19.1 / 25 / 30.9 / 39.3 / 50
     expect(hitTestDrawings([moved], 25, 150, project)).toBe('ft')
     expect(hitTestDrawings([moved], 60, 150, project)).toBeNull()
+  })
+})
+
+describe('polyline（多段折线）', () => {
+  it('requiredPoints 为大值（靠双击收尾，不按锚点数自动提交）', () => {
+    expect(requiredPoints('polyline')).toBeGreaterThan(10)
+  })
+  it('normalizePoints 保留全部锚点且顺序不变', () => {
+    const d = createDrawing('polyline', [
+      { time: 100, price: 100 },
+      { time: 200, price: 80 },
+      { time: 300, price: 120 },
+      { time: 400, price: 90 },
+    ])
+    expect(d.points).toHaveLength(4)
+    expect(d.points.map((p) => p.time)).toEqual([100, 200, 300, 400])
+    expect(d.points.map((p) => p.price)).toEqual([100, 80, 120, 90])
+  })
+  it('命中任一相邻线段（含中间段与顶点附近）', () => {
+    const d = createDrawing('polyline', [
+      { time: 0, price: 100 },
+      { time: 100, price: 100 },
+      { time: 200, price: 50 },
+    ], 'pl')
+    // 第一段 y = 300-100 = 200（水平）
+    expect(hitTestDrawings([d], 50, 200, project)).toBe('pl')
+    // 第二段（x 100→200, y 200→250）
+    expect(hitTestDrawings([d], 150, 225, project)).toBe('pl')
+    // 顶点附近
+    expect(hitTestDrawings([d], 101, 199, project)).toBe('pl')
+    // 远离折线（第一段上方 20px）
+    expect(hitTestDrawings([d], 50, 180, project)).toBeNull()
+  })
+  it('moveAnchor 拖动某个顶点仅移动该点', () => {
+    const d = createDrawing('polyline', [
+      { time: 0, price: 100 },
+      { time: 100, price: 100 },
+      { time: 200, price: 50 },
+    ], 'pl')
+    const moved = moveAnchor(d, 1, { time: 120, price: 90 })
+    expect(moved.points.map((p) => p.time)).toEqual([0, 120, 200])
+    expect(moved.points.map((p) => p.price)).toEqual([100, 90, 50])
+  })
+})
+
+describe('measure（量度）', () => {
+  it('requiredPoints 为 2（两点手势）', () => {
+    expect(requiredPoints('measure')).toBe(2)
+  })
+  it('normalizePoints 保留 A→B 顺序（涨跌幅带方向符号）', () => {
+    const d = createDrawing('measure', [{ time: 100, price: 90 }, { time: 50, price: 100 }])
+    expect(d.points.map((p) => p.time)).toEqual([100, 50])
+    expect(d.points.map((p) => p.price)).toEqual([90, 100])
+  })
+  it('measureInfo：上涨差值与百分比', () => {
+    const { diff, pct } = measureInfo({ price: 100 }, { price: 110 })
+    expect(diff).toBe(10)
+    expect(pct).toBeCloseTo(10)
+  })
+  it('measureInfo：下跌差值与百分比为负', () => {
+    const { diff, pct } = measureInfo({ price: 200 }, { price: 150 })
+    expect(diff).toBe(-50)
+    expect(pct).toBeCloseTo(-25)
+  })
+  it('measureInfo：零价格兜底不除零', () => {
+    const { diff, pct } = measureInfo({ price: 0 }, { price: 5 })
+    expect(diff).toBe(5)
+    expect(pct).toBe(0)
+  })
+  it('命中 A→B 线段（含反向拖出的顺序）', () => {
+    const d = createDrawing('measure', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'ms')
+    // 线段 (0,200)→(100,250)：x=50 处 y=225
+    expect(hitTestDrawings([d], 50, 225, project)).toBe('ms')
+    expect(hitTestDrawings([d], 50, 195, project)).toBeNull()
+    // 反向拖出（B→A）顺序不丢，线段仍可命中
+    const rev = createDrawing('measure', [{ time: 100, price: 50 }, { time: 0, price: 100 }], 'ms2')
+    expect(hitTestDrawings([rev], 50, 225, project)).toBe('ms2')
+  })
+  it('moveDrawing 整线平移保留两锚点', () => {
+    const d = createDrawing('measure', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'ms')
+    const moved = moveDrawing(d, 50, 10)
+    expect(moved.points.map((p) => p.time)).toEqual([50, 150])
+    expect(moved.points.map((p) => p.price)).toEqual([110, 60])
   })
 })
