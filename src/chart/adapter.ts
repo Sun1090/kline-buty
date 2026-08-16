@@ -538,6 +538,58 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'ellipse') {
+      // 椭圆：两对角锚点定义外接框，半透明填充 + 描边
+      const left = Math.min(a.x, b.x)
+      const right = Math.max(a.x, b.x)
+      const top = Math.min(a.y, b.y)
+      const bottom = Math.max(a.y, b.y)
+      const cx = (left + right) / 2
+      const cy = (top + bottom) / 2
+      const rx = Math.max(1, (right - left) / 2)
+      const ry = Math.max(1, (bottom - top) / 2)
+      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.beginPath()
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.beginPath()
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+      ctx.stroke()
+      for (const p of [
+        { x: left, y: top },
+        { x: right, y: bottom },
+      ]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'circle') {
+      // 圆：首锚点为圆心，次锚点定半径
+      const r = Math.hypot(b.x - a.x, b.y - a.y)
+      if (r > 0) {
+        ctx.fillStyle = this.theme.yellow + '1f'
+        ctx.beginPath()
+        ctx.arc(a.x, a.y, r, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        ctx.beginPath()
+        ctx.arc(a.x, a.y, r, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
     if (d.type === 'ray') {
       // 射线：锚点 → 经第二点方向无限延伸（画到画布外由 canvas 裁剪）
       const dx = b.x - a.x

@@ -17,6 +17,8 @@ const TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'channel', labelKey: 'drawing.channel' },
   { value: 'fib', labelKey: 'drawing.fib' },
   { value: 'rect', labelKey: 'drawing.rect' },
+  { value: 'ellipse', labelKey: 'drawing.ellipse' },
+  { value: 'circle', labelKey: 'drawing.circle' },
   { value: 'ray', labelKey: 'drawing.ray' },
   { value: 'text', labelKey: 'drawing.text' },
   { value: 'fibext', labelKey: 'drawing.fibext' },

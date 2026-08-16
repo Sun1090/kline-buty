@@ -245,8 +245,8 @@ describe('requiredPoints（所需锚点数）', () => {
     expect(requiredPoints('text')).toBe(1)
     expect(requiredPoints('pricelabel')).toBe(1)
   })
-  it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头', () => {
-    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow'] as const) {
+  it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头/椭圆/圆', () => {
+    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow', 'ellipse', 'circle'] as const) {
       expect(requiredPoints(t)).toBe(2)
     }
   })
@@ -352,5 +352,63 @@ describe('hitTestDrawings（M14 新工具）', () => {
     expect(hitTestDrawings([d], 52, 150, project)).toBe('fe')
     // 完全在摆幅框外、延伸线也远
     expect(hitTestDrawings([d], -30, 150, project)).toBeNull()
+  })
+})
+
+describe('normalizePoints（M20 椭圆/圆）', () => {
+  it('圆保持「圆心在前」的原始顺序（半径点在后，方向敏感）', () => {
+    const pts = normalizePoints('circle', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0]).toEqual({ time: 100, price: 50 })
+    expect(pts[1]).toEqual({ time: 0, price: 100 })
+  })
+  it('椭圆按时间排序（外接框与锚点顺序无关）', () => {
+    const pts = normalizePoints('ellipse', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(0)
+    expect(pts[1].time).toBe(100)
+  })
+})
+
+describe('hitTestDrawings（M20 椭圆/圆）', () => {
+  // 椭圆锚点 (0,150)/(100,50) → 屏幕外接框 (0,150)-(100,250)，中心 (50,200) 半径 50
+  const ellipse: Drawing = createDrawing('ellipse', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'el')
+  // 圆：圆心 (50,100)→(50,200)，半径点 (90,140)→(90,160)，r=√(40²+40²)≈56.6
+  const circle: Drawing = createDrawing('circle', [{ time: 50, price: 100 }, { time: 90, price: 140 }], 'ci')
+
+  it('椭圆内部/边缘命中（区域命中）', () => {
+    expect(hitTestDrawings([ellipse], 50, 200, project)).toBe('el') // 中心
+    expect(hitTestDrawings([ellipse], 50, 150, project)).toBe('el') // 上边缘
+    expect(hitTestDrawings([ellipse], 0, 200, project)).toBe('el') // 左边缘
+  })
+  it('椭圆外不命中', () => {
+    expect(hitTestDrawings([ellipse], 50, 130, project)).toBeNull() // 上方 20px 外
+    expect(hitTestDrawings([ellipse], 120, 200, project)).toBeNull() // 右侧 20px 外
+  })
+  it('圆内部/圆周命中', () => {
+    expect(hitTestDrawings([circle], 50, 200, project)).toBe('ci') // 圆心
+    expect(hitTestDrawings([circle], 50, 143.4, project)).toBe('ci') // 圆周上（容差内）
+  })
+  it('圆周外不命中', () => {
+    expect(hitTestDrawings([circle], 50, 130, project)).toBeNull() // 距圆心 70px > r+8
+  })
+})
+
+describe('moveAnchor（M20 椭圆/圆）', () => {
+  it('圆拖动半径点后仍保持两点（圆心在前）', () => {
+    const d = createDrawing('circle', [{ time: 50, price: 100 }, { time: 90, price: 140 }], 'c')
+    const moved = moveAnchor(d, 1, { time: 80, price: 160 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[0]).toEqual({ time: 50, price: 100 })
+    expect(moved.points[1]).toEqual({ time: 80, price: 160 })
+  })
+  it('圆拖动圆心后仍保持两点', () => {
+    const d = createDrawing('circle', [{ time: 50, price: 100 }, { time: 90, price: 140 }], 'c')
+    const moved = moveAnchor(d, 0, { time: 30, price: 120 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[0]).toEqual({ time: 30, price: 120 })
+  })
+  it('椭圆拖锚点后按时间重排', () => {
+    const d = createDrawing('ellipse', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'e')
+    const moved = moveAnchor(d, 1, { time: -50, price: 80 })
+    expect(moved.points[0].time).toBe(-50)
   })
 })
