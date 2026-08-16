@@ -288,6 +288,11 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: '深度' }).click()
     await expect(page.getByText(/盘口深度/)).toBeVisible({ timeout: 15_000 })
+    // 深度图新标注：价差 + 买卖累计总量（K/M 紧凑格式）
+    await expect(page.getByTestId('depth-chart')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/spread \d/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/^买 [\d.]+[KM]?$/)).toBeVisible()
+    await expect(page.getByText(/^卖 [\d.]+[KM]?$/)).toBeVisible()
     await page.getByRole('button', { name: '筹码' }).click()
     await expect(page.getByText(/筹码分布/)).toBeVisible()
     await page.getByRole('button', { name: '深度' }).click()
