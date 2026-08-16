@@ -111,6 +111,7 @@ export function App() {
   const [depthOpen, setDepthOpen] = useState(false)
   const [orderBookOpen, setOrderBookOpen] = useState(false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
+  const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -648,7 +649,7 @@ export function App() {
         />
       )}
       {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
-      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} />}
+      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))} />}
       {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
       {sentimentOpen && <SentimentPanel data={sentiment} />}
       <main style={{ flex: 1, minHeight: 0 }}>
@@ -664,6 +665,7 @@ export function App() {
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
             referencePrice={obHoverPrice}
+            markerPrice={obMarkPrice}
           />
         ) : layout === 'quad' ? (
           <ChartQuad
@@ -693,6 +695,7 @@ export function App() {
             onLoadMore={loadMore}
             positionLines={position}
             referencePrice={obHoverPrice}
+            markerPrice={obMarkPrice}
             onPositionDrag={(key, price) =>
               setPosition((prev) => (prev ? { ...prev, [key]: price } : prev))
             }

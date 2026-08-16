@@ -60,6 +60,8 @@ interface ChartViewProps {
   positionLines?: PositionLines | null
   /** 外部参考价格线（盘口档位 hover 联动），null 清除 */
   referencePrice?: number | null
+  /** 限价标记线（盘口档位点击联动），null 清除 */
+  markerPrice?: number | null
   /** 仓位线拖拽回调 */
   onPositionDrag?: (key: 'entry' | 'takeProfit' | 'stopLoss', price: number) => void
   /** 画线数据（已按当前品种过滤） */
@@ -102,6 +104,7 @@ export function ChartView({
   externalRange,
   positionLines,
   referencePrice,
+  markerPrice,
   onPositionDrag,
   drawings,
   drawingTool,
@@ -422,6 +425,10 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setReferencePrice(referencePrice ?? null)
   }, [referencePrice])
+
+  useEffect(() => {
+    apiRef.current?.setMarkerPrice(markerPrice ?? null)
+  }, [markerPrice])
 
   // 画线独立 effect：数据/工具变化时重绘
   useEffect(() => {

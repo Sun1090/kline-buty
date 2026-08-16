@@ -18,10 +18,12 @@ interface ChartPairProps {
   colorPreset?: ColorPresetId
   /** 外部参考价格线（仅主图 symbol） */
   referencePrice?: number | null
+  /** 限价标记线（仅主图 symbol） */
+  markerPrice?: number | null
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', referencePrice }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', referencePrice, markerPrice }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
@@ -51,7 +53,7 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicat
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, minHeight: 0, borderBottom: '1px solid #2a2e39' }}>
-        <ChartView {...base} symbol={symbol} candles={a.state.candles} hasMore={a.hasMore} onLoadMore={a.loadMore} onViewRangeChange={fromA} externalRange={rangeA} referencePrice={referencePrice} />
+        <ChartView {...base} symbol={symbol} candles={a.state.candles} hasMore={a.hasMore} onLoadMore={a.loadMore} onViewRangeChange={fromA} externalRange={rangeA} referencePrice={referencePrice} markerPrice={markerPrice} />
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
         <ChartView {...base} symbol={secondSymbol} candles={b.state.candles} hasMore={b.hasMore} onLoadMore={b.loadMore} onViewRangeChange={fromB} externalRange={rangeB} />
