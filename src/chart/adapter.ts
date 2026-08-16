@@ -7,6 +7,7 @@ import {
   ColorType,
   CrosshairMode,
   LineStyle,
+  PriceScaleMode,
   type IChartApi,
   type ISeriesApi,
   type IPriceLine,
@@ -143,6 +144,8 @@ export interface ChartApi {
   setLocale(lang: Lang): void
   /** 设置 K 线周期秒数（量度工具标签计算根数用） */
   setPeriodSeconds(sec: number): void
+  /** 价格坐标轴模式：线性 / 对数（对标 TradingView/币安） */
+  setPriceScaleMode(mode: 'linear' | 'log'): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -365,6 +368,12 @@ export class LightweightChartAdapter implements ChartApi {
 
   setPeriodSeconds(sec: number) {
     this.periodSeconds = sec
+  }
+
+  setPriceScaleMode(mode: 'linear' | 'log') {
+    this.chart
+      .priceScale('right')
+      .applyOptions({ mode: mode === 'log' ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal })
   }
 
   takeScreenshot(rect?: RegionRect): string | null {

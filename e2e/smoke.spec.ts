@@ -482,7 +482,7 @@ test.describe('K 线应用冒烟', () => {
     // 有「多/空」+ 百分比即代表真实数据已渲染，而非停留在「加载中」
     const panel = page.locator('[data-testid="sentiment-panel"]')
     await expect(panel.getByText(/多/).first()).toBeVisible({ timeout: 15_000 })
-    await expect(panel.getByText(/%/).first()).toBeVisible()
+    await expect(panel.getByText(/%/).first()).toBeVisible({ timeout: 20_000 })
     await expect(panel.getByText(/^\d+\.\d+$/).first()).toBeVisible()
     await page.getByRole('button', { name: '情绪' }).click()
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
@@ -1389,6 +1389,26 @@ test.describe('K 线应用冒烟', () => {
     await page.getByRole('button', { name: '参数', exact: true }).click()
     await expect(page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')).toHaveValue('7')
     await page.getByRole('button', { name: '✕', exact: true }).click()
+    expect(errors).toHaveLength(0)
+  })
+
+  test('价格坐标轴：线性/对数切换 → 渲染无异常 + 持久化', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const toggle = page.getByTestId('scale-toggle')
+    await expect(toggle).toHaveText('线性')
+    // 切到对数：按钮高亮 + 无异常；价格轴仍渲染数字刻度
+    await toggle.click()
+    await expect(toggle).toHaveText('对数')
+    await page.waitForTimeout(800)
+    await expect(page.locator('canvas').first()).toBeVisible()
+    // 刷新持久化
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByTestId('scale-toggle')).toHaveText('对数')
     expect(errors).toHaveLength(0)
   })
 

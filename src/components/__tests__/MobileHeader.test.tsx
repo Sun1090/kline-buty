@@ -33,6 +33,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onCycleLang: vi.fn(),
     onShare: vi.fn(),
     onExport: vi.fn(),
+    onToggleScale: vi.fn(),
   }
   const props: Parameters<typeof MobileHeader>[0] = {
     symbol: 'BTCUSDT',
@@ -40,6 +41,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     statusColor: 'var(--up)',
     period: '1m' as Period,
     chartType: 'candlestick' as ChartType,
+    priceScaleMode: 'linear',
     mainIndicator: 'ma' as MainIndicatorKind,
     subIndicator: 'volume' as SubIndicatorKind,
     drawingTool: 'none' as DrawingTool,
