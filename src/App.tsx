@@ -81,7 +81,7 @@ export function App() {
   // Service Worker 注册（生产环境）
   useEffect(() => {
     if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
-    void navigator.serviceWorker.register('/sw.js')
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
   }, [])
 
   // 多图模式不支持回放（时间轴同步与游标冲突）
