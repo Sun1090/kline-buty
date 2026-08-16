@@ -19,6 +19,10 @@ const TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'rect', labelKey: 'drawing.rect' },
   { value: 'ray', labelKey: 'drawing.ray' },
   { value: 'text', labelKey: 'drawing.text' },
+  { value: 'fibext', labelKey: 'drawing.fibext' },
+  { value: 'fibfan', labelKey: 'drawing.fibfan' },
+  { value: 'pricelabel', labelKey: 'drawing.pricelabel' },
+  { value: 'arrow', labelKey: 'drawing.arrow' },
 ]
 
 export function DrawingToolbar({

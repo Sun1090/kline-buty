@@ -1,8 +1,22 @@
-export type DrawingTool = 'none' | 'horizontal' | 'trend' | 'fib' | 'channel' | 'text' | 'rect' | 'ray'
+export type DrawingTool =
+  | 'none'
+  | 'horizontal'
+  | 'trend'
+  | 'fib'
+  | 'channel'
+  | 'text'
+  | 'rect'
+  | 'ray'
+  | 'fibext'
+  | 'fibfan'
+  | 'pricelabel'
+  | 'arrow'
+
+export type DrawingType = Exclude<DrawingTool, 'none'>
 
 export interface Drawing {
   id: string
-  type: 'horizontal' | 'trend' | 'fib' | 'channel' | 'text' | 'rect' | 'ray'
+  type: DrawingType
   points: { time: number; price: number }[]
   /** 文本标注内容（仅 type === 'text'） */
   text?: string
@@ -30,6 +44,49 @@ export function fibPrices(from: number, to: number): number[] {
   return FIB_LEVELS.map((l) => hi - (hi - lo) * l)
 }
 
+/** 各画线工具所需锚点数（用于多段点击交互） */
+export function requiredPoints(type: DrawingTool | DrawingType): number {
+  if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return 1
+  if (type === 'fibext') return 3
+  return 2
+}
+
+/** 斐波那契扩展分位（<1 为回撤区，≥1 为向 B 外侧延伸区） */
+export const FIB_EXT_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.272, 1.618, 2.618]
+
+export interface FibLevel {
+  level: number
+  price: number
+}
+
+/** 斐波那契扩展：A→B 为主摆幅；回撤区在 A/B 之间，延伸区在 B 之外 */
+export function fibExtPrices(a: { price: number }, b: { price: number }): FibLevel[] {
+  const swing = b.price - a.price
+  return FIB_EXT_LEVELS.map((level) => ({
+    level,
+    price: level < 1 ? a.price + swing * level : b.price + swing * (level - 1),
+  }))
+}
+
+/** 斐波那契扇形分位（射线从 A 原点发出，方向点取 A→B 竖直距离的分位） */
+export const FIB_FAN_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786, 1]
+
+export interface FibFanRay {
+  level: number
+  dir: { time: number; price: number }
+}
+
+export function fibFanRays(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+): FibFanRay[] {
+  const span = b.price - a.price
+  return FIB_FAN_LEVELS.map((level) => ({
+    level,
+    dir: { time: b.time, price: a.price + span * level },
+  }))
+}
+
 /** 平行通道：基线 a→b，平行线垂直偏移 delta = b.price - a.price */
 export function channelLine(
   a: { time: number; price: number },
@@ -42,12 +99,13 @@ export function channelLine(
   ]
 }
 
-/** 归一化锚点：水平线/文本只保留一点；射线保持「锚点在前」的原始顺序；其余两点工具按时间排序 */
-export function normalizePoints(type: Drawing['type'], pts: { time: number; price: number }[]) {
-  if (type === 'horizontal' || type === 'text') return [pts[0]]
+/** 归一化锚点：单点工具只保留一点；方向敏感工具（射线/扇形/箭头/斐波那契扩展）保持原始顺序；其余两点工具按时间排序 */
+export function normalizePoints(type: DrawingType, pts: { time: number; price: number }[]) {
+  if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'arrow') return [a, b]
+  if (type === 'fibext') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -160,6 +218,47 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)
       if (a && b) dist = distToRay({ x: px, y: py }, a, b)
+    } else if (d.type === 'pricelabel') {
+      const a = project(d.points[0].time, d.points[0].price)
+      if (a && Math.abs(px - a.x) <= TEXT_HIT_HALF_W && Math.abs(py - a.y) <= TEXT_HIT_HALF_H) {
+        dist = Math.hypot(px - a.x, py - a.y)
+      }
+    } else if (d.type === 'arrow') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
+    } else if (d.type === 'fibfan') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        dist = Infinity
+        for (const { dir } of fibFanRays(d.points[0], d.points[1])) {
+          const dirPt = project(dir.time, dir.price)
+          if (dirPt) dist = Math.min(dist, distToRay({ x: px, y: py }, a, dirPt))
+        }
+      }
+    } else if (d.type === 'fibext') {
+      const [pa, pb, pc] = d.points
+      const a = project(pa.time, pa.price)
+      const b = project(pb.time, pb.price)
+      if (a && b) {
+        const levels = fibExtPrices(pa, pb)
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        dist = Infinity
+        for (const { level, price } of levels) {
+          const isExt = level >= 1
+          const pt = project(isExt ? pb.time : pa.time, price)
+          if (!pt) continue
+          const inX = isExt ? px >= right - HIT_THRESHOLD_PX : px >= left - HIT_THRESHOLD_PX && px <= right + HIT_THRESHOLD_PX
+          if (inX) dist = Math.min(dist, Math.abs(py - pt.y))
+        }
+        // C 回撤点竖线标记
+        if (pc) {
+          const c = project(pc.time, pc.price)
+          if (c && Math.abs(px - c.x) <= HIT_THRESHOLD_PX) dist = Math.min(dist, Math.abs(py - c.y))
+        }
+      }
     } else {
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)

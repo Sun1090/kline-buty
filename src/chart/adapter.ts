@@ -18,12 +18,15 @@ import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
 import {
   channelLine,
+  fibExtPrices,
+  fibFanRays,
   fibPrices,
   hitTestDrawings,
   moveAnchor,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
+  requiredPoints,
   type Drawing,
   type DrawingTool,
 } from '../drawings/logic'
@@ -160,7 +163,10 @@ export class LightweightChartAdapter implements ChartApi {
   private drawingTool: DrawingTool = 'none'
   private drawingCallbacks: DrawingCallbacks | null = null
   private selectedDrawingId: string | null = null
-  private drawingStart: { time: number; price: number } | null = null
+  /** 画线交互：当前手势按下点（释放时作为锚点提交） */
+  private drawingDown: { time: number; price: number } | null = null
+  /** 多锚点工具（斐波那契扩展）已确认的锚点 */
+  private drawingPoints: { time: number; price: number }[] = []
   private drawingPreview: { time: number; price: number } | null = null
   private dragEdit:
     | {
@@ -320,10 +326,17 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.dragPreview) this.drawOne(ctx, this.dragPreview, true)
 
     // 画线预览
-    if (this.drawingStart && this.drawingPreview) {
+    if (this.drawingDown && this.drawingPreview) {
       const tool = this.drawingTool as Drawing['type']
-      const pts = normalizePoints(tool, [this.drawingStart, this.drawingPreview])
-      this.drawOne(ctx, { id: '__preview', type: this.drawingTool as Drawing['type'], points: pts }, true)
+      const need = requiredPoints(tool)
+      let pts: { time: number; price: number }[]
+      if (need === 2 && this.drawingPoints.length === 0) {
+        pts = normalizePoints(tool, [this.drawingDown, this.drawingPreview])
+      } else {
+        // 多锚点工具：已确认锚点 + 当前预览
+        pts = [...this.drawingPoints, this.drawingPreview].slice(0, need)
+      }
+      this.drawOne(ctx, { id: '__preview', type: tool, points: pts }, true)
     }
   }
 
@@ -379,6 +392,71 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.textBaseline = 'middle'
       ctx.fillText(label, bx + 6, by + h / 2 + 0.5)
       if (selected) this.drawAnchor(ctx, a.x, a.y)
+      return
+    }
+
+    if (d.type === 'pricelabel') {
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      ctx.beginPath()
+      ctx.arc(a.x, a.y, 3, 0, Math.PI * 2)
+      ctx.fill()
+      this.drawLabel(ctx, a.x, a.y, d.points[0].price.toFixed(2), 'left')
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
+      return
+    }
+
+    if (d.type === 'fibext') {
+      // 斐波那契扩展：A→B 主摆幅；回撤区在 A/B 之间，延伸区从 B 向右缘
+      const [pa, pb, pc] = d.points
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = pb ? this.project(pb.time, pb.price) : null
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      if (b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        for (const { level, price } of fibExtPrices(pa, pb)) {
+          const y = this.mainSeries.priceToCoordinate(price)
+          if (y === null) continue
+          const isExt = level >= 1
+          const x0 = isExt ? right : left
+          const x1 = isExt ? w : right
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+          ctx.beginPath()
+          ctx.moveTo(x0, y)
+          ctx.lineTo(x1, y)
+          ctx.stroke()
+          this.drawLabel(ctx, x0, y, `${level.toFixed(3)} ${price.toFixed(2)}`, isExt ? 'right' : 'left')
+        }
+        // 摆幅框
+        ctx.strokeStyle = this.theme.yellow + '66'
+        ctx.strokeRect(left, Math.min(a.y, b.y), right - left, Math.abs(a.y - b.y))
+      }
+      // C 回撤点竖虚线标记
+      if (pc) {
+        const c = this.project(pc.time, pc.price)
+        if (c) {
+          ctx.setLineDash([3, 3])
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+          ctx.beginPath()
+          ctx.moveTo(c.x, Math.min(a.y, c.y))
+          ctx.lineTo(c.x, Math.max(a.y, c.y))
+          ctx.stroke()
+          ctx.setLineDash([])
+          ctx.beginPath()
+          ctx.arc(c.x, c.y, 3, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        if (b) this.drawAnchor(ctx, b.x, b.y)
+        if (pc) {
+          const c = this.project(pc.time, pc.price)
+          if (c) this.drawAnchor(ctx, c.x, c.y)
+        }
+      }
       return
     }
 
@@ -468,6 +546,61 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'arrow') {
+      // 箭头：A→B 线段 + B 端实心箭头
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      const angle = Math.atan2(b.y - a.y, b.x - a.x)
+      const size = 9
+      ctx.beginPath()
+      ctx.moveTo(b.x, b.y)
+      ctx.lineTo(b.x - size * Math.cos(angle - Math.PI / 6), b.y - size * Math.sin(angle - Math.PI / 6))
+      ctx.lineTo(b.x - size * Math.cos(angle + Math.PI / 6), b.y - size * Math.sin(angle + Math.PI / 6))
+      ctx.closePath()
+      ctx.fill()
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'fibfan') {
+      // 斐波那契扇形：A 为原点，向 A→B 竖直距离各分位方向发散射线
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      const s2 = Math.max(w, h) * 2
+      for (const { level, dir } of fibFanRays(d.points[0], d.points[1])) {
+        const dirPt = this.project(dir.time, dir.price)
+        if (!dirPt) continue
+        const dx = dirPt.x - a.x
+        const dy = dirPt.y - a.y
+        const len = Math.hypot(dx, dy)
+        if (len === 0) continue
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'bb'
+        ctx.beginPath()
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(a.x + (dx / len) * s2, a.y + (dy / len) * s2)
+        ctx.stroke()
+        this.drawLabel(ctx, dirPt.x, dirPt.y, level.toFixed(3), 'left')
+      }
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
     if (d.type === 'fib') {
       // 分位线（从高位向下）
       const prices = fibPrices(d.points[0].price, d.points[1].price)
@@ -513,14 +646,13 @@ export class LightweightChartAdapter implements ChartApi {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // 画线模式：起点 = 当前 time/price，capture 指针
+    // 画线模式：按下点 = 当前 time/price（释放时作为锚点提交），capture 指针
     if (this.drawingTool !== 'none') {
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
-
       if (time !== null && price !== null) {
-        this.drawingStart = { time: Number(time), price: Number(price) }
-        this.drawingPreview = this.drawingStart
+        this.drawingDown = { time: Number(time), price: Number(price) }
+        this.drawingPreview = this.drawingDown
         this.container.setPointerCapture?.(e.pointerId)
         this.setPanEnabled(false)
         this.draw()
@@ -585,8 +717,8 @@ export class LightweightChartAdapter implements ChartApi {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // 画线预览
-    if (this.drawingStart) {
+    // 画线预览（仅当前手势内跟随）
+    if (this.drawingDown) {
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
@@ -670,39 +802,60 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
-    // 画线完成 → 提交
-    if (this.drawingStart && this.drawingPreview) {
-      // 水平线支持单击放置（未拖动也提交）；趋势线/斐波那契需两点
-      const pts =
-        this.drawingTool === 'horizontal' || this.drawingTool === 'text'
-          ? [this.drawingStart]
-          : normalizePoints(this.drawingTool as Drawing['type'], [this.drawingStart, this.drawingPreview])
-      this.drawingCallbacks?.onCommit({
-        type: this.drawingTool as Drawing['type'],
-        points: pts,
-      })
-      this.drawingStart = null
-      this.drawingPreview = null
-      this.setPanEnabled(true)
-      this.draw()
+    // 画线完成 → 提交（按工具所需锚点数分批收集）
+    if (this.drawingDown) {
+      const tool = this.drawingTool as Drawing['type']
+      const need = requiredPoints(tool)
+      const final = this.drawingPreview ?? this.drawingDown
+      if (need === 1) {
+        // 单点工具：单击/拖放即提交
+        this.drawingCallbacks?.onCommit({ type: tool, points: [final] })
+        this.resetDrawing()
+      } else if (need === 2 && this.drawingPoints.length === 0) {
+        // 两点工具：单次手势「按下=起点，释放=终点」
+        this.drawingCallbacks?.onCommit({ type: tool, points: normalizePoints(tool, [this.drawingDown, final]) })
+        this.resetDrawing()
+      } else {
+        // 多锚点工具（斐波那契扩展）：每次手势的按下点作为一个锚点，集满提交
+        this.drawingPoints.push(this.drawingDown)
+        if (this.drawingPoints.length >= need) {
+          this.drawingCallbacks?.onCommit({ type: tool, points: this.drawingPoints })
+          this.resetDrawing()
+        } else {
+          this.drawingPreview = this.drawingPoints[this.drawingPoints.length - 1]
+          this.drawingDown = null
+          this.setPanEnabled(true)
+          this.draw()
+        }
+      }
       return
     }
-    this.drawingStart = null
+    this.drawingDown = null
     this.drawingPreview = null
+    this.drawingPoints = []
     this.dragKey = null
     this.hoverKey = null
     this.setPanEnabled(true)
     this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
   }
 
+  private resetDrawing() {
+    this.drawingDown = null
+    this.drawingPreview = null
+    this.drawingPoints = []
+    this.setPanEnabled(true)
+    this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
+    this.draw()
+  }
+
   private onPointerLeave = () => {
     this.dragKey = null
     this.hoverKey = null
-    if (!this.drawingStart && !this.dragEdit) {
+    if (!this.drawingDown && !this.dragEdit) {
       this.drawingPreview = null
       this.dragPreview = null
     }
-    if (!this.drawingStart && !this.dragEdit && !this.dragKey) this.setPanEnabled(true)
+    if (!this.drawingDown && !this.dragEdit && !this.dragKey) this.setPanEnabled(true)
     this.container.style.cursor = ''
   }
 

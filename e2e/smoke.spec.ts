@@ -369,6 +369,52 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+
+  test('画线：斐波那契扩展（3 锚点）+ 扇形 + 价格标签 + 箭头 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 斐波那契扩展：三点点击（A/B/C）集满提交
+    await page.getByRole('button', { name: '斐波那契扩展' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.25)
+    await page.mouse.click(box!.x + box!.width * 0.6, box!.y + box!.height * 0.45)
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.35)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 斐波那契扇形：拖出原点 + 方向点
+    await page.getByRole('button', { name: '斐波那契扇形' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.5, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 价格标签：单击放置
+    await page.getByRole('button', { name: '价格标签' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 箭头：拖出 A→B
+    await page.getByRole('button', { name: '箭头' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('画线：趋势线 → 鼠标拖拽整线移动 → 锚点增量一致 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
