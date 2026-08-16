@@ -1,8 +1,8 @@
-export type DrawingTool = 'none' | 'horizontal' | 'trend' | 'fib' | 'channel' | 'text'
+export type DrawingTool = 'none' | 'horizontal' | 'trend' | 'fib' | 'channel' | 'text' | 'rect' | 'ray'
 
 export interface Drawing {
   id: string
-  type: 'horizontal' | 'trend' | 'fib' | 'channel' | 'text'
+  type: 'horizontal' | 'trend' | 'fib' | 'channel' | 'text' | 'rect' | 'ray'
   points: { time: number; price: number }[]
   /** 文本标注内容（仅 type === 'text'） */
   text?: string
@@ -42,11 +42,12 @@ export function channelLine(
   ]
 }
 
-/** 归一化锚点：水平线/文本只保留一点，两点工具按时间排序 */
+/** 归一化锚点：水平线/文本只保留一点；射线保持「锚点在前」的原始顺序；其余两点工具按时间排序 */
 export function normalizePoints(type: Drawing['type'], pts: { time: number; price: number }[]) {
   if (type === 'horizontal' || type === 'text') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
+  if (type === 'ray') return [a, b]
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -66,6 +67,17 @@ function distToSegment(p: Point, a: Point, b: Point): number {
   let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
   t = Math.max(0, Math.min(1, t))
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+}
+
+/** 点到射线距离：p 在锚点 a→方向 b 前方取垂距，在锚点后方取到锚点距离 */
+function distToRay(p: Point, a: Point, b: Point): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lenSq = dx * dx + dy * dy
+  if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y)
+  const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
+  if (t < 0) return Math.hypot(p.x - a.x, p.y - a.y)
+  return Math.abs((p.x - a.x) * dy - (p.y - a.y) * dx) / Math.sqrt(lenSq)
 }
 
 /** 命中检测：返回命中的绘图 id（最近的优先），未命中 null */
@@ -96,6 +108,31 @@ export function hitTestDrawings(
         const parallel = c && e ? distToSegment({ x: px, y: py }, c, e) : Infinity
         dist = Math.min(base, parallel)
       }
+    } else if (d.type === 'rect') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        const top = Math.min(a.y, b.y)
+        const bottom = Math.max(a.y, b.y)
+        if (px >= left && px <= right && py >= top && py <= bottom) {
+          // 矩形内部任意位置都可选中（区域命中）
+          dist = 0
+        } else {
+          const edges: [Point, Point][] = [
+            [{ x: left, y: top }, { x: right, y: top }],
+            [{ x: left, y: bottom }, { x: right, y: bottom }],
+            [{ x: left, y: top }, { x: left, y: bottom }],
+            [{ x: right, y: top }, { x: right, y: bottom }],
+          ]
+          dist = Math.min(...edges.map(([p, q]) => distToSegment({ x: px, y: py }, p, q)))
+        }
+      }
+    } else if (d.type === 'ray') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = distToRay({ x: px, y: py }, a, b)
     } else {
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)

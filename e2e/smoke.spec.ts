@@ -166,6 +166,36 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText(/盘口深度/)).toHaveCount(0)
   })
 
+
+  test('画线：矩形 + 射线 → 绘制 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 矩形：拖出两对角锚点
+    await page.getByRole('button', { name: '矩形' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.45, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 射线：锚点 + 方向点
+    await page.getByRole('button', { name: '射线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('i18n：中/英文切换 → 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())

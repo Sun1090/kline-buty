@@ -53,7 +53,7 @@ npm run build                # 生产构建
 - [x] P2-1 订单叠加：模拟仓位（开多/开空、开仓/止盈/止损线、浮动盈亏、触发判断、价格线拖拽）
 - [x] P2-5 价格提醒：条件触发（≥/≤）、浏览器通知、一次性触发可重置、localStorage 持久化、SW 后台提醒（尽力而为）+ 离线缓存
 - [x] P2-6 移动端基础：PWA manifest + 图标 + 响应式布局（WebView 套壳可直接复用）
-- [x] P1-2 画线工具：水平线/趋势线/斐波那契回撤（overlay 图层、创建/选中/删除、持久化）
+- [x] P1-2 画线工具：水平线/趋势线/平行通道/斐波那契/矩形/射线/文本标注（overlay 图层、创建/选中/删除/改字、持久化）
 - [x] P1-3 盘口深度图：WS depth20@100ms 实时聚合曲线 + 最优价标记
 - [x] P1-6 周期补全：1s/3m/30m/2h/12h/3d/1M（共 14 档）
 - [x] P1-7 图表截图：主图+画线图层合成 PNG 下载
@@ -64,7 +64,7 @@ npm run build                # 生产构建
 - [x] 筹码分布（VPVR）：成交量按价格分桶、买卖量分色、密集区标记
 - [x] 四图联动：单图/双图/四图布局切换，时间轴全联动 + 防回环
 - [x] i18n 多语言：中/英文界面一键切换（字典驱动 + localStorage 持久化 + `<html lang>` 同步），画线/仓位线标签随语言联动
-- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 7 场景
+- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 10 场景
 
 ## 技术栈与结构
 
