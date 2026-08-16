@@ -32,10 +32,13 @@ import {
   moveDrawing,
   nearestAnchor,
   normalizePoints,
+  regressionSegments,
   requiredPoints,
+  speedLines,
   type Drawing,
   type DrawingTool,
   type Point,
+  type SegmentLine,
 } from '../drawings/logic'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
@@ -495,6 +498,15 @@ export class LightweightChartAdapter implements ChartApi {
     ctx.fill()
   }
 
+  /** 回归通道线段：取 [A,B] 时间窗内收盘价做线性回归 → 中线 + ±σ 上下轨 */
+  private regchanSegments(d: Drawing): SegmentLine[] {
+    const [a, b] = d.points
+    const closes = this.lastCandles
+      .filter((c) => c.time >= Math.min(a.time, b.time) && c.time <= Math.max(a.time, b.time))
+      .map((c) => ({ time: c.time, price: c.close }))
+    return regressionSegments(a, b, closes)
+  }
+
   /** 拖拽画线/仓位线时关闭图表平移，避免线条跟随数据而不是光标 */
   private setPanEnabled(enabled: boolean) {
     this.chart.applyOptions({
@@ -749,6 +761,70 @@ export class LightweightChartAdapter implements ChartApi {
       const sign = info.diff >= 0 ? '+' : ''
       const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${bars}根`
       this.drawLabel(ctx, (a.x + b.x) / 2, (a.y + b.y) / 2 - 8, label, 'left')
+      return
+    }
+
+    if (d.type === 'speedlines') {
+      // 速度线：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线
+      const segs = speedLines(d.points[0], d.points[1])
+      for (let i = 0; i < segs.length; i++) {
+        const seg = segs[i]
+        const p = this.project(seg.from.time, seg.from.price)
+        const q = this.project(seg.to.time, seg.to.price)
+        if (!p || !q) continue
+        if (i === 0) {
+          // 主对角线：实线默认色
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+          ctx.lineWidth = selected ? 1.6 : 1
+          ctx.setLineDash([])
+        } else {
+          // B 竖直线 + 分位线：虚线浅色
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+          ctx.lineWidth = selected ? 1.4 : 1
+          ctx.setLineDash(i === 1 ? [3, 3] : [5, 4])
+        }
+        ctx.beginPath()
+        ctx.moveTo(p.x, p.y)
+        ctx.lineTo(q.x, q.y)
+        ctx.stroke()
+      }
+      ctx.setLineDash([])
+      for (const pt of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'regchan') {
+      // 回归通道：中线实线 + ±σ 上下轨虚线（基于窗口内收盘价最小二乘回归）
+      const segs = this.regchanSegments(d)
+      for (let i = 0; i < segs.length; i++) {
+        const seg = segs[i]
+        const p = this.project(seg.from.time, seg.from.price)
+        const q = this.project(seg.to.time, seg.to.price)
+        if (!p || !q) continue
+        if (i === 0) {
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+          ctx.lineWidth = selected ? 1.6 : 1
+          ctx.setLineDash([])
+        } else {
+          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '99'
+          ctx.lineWidth = selected ? 1.4 : 1
+          ctx.setLineDash([5, 4])
+        }
+        ctx.beginPath()
+        ctx.moveTo(p.x, p.y)
+        ctx.lineTo(q.x, q.y)
+        ctx.stroke()
+      }
+      ctx.setLineDash([])
+      for (const pt of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
       return
     }
 
@@ -1065,7 +1141,13 @@ export class LightweightChartAdapter implements ChartApi {
         }
       }
 
-      const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
+      const hit = hitTestDrawings(
+        this.drawings,
+        x,
+        y,
+        (t, p) => this.project(t, p),
+        (d) => (d.type === 'regchan' ? this.regchanSegments(d) : null),
+      )
       if (hit && hit === this.selectedDrawingId) {
         const hitDrawing = this.drawings.find((d) => d.id === hit)
         if (!hitDrawing) return
@@ -1140,7 +1222,13 @@ export class LightweightChartAdapter implements ChartApi {
           this.container.style.cursor = 'grab'
           return
         }
-        const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
+        const hit = hitTestDrawings(
+          this.drawings,
+          x,
+          y,
+          (t, p) => this.project(t, p),
+          (d) => (d.type === 'regchan' ? this.regchanSegments(d) : null),
+        )
         this.container.style.cursor = hit ? 'grab' : ''
         return
       }
