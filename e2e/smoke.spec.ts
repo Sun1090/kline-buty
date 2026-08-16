@@ -864,4 +864,54 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(box).not.toBeNull()
     expect(box!.width).toBeGreaterThan(300)
   })
+
+  test('双指捏合纵向缩放：价格轴区间变化（固定价画线位移）+ 无异常', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 画一条水平线（价格轴上部，固定价格）
+    await page.getByRole('button', { name: '水平线' }).tap()
+    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.25)
+    const before = await findDrawnLineCenter(page)
+    expect(before).not.toBeNull()
+
+    // CDP 双指捏合（张开 → 放大：价格区间收窄 → 固定价画线位移）
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const cx = box!.x + box!.width * 0.5
+    const cy = box!.y + box!.height * 0.5
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: cx - 40, y: cy },
+        { x: cx + 40, y: cy },
+      ],
+    })
+    for (let i = 1; i <= 6; i++) {
+      const spread = 40 + i * 20
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          { x: cx - spread, y: cy },
+          { x: cx + spread, y: cy },
+        ],
+      })
+      await page.waitForTimeout(60)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(800)
+
+    const after = await findDrawnLineCenter(page)
+    expect(after).not.toBeNull()
+    // 捏合后价格轴缩放，固定价格的线发生明显位移（>10px）
+    expect(Math.abs(after!.y - before!.y)).toBeGreaterThan(10)
+    expect(errors).toHaveLength(0)
+  })
 })
