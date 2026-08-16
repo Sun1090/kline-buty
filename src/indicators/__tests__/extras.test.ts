@@ -1,0 +1,89 @@
+import { describe, expect, it } from 'vitest'
+import { calcWR, calcOBV, calcATR, calcCCI, calcPSY, calcDMI, calcTR } from '../extras'
+import type { Candle } from '../../chart/types'
+
+function c(time: number, o: number, h: number, l: number, cl: number, v: number): Candle {
+  return { time, open: o, high: h, low: l, close: cl, volume: v, isClosed: true }
+}
+
+const candles: Candle[] = [
+  c(1, 10, 12, 9, 11, 100),
+  c(2, 11, 13, 10, 12, 150),
+  c(3, 12, 14, 11, 13, 200),
+  c(4, 13, 15, 12, 14, 250),
+  c(5, 14, 16, 13, 15, 300),
+]
+
+describe('calcWR', () => {
+  it('收盘贴近最高 → WR 趋近 0', () => {
+    const wr = calcWR(candles, 3)
+    for (const p of wr) expect(p.value).toBeLessThan(25)
+  })
+  it('窗口长度 = n-1 起点', () => {
+    expect(calcWR(candles, 3)).toHaveLength(candles.length - 2)
+  })
+  it('close 触及最高 → WR = 0', () => {
+    const peak = [c(1, 10, 12, 9, 12, 1), c(2, 12, 14, 11, 14, 1), c(3, 14, 16, 13, 16, 1)]
+    for (const p of calcWR(peak, 3)) expect(p.value).toBe(0)
+  })
+})
+
+describe('calcOBV', () => {
+  it('全程上涨 → OBV 累加', () => {
+    const obv = calcOBV(candles)
+    expect(obv[0].value).toBe(0)
+    expect(obv[4].value).toBeCloseTo(100 + 150 + 200 + 250 + 300 - 100) // 第一根不计
+  })
+  it('下跌累计为负', () => {
+    const down = [c(1, 10, 11, 9, 10, 100), c(2, 10, 10, 8, 9, 50)]
+    const obv = calcOBV(down)
+    expect(obv[1].value).toBe(-50)
+  })
+})
+
+describe('calcATR', () => {
+  it('单根波动：ATR = TR', () => {
+    const atr = calcATR(candles, 3)
+    // 前 3 根 TR 平均：(3 + 3 + 3)/3 = 3
+    expect(atr[0].value).toBe(3)
+  })
+  it('窗口起点正确', () => {
+    expect(calcATR(candles, 3)).toHaveLength(candles.length - 2)
+  })
+})
+
+describe('calcCCI', () => {
+  it('等幅波动 CCI 收敛', () => {
+    const cci = calcCCI(candles, 3)
+    expect(cci).toHaveLength(candles.length - 2)
+    expect(Number.isFinite(cci[cci.length - 1].value)).toBe(true)
+  })
+})
+
+describe('calcPSY', () => {
+  it('全程上涨 → PSY = 100', () => {
+    const psy = calcPSY(candles, 3)
+    for (const p of psy) expect(p.value).toBe(100)
+  })
+})
+
+describe('calcDMI', () => {
+  it('单边上涨：+DI 高于 -DI，ADX 有限', () => {
+    const dmi = calcDMI(candles, 3)
+    for (const p of dmi) {
+      expect(p.pdi).toBeGreaterThan(0)
+      expect(p.mdi).toBe(0)
+      expect(p.adx).toBeGreaterThan(0)
+    }
+  })
+  it('窗口起点', () => {
+    expect(calcDMI(candles, 3)).toHaveLength(candles.length - 2)
+  })
+})
+
+describe('calcTR', () => {
+  it('与收盘的跳空也计入', () => {
+    const trs = calcTR([c(1, 10, 10, 10, 10, 1), c(2, 15, 16, 14, 15, 1)])
+    expect(trs[1]).toBe(Math.max(2, Math.abs(16 - 10), Math.abs(14 - 10))) // 6
+  })
+})

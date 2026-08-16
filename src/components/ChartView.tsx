@@ -9,10 +9,11 @@ import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
+import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY } from '../indicators/extras'
 import type { IndicatorParams } from '../indicators/params'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'none'
-export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'none'
+export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'none'
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
@@ -231,6 +232,53 @@ export function ChartView({
         markers: [
           { price: 70, color: DOWN },
           { price: 30, color: UP },
+        ],
+      }
+    }
+    if (subIndicator === 'wr') {
+      return {
+        kind: 'wr' as const,
+        lines: [{ id: 'WR', points: calcWR(replayData) }],
+        markers: [
+          { price: 20, color: UP },
+          { price: 80, color: DOWN },
+        ],
+      }
+    }
+    if (subIndicator === 'obv') {
+      return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(replayData) }] }
+    }
+    if (subIndicator === 'atr') {
+      return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(replayData) }] }
+    }
+    if (subIndicator === 'dmi') {
+      const dmi = calcDMI(replayData)
+      return {
+        kind: 'dmi' as const,
+        lines: [
+          { id: 'PDI', points: dmi.map((p) => ({ time: p.time, value: p.pdi })) },
+          { id: 'MDI', points: dmi.map((p) => ({ time: p.time, value: p.mdi })) },
+          { id: 'ADX', points: dmi.map((p) => ({ time: p.time, value: p.adx })) },
+        ],
+      }
+    }
+    if (subIndicator === 'cci') {
+      return {
+        kind: 'cci' as const,
+        lines: [{ id: 'CCI', points: calcCCI(replayData) }],
+        markers: [
+          { price: 100, color: DOWN },
+          { price: -100, color: UP },
+        ],
+      }
+    }
+    if (subIndicator === 'psy') {
+      return {
+        kind: 'psy' as const,
+        lines: [{ id: 'PSY', points: calcPSY(replayData) }],
+        markers: [
+          { price: 75, color: DOWN },
+          { price: 25, color: UP },
         ],
       }
     }

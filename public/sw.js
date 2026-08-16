@@ -74,6 +74,7 @@ async function poll() {
       self.registration.showNotification('Kline Buty · 价格提醒', {
         body: `${a.symbol} ${a.direction === 'above' ? '已到达' : '已跌破'} ${a.price}`,
         tag: a.id,
+        data: { symbol: a.symbol },
       })
     }
   }
@@ -81,12 +82,16 @@ async function poll() {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(self.clients.matchAll({ type: 'window' }).then((list) => {
-    if (list.length > 0) {
-      return list[0].focus()
-    }
-    return self.clients.openWindow('/')
-  }))
+  const symbol = event.notification.data?.symbol
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((list) => {
+      if (list.length > 0) {
+        if (symbol) list[0].postMessage({ type: 'focus-symbol', symbol })
+        return list[0].focus()
+      }
+      return self.clients.openWindow(SCOPE)
+    }),
+  )
 })
 
 setInterval(poll, 30_000)

@@ -1,4 +1,30 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+/** 等待蜡烛真正渲染（canvas 出现涨跌色像素） */
+async function waitCandlesRendered(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const cs = [...document.querySelectorAll('canvas')]
+      for (const c of cs) {
+        try {
+          const ctx = c.getContext('2d')
+          if (!ctx || c.width < 100) continue
+          const d = ctx.getImageData(0, 0, c.width, c.height).data
+          for (let i = 0; i < d.length; i += 200) {
+            const r = d[i]
+            const g = d[i + 1]
+            const b = d[i + 2]
+            if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      return false
+    },
+    { timeout: 20_000 },
+  )
+}
 
 test.describe('K 线应用冒烟', () => {
   test('页面加载 → 实时行情 + 图表渲染', async ({ page }) => {
@@ -14,13 +40,14 @@ test.describe('K 线应用冒烟', () => {
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    // 等历史数据就绪（StatsBar 出现）
-    await expect(page.getByText('最新价', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    // 等蜡烛真正渲染（canvas 涨跌色像素）
+    await waitCandlesRendered(page)
     await page.getByRole('button', { name: '1时' }).click()
     await page.getByRole('button', { name: 'MACD' }).click()
     await page.getByRole('button', { name: 'BOLL' }).click()
-    // 打开当前交易对下拉并切换
+    // 打开当前交易对下拉，用搜索过滤后切换
     await page.getByRole('button', { name: 'BTC/USDT ▾' }).click()
+    await page.getByPlaceholder('搜索交易对…').fill('doge')
     await page.getByText('DOGE/USDT', { exact: true }).first().click()
     await page.waitForTimeout(1500)
     expect(errors).toHaveLength(0)
@@ -57,29 +84,7 @@ test.describe('K 线应用冒烟', () => {
   test('画线：绘制水平线 → 选中 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    // 等蜡烛真正渲染（检测 canvas 中的涨跌色像素）
-    await page.waitForFunction(
-      () => {
-        const cs = [...document.querySelectorAll('canvas')]
-        for (const c of cs) {
-          try {
-            const ctx = c.getContext('2d')
-            if (!ctx || c.width < 100) continue
-            const d = ctx.getImageData(0, 0, c.width, c.height).data
-            for (let i = 0; i < d.length; i += 200) {
-              const r = d[i]
-              const g = d[i + 1]
-              const b = d[i + 2]
-              if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
-            }
-          } catch {
-            /* noop */
-          }
-        }
-        return false
-      },
-      { timeout: 20_000 },
-    )
+    await waitCandlesRendered(page)
     await page.getByRole('button', { name: '水平线' }).click()
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
