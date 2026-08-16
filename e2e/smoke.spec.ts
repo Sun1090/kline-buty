@@ -218,3 +218,29 @@ test.describe('K 线应用冒烟', () => {
     await page.reload()
   })
 })
+
+test.describe('移动端（390×844 触屏视口）', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test('页面无横向溢出 + 工具栏可滚动 + 触屏操作可用', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.locator('canvas').first()).toBeVisible()
+    // 无横向页面溢出（工具栏在容器内部横向滚动，不撑破页面）
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(1)
+    // 触屏点击周期按钮（工具栏自动滚动到可见）
+    await page.getByRole('button', { name: '1时' }).tap()
+    await page.waitForTimeout(500)
+    // 触屏进入画线模式（矩形）
+    await page.getByRole('button', { name: '矩形' }).tap()
+    await page.waitForTimeout(300)
+    // 图表仍有足够宽度
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.width).toBeGreaterThan(300)
+  })
+})

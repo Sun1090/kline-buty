@@ -30,7 +30,7 @@ export function DrawingToolbar({
 }: DrawingToolbarProps) {
   const { t } = useI18n()
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <div className="scroll-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap', overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
       <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('drawing.group')}</span>
       {TOOLS.map((o) => (
         <button
