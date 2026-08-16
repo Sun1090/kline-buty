@@ -273,6 +273,19 @@ export const zh = {
   errorBoundary: {
     title: '图表渲染出错',
   },
+  shortcuts: {
+    title: '键盘快捷键',
+    openSearch: '打开交易对搜索：{key}',
+    period: '切换周期：[ / ]',
+    layout: '布局切换：1 / 2 / 3（单图 / 双图 / 四图）',
+    cycleMain: '循环主图指标：M',
+    cycleSub: '循环副图指标：N',
+    fullscreen: '全屏切换：F',
+    replay: '回放播放/暂停：Space',
+    deleteDrawing: '删除选中画线：Delete',
+    escape: '取消 / 关闭：Esc',
+    hint: '显示/隐藏快捷键：?',
+  },
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
     titleEn: 'Kline Buty · Live Candles',
@@ -552,6 +565,19 @@ export const en: Messages = {
   errorBoundary: {
     title: 'Chart render error',
   },
+  shortcuts: {
+    title: 'Keyboard Shortcuts',
+    openSearch: 'Open symbol search: {key}',
+    period: 'Switch period: [ / ]',
+    layout: 'Layout: 1 / 2 / 3 (single / pair / quad)',
+    cycleMain: 'Cycle main indicator: M',
+    cycleSub: 'Cycle sub indicator: N',
+    fullscreen: 'Toggle fullscreen: F',
+    replay: 'Replay play/pause: Space',
+    deleteDrawing: 'Delete selected drawing: Del',
+    escape: 'Cancel / close: Esc',
+    hint: 'Show/hide shortcuts: ?',
+  },
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
     titleEn: 'Kline Buty · Live Candles',
@@ -828,6 +854,19 @@ export const ja: Messages = {
   },
   errorBoundary: {
     title: 'チャート描画エラー',
+  },
+  shortcuts: {
+    title: 'キーボードショートカット',
+    openSearch: '銘柄検索を開く：{key}',
+    period: '期間切替：[ / ]',
+    layout: 'レイアウト切替：1 / 2 / 3（単一 / ペア / 4分割）',
+    cycleMain: 'メイン指標を循環：M',
+    cycleSub: 'サブ指標を循環：N',
+    fullscreen: '全画面切替：F',
+    replay: 'リプレイ再生 / 一時停止：Space',
+    deleteDrawing: '選択中の描画を削除：Delete',
+    escape: 'キャンセル / 閉じる：Esc',
+    hint: 'ショートカット表示 / 非表示：?',
   },
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
@@ -1106,6 +1145,19 @@ export const ko: Messages = {
   },
   errorBoundary: {
     title: '차트 렌더링 오류',
+  },
+  shortcuts: {
+    title: '키보드 단축키',
+    openSearch: '거래쌍 검색 열기: {key}',
+    period: '주기 전환: [ / ]',
+    layout: '레이아웃 전환: 1 / 2 / 3 (단일 / 쌍 / 4분할)',
+    cycleMain: '메인 지표 순환: M',
+    cycleSub: '서브 지표 순환: N',
+    fullscreen: '전체화면 전환: F',
+    replay: '리플레이 재생/일시정지: Space',
+    deleteDrawing: '선택한 드로잉 삭제: Delete',
+    escape: '취소 / 닫기: Esc',
+    hint: '단축키 표시/숨기기: ?',
   },
   app: {
     titleZh: 'Kline Buty · 实时 K 线',
@@ -1395,6 +1447,19 @@ export const es: Messages = {
   },
   errorBoundary: {
     title: 'Error al renderizar el gráfico',
+  },
+  shortcuts: {
+    title: 'Atajos de teclado',
+    openSearch: 'Abrir búsqueda de símbolo: {key}',
+    period: 'Cambiar período: [ / ]',
+    layout: 'Diseño: 1 / 2 / 3 (único / par / cuádruple)',
+    cycleMain: 'Ciclar indicador principal: M',
+    cycleSub: 'Ciclar indicador secundario: N',
+    fullscreen: 'Alternar pantalla completa: F',
+    replay: 'Reproducir / pausar replay: Espacio',
+    deleteDrawing: 'Eliminar dibujo seleccionado: Supr',
+    escape: 'Cancelar / cerrar: Esc',
+    hint: 'Mostrar / ocultar atajos: ?',
   },
   app: {
     titleZh: 'Kline Buty · 实时 K 线',

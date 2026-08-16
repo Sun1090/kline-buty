@@ -109,6 +109,21 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
+  // 键盘快捷键 Ctrl/Cmd+K 或 / → 打开搜索并聚焦（App 派发 window 事件）
+  useEffect(() => {
+    const onOpen = () => {
+      // 下拉需同时具备 open + menuPos 才渲染，按按钮位置计算定位
+      const r = rootRef.current?.getBoundingClientRect()
+      if (r) {
+        setMenuPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 328)), top: r.bottom + 6 })
+      }
+      setOpen(true)
+      requestAnimationFrame(() => searchRef.current?.focus())
+    }
+    window.addEventListener('open-symbol-picker', onOpen)
+    return () => window.removeEventListener('open-symbol-picker', onOpen)
+  }, [])
+
   useEffect(() => {
     if (open) searchRef.current?.focus()
   }, [open])
@@ -168,6 +183,12 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation()
+                setOpen(false)
+              }
+            }}
             placeholder={t('symbol.searchPlaceholder')}
             style={{
               width: '100%',

@@ -35,6 +35,7 @@ import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { ThemePicker } from './components/ThemePicker'
 import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
+import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
 
 const STATUS_TEXT: Record<string, MessageKey> = {
   loading: 'status.loading',
@@ -120,6 +121,7 @@ export function App() {
   const [copied, setCopied] = useState(false)
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
   useEffect(() => {
@@ -272,33 +274,73 @@ export function App() {
     window.setTimeout(() => setExported(false), 1500)
   }
 
-  // 键盘快捷键：[ ] 切周期，Space 回放播放/暂停，Delete 删除选中画线
+  // 键盘快捷键（纯逻辑见 src/shortcuts.ts）：[ ] 周期、Space 回放、Delete 删画线、Esc 取消、
+  // ⌘K / 打开搜索、F 全屏、1/2/3 布局、M/N 循环指标、? 帮助
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') return
-      if (e.key === '[' || e.key === ']') {
-        const idx = PERIODS.findIndex((p) => p.value === period)
-        const next = PERIODS[Math.max(0, Math.min(PERIODS.length - 1, idx + (e.key === ']' ? 1 : -1)))]
-        if (next) setPeriod(next.value)
-      } else if (e.key === ' ') {
-        e.preventDefault()
-        setReplay((r) => (r ? { ...r, playing: !r.playing } : r))
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedDrawingId) {
-        deleteSelectedDrawing()
-      } else if (e.key === 'Escape') {
-        // Esc：取消选中画线 / 退出文本编辑
-        if (editingTextId) {
-          setEditingTextId(null)
-          setTextDraft('')
-        } else if (selectedDrawingId) {
-          setSelectedDrawingId(null)
+      const action = shortcutFor(e, isTypingTarget(e.target as HTMLElement | null))
+      switch (action.type) {
+        case 'none':
+          return
+        case 'period-prev':
+        case 'period-next': {
+          const idx = PERIODS.findIndex((p) => p.value === period)
+          const next = PERIODS[Math.max(0, Math.min(PERIODS.length - 1, idx + (action.type === 'period-next' ? 1 : -1)))]
+          if (next) setPeriod(next.value)
+          break
         }
+        case 'replay-toggle':
+          e.preventDefault()
+          setReplay((r) => (r ? { ...r, playing: !r.playing } : r))
+          break
+        case 'delete-drawing':
+          if (selectedDrawingId) deleteSelectedDrawing()
+          break
+        case 'open-search':
+          e.preventDefault()
+          window.dispatchEvent(new Event('open-symbol-picker'))
+          break
+        case 'toggle-fullscreen':
+          e.preventDefault()
+          toggleFullscreen()
+          break
+        case 'set-layout':
+          setLayout(action.layout)
+          break
+        case 'cycle-main':
+          setMainIndicator(cycleValue(MAIN_OPTIONS.map((o) => o.value as MainIndicatorKind), mainIndicator, action.dir))
+          break
+        case 'cycle-sub':
+          setSubIndicator(cycleValue(SUB_OPTIONS.map((o) => o.value as SubIndicatorKind), subIndicator, action.dir))
+          break
+        case 'toggle-shortcuts':
+          e.preventDefault()
+          setShortcutsOpen((v) => !v)
+          break
+        case 'escape':
+          // Esc：关闭快捷键浮层 → 退出文本编辑 → 取消选中画线
+          if (shortcutsOpen) setShortcutsOpen(false)
+          else if (editingTextId) {
+            setEditingTextId(null)
+            setTextDraft('')
+          } else if (selectedDrawingId) {
+            setSelectedDrawingId(null)
+          }
+          break
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [period, selectedDrawingId, editingTextId, textDraft, deleteSelectedDrawing])
+  }, [
+    period,
+    selectedDrawingId,
+    editingTextId,
+    textDraft,
+    shortcutsOpen,
+    mainIndicator,
+    subIndicator,
+    deleteSelectedDrawing,
+  ])
 
   const statusColor =
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
@@ -399,6 +441,7 @@ export function App() {
           </div>
         )}
         <button
+          data-testid="layout-toggle"
           onClick={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           style={{
             padding: '3px 8px',
@@ -568,6 +611,22 @@ export function App() {
           {isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
         </button>
         <button
+          onClick={() => setShortcutsOpen((v) => !v)}
+          title={t('shortcuts.hint')}
+          data-testid="shortcuts-toggle"
+          style={{
+            padding: '3px 10px',
+            fontSize: 11,
+            border: '1px solid #2a2e39',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: shortcutsOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: shortcutsOpen ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+        >
+          ?
+        </button>
+        <button
           onClick={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
           title={t('lang.switchTo')}
           style={{
@@ -734,6 +793,41 @@ export function App() {
           onSeek={(cursor) => setReplay((r) => (r ? seekReplay(r, cursor) : r))}
           onExit={() => setReplay(null)}
         />
+      )}
+      {shortcutsOpen && (
+        <div
+          data-testid="shortcuts-help"
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 64,
+            zIndex: 999,
+            minWidth: 280,
+            padding: '12px 16px',
+            background: 'var(--panel)',
+            border: '1px solid #2a2e39',
+            borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            fontSize: 12,
+            lineHeight: 1.9,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text)' }}>
+            {t('shortcuts.title')}
+          </div>
+          <div style={{ color: 'var(--text-dim)' }}>
+            <div>{t('shortcuts.openSearch', { key: /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K' })}</div>
+            <div>{t('shortcuts.period')}</div>
+            <div>{t('shortcuts.layout')}</div>
+            <div>{t('shortcuts.cycleMain')}</div>
+            <div>{t('shortcuts.cycleSub')}</div>
+            <div>{t('shortcuts.fullscreen')}</div>
+            <div>{t('shortcuts.replay')}</div>
+            <div>{t('shortcuts.deleteDrawing')}</div>
+            <div>{t('shortcuts.escape')}</div>
+            <div>{t('shortcuts.hint')}</div>
+          </div>
+        </div>
       )}
     </div>
   )
