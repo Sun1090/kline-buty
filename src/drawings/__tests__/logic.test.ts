@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import {
   channelLine,
   createDrawing,
+  fibExtPrices,
+  fibFanRays,
   fibPrices,
   hitTestDrawings,
   moveAnchor,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
+  requiredPoints,
   FIB_LEVELS,
   type Drawing,
   type Project,
@@ -233,5 +236,121 @@ describe('nearestAnchor（锚点命中）', () => {
   })
   it('投影失败（锚点不可见）跳过', () => {
     expect(nearestAnchor(trend, 0, 200, () => null)).toBeNull()
+  })
+})
+
+describe('requiredPoints（所需锚点数）', () => {
+  it('单点工具：水平线/文本/价格标签', () => {
+    expect(requiredPoints('horizontal')).toBe(1)
+    expect(requiredPoints('text')).toBe(1)
+    expect(requiredPoints('pricelabel')).toBe(1)
+  })
+  it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头', () => {
+    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow'] as const) {
+      expect(requiredPoints(t)).toBe(2)
+    }
+  })
+  it('三点工具：斐波那契扩展', () => {
+    expect(requiredPoints('fibext')).toBe(3)
+  })
+})
+
+describe('fibExtPrices（斐波那契扩展）', () => {
+  it('A=100 → B=200（上升摆幅）', () => {
+    const levels = fibExtPrices({ price: 100 }, { price: 200 })
+    // 回撤区在 A/B 之间
+    const retr = levels.filter((l) => l.level < 1)
+    expect(retr.every((l) => l.price > 100 && l.price < 200)).toBe(true)
+    // level 1 恰为 B
+    expect(levels.find((l) => l.level === 1)?.price).toBe(200)
+    // 延伸区在 B 之外且递增
+    const ext = levels.filter((l) => l.level >= 1)
+    expect(ext.every((l) => l.price >= 200)).toBe(true)
+    expect(ext[ext.length - 1].price).toBeCloseTo(200 + 100 * (2.618 - 1))
+  })
+  it('下跌摆幅（B < A）延伸区在 B 之下', () => {
+    const levels = fibExtPrices({ price: 200 }, { price: 100 })
+    expect(levels.find((l) => l.level === 1)?.price).toBe(100)
+    const ext = levels.filter((l) => l.level >= 1)
+    expect(ext.every((l) => l.price <= 100)).toBe(true)
+    expect(ext[ext.length - 1].price).toBeCloseTo(100 - 100 * (2.618 - 1))
+  })
+})
+
+describe('fibFanRays（斐波那契扇形）', () => {
+  it('射线方向点 = A + 竖直距离 × 分位', () => {
+    const rays = fibFanRays({ time: 0, price: 100 }, { time: 100, price: 200 })
+    expect(rays).toHaveLength(6)
+    expect(rays[0].level).toBe(0.236)
+    expect(rays[0].dir.price).toBeCloseTo(100 + 100 * 0.236)
+    expect(rays[rays.length - 1].level).toBe(1)
+    expect(rays[rays.length - 1].dir.price).toBe(200)
+    expect(rays[0].dir.time).toBe(100)
+  })
+})
+
+describe('normalizePoints（M14 新工具）', () => {
+  it('价格标签只保留一点', () => {
+    expect(normalizePoints('pricelabel', [{ time: 1, price: 2 }, { time: 3, price: 4 }])).toHaveLength(1)
+  })
+  it('箭头保持 A→B 原始顺序（方向敏感）', () => {
+    const pts = normalizePoints('arrow', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0]).toEqual({ time: 100, price: 50 })
+    expect(pts[1]).toEqual({ time: 0, price: 100 })
+  })
+  it('斐波那契扇形保持原点在前', () => {
+    const pts = normalizePoints('fibfan', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(100)
+  })
+  it('斐波那契扩展保留 A/B/C 三点顺序', () => {
+    const pts = normalizePoints('fibext', [
+      { time: 0, price: 100 },
+      { time: 50, price: 200 },
+      { time: 100, price: 150 },
+    ])
+    expect(pts).toHaveLength(3)
+    expect(pts.map((p) => p.price)).toEqual([100, 200, 150])
+  })
+})
+
+describe('hitTestDrawings（M14 新工具）', () => {
+  // project: x=time, y=300-price
+  it('命中箭头（点到线段距离）', () => {
+    const d = createDrawing('arrow', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'ar')
+    // 线段从 (0,200) 到 (100,250)，中点 (50,225) 在线段上
+    expect(hitTestDrawings([d], 50, 225, project)).toBe('ar')
+    expect(hitTestDrawings([d], 20, 210, project)).toBe('ar')
+    expect(hitTestDrawings([d], 50, 260, project)).toBeNull()
+  })
+  it('命中斐波那契扇形（射线延长线 + 原点前）', () => {
+    const d = createDrawing('fibfan', [{ time: 0, price: 100 }, { time: 100, price: 200 }], 'fan')
+    // 分位 0.5 方向点 (100, 200) → 屏幕 (100,100)；原点 (0,200)。射线上一点 (50,150)
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('fan')
+    // 原点后方不命中（方向敏感）
+    expect(hitTestDrawings([d], -20, 210, project)).toBeNull()
+  })
+  it('命中价格标签（锚点附近框内）', () => {
+    const d = createDrawing('pricelabel', [{ time: 50, price: 100 }], 'pl')
+    expect(hitTestDrawings([d], 52, 198, project)).toBe('pl')
+    expect(hitTestDrawings([d], 100, 198, project)).toBeNull()
+  })
+  it('命中斐波那契扩展（回撤区水平线 + 延伸区 + C 竖线）', () => {
+    const d = createDrawing(
+      'fibext',
+      [
+        { time: 0, price: 100 },
+        { time: 100, price: 200 },
+        { time: 50, price: 150 },
+      ],
+      'fe',
+    )
+    // 回撤区：level 0.5 = 150 → 屏幕 y=150；x=50 在线段横向范围内
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('fe')
+    // 延伸区：level 1.272 = 200+100*0.272=227.2 → y=72.8；x=120（在 B 右侧）
+    expect(hitTestDrawings([d], 120, 73, project)).toBe('fe')
+    // C 竖线：C=(50,150) → (50,150) 屏幕；x=52 附近
+    expect(hitTestDrawings([d], 52, 150, project)).toBe('fe')
+    // 完全在摆幅框外、延伸线也远
+    expect(hitTestDrawings([d], -30, 150, project)).toBeNull()
   })
 })
