@@ -288,7 +288,7 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
   // 单点工具：水平线只落 1 个锚点（price 固定，time 由绘制点决定）
   expect(saved!.points).toHaveLength(1)
 
-  // overlay 渲染：主题黄画线像素数 > 50
+  // overlay 渲染：画线像素数 > 50（水平线带黄色价格标签）
   const drawnPx = await page.evaluate(() => {
     const overlay = [...document.querySelectorAll('canvas')].find((c) => {
       const st = getComputedStyle(c)
@@ -311,6 +311,192 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
   expect(drawnPx).toBeGreaterThan(50)
 
   // 重开画线弹层 → 删除（绘制完成自动选中）
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.waitForTimeout(400)
+  const after = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)[0]?.length ?? -1
+    } catch {
+      return -2
+    }
+  })
+  expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
+
+test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 → 删除', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  // 等蜡烛渲染（出现涨跌色像素）
+  await page.waitForFunction(
+    () => {
+      for (const c of document.querySelectorAll('canvas')) {
+        try {
+          const ctx = c.getContext('2d')
+          if (!ctx || c.width < 100) continue
+          const d = ctx.getImageData(0, 0, c.width, c.height).data
+          for (let i = 0; i < d.length; i += 200) {
+            const r = d[i]
+            const g = d[i + 1]
+            const b = d[i + 2]
+            if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      return false
+    },
+    { timeout: 30_000 },
+  )
+  // 打开画线弹层 → 选文本标注
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '文本', exact: true }).tap()
+  await page.waitForTimeout(300)
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  // 触屏轻点放置（单点工具：touch 合成 pointerdown/up → 提交 → 打开移动端文本浮层）
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const x = box.x + box.width * 0.5
+  const y = box.y + box.height * 0.4
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(400)
+
+  // 移动端文本编辑浮层出现 → 输入 → 确定
+  await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+  await page.getByTestId('mobile-text-input').fill('关键位')
+  await page.getByTestId('mobile-text-confirm').tap()
+  await page.waitForTimeout(300)
+
+  // 落库：type=text + 文本内容
+  const saved = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const arr = Object.values(d)[0] as { type: string; text?: string }[]
+      return arr[0] ?? null
+    } catch {
+      return null
+    }
+  })
+  expect(saved).not.toBeNull()
+  expect(saved!.type).toBe('text')
+  expect(saved!.text).toBe('关键位')
+
+  // 重开画线弹层 → 删除（提交后自动选中）
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.waitForTimeout(400)
+  const after = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)[0]?.length ?? -1
+    } catch {
+      return -2
+    }
+  })
+  expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
+
+test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲染 → 删除', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await page.waitForFunction(
+    () => {
+      for (const c of document.querySelectorAll('canvas')) {
+        try {
+          const ctx = c.getContext('2d')
+          if (!ctx || c.width < 100) continue
+          const d = ctx.getImageData(0, 0, c.width, c.height).data
+          for (let i = 0; i < d.length; i += 200) {
+            const r = d[i]
+            const g = d[i + 1]
+            const b = d[i + 2]
+            if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+          }
+        } catch {
+          /* noop */
+        }
+      }
+      return false
+    },
+    { timeout: 30_000 },
+  )
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '平行通道', exact: true }).tap()
+  await page.waitForTimeout(300)
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  // 触屏拖拽 A→B（两点工具：按下=起点，释放=终点）
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const x0 = box.x + box.width * 0.25
+  const y0 = box.y + box.height * 0.3
+  const x1 = box.x + box.width * 0.7
+  const y1 = box.y + box.height * 0.65
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+  for (let i = 1; i <= 6; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: x0 + ((x1 - x0) * i) / 6, y: y0 + ((y1 - y0) * i) / 6 }],
+    })
+    await page.waitForTimeout(30)
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(600)
+
+  // 落库：type=channel、2 锚点
+  const saved = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
+      return arr[0] ?? null
+    } catch {
+      return null
+    }
+  })
+  expect(saved).not.toBeNull()
+  expect(saved!.type).toBe('channel')
+  expect(saved!.points).toHaveLength(2)
+
+  // overlay 渲染：提交后自动选中 → 选中色 #4e9cf5 画线像素数 > 50
+  const drawnPx = await page.evaluate(() => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return 0
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return 0
+    const d = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+    let n = 0
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i]
+      const g = d[i + 1]
+      const b = d[i + 2]
+      const a = d[i + 3]
+      // 选中色 #4e9cf5（r≈78 g≈156 b≈245，抗锯齿容差 ±12）
+      if (a > 100 && r > 66 && r < 90 && g > 144 && g < 168 && b > 233 && b < 255) n++
+    }
+    return n
+  })
+  expect(drawnPx).toBeGreaterThan(50)
+
+  // 重开画线弹层 → 删除
   await page.getByTestId('mobile-menu-drawing').tap()
   await page.getByRole('button', { name: '删除', exact: true }).first().tap()
   await page.waitForTimeout(400)

@@ -1,6 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKline } from './types'
-import { buildApiUrl, detectMode } from './endpoints'
+import { DAPI_BASE, buildApiUrl, detectMode, toCoinMPair, toCoinMSymbol } from './endpoints'
 
 /** 币安 K 线 → 领域类型（openTime 毫秒 → 秒） */
 export function mapKline(raw: RawKline): Candle {
@@ -23,12 +23,26 @@ export interface Ticker24h {
   quoteVolume: number
 }
 
-/** 请求封装：自动探测代理/直连模式 */
-async function binanceGet(path: string): Promise<Response> {
+/**
+ * 请求封装：自动探测代理/直连模式。
+ * direct 模式支持候选 URL 兜底（fapi 被网络阻断时回退 COIN-M dapi），
+ * 依次尝试直到首个成功；全部失败抛最后错误。
+ */
+async function binanceGet(path: string, fallback?: string): Promise<Response> {
   const mode = await detectMode()
-  const res = await fetch(buildApiUrl(mode, path))
-  if (!res.ok) throw new Error(`binance http ${res.status}`)
-  return res
+  const candidates =
+    mode === 'proxy' ? [path] : [buildApiUrl(mode, path), ...(fallback ? [fallback] : [])]
+  let lastErr: unknown
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`binance http ${res.status}`)
+      return res
+    } catch (e) {
+      lastErr = e
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('binance request failed')
 }
 
 /**
@@ -88,7 +102,10 @@ export interface FundingRate {
 
 /** 永续合约资金费率 */
 export async function fetchFundingRate(symbol: string): Promise<FundingRate> {
-  const res = await binanceGet(`/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`)
+  const res = await binanceGet(
+    `/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`,
+    `${DAPI_BASE}/dapi/v1/premiumIndex?symbol=${encodeURIComponent(toCoinMSymbol(symbol))}`,
+  )
   const d = (await res.json()) as {
     markPrice: string
     lastFundingRate: string
@@ -103,7 +120,10 @@ export async function fetchFundingRate(symbol: string): Promise<FundingRate> {
 
 /** 永续合约未平仓量 */
 export async function fetchOpenInterest(symbol: string): Promise<number> {
-  const res = await binanceGet(`/fapi/v1/openInterest?symbol=${encodeURIComponent(symbol)}`)
+  const res = await binanceGet(
+    `/fapi/v1/openInterest?symbol=${encodeURIComponent(symbol)}`,
+    `${DAPI_BASE}/dapi/v1/openInterest?symbol=${encodeURIComponent(toCoinMSymbol(symbol))}`,
+  )
   const d = (await res.json()) as { openInterest: string }
   return Number(d.openInterest)
 }
@@ -175,6 +195,7 @@ export function parseOiArray(raw: unknown[]): OiPoint[] {
 export async function fetchGlobalLongShortRatio(symbol: string, limit = 24): Promise<RatioPoint[]> {
   const res = await binanceGet(
     `/futures/data/globalLongShortAccountRatio?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+    `${DAPI_BASE}/futures/data/globalLongShortAccountRatio?pair=${encodeURIComponent(toCoinMPair(symbol))}&period=1h&limit=${limit}`,
   )
   return parseRatioArray((await res.json()) as unknown[])
 }
@@ -183,6 +204,7 @@ export async function fetchGlobalLongShortRatio(symbol: string, limit = 24): Pro
 export async function fetchTopTraderPositionRatio(symbol: string, limit = 24): Promise<RatioPoint[]> {
   const res = await binanceGet(
     `/futures/data/topLongShortPositionRatio?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+    `${DAPI_BASE}/futures/data/topLongShortPositionRatio?pair=${encodeURIComponent(toCoinMPair(symbol))}&period=1h&limit=${limit}`,
   )
   return parseRatioArray((await res.json()) as unknown[])
 }
@@ -199,6 +221,7 @@ export async function fetchTakerBuySellRatio(symbol: string, limit = 24): Promis
 export async function fetchOpenInterestHistory(symbol: string, limit = 24): Promise<OiPoint[]> {
   const res = await binanceGet(
     `/futures/data/openInterestHist?symbol=${encodeURIComponent(symbol)}&period=1h&limit=${limit}`,
+    `${DAPI_BASE}/futures/data/openInterestHist?pair=${encodeURIComponent(toCoinMPair(symbol))}&period=1h&limit=${limit}`,
   )
   return parseOiArray((await res.json()) as unknown[])
 }

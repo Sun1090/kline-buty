@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  fetchFundingRate,
   fetchGlobalLongShortRatio,
   fetchKlines,
+  fetchOpenInterest,
   fetchOpenInterestHistory,
   fetchTicker24h,
   mapKline,
@@ -171,5 +173,109 @@ describe('衍生品情绪解析纯函数', () => {
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
     expect(urls.find((u) => u.includes('/futures/data/openInterestHist'))).toBeDefined()
     expect(out[0].oi).toBe(111331.031)
+  })
+})
+
+
+describe('COIN-M dapi 兜底（fapi 被网络阻断时回退）', () => {
+  it('fetchFundingRate：fapi 失败 → 回退 dapi premiumIndex（COIN-M 交易对）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } }) // ping → direct
+      .mockRejectedValueOnce(new Error('fapi blocked')) // fapi premiumIndex 失败
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          symbol: 'BTCUSD_PERP',
+          markPrice: '62750.3',
+          lastFundingRate: '0.00002629',
+          nextFundingTime: 1786924800000,
+        }),
+      }) // dapi 兜底成功
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchFundingRate('BTCUSDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[1]).toBe('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')
+    expect(urls[2]).toBe('https://dapi.binance.com/dapi/v1/premiumIndex?symbol=BTCUSD_PERP')
+    expect(out.lastFundingRate).toBe(0.00002629)
+    expect(out.nextFundingTime).toBe(1786924800000)
+  })
+
+  it('fetchOpenInterest：fapi 失败 → 回退 dapi openInterest', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } })
+      .mockRejectedValueOnce(new Error('fapi blocked'))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ symbol: 'BTCUSD_PERP', openInterest: '11345545' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchOpenInterest('BTCUSDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[2]).toBe('https://dapi.binance.com/dapi/v1/openInterest?symbol=BTCUSD_PERP')
+    expect(out).toBe(11345545)
+  })
+
+  it('fetchGlobalLongShortRatio：fapi 失败 → 回退 dapi futures/data（pair=BTCUSD）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } })
+      .mockRejectedValueOnce(new Error('fapi blocked'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { pair: 'BTCUSD', longAccount: '0.2051', longShortRatio: '0.2588', shortAccount: '0.7925', timestamp: 1786917600000 },
+        ],
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchGlobalLongShortRatio('BTCUSDT', 24)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[2]).toContain('https://dapi.binance.com/futures/data/globalLongShortAccountRatio')
+    expect(urls[2]).toContain('pair=BTCUSD')
+    expect(urls[2]).toContain('period=1h')
+    expect(out[0].long).toBe(0.2051)
+  })
+
+  it('fetchOpenInterestHistory：fapi 失败 → 回退 dapi futures/data（pair=BTCUSD）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } })
+      .mockRejectedValueOnce(new Error('fapi blocked'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { pair: 'BTCUSD', sumOpenInterest: '14118541', sumOpenInterestValue: '22468.21', timestamp: 1786917600000 },
+        ],
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchOpenInterestHistory('BTCUSDT', 24)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[2]).toContain('https://dapi.binance.com/futures/data/openInterestHist')
+    expect(urls[2]).toContain('pair=BTCUSD')
+    expect(out[0].oi).toBe(14118541)
+  })
+
+  it('fapi 与 dapi 都失败 → 抛错（不静默吞掉）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } })
+      .mockRejectedValueOnce(new Error('fapi blocked'))
+      .mockRejectedValueOnce(new Error('dapi blocked'))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(fetchFundingRate('BTCUSDT')).rejects.toThrow('dapi blocked')
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('proxy 模式：不使用 dapi 兜底（单候选相对路径）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'application/json' } }) // ping → proxy
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ symbol: 'BTCUSDT', markPrice: '1', lastFundingRate: '0.0001', nextFundingTime: 1 }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchFundingRate('BTCUSDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[1]).toBe('/fapi/v1/premiumIndex?symbol=BTCUSDT')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
