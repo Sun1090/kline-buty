@@ -24,7 +24,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # 项目站点部署在子路径 /kline-buty/，资源路径需带 base
       - run: npm run build
+        env:
+          VITE_BASE_PATH: /kline-buty/
       # SPA fallback：GitHub Pages 用 404.html 兜底
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

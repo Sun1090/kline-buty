@@ -1,5 +1,6 @@
 const CACHE_NAME = 'kline-buty-v1'
-const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
+const SCOPE = self.registration.scope
+const PRECACHE = [SCOPE, SCOPE + 'index.html', SCOPE + 'manifest.webmanifest', SCOPE + 'icon.svg']
 
 self.addEventListener('install', (event) => {
   self.skipWaiting()
@@ -19,7 +20,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/fapi') || url.pathname.startsWith('/ws')) return
+  if (url.pathname.includes('/api') || url.pathname.includes('/fapi') || url.pathname.includes('/ws')) return
   event.respondWith(
     fetch(event.request)
       .then((res) => {
@@ -29,7 +30,11 @@ self.addEventListener('fetch', (event) => {
         }
         return res
       })
-      .catch(() => caches.match(event.request).then((m) => m || caches.match('/'))),
+      .catch(() =>
+        caches
+          .match(event.request)
+          .then((m) => m || caches.match(SCOPE + 'index.html')),
+      ),
   )
 })
 

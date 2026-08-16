@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // 前端统一走相对路径 /api /ws，由本代理转发到币安，禁止硬编码外部域名
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   server: {
     port: 5173,

@@ -4,6 +4,13 @@
 
 > **免责声明**：本项目仅用于技术学习与研究，不构成任何投资建议。加密货币交易有风险，据此操作风险自负。
 
+## 在线体验
+
+| 平台 | 地址 | 说明 |
+|---|---|---|
+| GitHub Pages | https://sun1090.github.io/kline-buty/ | 自动部署（push main 触发），子路径模式 |
+| Vercel | https://kline-buty.vercel.app/ | 预览版（导入仓库自动部署），根路径模式 |
+
 ## 数据与版权合规
 
 - **数据来源**：币安公开行情 API（REST + WebSocket），无需 API Key。使用时请遵守[币安服务条款](https://www.binance.com/zh-CN/terms)及其数据使用限制，请勿用于商业高频抓取。
