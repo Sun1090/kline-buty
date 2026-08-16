@@ -24,7 +24,7 @@ describe('buildWsUrl', () => {
     expect(buildWsUrl('proxy', 'btcusdt@kline_1m')).toContain('/ws/btcusdt@kline_1m')
   })
   it('direct 模式直连 stream', () => {
-    expect(buildWsUrl('direct', 'btcusdt@kline_1m')).toBe('wss://stream.binance.com:443/ws/btcusdt@kline_1m')
+    expect(buildWsUrl('direct', 'btcusdt@kline_1m')).toBe('wss://stream.binance.com:9443/ws/btcusdt@kline_1m')
   })
 })
 

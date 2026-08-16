@@ -9,6 +9,7 @@ export type DrawingTool =
   | 'ray'
   | 'fibext'
   | 'fibfan'
+  | 'fibtimed'
   | 'pricelabel'
   | 'arrow'
   | 'ellipse'
@@ -89,6 +90,25 @@ export function fibFanRays(
     level,
     dir: { time: b.time, price: a.price + span * level },
   }))
+}
+
+/** 斐波那契时间线：A→B 时间区间按黄金分割分位取时间点（0 / 0.236 / 0.382 / 0.5 / 0.618 / 0.786 / 1） */
+export function fibTimeLines(
+  a: { time: number },
+  b: { time: number },
+): { level: number; time: number }[] {
+  const from = Math.min(a.time, b.time)
+  const to = Math.max(a.time, b.time)
+  const span = to - from
+  return FIB_LEVELS.map((level) => ({ level, time: from + span * level }))
+}
+
+/** 斐波那契时间线竖线屏幕 x：在 A/B 锚点 x 之间按分位线性插值。
+ * 时间轴为等宽柱距，等价于时间插值；且 timeToCoordinate 只认整根蜡烛，无法直接取小数时间坐标。 */
+export function fibTimeXs(aX: number, bX: number): { level: number; x: number }[] {
+  const left = Math.min(aX, bX)
+  const right = Math.max(aX, bX)
+  return FIB_LEVELS.map((level) => ({ level, x: left + (right - left) * level }))
 }
 
 /** 平行通道：基线 a→b，平行线垂直偏移 delta = b.price - a.price */
@@ -323,6 +343,14 @@ export function hitTestDrawings(
           const c = project(pc.time, pc.price)
           if (c && Math.abs(px - c.x) <= HIT_THRESHOLD_PX) dist = Math.min(dist, Math.abs(py - c.y))
         }
+      }
+    } else if (d.type === 'fibtimed') {
+      // 斐波那契时间线：命中任一竖线（水平距离）
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        dist = Infinity
+        for (const { x } of fibTimeXs(a.x, b.x)) dist = Math.min(dist, Math.abs(px - x))
       }
     } else {
       const a = project(d.points[0].time, d.points[0].price)
