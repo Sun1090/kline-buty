@@ -93,6 +93,11 @@ export const zh = {
     buy: '买',
     loading: '加载中…',
   },
+  share: {
+    title: '复制当前品种与周期的分享链接',
+    copy: '分享',
+    copied: '已复制',
+  },
   replay: {
     start: '回放',
     title: '历史逐根回放',
@@ -119,6 +124,9 @@ export const zh = {
   symbol: {
     searchPlaceholder: '搜索交易对…',
     popular: '常用',
+    favorites: '自选',
+    favoriteAdd: '加入自选',
+    favoriteRemove: '取消自选',
     searchResults: '搜索结果 {count}',
     noMatch: '无匹配交易对',
   },
@@ -297,6 +305,11 @@ export const en: Messages = {
     buy: 'Buy',
     loading: 'Loading…',
   },
+  share: {
+    title: 'Copy share link for current symbol & period',
+    copy: 'Share',
+    copied: 'Copied',
+  },
   replay: {
     start: 'Replay',
     title: 'Step-by-step history replay',
@@ -323,6 +336,9 @@ export const en: Messages = {
   symbol: {
     searchPlaceholder: 'Search symbols…',
     popular: 'Popular',
+    favorites: 'Favorites',
+    favoriteAdd: 'Add to favorites',
+    favoriteRemove: 'Remove from favorites',
     searchResults: 'Results {count}',
     noMatch: 'No matching symbols',
   },

@@ -9,6 +9,7 @@ import { IndicatorBar } from './components/IndicatorBar'
 import { IndicatorSettings } from './components/IndicatorSettings'
 import { ReplayBar } from './components/ReplayBar'
 import { useKlineData } from './hooks/useKlineData'
+import { SYMBOL_LIST } from './hooks/useSymbolList'
 import { useMarketStats } from './hooks/useMarketStats'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
@@ -98,6 +99,7 @@ export function App() {
   const [depthOpen, setDepthOpen] = useState(false)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
@@ -206,6 +208,32 @@ export function App() {
       [symbol]: (prev[symbol] ?? []).filter((d) => d.id !== selectedDrawingId),
     }))
     setSelectedDrawingId(null)
+  }
+
+  // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const s = params.get('symbol')
+    if (s && SYMBOL_LIST.includes(s.toUpperCase())) setSymbol(s.toUpperCase())
+    const p = params.get('period')
+    if (p && PERIODS.some((x) => x.value === p)) setPeriod(p as Period)
+  }, [])
+
+  // 复制当前品种+周期的分享链接（clipboard 失败降级 execCommand）
+  const copyShareLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?symbol=${encodeURIComponent(symbol)}&period=${period}`
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = url
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1500)
   }
 
   // 键盘快捷键：[ ] 切周期，Space 回放播放/暂停，Delete 删除选中画线
@@ -501,6 +529,21 @@ export function App() {
           }}
         >
           {lang === 'zh-CN' ? 'EN' : '中文'}
+        </button>
+        <button
+          onClick={copyShareLink}
+          title={t('share.title')}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: copied ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: copied ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+        >
+          {copied ? t('share.copied') : t('share.copy')}
         </button>
         <SymbolPicker value={symbol} onChange={setSymbol} />
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: statusColor }}>
