@@ -26,6 +26,45 @@ async function waitCandlesRendered(page: Page) {
   )
 }
 
+/** 扫描画线 overlay 画布，返回黄色线条像素的几何中点（CSS 坐标，含容器偏移） */
+async function findDrawnLineCenter(page: Page): Promise<{ x: number; y: number } | null> {
+  return page.evaluate(() => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return null
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return null
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    const dpr = window.devicePixelRatio || 1
+    const rect = overlay.getBoundingClientRect()
+    let sx = 0
+    let sy = 0
+    let n = 0
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4
+        const r = img[i]
+        const g = img[i + 1]
+        const b = img[i + 2]
+        const a = img[i + 3]
+        // 画线像素：主题黄 #f5c02f 或选中蓝 #4e9cf5（含抗锯齿容差）
+        const yellow = a > 100 && r > 190 && g > 130 && g < 235 && b < 110
+        const blue = a > 100 && b > 190 && g > 110 && g < 200 && r < 130
+        if (yellow || blue) {
+          sx += x / dpr
+          sy += y / dpr
+          n++
+        }
+      }
+    }
+    if (!n) return null
+    return { x: rect.left + sx / n, y: rect.top + sy / n }
+  })
+}
+
 test.describe('K 线应用冒烟', () => {
   test('页面加载 → 实时行情 + 图表渲染', async ({ page }) => {
     await page.goto('/')
@@ -192,6 +231,73 @@ test.describe('K 线应用冒烟', () => {
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
     await page.mouse.up()
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：趋势线 → 鼠标拖拽整线移动 → 锚点增量一致 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 趋势线工具画一条线
+    await page.getByRole('button', { name: '趋势线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.points).toHaveLength(2)
+
+    // 切回鼠标（只读）→ 定位画线实际中心 → 按住拖拽整线
+    await page.getByRole('button', { name: '鼠标' }).click()
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+    const center = (await findDrawnLineCenter(page))!
+    await page.mouse.move(center.x, center.y)
+    await page.mouse.down()
+    await page.mouse.move(center.x + box!.width * 0.18, center.y + box!.height * 0.12, { steps: 5 })
+    await page.mouse.up()
+
+    // 提交后：同一 id，各锚点时间/价格增量一致（整线平移）且确实发生了移动
+    await expect
+      .poll(
+        async () => {
+          const after = await readFirst()
+          if (!after || after.points.length !== 2) return false
+          const dT0 = after.points[0].time - before!.points[0].time
+          const dT1 = after.points[1].time - before!.points[1].time
+          const dP0 = after.points[0].price - before!.points[0].price
+          const dP1 = after.points[1].price - before!.points[1].price
+          return (
+            after.id === before!.id &&
+            dT0 === dT1 &&
+            dP0 === dP1 &&
+            (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
+          )
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true)
+
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })

@@ -20,6 +20,9 @@ import {
   channelLine,
   fibPrices,
   hitTestDrawings,
+  moveAnchor,
+  moveDrawing,
+  nearestAnchor,
   normalizePoints,
   type Drawing,
   type DrawingTool,
@@ -33,6 +36,8 @@ export type ChartType = 'candlestick' | 'line' | 'area'
 export interface DrawingCallbacks {
   onCommit: (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => void
   onSelect: (id: string | null) => void
+  /** 画线编辑提交（拖拽整线/锚点后） */
+  onUpdate?: (id: string, points: { time: number; price: number }[]) => void
 }
 
 /** 副图指标数据（UI 层计算，本层渲染） */
@@ -77,6 +82,8 @@ export interface ChartApi {
   setDrawings(drawings: Drawing[]): void
   /** 画线工具模式（none 为只读/选中） */
   setDrawingTool(tool: DrawingTool): void
+  /** 同步外部选中画线（用于只读模式拖拽判定） */
+  setSelectedDrawing?(id: string | null): void
   /** 画线回调（创建完成/选中变化） */
   setDrawingCallbacks(cb: DrawingCallbacks | null): void
   /** 截图：主图 + 画线图层合成 PNG dataURL */
@@ -155,6 +162,17 @@ export class LightweightChartAdapter implements ChartApi {
   private selectedDrawingId: string | null = null
   private drawingStart: { time: number; price: number } | null = null
   private drawingPreview: { time: number; price: number } | null = null
+  private dragEdit:
+    | {
+        id: string
+        kind: 'anchor' | 'move'
+        anchorIdx?: number
+        startTime: number
+        startPrice: number
+        orig: Drawing
+      }
+    | null = null
+  private dragPreview: Drawing | null = null
 
   constructor(container: HTMLElement) {
     this.container = container
@@ -218,6 +236,11 @@ export class LightweightChartAdapter implements ChartApi {
 
   setDrawingCallbacks(cb: DrawingCallbacks | null) {
     this.drawingCallbacks = cb
+  }
+
+  setSelectedDrawing(id: string | null) {
+    this.selectedDrawingId = id
+    this.draw()
   }
 
   setTheme(mode: ThemeMode) {
@@ -289,7 +312,12 @@ export class LightweightChartAdapter implements ChartApi {
     const h = this.overlay.height / dpr
     ctx.clearRect(0, 0, w, h)
 
-    for (const d of this.drawings) this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+    for (const d of this.drawings) {
+      // 拖拽中的画线由预览态绘制（实时跟随指针）
+      if (this.dragEdit && d.id === this.dragEdit.id) continue
+      this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+    }
+    if (this.dragPreview) this.drawOne(ctx, this.dragPreview, true)
 
     // 画线预览
     if (this.drawingStart && this.drawingPreview) {
@@ -297,6 +325,20 @@ export class LightweightChartAdapter implements ChartApi {
       const pts = normalizePoints(tool, [this.drawingStart, this.drawingPreview])
       this.drawOne(ctx, { id: '__preview', type: this.drawingTool as Drawing['type'], points: pts }, true)
     }
+  }
+
+  /** 锚点小圆点 */
+  private drawAnchor(ctx: CanvasRenderingContext2D, x: number, y: number) {
+    ctx.beginPath()
+    ctx.arc(x, y, 3, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  /** 拖拽画线/仓位线时关闭图表平移，避免线条跟随数据而不是光标 */
+  private setPanEnabled(enabled: boolean) {
+    this.chart.applyOptions({
+      handleScroll: { pressedMouseMove: enabled, horzTouchDrag: enabled, vertTouchDrag: enabled },
+    })
   }
 
   private drawOne(ctx: CanvasRenderingContext2D, d: Drawing, selected: boolean) {
@@ -315,6 +357,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.lineTo(this.overlay.width / (window.devicePixelRatio || 1), a.y)
       ctx.stroke()
       this.drawLabel(ctx, a.x, a.y, d.points[0].price.toFixed(2), 'left')
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
 
@@ -335,6 +378,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.fillStyle = color
       ctx.textBaseline = 'middle'
       ctx.fillText(label, bx + 6, by + h / 2 + 0.5)
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
 
@@ -438,6 +482,10 @@ export class LightweightChartAdapter implements ChartApi {
       // 边框
       ctx.strokeStyle = this.theme.yellow + '66'
       ctx.strokeRect(left, Math.min(a.y, b.y), right - left, Math.abs(a.y - b.y))
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
     }
   }
 
@@ -470,6 +518,7 @@ export class LightweightChartAdapter implements ChartApi {
         this.drawingStart = { time: Number(time), price: Number(price) }
         this.drawingPreview = this.drawingStart
         this.container.setPointerCapture?.(e.pointerId)
+        this.setPanEnabled(false)
         this.draw()
       }
       return
@@ -480,23 +529,60 @@ export class LightweightChartAdapter implements ChartApi {
       this.dragKey = this.hoverKey
       this.container.style.cursor = 'grabbing'
       this.container.setPointerCapture?.(e.pointerId)
+      this.setPanEnabled(false)
       return
     }
 
-    // 画线命中检测（选中/取消）
-    const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
-    this.selectedDrawingId = hit
-    this.drawingCallbacks?.onSelect(hit)
-    this.draw()
+    // 画线编辑（只读模式）：锚点拖拽 → 整线移动 → 选中/取消
+    if (this.drawingTool === 'none') {
+      const time = this.chart.timeScale().coordinateToTime(x)
+      const price = this.mainSeries.coordinateToPrice(y)
+      const startTime = time !== null ? Number(time) : 0
+      const startPrice = price !== null ? Number(price) : 0
+      const selected = this.selectedDrawingId
+        ? this.drawings.find((d) => d.id === this.selectedDrawingId)
+        : null
+
+      if (selected) {
+        const anchorIdx = nearestAnchor(selected, x, y, (t, p) => this.project(t, p))
+        if (anchorIdx !== null) {
+          this.dragEdit = { id: selected.id, kind: 'anchor', anchorIdx, startTime, startPrice, orig: selected }
+          this.dragPreview = selected
+          this.container.setPointerCapture?.(e.pointerId)
+          this.container.style.cursor = 'grabbing'
+          this.setPanEnabled(false)
+          this.draw()
+          return
+        }
+      }
+
+      const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
+      if (hit && hit === this.selectedDrawingId) {
+        const hitDrawing = this.drawings.find((d) => d.id === hit)
+        if (!hitDrawing) return
+        this.dragEdit = { id: hit, kind: 'move', startTime, startPrice, orig: hitDrawing }
+        this.dragPreview = hitDrawing
+        this.container.setPointerCapture?.(e.pointerId)
+        this.container.style.cursor = 'grabbing'
+        this.setPanEnabled(false)
+        this.draw()
+        return
+      }
+
+      this.selectedDrawingId = hit
+      this.drawingCallbacks?.onSelect(hit)
+      this.draw()
+      return
+    }
   }
 
   private onPointerMove = (e: PointerEvent) => {
     const rect = this.container.getBoundingClientRect()
+    const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
     // 画线预览
     if (this.drawingStart) {
-      const x = e.clientX - rect.left
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
@@ -506,7 +592,42 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    // 画线编辑拖拽：本地预览 + 重绘（不逐帧回调，提交时才写回）
+    if (this.dragEdit) {
+      const time = this.chart.timeScale().coordinateToTime(x)
+      const price = this.mainSeries.coordinateToPrice(y)
+      const orig = this.dragEdit.orig
+      if (time !== null && price !== null && orig) {
+        this.dragPreview =
+          this.dragEdit.kind === 'anchor'
+            ? moveAnchor(orig, this.dragEdit.anchorIdx ?? 0, {
+                time: Number(time),
+                price: Number(price),
+              })
+            : moveDrawing(
+                orig,
+                Number(time) - this.dragEdit.startTime,
+                Number(price) - this.dragEdit.startPrice,
+              )
+        this.draw()
+      }
+      return
+    }
+
     if (!this.positionLines) {
+      // 画线悬停光标：选中画线锚点 / 任意画线 → grab
+      if (this.drawingTool === 'none' && this.drawings.length) {
+        const selected = this.selectedDrawingId
+          ? this.drawings.find((d) => d.id === this.selectedDrawingId)
+          : null
+        if (selected && nearestAnchor(selected, x, y, (t, p) => this.project(t, p)) !== null) {
+          this.container.style.cursor = 'grab'
+          return
+        }
+        const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
+        this.container.style.cursor = hit ? 'grab' : ''
+        return
+      }
       this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
       return
     }
@@ -528,7 +649,23 @@ export class LightweightChartAdapter implements ChartApi {
     this.container.style.cursor = hit ? 'grab' : this.drawingTool === 'none' ? '' : 'crosshair'
   }
 
-  private onPointerUp = () => {
+  private onPointerUp = (_e: PointerEvent) => {
+    // 画线编辑完成 → 提交最终锚点
+    if (this.dragEdit) {
+      const edit = this.dragEdit
+      const preview = this.dragPreview
+      this.dragEdit = null
+      this.dragPreview = null
+      if (preview) {
+        this.drawings = this.drawings.map((d) => (d.id === preview.id ? preview : d))
+        this.drawingCallbacks?.onUpdate?.(edit.id, preview.points)
+      }
+      this.setPanEnabled(true)
+      this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
+      this.draw()
+      return
+    }
+
     // 画线完成 → 提交
     if (this.drawingStart && this.drawingPreview) {
       // 水平线支持单击放置（未拖动也提交）；趋势线/斐波那契需两点
@@ -542,6 +679,7 @@ export class LightweightChartAdapter implements ChartApi {
       })
       this.drawingStart = null
       this.drawingPreview = null
+      this.setPanEnabled(true)
       this.draw()
       return
     }
@@ -549,15 +687,18 @@ export class LightweightChartAdapter implements ChartApi {
     this.drawingPreview = null
     this.dragKey = null
     this.hoverKey = null
+    this.setPanEnabled(true)
     this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
   }
 
   private onPointerLeave = () => {
     this.dragKey = null
     this.hoverKey = null
-    if (!this.drawingStart) {
+    if (!this.drawingStart && !this.dragEdit) {
       this.drawingPreview = null
+      this.dragPreview = null
     }
+    if (!this.drawingStart && !this.dragEdit && !this.dragKey) this.setPanEnabled(true)
     this.container.style.cursor = ''
   }
 

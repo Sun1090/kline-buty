@@ -53,10 +53,14 @@ interface ChartViewProps {
   drawings?: Drawing[]
   /** 画线工具 */
   drawingTool?: DrawingTool
+  /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
+  selectedDrawingId?: string | null
   /** 画线创建完成回调 */
   onDrawingCommit?: (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => void
   /** 画线选中变化回调 */
   onDrawingSelect?: (id: string | null) => void
+  /** 画线编辑提交回调（整线移动/锚点拖拽后） */
+  onDrawingUpdate?: (id: string, points: { time: number; price: number }[]) => void
   /** 主题模式（canvas 渲染色） */
   themeMode?: 'dark' | 'light'
 }
@@ -85,8 +89,10 @@ export function ChartView({
   onPositionDrag,
   drawings,
   drawingTool,
+  selectedDrawingId,
   onDrawingCommit,
   onDrawingSelect,
+  onDrawingUpdate,
   themeMode = 'dark',
 }: ChartViewProps) {
   const { t, lang } = useI18n()
@@ -112,6 +118,8 @@ export function ChartView({
   onDrawingCommitRef.current = onDrawingCommit
   const onDrawingSelectRef = useRef(onDrawingSelect)
   onDrawingSelectRef.current = onDrawingSelect
+  const onDrawingUpdateRef = useRef(onDrawingUpdate)
+  onDrawingUpdateRef.current = onDrawingUpdate
 
   // 外部可见区间指令（多图同步）：与本地值不同才写入，防回环
   const lastExternalRef = useRef('')
@@ -146,10 +154,11 @@ export function ChartView({
     api.setPositionDragHandler(onPositionDrag ?? null)
     api.setTheme(themeMode)
     api.setDrawingCallbacks(
-      onDrawingCommit || onDrawingSelect
+      onDrawingCommit || onDrawingSelect || onDrawingUpdate
         ? {
             onCommit: (d) => onDrawingCommitRef.current?.(d),
             onSelect: (id) => onDrawingSelectRef.current?.(id),
+            onUpdate: (id, points) => onDrawingUpdateRef.current?.(id, points),
           }
         : null,
     )
@@ -339,6 +348,11 @@ export function ChartView({
     apiRef.current?.setDrawings(drawings ?? [])
     apiRef.current?.setDrawingTool(drawingTool ?? 'none')
   }, [drawings, drawingTool])
+
+  // 选中画线同步（拖拽判定依赖）
+  useEffect(() => {
+    apiRef.current?.setSelectedDrawing?.(selectedDrawingId ?? null)
+  }, [selectedDrawingId])
 
   // 主题切换
   useEffect(() => {

@@ -183,6 +183,12 @@ export function App() {
     setEditingTextId(null)
     setTextDraft('')
   }
+  const updateDrawing = (id: string, points: { time: number; price: number }[]) => {
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? { ...d, points } : d)),
+    }))
+  }
   const selectedDrawing = drawings.find((d) => d.id === selectedDrawingId)
   const startEditingSelectedText = () => {
     if (selectedDrawing?.type !== 'text') return
@@ -552,8 +558,10 @@ export function App() {
             }
             drawings={drawings}
             drawingTool={drawingTool}
+            selectedDrawingId={selectedDrawingId}
             onDrawingCommit={commitDrawing}
             onDrawingSelect={setSelectedDrawingId}
+            onDrawingUpdate={updateDrawing}
           />
         )}
       </main>

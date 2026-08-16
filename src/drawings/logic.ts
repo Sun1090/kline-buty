@@ -59,6 +59,33 @@ export function createDrawing(
   return { id, type, points: normalizePoints(type, pts) }
 }
 
+/** 整图平移：所有锚点按 (dTime 秒, dPrice) 偏移，保留 id/type/text */
+export function moveDrawing(d: Drawing, dTime: number, dPrice: number): Drawing {
+  return { ...d, points: d.points.map((p) => ({ time: p.time + dTime, price: p.price + dPrice })) }
+}
+
+/** 拖动单个锚点到新位置（射线保持锚点顺序，其余按时间重排） */
+export function moveAnchor(d: Drawing, idx: number, point: { time: number; price: number }): Drawing {
+  const points = d.points.map((p, i) => (i === idx ? point : p))
+  return { ...d, points: normalizePoints(d.type, points) }
+}
+
+/** 命中锚点：返回最近的锚点下标（阈值内），未命中 null */
+export function nearestAnchor(d: Drawing, px: number, py: number, project: Project): number | null {
+  let best: number | null = null
+  let bestDist = Infinity
+  d.points.forEach((p, i) => {
+    const pt = project(p.time, p.price)
+    if (!pt) return
+    const dist = Math.hypot(px - pt.x, py - pt.y)
+    if (dist < HIT_THRESHOLD_PX && dist < bestDist) {
+      bestDist = dist
+      best = i
+    }
+  })
+  return best
+}
+
 function distToSegment(p: Point, a: Point, b: Point): number {
   const dx = b.x - a.x
   const dy = b.y - a.y

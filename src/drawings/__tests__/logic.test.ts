@@ -4,6 +4,9 @@ import {
   createDrawing,
   fibPrices,
   hitTestDrawings,
+  moveAnchor,
+  moveDrawing,
+  nearestAnchor,
   normalizePoints,
   FIB_LEVELS,
   type Drawing,
@@ -172,5 +175,63 @@ describe('hitTestDrawings（矩形/射线）', () => {
   })
   it('射线锚点附近命中', () => {
     expect(hitTestDrawings([ray], 2, 152, project)).toBe('r2')
+  })
+})
+
+describe('moveDrawing（整线平移）', () => {
+  it('所有锚点按时间/价格增量偏移，保留 id/type/text', () => {
+    const d: Drawing = { ...trend, text: undefined }
+    const moved = moveDrawing(d, 30, -10)
+    expect(moved.id).toBe(d.id)
+    expect(moved.type).toBe('trend')
+    expect(moved.points).toEqual([
+      { time: 30, price: 90 },
+      { time: 130, price: 40 },
+    ])
+  })
+  it('平移保留两点几何关系（价差/时间差不变）', () => {
+    const d = createDrawing('channel', [{ time: 10, price: 100 }, { time: 90, price: 130 }], 'c')
+    const moved = moveDrawing(d, 50, 5)
+    expect(moved.points[1].price - moved.points[0].price).toBe(30)
+    expect(moved.points[1].time - moved.points[0].time).toBe(80)
+  })
+})
+
+describe('moveAnchor（锚点拖拽）', () => {
+  it('普通两点工具按时间重排', () => {
+    const d = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 't')
+    // 把第二个锚点拖到时间更早的位置 → 重排后它排第一
+    const moved = moveAnchor(d, 1, { time: -50, price: 80 })
+    expect(moved.points[0]).toEqual({ time: -50, price: 80 })
+    expect(moved.points[1]).toEqual({ time: 0, price: 100 })
+  })
+  it('射线保持锚点顺序（方向敏感）', () => {
+    const d = createDrawing('ray', [{ time: 100, price: 50 }, { time: 0, price: 100 }], 'r')
+    // 拖第二个锚点（方向点），锚点仍是第一个
+    const moved = moveAnchor(d, 1, { time: 30, price: 90 })
+    expect(moved.points[0]).toEqual({ time: 100, price: 50 })
+    expect(moved.points[1]).toEqual({ time: 30, price: 90 })
+  })
+  it('水平线单锚点替换', () => {
+    const moved = moveAnchor(horizontal, 0, { time: 20, price: 120 })
+    expect(moved.points).toEqual([{ time: 20, price: 120 }])
+    expect(moved.type).toBe('horizontal')
+  })
+})
+
+describe('nearestAnchor（锚点命中）', () => {
+  // project: x=time, y=300-price
+  it('阈值内命中最近的锚点', () => {
+    // 趋势线锚点 (0,200) 与 (100,250)；点 (3,202) 距锚点0约 3.6px、距锚点1远
+    expect(nearestAnchor(trend, 3, 202, project)).toBe(0)
+    // 距锚点1 (100,250) 约 4px
+    expect(nearestAnchor(trend, 97, 253, project)).toBe(1)
+  })
+  it('阈值外不命中', () => {
+    // 距两个锚点都 > 8px 的点（线段中点附近）
+    expect(nearestAnchor(trend, 50, 225, project)).toBeNull()
+  })
+  it('投影失败（锚点不可见）跳过', () => {
+    expect(nearestAnchor(trend, 0, 200, () => null)).toBeNull()
   })
 })
