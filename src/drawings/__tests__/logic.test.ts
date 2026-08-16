@@ -133,3 +133,44 @@ describe('hitTestDrawings（通道/文本）', () => {
     expect(hitTestDrawings(all, 55, 205, project)).toBe('x1')
   })
 })
+
+describe('normalizePoints（矩形/射线）', () => {
+  it('矩形按时间排序（渲染与锚点顺序无关）', () => {
+    const pts = normalizePoints('rect', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(0)
+    expect(pts[1].time).toBe(100)
+  })
+  it('射线保持「锚点在前」的原始顺序（方向敏感）', () => {
+    const pts = normalizePoints('ray', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(100)
+    expect(pts[1].time).toBe(0)
+  })
+})
+
+describe('hitTestDrawings（矩形/射线）', () => {
+  const rect: Drawing = createDrawing('rect', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'r1')
+  // 射线锚点 (0,150) → 方向经 (100,50)，投影后 a=(0,150) b=(100,250)，方向 (100,100)
+  const ray: Drawing = createDrawing('ray', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'r2')
+
+  it('矩形内部/边框命中（区域命中）', () => {
+    expect(hitTestDrawings([rect], 50, 200, project)).toBe('r1')
+    expect(hitTestDrawings([rect], 50, 152, project)).toBe('r1') // 上边附近
+    expect(hitTestDrawings([rect], 50, 248, project)).toBe('r1') // 下边附近
+    expect(hitTestDrawings([rect], 98, 200, project)).toBe('r1') // 右边附近
+  })
+  it('矩形外不命中', () => {
+    expect(hitTestDrawings([rect], 120, 200, project)).toBeNull()
+    expect(hitTestDrawings([rect], 50, 140, project)).toBeNull()
+  })
+  it('射线：锚点前方延长线上命中（含线段上）', () => {
+    expect(hitTestDrawings([ray], 200, 350, project)).toBe('r2') // t=2 延长线
+    expect(hitTestDrawings([ray], 50, 200, project)).toBe('r2') // 线段上
+  })
+  it('射线：锚点后方不命中（方向敏感）', () => {
+    // 锚点 (0,150) 反方向 (-50,100)，距锚点 ~70px
+    expect(hitTestDrawings([ray], -50, 100, project)).toBeNull()
+  })
+  it('射线锚点附近命中', () => {
+    expect(hitTestDrawings([ray], 2, 152, project)).toBe('r2')
+  })
+})

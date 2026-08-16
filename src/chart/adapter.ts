@@ -376,6 +376,50 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'rect') {
+      // 矩形：半透明填充 + 边框 + 四角锚点
+      const left = Math.min(a.x, b.x)
+      const right = Math.max(a.x, b.x)
+      const top = Math.min(a.y, b.y)
+      const bottom = Math.max(a.y, b.y)
+      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillRect(left, top, right - left, bottom - top)
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.strokeRect(left, top, right - left, bottom - top)
+      for (const p of [
+        { x: left, y: top },
+        { x: right, y: top },
+        { x: left, y: bottom },
+        { x: right, y: bottom },
+      ]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'ray') {
+      // 射线：锚点 → 经第二点方向无限延伸（画到画布外由 canvas 裁剪）
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const len = Math.hypot(dx, dy)
+      if (len > 0) {
+        const w = this.overlay.width / (window.devicePixelRatio || 1)
+        const h = this.overlay.height / (window.devicePixelRatio || 1)
+        const s = Math.max(w, h) * 2
+        ctx.beginPath()
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(a.x + (dx / len) * s, a.y + (dy / len) * s)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(a.x, a.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
     if (d.type === 'fib') {
       // 分位线（从高位向下）
       const prices = fibPrices(d.points[0].price, d.points[1].price)
