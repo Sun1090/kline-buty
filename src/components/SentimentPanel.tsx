@@ -125,6 +125,7 @@ export function SentimentPanel({ data }: SentimentPanelProps) {
   const { t } = useI18n()
   return (
     <div
+      data-testid="sentiment-panel"
       style={{
         display: 'flex',
         alignItems: 'stretch',

@@ -34,7 +34,9 @@ const DIRECT_BASES: Record<string, string> = {
 /** 构造请求 URL：direct 模式拼直连域名（路径原样保留） */
 export function buildApiUrl(mode: EndpointMode, path: string): string {
   if (mode === 'proxy') return path
-  const key = path.startsWith('/fapi') ? 'fapi' : 'api'
+  // /fapi（永续行情）与 /futures/data（衍生品情绪）均来自 fapi.binance.com（带 CORS）；
+  // data-api.binance.vision 的 /futures/data 不带 CORS 头，浏览器直连会被拦截
+  const key = path.startsWith('/fapi') || path.startsWith('/futures') ? 'fapi' : 'api'
   return DIRECT_BASES[key] + path
 }
 
