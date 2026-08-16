@@ -457,8 +457,12 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.moveTo(a.x, a.y)
         ctx.lineTo(a.x + (dx / len) * s, a.y + (dy / len) * s)
         ctx.stroke()
+        // 锚点 + 方向控制点（均可拖拽）
         ctx.beginPath()
         ctx.arc(a.x, a.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(b.x, b.y, 3, 0, Math.PI * 2)
         ctx.fill()
       }
       return

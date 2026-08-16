@@ -218,11 +218,19 @@ export function App() {
         setReplay((r) => (r ? { ...r, playing: !r.playing } : r))
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedDrawingId) {
         deleteSelectedDrawing()
+      } else if (e.key === 'Escape') {
+        // Esc：取消选中画线 / 退出文本编辑
+        if (editingTextId) {
+          setEditingTextId(null)
+          setTextDraft('')
+        } else if (selectedDrawingId) {
+          setSelectedDrawingId(null)
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [period, selectedDrawingId, deleteSelectedDrawing])
+  }, [period, selectedDrawingId, editingTextId, textDraft, deleteSelectedDrawing])
 
   const statusColor =
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
