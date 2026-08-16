@@ -42,7 +42,7 @@ function RatioBlock({ title, points }: RatioBlockProps) {
         <span style={{ color: 'var(--up)', fontSize: 11 }}>{longPct.toFixed(0)}%</span>
         <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('sentiment.long')}</span>
       </div>
-      <Sparkline points={points.map((p) => p.longShortRatio)} />
+      <Sparkline fluid points={points.map((p) => p.longShortRatio)} />
     </Block>
   )
 }
@@ -74,7 +74,7 @@ function TakerBlock({ title, points }: TakerBlockProps) {
         <span style={{ color: 'var(--up)', fontSize: 11 }}>{buyPct.toFixed(0)}%</span>
         <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('sentiment.buy')}</span>
       </div>
-      <Sparkline points={points.map((p) => p.buySellRatio)} />
+      <Sparkline fluid points={points.map((p) => p.buySellRatio)} />
     </Block>
   )
 }
@@ -102,14 +102,14 @@ function OiBlock({ title, points }: OiBlockProps) {
     <Block title={title}>
       <span style={{ fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtOiOz(cur.oi)}</span>
       <span style={{ color, fontSize: 11 }}>{change >= 0 ? '+' : ''}{(change * 100).toFixed(2)}%</span>
-      <Sparkline points={points.map((p) => p.oi)} />
+      <Sparkline fluid points={points.map((p) => p.oi)} />
     </Block>
   )
 }
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 280, padding: '6px 16px', borderRight: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 260px', minWidth: 240, maxWidth: '100%', padding: '6px 16px', borderRight: '1px solid var(--border)' }}>
       <span style={{ color: 'var(--text-faint)', fontSize: 12, whiteSpace: 'nowrap' }}>{title}</span>
       {children}
     </div>
@@ -128,9 +128,10 @@ export function SentimentPanel({ data }: SentimentPanelProps) {
       data-testid="sentiment-panel"
       style={{
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'stretch',
         gap: 0,
-        overflowX: 'auto',
+        overflowX: 'hidden',
         borderBottom: '1px solid var(--border)',
         background: 'var(--panel)',
         flexShrink: 0,
