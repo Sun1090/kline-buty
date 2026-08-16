@@ -1,5 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKlineWsMessage } from './types'
+import { buildWsUrl, type EndpointMode } from './endpoints'
 
 export type WsStatus = 'connecting' | 'live' | 'reconnecting' | 'closed'
 
@@ -68,6 +69,7 @@ export function createKlineWs(
   period: Period,
   callbacks: KlineWsCallbacks,
   deps: WsDeps = browserDeps,
+  mode: EndpointMode = 'proxy',
 ): KlineWs {
   let socket: WebSocketLike | null = null
   let closed = false
@@ -77,10 +79,7 @@ export function createKlineWs(
   let watchdogTimer: number | undefined
   let lastMsgAt = 0
 
-  const hasLocation = typeof location !== 'undefined'
-  const host = hasLocation ? location.host : 'localhost'
-  const protocol = hasLocation && location.protocol === 'https:' ? 'wss' : 'ws'
-  const url = `${protocol}://${host}/ws/${symbol.toLowerCase()}@kline_${period}`
+  const url = buildWsUrl(mode, `${symbol.toLowerCase()}@kline_${period}`)
 
   function startWatchdog() {
     stopWatchdog()

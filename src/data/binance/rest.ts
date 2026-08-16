@@ -1,5 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKline } from './types'
+import { buildApiUrl, detectMode } from './endpoints'
 
 /** 币安 K 线 → 领域类型（openTime 毫秒 → 秒） */
 export function mapKline(raw: RawKline): Candle {
@@ -22,10 +23,47 @@ export interface Ticker24h {
   quoteVolume: number
 }
 
+/** 请求封装：自动探测代理/直连模式 */
+async function binanceGet(path: string): Promise<Response> {
+  const mode = await detectMode()
+  const res = await fetch(buildApiUrl(mode, path))
+  if (!res.ok) throw new Error(`binance http ${res.status}`)
+  return res
+}
+
+/**
+ * 拉取历史 K 线。优先走代理（相对路径 /api），静态托管下自动直连币安公开 API。
+ * 5xx/网络错误自动重试 2 次。
+ */
+export async function fetchKlines(
+  symbol: string,
+  interval: Period,
+  limit = 800,
+  startTime?: number,
+  endTime?: number,
+): Promise<Candle[]> {
+  const params = new URLSearchParams({ symbol, interval, limit: String(limit) })
+  if (startTime !== undefined) params.set('startTime', String(startTime))
+  if (endTime !== undefined) params.set('endTime', String(endTime))
+
+  const url = `/api/v3/klines?${params.toString()}`
+  let lastErr: unknown
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt))
+    try {
+      const res = await binanceGet(url)
+      const data = (await res.json()) as RawKline[]
+      return data.map(mapKline)
+    } catch (e) {
+      lastErr = e
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('binance klines failed')
+}
+
 /** 24 小时行情摘要（最新价/涨跌幅/高低/成交额） */
 export async function fetchTicker24h(symbol: string): Promise<Ticker24h> {
-  const res = await fetch(`/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`)
-  if (!res.ok) throw new Error(`binance ticker http ${res.status}`)
+  const res = await binanceGet(`/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`)
   const d = (await res.json()) as {
     lastPrice: string
     priceChangePercent: string
@@ -48,10 +86,9 @@ export interface FundingRate {
   nextFundingTime: number
 }
 
-/** 永续合约资金费率（经 /fapi 代理 → fapi.binance.com） */
+/** 永续合约资金费率 */
 export async function fetchFundingRate(symbol: string): Promise<FundingRate> {
-  const res = await fetch(`/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`)
-  if (!res.ok) throw new Error(`binance funding http ${res.status}`)
+  const res = await binanceGet(`/fapi/v1/premiumIndex?symbol=${encodeURIComponent(symbol)}`)
   const d = (await res.json()) as {
     markPrice: string
     lastFundingRate: string
@@ -66,39 +103,7 @@ export async function fetchFundingRate(symbol: string): Promise<FundingRate> {
 
 /** 永续合约未平仓量 */
 export async function fetchOpenInterest(symbol: string): Promise<number> {
-  const res = await fetch(`/fapi/v1/openInterest?symbol=${encodeURIComponent(symbol)}`)
-  if (!res.ok) throw new Error(`binance oi http ${res.status}`)
+  const res = await binanceGet(`/fapi/v1/openInterest?symbol=${encodeURIComponent(symbol)}`)
   const d = (await res.json()) as { openInterest: string }
   return Number(d.openInterest)
-}
-
-/**
- * 拉取历史 K 线。前端统一走相对路径 /api，由 dev 代理转发到币安，
- * 不硬编码外部域名（见 03-技术方案 §4）。5xx/网络错误自动重试 2 次。
- */
-export async function fetchKlines(
-  symbol: string,
-  interval: Period,
-  limit = 800,
-  startTime?: number,
-  endTime?: number,
-): Promise<Candle[]> {
-  const params = new URLSearchParams({ symbol, interval, limit: String(limit) })
-  if (startTime !== undefined) params.set('startTime', String(startTime))
-  if (endTime !== undefined) params.set('endTime', String(endTime))
-
-  const url = `/api/v3/klines?${params.toString()}`
-  let lastErr: unknown
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt))
-    try {
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`binance klines http ${res.status}`)
-      const data = (await res.json()) as RawKline[]
-      return data.map(mapKline)
-    } catch (e) {
-      lastErr = e
-    }
-  }
-  throw lastErr instanceof Error ? lastErr : new Error('binance klines failed')
 }

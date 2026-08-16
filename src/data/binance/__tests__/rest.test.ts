@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchKlines, fetchTicker24h, mapKline } from '../rest'
+import { __resetModeForTests } from '../endpoints'
 
 const rawKline = [
   1786797540000,
@@ -16,8 +17,18 @@ const rawKline = [
   '0',
 ]
 
+beforeEach(() => {
+  __resetModeForTests()
+  // 默认代理可用：ping 返回 JSON → proxy 模式
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    headers: { get: () => 'application/json' },
+  }))
+})
+
 afterEach(() => {
   vi.unstubAllGlobals()
+  __resetModeForTests()
 })
 
 describe('mapKline', () => {
@@ -37,14 +48,16 @@ describe('fetchKlines', () => {
   it('请求相对路径 /api/v3/klines 且参数正确', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: () => 'application/json' },
       json: async () => [rawKline],
     })
     vi.stubGlobal('fetch', fetchMock)
 
     const out = await fetchKlines('BTCUSDT', '5m', 500, 1234567, 7654321)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    const url = fetchMock.mock.calls[0][0] as string
-    expect(url.startsWith('/api/v3/klines?')).toBe(true)
+    const urls = fetchMock.mock.calls.map((c) => c[0] as string)
+    const url = urls.find((u) => u.includes('/api/v3/klines'))
+    expect(url).toBeDefined()
+    expect(url!.startsWith('/api/v3/klines?')).toBe(true)
     expect(url).toContain('symbol=BTCUSDT')
     expect(url).toContain('interval=5m')
     expect(url).toContain('limit=500')
@@ -58,17 +71,20 @@ describe('fetchKlines', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429 })
     vi.stubGlobal('fetch', fetchMock)
     await expect(fetchKlines('BTCUSDT', '1m')).rejects.toThrow('http 429')
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    // 1 次 ping 探测 + 3 次重试
+    expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
   it('首次 5xx 自动重试后成功', async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'application/json' }, json: async () => [{}] }) // ping
       .mockResolvedValueOnce({ ok: false, status: 500 })
-      .mockResolvedValueOnce({ ok: true, json: async () => [rawKline] })
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'application/json' }, json: async () => [rawKline] })
     vi.stubGlobal('fetch', fetchMock)
     const out = await fetchKlines('BTCUSDT', '1m')
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    // 1 次 ping + 首次失败 + 重试成功
+    expect(fetchMock).toHaveBeenCalledTimes(3)
     expect(out).toHaveLength(1)
   })
 })
@@ -85,7 +101,7 @@ describe('fetchTicker24h', () => {
     const t = await fetchTicker24h('BTCUSDT')
     expect(t.price).toBe(63000.5)
     expect(t.changePct).toBe(-1.234)
-    const url = (vi.mocked(fetch).mock.calls[0][0] as string)
-    expect(url).toContain('/api/v3/ticker/24hr?symbol=BTCUSDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls.find((u) => u.includes('/api/v3/ticker/24hr?symbol=BTCUSDT'))).toBeDefined()
   })
 })

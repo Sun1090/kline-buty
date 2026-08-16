@@ -4,6 +4,7 @@ import { PERIOD_MS } from '../chart/types'
 import { MarketStore } from '../data/market'
 import { fetchKlines } from '../data/binance/rest'
 import { createKlineWs, type WsStatus } from '../data/binance/ws'
+import { detectMode } from '../data/binance/endpoints'
 
 const PAGE_SIZE = 500
 
@@ -46,27 +47,32 @@ export function useKlineData(symbol: string, period: Period) {
         }
       })
 
-    const ws = createKlineWs(symbol, period, {
-      onKline: (c) => {
-        store.upsert(c)
-        publish()
-      },
-      onStatus: (s) => {
-        if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
-      },
-      onReconnect: () => {
-        fetchKlines(symbol, period, 100)
-          .then((hist) => {
-            store.upsertAll(hist)
-            publish()
-          })
-          .catch(() => {})
-      },
+    let ws: ReturnType<typeof createKlineWs> | null = null
+    // 探测端点模式（代理/直连）后建立 WS
+    void detectMode().then((mode) => {
+      if (!aliveRef.current) return
+      ws = createKlineWs(symbol, period, {
+        onKline: (c) => {
+          store.upsert(c)
+          publish()
+        },
+        onStatus: (s) => {
+          if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
+        },
+        onReconnect: () => {
+          fetchKlines(symbol, period, 100)
+            .then((hist) => {
+              store.upsertAll(hist)
+              publish()
+            })
+            .catch(() => {})
+        },
+      }, undefined, mode)
     })
 
     return () => {
       aliveRef.current = false
-      ws.close()
+      ws?.close()
       storeRef.current = null
     }
   }, [symbol, period])
