@@ -5,7 +5,7 @@ const STORAGE_KEY = 'kline-buty:lang'
 
 export type { Lang, MessageKey, Messages }
 export { localeFor, DICTIONARIES, DEFAULT_LANG, chartLabelsFor, titleFor, type ChartLabels } from './messages'
-export { zh, en, ja, ko } from './messages'
+export { zh, en, ja, ko, es } from './messages'
 
 export type TFunction = (key: MessageKey, params?: Record<string, string | number>) => string
 
@@ -45,7 +45,7 @@ const I18nContext = createContext<I18nContextValue>(DEFAULT_CONTEXT)
 function readStoredLang(): Lang {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    if (v === 'zh-CN' || v === 'en' || v === 'ja' || v === 'ko') return v
+    if (v === 'zh-CN' || v === 'en' || v === 'ja' || v === 'ko' || v === 'es') return v
   } catch {
     /* noop */
   }

@@ -86,9 +86,9 @@ function optionLabel(
 
 export function App() {
   const { t, lang, setLang } = useI18n()
-  // 语言循环切换：中文 → EN → 日本語 → 한국어
-  const LANGS: Lang[] = ['zh-CN', 'en', 'ja', 'ko']
-  const LANG_LABELS: Record<Lang, string> = { 'zh-CN': '中文', en: 'EN', ja: '日本語', ko: '한국어' }
+  // 语言循环切换：中文 → EN → 日本語 → 한국어 → Español
+  const LANGS: Lang[] = ['zh-CN', 'en', 'ja', 'ko', 'es']
+  const LANG_LABELS: Record<Lang, string> = { 'zh-CN': '中文', en: 'EN', ja: '日本語', ko: '한국어', es: 'ES' }
   const [symbol, setSymbol] = usePersistedState('symbol', 'BTCUSDT')
   const [period, setPeriod] = usePersistedState<Period>('period', '1m')
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
