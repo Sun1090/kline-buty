@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { buildApiUrl, buildWsUrl, detectMode, __resetModeForTests } from '../endpoints'
+import { buildApiUrl, buildDepthWsUrls, buildWsUrl, detectMode, toCoinMPair, toCoinMSymbol, __resetModeForTests } from '../endpoints'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -64,5 +64,38 @@ describe('detectMode', () => {
     await detectMode()
     await detectMode()
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('COIN-M 兜底映射', () => {
+  it('toCoinMSymbol：USDT-M → COIN-M 永续（BTCUSDT → BTCUSD_PERP）', () => {
+    expect(toCoinMSymbol('BTCUSDT')).toBe('BTCUSD_PERP')
+    expect(toCoinMSymbol('ETHUSDT')).toBe('ETHUSD_PERP')
+  })
+  it('toCoinMPair：USDT-M → COIN-M pair（BTCUSDT → BTCUSD，futures/data 用 pair=）', () => {
+    expect(toCoinMPair('BTCUSDT')).toBe('BTCUSD')
+    expect(toCoinMPair('ETHUSDT')).toBe('ETHUSD')
+  })
+  it('非 USDT 后缀原样返回（不强行改写）', () => {
+    expect(toCoinMSymbol('BTCUSDC')).toBe('BTCUSDC')
+    expect(toCoinMPair('BTCUSDC')).toBe('BTCUSDC')
+  })
+})
+
+describe('buildDepthWsUrls', () => {
+  it('direct 模式：spot → fstream → dstream 候选链（流名同构/同构化）', () => {
+    const urls = buildDepthWsUrls('direct', 'btcusdt@depth20@100ms', 'btcusd_perp@depth20@100ms')
+    expect(urls).toEqual([
+      'wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms',
+      'wss://fstream.binance.com/ws/btcusdt@depth20@100ms',
+      'wss://dstream.binance.com/ws/btcusd_perp@depth20@100ms',
+    ])
+  })
+  it('direct 模式：无 coinm 流时仅前两个候选', () => {
+    const urls = buildDepthWsUrls('direct', 'btcusdt@depth20@100ms')
+    expect(urls).toHaveLength(2)
+  })
+  it('proxy 模式：单一相对路径', () => {
+    expect(buildDepthWsUrls('proxy', 'btcusdt@depth20@100ms')[0]).toContain('/ws/btcusdt@depth20@100ms')
   })
 })

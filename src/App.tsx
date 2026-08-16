@@ -911,6 +911,78 @@ export function App() {
           </div>
         </div>
       )}
+      {editingTextId && isMobile && (
+        <div
+          data-testid="mobile-text-editor"
+          style={{
+            position: 'fixed',
+            bottom: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 120,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 10px',
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.45)',
+            maxWidth: 'calc(100vw - 24px)',
+          }}
+        >
+          <input
+            value={textDraft}
+            onChange={(e) => setTextDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmTextDrawing()
+              if (e.key === 'Escape') setEditingTextId(null)
+            }}
+            placeholder={t('drawing.textPlaceholder')}
+            autoFocus
+            data-testid="mobile-text-input"
+            style={{
+              width: 170,
+              fontSize: 13,
+              padding: '6px 8px',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              background: 'var(--panel)',
+              color: 'var(--text)',
+            }}
+          />
+          <button
+            onClick={confirmTextDrawing}
+            data-testid="mobile-text-confirm"
+            style={{
+              padding: '6px 12px',
+              fontSize: 12,
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              background: 'var(--accent)',
+              color: '#fff',
+            }}
+          >
+            {t('common.confirm')}
+          </button>
+          <button
+            onClick={() => setEditingTextId(null)}
+            data-testid="mobile-text-cancel"
+            style={{
+              padding: '6px 12px',
+              fontSize: 12,
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              background: 'transparent',
+              color: 'var(--text-dim)',
+            }}
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
