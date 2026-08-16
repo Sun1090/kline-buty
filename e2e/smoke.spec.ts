@@ -306,6 +306,40 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
   })
 
+  test('分享链接：URL 参数定位品种/周期 + 复制链接', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/?symbol=ETHUSDT&period=1h')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // URL 参数已定位品种
+    await expect(page.getByText('ETH/USDT', { exact: false }).first()).toBeVisible()
+    // 1时 周期处于选中态（accent 背景）
+    const bg = await page
+      .getByRole('button', { name: '1时' })
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).toBe('rgb(41, 98, 255)')
+    // 复制分享链接 → 剪贴板含当前品种与周期
+    await page.getByRole('button', { name: '分享' }).click()
+    await expect(page.getByText('已复制')).toBeVisible({ timeout: 5000 })
+    const clip = await page.evaluate(() => navigator.clipboard.readText())
+    expect(clip).toContain('symbol=ETHUSDT')
+    expect(clip).toContain('period=1h')
+  })
+
+  test('自选收藏：星标添加 → 置顶自选区 → 取消', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // 打开交易对选择器（按钮文案 = 当前品种）
+    await page.locator('button', { hasText: 'BTC/USDT' }).click()
+    // 收藏第一行（BTCUSDT）的星标
+    await page.getByRole('button', { name: '加入自选' }).first().click()
+    // 自选区出现且星标变实心（可取消）
+    await expect(page.getByText('自选')).toBeVisible()
+    await expect(page.getByRole('button', { name: '取消自选' }).first()).toBeVisible()
+    // 取消收藏 → 自选区消失
+    await page.getByRole('button', { name: '取消自选' }).first().click()
+    await expect(page.getByText('自选')).toHaveCount(0)
+  })
+
   test('画线：矩形 + 射线 → 绘制 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
 import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
+import { useFavorites } from '../hooks/useFavorites'
 import { useI18n } from '../i18n'
 import { Sparkline } from './Sparkline'
 
@@ -16,13 +17,88 @@ interface SymbolPickerProps {
   onChange: (s: string) => void
 }
 
+function StarButton({
+  starred,
+  onToggle,
+  title,
+}: {
+  starred: boolean
+  onToggle: () => void
+  title: string
+}) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+      title={title}
+      aria-label={title}
+      style={{
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        fontSize: 14,
+        lineHeight: 1,
+        padding: '2px 4px',
+        color: starred ? 'var(--yellow)' : 'var(--text-faint)',
+        flexShrink: 0,
+      }}
+    >
+      {starred ? '★' : '☆'}
+    </button>
+  )
+}
+
+interface RowProps {
+  symbol: string
+  snap?: { price: number; changePct: number; spark: number[] } | undefined
+  selected: boolean
+  starred: boolean
+  onSelect: () => void
+  onToggleStar: () => void
+  starTitle: string
+}
+
+/** 交易对行：名称 + 价格 + 24h 涨跌 + 迷你图 + 收藏星标 */
+function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, starTitle }: RowProps) {
+  const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
+  return (
+    <div
+      onClick={onSelect}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '6px 8px',
+        borderRadius: 6,
+        cursor: 'pointer',
+        background: selected ? 'rgba(41,98,255,0.15)' : 'transparent',
+      }}
+    >
+      <span style={{ width: 74, fontWeight: 600, fontSize: 13 }}>{symbol.replace('USDT', '/USDT')}</span>
+      <span style={{ width: 64, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+        {snap ? fmtPrice(snap.price) : '—'}
+      </span>
+      <span style={{ width: 56, textAlign: 'right', fontSize: 12, color: changeColor }}>
+        {snap ? `${snap.changePct.toFixed(2)}%` : '—'}
+      </span>
+      {snap ? <Sparkline points={snap.spark} /> : <span style={{ width: 76 }} />}
+      <StarButton starred={starred} onToggle={onToggleStar} title={starTitle} />
+    </div>
+  )
+}
+
 export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
-  const { snapshots } = useMarketSnapshots(POPULAR_SYMBOLS)
+  const { favorites, toggleFavorite } = useFavorites()
+  const snapSymbols = useMemo(() => Array.from(new Set([...POPULAR_SYMBOLS, ...favorites])), [favorites])
+  const { snapshots } = useMarketSnapshots(snapSymbols)
+  const filtered = useFilteredSymbols(query)
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -32,29 +108,28 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
-  // 打开时聚焦搜索框
   useEffect(() => {
-    if (open) {
-      setQuery('')
-      setTimeout(() => searchRef.current?.focus(), 50)
-    }
+    if (open) searchRef.current?.focus()
   }, [open])
 
-  const filtered = useFilteredSymbols(query)
+  const select = (s: string) => {
+    onChange(s)
+    setOpen(false)
+  }
+  const favTitle = (s: string) => (favorites.includes(s) ? t('symbol.favoriteRemove') : t('symbol.favoriteAdd'))
 
   return (
-    <div ref={rootRef} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }} ref={rootRef}>
       <button
         onClick={() => setOpen((v) => !v)}
         style={{
-          padding: '5px 10px',
-          fontSize: 13,
-          borderRadius: 4,
+          padding: '3px 10px',
+          fontSize: 12,
           border: '1px solid var(--border)',
-          background: 'var(--panel)',
-          color: 'var(--text)',
+          borderRadius: 4,
           cursor: 'pointer',
-          minWidth: 96,
+          background: 'transparent',
+          color: 'var(--text)',
         }}
       >
         {value.replace('USDT', '/USDT')} ▾
@@ -92,41 +167,39 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             }}
           />
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+            {query === '' && favorites.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>{t('symbol.favorites')}</div>
+                {favorites.map((s) => (
+                  <SymbolRow
+                    key={s}
+                    symbol={s}
+                    snap={snapshots[s]}
+                    selected={s === value}
+                    starred
+                    onSelect={() => select(s)}
+                    onToggleStar={() => toggleFavorite(s)}
+                    starTitle={t('symbol.favoriteRemove')}
+                  />
+                ))}
+              </>
+            )}
             {query === '' && (
               <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>{t('symbol.popular')}</div>
             )}
             {query === '' &&
-              POPULAR_SYMBOLS.map((s) => {
-                const snap = snapshots[s]
-                const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
-                return (
-                  <div
-                    key={s}
-                    onClick={() => {
-                      onChange(s)
-                      setOpen(false)
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '6px 8px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      background: s === value ? 'rgba(41,98,255,0.15)' : 'transparent',
-                    }}
-                  >
-                    <span style={{ width: 74, fontWeight: 600, fontSize: 13 }}>{s.replace('USDT', '/USDT')}</span>
-                    <span style={{ width: 64, textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-                      {snap ? fmtPrice(snap.price) : '—'}
-                    </span>
-                    <span style={{ width: 56, textAlign: 'right', fontSize: 12, color: changeColor }}>
-                      {snap ? `${snap.changePct.toFixed(2)}%` : '—'}
-                    </span>
-                    {snap ? <Sparkline points={snap.spark} /> : <span style={{ width: 76 }} />}
-                  </div>
-                )
-              })}
+              POPULAR_SYMBOLS.map((s) => (
+                <SymbolRow
+                  key={s}
+                  symbol={s}
+                  snap={snapshots[s]}
+                  selected={s === value}
+                  starred={favorites.includes(s)}
+                  onSelect={() => select(s)}
+                  onToggleStar={() => toggleFavorite(s)}
+                  starTitle={favTitle(s)}
+                />
+              ))}
             {query !== '' && (
               <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>
                 {t('symbol.searchResults', { count: filtered.length })}
@@ -134,25 +207,15 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             )}
             {query !== '' &&
               filtered.map((s) => (
-                <div
+                <SymbolRow
                   key={s}
-                  onClick={() => {
-                    onChange(s)
-                    setOpen(false)
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    background: s === value ? 'rgba(41,98,255,0.15)' : 'transparent',
-                  }}
-                >
-                  {s.replace('USDT', '/USDT')}
-                </div>
+                  symbol={s}
+                  selected={s === value}
+                  starred={favorites.includes(s)}
+                  onSelect={() => select(s)}
+                  onToggleStar={() => toggleFavorite(s)}
+                  starTitle={favTitle(s)}
+                />
               ))}
             {query !== '' && filtered.length === 0 && (
               <div style={{ color: 'var(--text-faint)', fontSize: 12, padding: '8px 6px' }}>{t('symbol.noMatch')}</div>
