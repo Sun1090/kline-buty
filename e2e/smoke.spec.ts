@@ -701,23 +701,37 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
-  test('i18n：中/英文切换 → 界面文案切换并持久化', async ({ page }) => {
+  test('i18n：4 语循环切换（中/EN/日本語/한국어）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
-    // 默认中文 → 点 EN 切英文
-    await page.getByRole('button', { name: 'EN', exact: true }).click()
+    // 默认中文 → 点「中文」切英文
+    await page.getByRole('button', { name: '中文', exact: true }).click()
     await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Type', { exact: false }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: '中文', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'EN', exact: true })).toBeVisible()
     // 语言持久化：刷新后仍为英文
     await page.reload()
     await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: '中文', exact: true })).toBeVisible()
-    // 切回中文恢复
-    await page.getByRole('button', { name: '中文', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'EN', exact: true })).toBeVisible()
+    // EN → 日本語
+    await page.getByRole('button', { name: 'EN', exact: true }).click()
+    await expect(page.getByText('リアルタイム', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('タイプ', { exact: false }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: '日本語', exact: true })).toBeVisible()
+    // 日本語 → 한국어
+    await page.getByRole('button', { name: '日本語', exact: true }).click()
+    await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('유형', { exact: false }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: '한국어', exact: true })).toBeVisible()
+    // 刷新持久化：仍为韩语
+    await page.reload()
+    await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: '한국어', exact: true })).toBeVisible()
+    // 韩国语 → 切回中文
+    await page.getByRole('button', { name: '한국어', exact: true }).click()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await page.evaluate(() => localStorage.clear())
     await page.reload()

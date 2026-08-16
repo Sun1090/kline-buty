@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { DICTIONARIES, DEFAULT_LANG, type Lang, type MessageKey, type Messages } from './messages'
+import { DICTIONARIES, DEFAULT_LANG, titleFor, type Lang, type MessageKey, type Messages } from './messages'
 
 const STORAGE_KEY = 'kline-buty:lang'
 
 export type { Lang, MessageKey, Messages }
-export { localeFor, DICTIONARIES, DEFAULT_LANG, chartLabelsFor, type ChartLabels } from './messages'
-export { zh, en } from './messages'
+export { localeFor, DICTIONARIES, DEFAULT_LANG, chartLabelsFor, titleFor, type ChartLabels } from './messages'
+export { zh, en, ja, ko } from './messages'
 
 export type TFunction = (key: MessageKey, params?: Record<string, string | number>) => string
 
@@ -45,7 +45,7 @@ const I18nContext = createContext<I18nContextValue>(DEFAULT_CONTEXT)
 function readStoredLang(): Lang {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    if (v === 'zh-CN' || v === 'en') return v
+    if (v === 'zh-CN' || v === 'en' || v === 'ja' || v === 'ko') return v
   } catch {
     /* noop */
   }
@@ -67,8 +67,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // 同步 <html lang> 与标题（SEO / 无障碍 / 日期格式化）
   useEffect(() => {
     document.documentElement.lang = lang
-    const titles = DICTIONARIES[lang].app
-    document.title = lang === 'zh-CN' ? titles.titleZh : titles.titleEn
+    document.title = titleFor(lang)
   }, [lang])
 
   const value = useMemo<I18nContextValue>(() => ({ lang, setLang, t: makeT(DICTIONARIES[lang]) }), [lang])
