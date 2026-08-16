@@ -1,7 +1,7 @@
-import { useId, useMemo } from 'react'
+import { useId, useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { aggregateDepth, maxTotal, bestPrice } from '../depth/aggregate'
-import { fmtCompact, sideTotals, spreadOf } from '../depth/format'
+import { fmtCompact, sideTotals, spreadOf, depthHoverInfo, type DepthHoverInfo } from '../depth/format'
 import { useI18n } from '../i18n'
 
 interface DepthChartProps {
@@ -25,6 +25,7 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
   const render = useMemo(() => {
     if (!depth || depth.bids.length === 0 || depth.asks.length === 0) return null
     const points = aggregateDepth(depth.bids, depth.asks)
+    const pointList = points
     const max = maxTotal(points)
     const { bestBid, bestAsk } = bestPrice(depth.bids, depth.asks)
     const { bidTotal, askTotal } = sideTotals(points)
@@ -59,8 +60,12 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
       bestBid, bestAsk, midX, max, minPrice, maxPrice,
       bidTotal, askTotal, spread,
       bidEnd, askEnd, bidStart, askStart,
+      pointList,
     }
   }, [depth])
+
+  const [hover, setHover] = useState<DepthHoverInfo | null>(null)
+  const [hoverX, setHoverX] = useState<number | null>(null)
 
   if (!render) {
     return (
@@ -72,6 +77,15 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
 
   const bidGrad = `url(#bidGrad-${gradId})`
   const askGrad = `url(#askGrad-${gradId})`
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    if (rect.width === 0) return
+    const ratio = (e.clientX - rect.left) / rect.width
+    const price = render.minPrice + ratio * (render.maxPrice - render.minPrice)
+    setHover(depthHoverInfo(render.pointList, price))
+    setHoverX(render.x(price))
+  }
 
   return (
     <div
@@ -86,7 +100,7 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
       <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 2 }}>
         {t('depth.title', { symbol: symbol.replace('USDT', '/USDT') })}
       </div>
-      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: 520 }} data-testid="depth-chart">
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: 520 }} data-testid="depth-chart" onMouseMove={onMove} onMouseLeave={() => { setHover(null); setHoverX(null) }}>
         <defs>
           <linearGradient id={`bidGrad-${gradId}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={BID} stopOpacity={0.4} />
@@ -122,6 +136,23 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
         {/* 价格范围 */}
         <text x={6} y={H - 14} style={{ fill: 'var(--placeholder)' }} fontSize={9}>{fmtPrice(render.minPrice)}</text>
         <text x={W - 70} y={H - 14} style={{ fill: 'var(--placeholder)' }} fontSize={9}>{fmtPrice(render.maxPrice)}</text>
+        {hoverX != null && hover && (
+          <>
+            <line data-testid="depth-crosshair" x1={hoverX} y1={0} x2={hoverX} y2={H - 10} style={{ stroke: 'var(--text-dim)' }} strokeWidth={1} strokeDasharray="3 3" />
+            <g data-testid="depth-tooltip" transform={`translate(${hoverX < W - 128 ? hoverX + 8 : hoverX - 124}, 10)`}>
+              <rect width={116} height={38} rx={4} fill="var(--panel)" stroke="var(--border)" strokeWidth={1} opacity={0.95} />
+              <text x={8} y={14} fill="var(--text-dim)" fontSize={9}>
+                {fmtPrice(hover.price)} {hover.exact ? '●' : ''}
+              </text>
+              <text x={8} y={29} fill={BID} fontSize={9}>
+                {t('depth.bid')} {fmtCompact(hover.bidTotal)}
+              </text>
+              <text x={62} y={29} fill={ASK} fontSize={9}>
+                {t('depth.ask')} {fmtCompact(hover.askTotal)}
+              </text>
+            </g>
+          </>
+        )}
       </svg>
     </div>
   )
