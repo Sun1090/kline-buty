@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PERIODS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
@@ -122,6 +122,24 @@ export function App() {
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const [headerH, setHeaderH] = useState(0)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  // 测量 header 实际高度（工具栏换行时变化）+ 窄屏检测：右侧面板抽屉定位依赖
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setHeaderH(el.offsetHeight))
+    ro.observe(el)
+    setHeaderH(el.offsetHeight)
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', onResize)
+    }
+  }, [])
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
   useEffect(() => {
@@ -344,10 +362,12 @@ export function App() {
 
   const statusColor =
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
+  const sidePanelOpen = depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? 'min(380px, 88vw)' : '0px' }}>
       <header
+        ref={headerRef}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -723,12 +743,7 @@ export function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
-      {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
-      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
-          onQuickOrder={(price, side) => setQuickOrder({ side, price })} />}
-      {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
-      {sentimentOpen && <SentimentPanel data={sentiment} />}
-      <main style={{ flex: 1, minHeight: 0 }}>
+      <main style={{ flex: 1, minHeight: 0, marginRight: 'var(--side-panel-w)' }}>
         {layout === 'pair' ? (
           <ChartPair
             symbol={symbol}
@@ -784,6 +799,32 @@ export function App() {
           />
         )}
       </main>
+      {sidePanelOpen && (
+        <div
+          data-testid="side-panels"
+          style={{
+            position: 'fixed',
+            top: 'var(--header-h)',
+            right: 0,
+            bottom: 0,
+            width: isMobile ? '100%' : 'var(--side-panel-w)',
+            zIndex: 90,
+            background: 'var(--panel)',
+            borderLeft: '1px solid var(--border)',
+            boxShadow: '-8px 0 24px rgba(0,0,0,0.35)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
+          {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
+            onQuickOrder={(price, side) => setQuickOrder({ side, price })} />}
+          {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
+          {sentimentOpen && <SentimentPanel data={sentiment} />}
+        </div>
+      )}
       {replay && (
         <ReplayBar
           replay={replay}

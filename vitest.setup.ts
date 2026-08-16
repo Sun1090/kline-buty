@@ -17,3 +17,16 @@ const memoryStorage: Storage = {
 }
 
 Object.defineProperty(globalThis, 'localStorage', { value: memoryStorage, configurable: true })
+
+/** jsdom 无 ResizeObserver（App 用其测量 header 高度驱动右侧面板抽屉定位） */
+if (!('ResizeObserver' in globalThis)) {
+  class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    value: MockResizeObserver,
+    configurable: true,
+  })
+}
