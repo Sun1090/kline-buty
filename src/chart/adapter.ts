@@ -17,6 +17,7 @@ import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
 import {
+  channelLine,
   fibPrices,
   hitTestDrawings,
   normalizePoints,
@@ -282,10 +283,8 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线预览
     if (this.drawingStart && this.drawingPreview) {
-      const pts = normalizePoints(
-        this.drawingTool === 'horizontal' ? 'horizontal' : (this.drawingTool as Drawing['type']),
-        [this.drawingStart, this.drawingPreview],
-      )
+      const tool = this.drawingTool as Drawing['type']
+      const pts = normalizePoints(tool, [this.drawingStart, this.drawingPreview])
       this.drawOne(ctx, { id: '__preview', type: this.drawingTool as Drawing['type'], points: pts }, true)
     }
   }
@@ -309,9 +308,50 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'text') {
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      const label = d.text && d.text.trim() ? d.text : '文本'
+      ctx.font = '11px system-ui'
+      const w = ctx.measureText(label).width + 12
+      const h = 18
+      const bx = a.x - w / 2
+      const by = a.y - h / 2
+      ctx.fillStyle = this.theme.background + 'e6'
+      ctx.fillRect(bx, by, w, h)
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '99'
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.strokeRect(bx, by, w, h)
+      ctx.fillStyle = color
+      ctx.textBaseline = 'middle'
+      ctx.fillText(label, bx + 6, by + h / 2 + 0.5)
+      return
+    }
+
     const a = this.project(d.points[0].time, d.points[0].price)
     const b = this.project(d.points[1].time, d.points[1].price)
     if (!a || !b) return
+
+    if (d.type === 'channel') {
+      // 基线 + 平行线（垂直偏移 = 两点价差）
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      const [c, e] = channelLine(d.points[0], d.points[1]).map((pt) => this.project(pt.time, pt.price))
+      if (c && e) {
+        ctx.beginPath()
+        ctx.moveTo(c.x, c.y)
+        ctx.lineTo(e.x, e.y)
+        ctx.stroke()
+      }
+      for (const pt of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
 
     if (d.type === 'trend') {
       ctx.beginPath()
@@ -439,7 +479,7 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.drawingStart && this.drawingPreview) {
       // 水平线支持单击放置（未拖动也提交）；趋势线/斐波那契需两点
       const pts =
-        this.drawingTool === 'horizontal'
+        this.drawingTool === 'horizontal' || this.drawingTool === 'text'
           ? [this.drawingStart]
           : normalizePoints(this.drawingTool as Drawing['type'], [this.drawingStart, this.drawingPreview])
       this.drawingCallbacks?.onCommit({
