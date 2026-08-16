@@ -497,7 +497,7 @@ export function ChartView({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} className="chart-container" style={{ width: '100%', height: '100%' }} />
       {candles.length === 0 && (
         <div
           style={{
