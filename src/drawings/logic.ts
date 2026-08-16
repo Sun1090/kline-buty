@@ -19,6 +19,8 @@ export type DrawingTool =
   | 'arc'
   | 'polyline'
   | 'measure'
+  | 'speedlines'
+  | 'regchan'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -161,6 +163,83 @@ export function channelLine(
   ]
 }
 
+/** 画线线段（时间/价格坐标，渲染与命中检测共用） */
+export interface SegmentLine {
+  from: { time: number; price: number }
+  to: { time: number; price: number }
+}
+
+/** 速度线（Speed Lines）：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线。
+ * 返回 [主对角线 A→B, B 处竖直线, A→1/3, A→2/3] 四条线段。 */
+export function speedLines(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+): SegmentLine[] {
+  const lo = Math.min(a.price, b.price)
+  const hi = Math.max(a.price, b.price)
+  const tB = b.time
+  const third = (f: number) => ({ time: tB, price: lo + (hi - lo) * f })
+  return [
+    { from: a, to: b },
+    { from: { time: tB, price: lo }, to: { time: tB, price: hi } },
+    { from: a, to: third(1 / 3) },
+    { from: a, to: third(2 / 3) },
+  ]
+}
+
+/** 线性回归：price = a + b·(time − x0)，x0 为首点时间（数值稳定，避免 time² 量级溢出）。数据不足返回 null */
+export function linearRegression(
+  pts: { time: number; price: number }[],
+): { a: number; b: number; x0: number } | null {
+  const n = pts.length
+  if (n < 2) return null
+  const x0 = pts[0].time
+  let sx = 0
+  let sy = 0
+  let sxx = 0
+  let sxy = 0
+  for (const p of pts) {
+    const x = p.time - x0
+    sx += x
+    sy += p.price
+    sxx += x * x
+    sxy += x * p.price
+  }
+  const denom = n * sxx - sx * sx
+  if (denom === 0) return null
+  const b = (n * sxy - sx * sy) / denom
+  const a = (sy - b * sx) / n
+  return { a, b, x0 }
+}
+
+/** 回归通道：对 [a.time, b.time] 内收盘价做线性回归，
+ * 返回 [回归中线, 上轨(mean+σ), 下轨(mean−σ)] 三条线段；数据不足退回 A→B 直线。 */
+export function regressionSegments(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+  closes: { time: number; price: number }[],
+): SegmentLine[] {
+  const t0 = Math.min(a.time, b.time)
+  const t1 = Math.max(a.time, b.time)
+  const pts = closes.filter((c) => c.time >= t0 && c.time <= t1)
+  const fallback: SegmentLine[] = [{ from: a, to: b }]
+  if (pts.length < 2) return fallback
+  const reg = linearRegression(pts)
+  if (!reg) return fallback
+  const at = (t: number) => reg.a + reg.b * (t - reg.x0)
+  let ss = 0
+  for (const p of pts) {
+    const pred = at(p.time)
+    ss += (p.price - pred) ** 2
+  }
+  const stdev = Math.sqrt(ss / pts.length)
+  return [
+    { from: { time: t0, price: at(t0) }, to: { time: t1, price: at(t1) } },
+    { from: { time: t0, price: at(t0) + stdev }, to: { time: t1, price: at(t1) + stdev } },
+    { from: { time: t0, price: at(t0) - stdev }, to: { time: t1, price: at(t1) - stdev } },
+  ]
+}
+
 /** 量度：A→B 价格差与涨跌幅（保留 A→B 方向符号） */
 export function measureInfo(a: { price: number }, b: { price: number }): { diff: number; pct: number } {
   const diff = b.price - a.price
@@ -173,7 +252,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines') return [a, b]
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
   if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
@@ -246,12 +325,17 @@ function distToRay(p: Point, a: Point, b: Point): number {
   return Math.abs((p.x - a.x) * dy - (p.y - a.y) * dx) / Math.sqrt(lenSq)
 }
 
-/** 命中检测：返回命中的绘图 id（最近的优先），未命中 null */
+/** 画线线段解析器：为依赖外部数据（如 K 线）的工具提供渲染线段，用于命中检测 */
+export type SegmentResolver = (d: Drawing) => SegmentLine[] | null
+
+/** 命中检测：返回命中的绘图 id（最近的优先），未命中 null。
+ * resolveSegments 可选：回归通道等需基于 K 线计算线段的工具传此解析器（无则退回 A→B 直线）。 */
 export function hitTestDrawings(
   drawings: Drawing[],
   px: number,
   py: number,
   project: Project,
+  resolveSegments?: SegmentResolver,
 ): string | null {
   let bestId: string | null = null
   let bestDist = Infinity
@@ -431,6 +515,29 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)
       if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
+    } else if (d.type === 'speedlines') {
+      // 速度线：命中四条线段（主对角线 + B 竖直线 + 1/3/2/3 分位线）任意一条
+      dist = Infinity
+      for (const seg of speedLines(d.points[0], d.points[1])) {
+        const p = project(seg.from.time, seg.from.price)
+        const q = project(seg.to.time, seg.to.price)
+        if (p && q) dist = Math.min(dist, distToSegment({ x: px, y: py }, p, q))
+      }
+    } else if (d.type === 'regchan') {
+      // 回归通道：优先用 K 线回归线段命中；无解析器退回 A→B 直线
+      const segs = resolveSegments ? resolveSegments(d) : null
+      if (segs && segs.length > 0) {
+        dist = Infinity
+        for (const seg of segs) {
+          const p = project(seg.from.time, seg.from.price)
+          const q = project(seg.to.time, seg.to.price)
+          if (p && q) dist = Math.min(dist, distToSegment({ x: px, y: py }, p, q))
+        }
+      } else {
+        const a = project(d.points[0].time, d.points[0].price)
+        const b = project(d.points[1].time, d.points[1].price)
+        if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
+      }
     } else {
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)

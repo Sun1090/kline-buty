@@ -1234,6 +1234,91 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：速度线（拖 A→B → 4 段渲染 + 落库保方向）→ 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 速度线：拖出 A→B（与趋势线同两点手势）
+    await page.getByRole('button', { name: '速度线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.7, box!.y + box!.height * 0.6, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 渲染：overlay 出现画线像素（主对角线 + 竖线 + 分位线）
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+
+    // 落库：type=speedlines、2 锚点、A→B 方向保持（time 递增）
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
+        return arr[0] ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('speedlines')
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[1].time).toBeGreaterThan(saved!.points[0].time)
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：回归通道（拖 A→B → 中线+上下轨渲染 + 落库）→ 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 回归通道：拖出 A→B 定时间窗
+    await page.getByRole('button', { name: '回归通道' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.8, box!.y + box!.height * 0.45, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 渲染：overlay 出现画线像素（回归中线 + ±σ 上下轨）
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+
+    // 落库：type=regchan、2 锚点（按时间排序）
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
+        return arr[0] ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('regchan')
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[1].time).toBeGreaterThan(saved!.points[0].time)
+
+    // 切回鼠标（只读）→ 点击中线附近可选中（命中检测走 K 线回归线段）
+    await page.getByRole('button', { name: '鼠标' }).click()
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+    const center = (await findDrawnLineCenter(page))!
+    await page.mouse.click(center.x, center.y)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())

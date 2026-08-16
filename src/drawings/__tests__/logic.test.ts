@@ -9,12 +9,15 @@ import {
   fibTimeLines,
   fibTimeXs,
   hitTestDrawings,
+  linearRegression,
   measureInfo,
   moveAnchor,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
+  regressionSegments,
   requiredPoints,
+  speedLines,
   FIB_LEVELS,
   type Drawing,
   type Project,
@@ -688,5 +691,136 @@ describe('measure（量度）', () => {
     const moved = moveDrawing(d, 50, 10)
     expect(moved.points.map((p) => p.time)).toEqual([50, 150])
     expect(moved.points.map((p) => p.price)).toEqual([110, 60])
+  })
+})
+
+describe('speedLines（速度线）', () => {
+  const a = { time: 0, price: 100 }
+  const b = { time: 100, price: 50 }
+  it('返回 4 条线段：主对角线 + B 竖直线 + 1/3 + 2/3 分位线', () => {
+    const segs = speedLines(a, b)
+    expect(segs).toHaveLength(4)
+    // 主对角线 A→B
+    expect(segs[0].from).toEqual(a)
+    expect(segs[0].to).toEqual(b)
+    // B 竖直线从低价到高价
+    expect(segs[1].from).toEqual({ time: 100, price: 50 })
+    expect(segs[1].to).toEqual({ time: 100, price: 100 })
+  })
+  it('1/3 与 2/3 分位在 A→B 价差内等分', () => {
+    const segs = speedLines(a, b)
+    // 价差 50：1/3 → 66.6667，2/3 → 83.3333（以低价 50 为基准）
+    expect(segs[2].from).toEqual(a)
+    expect(segs[2].to.time).toBe(100)
+    expect(segs[2].to.price).toBeCloseTo(66.6667, 3)
+    expect(segs[3].from).toEqual(a)
+    expect(segs[3].to.time).toBe(100)
+    expect(segs[3].to.price).toBeCloseTo(83.3333, 3)
+  })
+  it('反向（B 价高于 A）分位基准对称', () => {
+    const segs = speedLines({ time: 0, price: 50 }, { time: 100, price: 100 })
+    expect(segs[1].from).toEqual({ time: 100, price: 50 })
+    expect(segs[1].to).toEqual({ time: 100, price: 100 })
+    expect(segs[2].to.price).toBeCloseTo(66.6667, 3)
+    expect(segs[3].to.price).toBeCloseTo(83.3333, 3)
+  })
+  it('normalizePoints 保留 A→B 方向（速度线以 A 为原点）', () => {
+    const d = createDrawing('speedlines', [{ time: 100, price: 90 }, { time: 50, price: 100 }])
+    expect(d.points.map((p) => p.time)).toEqual([100, 50])
+    expect(d.points.map((p) => p.price)).toEqual([90, 100])
+  })
+  it('requiredPoints 为 2', () => {
+    expect(requiredPoints('speedlines')).toBe(2)
+  })
+  it('命中检测：B 竖直线与 1/3 分位线可命中', () => {
+    const d = createDrawing('speedlines', [a, b], 'sl')
+    // B 竖直线 x=100（屏幕 y=300-price，price 75 → y=225）
+    expect(hitTestDrawings([d], 100, 225, project)).toBe('sl')
+    // 1/3 分位线中点：x=50, price=83.3333 → y=216.6667
+    expect(hitTestDrawings([d], 50, 216.7, project)).toBe('sl')
+    // 远离所有线段
+    expect(hitTestDrawings([d], 50, 120, project)).toBeNull()
+  })
+})
+
+describe('linearRegression（最小二乘回归）', () => {
+  it('完美直线：y = 1 + 2x', () => {
+    const reg = linearRegression([
+      { time: 0, price: 1 },
+      { time: 1, price: 3 },
+      { time: 2, price: 5 },
+    ])
+    expect(reg).not.toBeNull()
+    expect(reg!.x0).toBe(0)
+    expect(reg!.a).toBeCloseTo(1)
+    expect(reg!.b).toBeCloseTo(2)
+  })
+  it('数据不足返回 null', () => {
+    expect(linearRegression([{ time: 1, price: 2 }])).toBeNull()
+  })
+})
+
+describe('regressionSegments（回归通道）', () => {
+  const closes = [
+    { time: 0, price: 100 },
+    { time: 10, price: 110 },
+    { time: 20, price: 120 },
+  ]
+  it('完美上升线：中线=上下轨（σ=0）', () => {
+    const segs = regressionSegments({ time: 0, price: 0 }, { time: 20, price: 0 }, closes)
+    expect(segs).toHaveLength(3)
+    for (const seg of segs) {
+      expect(seg.from.time).toBe(0)
+      expect(seg.to.time).toBe(20)
+      expect(seg.from.price).toBeCloseTo(100)
+      expect(seg.to.price).toBeCloseTo(120)
+    }
+  })
+  it('横盘：斜率 0，中线=均值', () => {
+    const segs = regressionSegments({ time: 0, price: 0 }, { time: 20, price: 0 }, [
+      { time: 0, price: 100 },
+      { time: 10, price: 100 },
+      { time: 20, price: 100 },
+    ])
+    expect(segs[0].from.price).toBeCloseTo(100)
+    expect(segs[0].to.price).toBeCloseTo(100)
+  })
+  it('残差标准差正确（σ = sqrt(Σres²/n)）', () => {
+    const segs = regressionSegments({ time: 0, price: 0 }, { time: 10, price: 0 }, [
+      { time: 0, price: 0 },
+      { time: 5, price: 0 },
+      { time: 10, price: 6 },
+    ])
+    // 回归：b=0.6, a=-1 → 中点 2；残差 1/-2/1 → σ=√(6/3)=√2
+    expect(segs[0].from.price).toBeCloseTo(-1, 3)
+    expect(segs[0].to.price).toBeCloseTo(5, 3)
+    const sigma = Math.sqrt(2)
+    expect(segs[1].from.price).toBeCloseTo(-1 + sigma, 3)
+    expect(segs[2].from.price).toBeCloseTo(-1 - sigma, 3)
+  })
+  it('窗口外收盘价不参与回归', () => {
+    const segs = regressionSegments({ time: 0, price: 0 }, { time: 20, price: 0 }, [
+      ...closes,
+      { time: 999, price: 9999 },
+    ])
+    expect(segs[0].to.price).toBeCloseTo(120)
+  })
+  it('数据不足退回 A→B 直线', () => {
+    const segs = regressionSegments({ time: 0, price: 50 }, { time: 10, price: 80 }, [{ time: 5, price: 60 }])
+    expect(segs).toHaveLength(1)
+    expect(segs[0].from).toEqual({ time: 0, price: 50 })
+    expect(segs[0].to).toEqual({ time: 10, price: 80 })
+  })
+  it('命中检测：中线/上下轨可命中（resolver 提供 K 线回归线段）', () => {
+    const d = createDrawing('regchan', [{ time: 0, price: 90 }, { time: 20, price: 110 }], 'rc')
+    const segs = regressionSegments(d.points[0], d.points[1], closes)
+    // 中线 y=100（屏幕 y=200）
+    expect(hitTestDrawings([d], 10, 200, project, () => segs)).toBe('rc')
+    // 无 resolver 时退回 A→B 直线：(0,90)→(20,110)，中点 (10,100) → y=200
+    expect(hitTestDrawings([d], 10, 200, project)).toBe('rc')
+    expect(hitTestDrawings([d], 10, 120, project, () => segs)).toBeNull()
+  })
+  it('requiredPoints 为 2', () => {
+    expect(requiredPoints('regchan')).toBe(2)
   })
 })
