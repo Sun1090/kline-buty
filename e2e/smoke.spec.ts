@@ -397,6 +397,48 @@ test.describe('K 线应用冒烟', () => {
   })
 
 
+  test('盘口快速下单：买盘快捷「买」→ 价格预填 + 金额估算 → 确认打开模拟仓位', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await page.getByRole('button', { name: '盘口' }).click()
+    const bid = page.getByTestId('ob-bid').first()
+    await expect(bid).toBeVisible({ timeout: 20_000 })
+    const bidPrice = Number(await bid.getAttribute('data-price'))
+    const bidBox = await bid.boundingBox()
+    await page.mouse.move(bidBox!.x + bidBox!.width / 2, bidBox!.y + bidBox!.height / 2)
+    await expect(page.getByTestId('qo-buy')).toBeVisible({ timeout: 5000 })
+    await page.getByTestId('qo-buy').click()
+    await expect(page.getByTestId('quick-order')).toBeVisible()
+    await expect(page.getByTestId('quick-order').getByText('买入')).toBeVisible()
+    // 价格预填为盘口档位价（容差 2%），金额估算展示
+    const buyPrice = Number(await page.getByTestId('qo-price').inputValue())
+    expect(Math.abs(buyPrice - bidPrice) / bidPrice).toBeLessThan(0.02)
+    await expect(page.getByText(/预估金额/)).toBeVisible()
+    await expect(page.getByText(/手续费/)).toBeVisible()
+    // 确认 → 模拟仓位面板打开（浮动盈亏可见）
+    await page.getByTestId('qo-confirm').click()
+    await expect(page.getByText('浮动盈亏')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('模拟仓位')).toBeVisible()
+  })
+
+  test('盘口快速下单：卖盘快捷「卖」→ 确认后建立空头仓位', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await page.getByRole('button', { name: '盘口' }).click()
+    const ask = page.getByTestId('ob-ask').first()
+    await expect(ask).toBeVisible({ timeout: 20_000 })
+    const askBox = await ask.boundingBox()
+    await page.mouse.move(askBox!.x + askBox!.width / 2, askBox!.y + askBox!.height / 2)
+    await expect(page.getByTestId('qo-sell')).toBeVisible({ timeout: 5000 })
+    await page.getByTestId('qo-sell').click()
+    await expect(page.getByTestId('quick-order')).toBeVisible()
+    await expect(page.getByTestId('quick-order').getByText('卖出')).toBeVisible()
+    await page.getByTestId('qo-confirm').click()
+    await expect(page.getByText('浮动盈亏')).toBeVisible({ timeout: 5000 })
+  })
+
   test('情绪面板：开合 + 四类指标标题可见（数据可加载中）', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

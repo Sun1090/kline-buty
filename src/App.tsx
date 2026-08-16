@@ -23,10 +23,12 @@ import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { DepthChart } from './components/DepthChart'
 import { OrderBook } from './components/OrderBook'
+import { QuickOrder } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
 import type { Position } from './position/pnl'
+import { buildPositionFromOrder, type OrderSide } from './trade/order'
 import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
@@ -112,6 +114,7 @@ export function App() {
   const [orderBookOpen, setOrderBookOpen] = useState(false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
   const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
+  const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -625,6 +628,19 @@ export function App() {
       </header>
       <StatsBar stats={stats} />
       <OfflineBanner />
+      {quickOrder && (
+        <QuickOrder
+          symbol={symbol}
+          side={quickOrder.side}
+          price={quickOrder.price}
+          onClose={() => setQuickOrder(null)}
+          onConfirm={(order) => {
+            setPosition(buildPositionFromOrder(order.side, order.price, order.qty))
+            setPositionOpen(true)
+            setQuickOrder(null)
+          }}
+        />
+      )}
       {positionOpen && (
         <PositionPanel
           position={position}
@@ -649,7 +665,8 @@ export function App() {
         />
       )}
       {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
-      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))} />}
+      {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
+          onQuickOrder={(price, side) => setQuickOrder({ side, price })} />}
       {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
       {sentimentOpen && <SentimentPanel data={sentiment} />}
       <main style={{ flex: 1, minHeight: 0 }}>
