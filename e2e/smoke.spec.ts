@@ -447,6 +447,34 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：三角形（3 锚点）+ 圆弧 → 绘制 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 三角形：三点点击（A/B/C）集满提交
+    await page.getByRole('button', { name: '三角形' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.5)
+    await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 圆弧：拖出两点定弦
+    await page.getByRole('button', { name: '圆弧' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.4, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('画线：斐波那契扩展（3 锚点）+ 扇形 + 价格标签 + 箭头 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

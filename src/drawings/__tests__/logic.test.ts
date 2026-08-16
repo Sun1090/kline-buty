@@ -246,12 +246,13 @@ describe('requiredPoints（所需锚点数）', () => {
     expect(requiredPoints('pricelabel')).toBe(1)
   })
   it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头/椭圆/圆', () => {
-    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow', 'ellipse', 'circle'] as const) {
+    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow', 'ellipse', 'circle', 'arc'] as const) {
       expect(requiredPoints(t)).toBe(2)
     }
   })
-  it('三点工具：斐波那契扩展', () => {
+  it('三点工具：斐波那契扩展/三角形', () => {
     expect(requiredPoints('fibext')).toBe(3)
+    expect(requiredPoints('triangle')).toBe(3)
   })
 })
 
@@ -410,5 +411,78 @@ describe('moveAnchor（M20 椭圆/圆）', () => {
     const d = createDrawing('ellipse', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'e')
     const moved = moveAnchor(d, 1, { time: -50, price: 80 })
     expect(moved.points[0].time).toBe(-50)
+  })
+})
+
+describe('normalizePoints（M21 三角形/圆弧）', () => {
+  it('三角形保留 A/B/C 三点点击顺序（多段点击）', () => {
+    const pts = normalizePoints('triangle', [
+      { time: 0, price: 150 },
+      { time: 100, price: 50 },
+      { time: 50, price: 150 },
+    ])
+    expect(pts).toHaveLength(3)
+    expect(pts.map((p) => p.price)).toEqual([150, 50, 150])
+  })
+  it('圆弧按时间排序（弦与方向无关）', () => {
+    const pts = normalizePoints('arc', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(0)
+    expect(pts[1].time).toBe(100)
+  })
+})
+
+describe('hitTestDrawings（M21 三角形/圆弧）', () => {
+  // 三角形 A(0,150)/(100,50)/(50,150) → 屏幕 (0,150)/(100,250)/(50,150)
+  const triangle: Drawing = createDrawing(
+    'triangle',
+    [
+      { time: 0, price: 150 },
+      { time: 100, price: 50 },
+      { time: 50, price: 150 },
+    ],
+    'tr',
+  )
+  // 圆弧 A(0,100)/(100,100) → 屏幕 (0,200)/(100,200)，中心 (50,200) r=50
+  const arc: Drawing = createDrawing('arc', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'ar')
+
+  it('三角形内部命中（区域命中）', () => {
+    expect(hitTestDrawings([triangle], 50, 180, project)).toBe('tr')
+    expect(hitTestDrawings([triangle], 50, 200, project)).toBe('tr') // A-B 边中点附近
+  })
+  it('三角形边缘附近命中', () => {
+    expect(hitTestDrawings([triangle], 50, 205, project)).toBe('tr') // 距 A-B 边 ~3.5px
+  })
+  it('三角形外不命中', () => {
+    expect(hitTestDrawings([triangle], 50, 120, project)).toBeNull() // 上方 30px 外
+    expect(hitTestDrawings([triangle], 150, 200, project)).toBeNull()
+  })
+  it('圆弧圆周命中 / 圆心不命中 / 圆周外不命中', () => {
+    expect(hitTestDrawings([arc], 50, 150, project)).toBe('ar') // 圆周上
+    expect(hitTestDrawings([arc], 50, 250, project)).toBe('ar') // 圆周另一端（容差内）
+    expect(hitTestDrawings([arc], 50, 200, project)).toBeNull() // 圆心距圆周 50px
+    expect(hitTestDrawings([arc], 50, 130, project)).toBeNull() // 距圆周 20px
+  })
+})
+
+describe('moveAnchor（M21 三角形/圆弧）', () => {
+  it('三角形拖第三锚点后仍三点且顺序不变', () => {
+    const d = createDrawing(
+      'triangle',
+      [
+        { time: 0, price: 150 },
+        { time: 100, price: 50 },
+        { time: 50, price: 150 },
+      ],
+      't',
+    )
+    const moved = moveAnchor(d, 2, { time: 60, price: 120 })
+    expect(moved.points).toHaveLength(3)
+    expect(moved.points[0]).toEqual({ time: 0, price: 150 })
+    expect(moved.points[2]).toEqual({ time: 60, price: 120 })
+  })
+  it('圆弧拖锚点后按时间重排', () => {
+    const d = createDrawing('arc', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'a')
+    const moved = moveAnchor(d, 1, { time: -20, price: 90 })
+    expect(moved.points[0].time).toBe(-20)
   })
 })

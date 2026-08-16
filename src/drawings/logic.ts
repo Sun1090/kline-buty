@@ -13,6 +13,8 @@ export type DrawingTool =
   | 'arrow'
   | 'ellipse'
   | 'circle'
+  | 'triangle'
+  | 'arc'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -49,7 +51,7 @@ export function fibPrices(from: number, to: number): number[] {
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return 1
-  if (type === 'fibext') return 3
+  if (type === 'fibext' || type === 'triangle') return 3
   return 2
 }
 
@@ -107,7 +109,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'fibfan' || type === 'arrow' || type === 'circle') return [a, b]
-  if (type === 'fibext') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -144,6 +146,16 @@ export function nearestAnchor(d: Drawing, px: number, py: number, project: Proje
     }
   })
   return best
+}
+
+/** 点是否在三角形内（同向叉积法，含边界） */
+function pointInTriangle(p: Point, a: Point, b: Point, c: Point): boolean {
+  const d1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y)
+  const d2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y)
+  const d3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y)
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0
+  return !(hasNeg && hasPos)
 }
 
 function distToSegment(p: Point, a: Point, b: Point): number {
@@ -244,6 +256,28 @@ export function hitTestDrawings(
           // 圆内区域命中；外部按到圆周距离
           dist = d <= r ? 0 : d - r
         }
+      }
+    } else if (d.type === 'triangle') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      const c = d.points.length >= 3 ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        const p = { x: px, y: py }
+        if (pointInTriangle(p, a, b, c)) {
+          // 三角形内部任意位置都可选中（区域命中）
+          dist = 0
+        } else {
+          dist = Math.min(distToSegment(p, a, b), distToSegment(p, b, c), distToSegment(p, c, a))
+        }
+      }
+    } else if (d.type === 'arc') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const mx = (a.x + b.x) / 2
+        const my = (a.y + b.y) / 2
+        const r = Math.hypot(b.x - a.x, b.y - a.y) / 2
+        if (r > 0) dist = Math.abs(Math.hypot(px - mx, py - my) - r)
       }
     } else if (d.type === 'ray') {
       const a = project(d.points[0].time, d.points[0].price)
