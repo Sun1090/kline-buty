@@ -418,6 +418,10 @@ export class LightweightChartAdapter implements ChartApi {
     const h = Math.max(1, Math.round(rect.height * dpr))
     if (this.overlay.width !== w) this.overlay.width = w
     if (this.overlay.height !== h) this.overlay.height = h
+    // canvas 是替换元素：改 width/height 属性会同时改其固有 CSS 尺寸（=物理像素），
+    // dpr>1 时必须显式设回 CSS 尺寸，否则画线 overlay 撑出横向滚动条
+    this.overlay.style.width = `${rect.width}px`
+    this.overlay.style.height = `${rect.height}px`
   }
 
   /** 坐标投影：time/price → 屏幕坐标（主图 pane） */

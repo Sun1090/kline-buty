@@ -13,6 +13,7 @@ export const zh = {
     cancel: '取消',
     confirm: '确定',
     retry: '重试',
+    more: '更多',
   },
   status: {
     loading: '加载历史数据…',
@@ -309,6 +310,7 @@ export const en: Messages = {
     cancel: 'Cancel',
     confirm: 'OK',
     retry: 'Retry',
+    more: 'More',
   },
   status: {
     loading: 'Loading history…',
@@ -603,6 +605,7 @@ export const ja: Messages = {
     cancel: 'キャンセル',
     confirm: 'OK',
     retry: '再試行',
+    more: 'その他',
   },
   status: {
     loading: '履歴データを読み込み中…',
@@ -898,6 +901,7 @@ export const ko: Messages = {
     cancel: '취소',
     confirm: '확인',
     retry: '재시도',
+    more: '더보기',
   },
   status: {
     loading: '과거 데이터 불러오는 중…',
@@ -1205,6 +1209,7 @@ export const es: Messages = {
     cancel: 'Cancelar',
     confirm: 'Aceptar',
     retry: 'Reintentar',
+    more: 'Más',
   },
   status: {
     loading: 'Cargando historial…',
