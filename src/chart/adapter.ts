@@ -69,6 +69,27 @@ export interface PositionLines {
   stopLoss?: number
 }
 
+/** 区域截图：框选矩形（CSS 像素，相对图表容器） */
+export interface RegionRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** 归一化框选矩形：任意两点 → 左上角 + 宽高 */
+export function normalizeRegionRect(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): RegionRect {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    w: Math.abs(a.x - b.x),
+    h: Math.abs(a.y - b.y),
+  }
+}
+
 /**
  * 渲染层隔离接口：UI/数据层只依赖它，不直接触碰具体图表库。
  * 将来替换渲染引擎（自研 Canvas / klinecharts）时仅需新实现本接口。
@@ -104,8 +125,14 @@ export interface ChartApi {
   setSelectedDrawing?(id: string | null): void
   /** 画线回调（创建完成/选中变化） */
   setDrawingCallbacks(cb: DrawingCallbacks | null): void
-  /** 截图：主图 + 画线图层合成 PNG dataURL */
-  takeScreenshot(): string | null
+  /** 截图：主图 + 画线图层合成 PNG dataURL；传 rect 时裁剪该区域（CSS 像素） */
+  takeScreenshot(rect?: RegionRect): string | null
+  /** 进入框选截图模式（拖拽出矩形，松开回调 onRegionCapture） */
+  startRegionSelect(): void
+  /** 取消框选截图模式 */
+  cancelRegionSelect(): void
+  /** 框选完成回调（松开鼠标/手指时触发，rect 为 CSS 像素） */
+  onRegionCapture(cb: ((rect: RegionRect) => void) | null): void
   /** 切换图表主题 */
   setTheme(theme: ThemeMode, presetId?: ColorPresetId): void
   /** 切换界面语言（文本标注默认文案 / 仓位线标签随语言更新） */
@@ -191,6 +218,11 @@ export class LightweightChartAdapter implements ChartApi {
   private pinch: { dist: number; range: IRange<number> } | null = null
   /** 触屏双击重置计时 */
   private lastTapAt = 0
+  /** 框选截图模式 */
+  private regionSelect = false
+  private regionDown: { x: number; y: number } | null = null
+  private regionCurrent: { x: number; y: number } | null = null
+  private regionCallback: ((rect: RegionRect) => void) | null = null
   /** 画线交互：当前手势按下点（释放时作为锚点提交） */
   private drawingDown: { time: number; price: number } | null = null
   /** 多锚点工具（斐波那契扩展）已确认的锚点 */
@@ -319,7 +351,7 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
-  takeScreenshot(): string | null {
+  takeScreenshot(rect?: RegionRect): string | null {
     const main = this.chart.takeScreenshot()
     if (!main) return null
     const canvas = document.createElement('canvas')
@@ -329,7 +361,40 @@ export class LightweightChartAdapter implements ChartApi {
     if (!ctx) return main.toDataURL('image/png')
     ctx.drawImage(main, 0, 0)
     ctx.drawImage(this.overlay, 0, 0, this.overlay.width, this.overlay.height, 0, 0, main.width, main.height)
+    if (rect) {
+      const dpr = window.devicePixelRatio || 1
+      const sx = Math.max(0, Math.round(rect.x * dpr))
+      const sy = Math.max(0, Math.round(rect.y * dpr))
+      const sw = Math.min(canvas.width - sx, Math.round(rect.w * dpr))
+      const sh = Math.min(canvas.height - sy, Math.round(rect.h * dpr))
+      if (sw <= 0 || sh <= 0) return canvas.toDataURL('image/png')
+      const out = document.createElement('canvas')
+      out.width = sw
+      out.height = sh
+      const octx = out.getContext('2d')
+      if (!octx) return canvas.toDataURL('image/png')
+      octx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh)
+      return out.toDataURL('image/png')
+    }
     return canvas.toDataURL('image/png')
+  }
+
+  startRegionSelect() {
+    this.regionSelect = true
+    this.container.style.cursor = 'crosshair'
+    this.draw()
+  }
+
+  cancelRegionSelect() {
+    this.regionSelect = false
+    this.regionDown = null
+    this.regionCurrent = null
+    this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
+    this.draw()
+  }
+
+  onRegionCapture(cb: ((rect: RegionRect) => void) | null) {
+    this.regionCallback = cb
   }
 
   private syncOverlaySize() {
@@ -376,6 +441,21 @@ export class LightweightChartAdapter implements ChartApi {
         pts = [...this.drawingPoints, this.drawingPreview].slice(0, need)
       }
       this.drawOne(ctx, { id: '__preview', type: tool, points: pts }, true)
+    }
+
+    // 框选截图：半透明遮罩 + 蓝色虚线框 + 尺寸标注
+    if (this.regionSelect && this.regionDown && this.regionCurrent) {
+      const rect = normalizeRegionRect(this.regionDown, this.regionCurrent)
+      ctx.fillStyle = 'rgba(78,156,245,0.08)'
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
+      ctx.strokeStyle = '#4e9cf5'
+      ctx.lineWidth = 1
+      ctx.setLineDash([5, 4])
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
+      ctx.setLineDash([])
+      ctx.fillStyle = 'rgba(78,156,245,0.95)'
+      ctx.font = '10px system-ui'
+      ctx.fillText(Math.round(rect.w) + '×' + Math.round(rect.h), rect.x + 4, Math.max(10, rect.y - 4))
     }
   }
 
@@ -784,6 +864,15 @@ export class LightweightChartAdapter implements ChartApi {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
+    // 框选截图模式：记录起点并 capture 指针
+    if (this.regionSelect) {
+      this.regionDown = { x, y }
+      this.regionCurrent = { x, y }
+      this.container.setPointerCapture?.(e.pointerId)
+      this.draw()
+      return
+    }
+
     // 画线模式：按下点 = 当前 time/price（释放时作为锚点提交），capture 指针
     if (this.drawingTool !== 'none') {
       const time = this.chart.timeScale().coordinateToTime(x)
@@ -855,6 +944,13 @@ export class LightweightChartAdapter implements ChartApi {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
+    // 框选截图：实时更新选框
+    if (this.regionSelect && this.regionDown) {
+      this.regionCurrent = { x, y }
+      this.draw()
+      return
+    }
+
     // 画线预览（仅当前手势内跟随）
     if (this.drawingDown) {
       const time = this.chart.timeScale().coordinateToTime(x)
@@ -924,6 +1020,18 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   private onPointerUp = (_e: PointerEvent) => {
+    // 框选截图完成 → 清除选框并回调（导出由 UI 层触发 takeScreenshot(rect)）
+    if (this.regionSelect && this.regionDown && this.regionCurrent) {
+      const regionRect = normalizeRegionRect(this.regionDown, this.regionCurrent)
+      this.regionSelect = false
+      this.regionDown = null
+      this.regionCurrent = null
+      this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
+      this.draw()
+      this.regionCallback?.(regionRect)
+      return
+    }
+
     // 画线编辑完成 → 提交最终锚点
     if (this.dragEdit) {
       const edit = this.dragEdit

@@ -2,6 +2,39 @@ import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
 /** 等待蜡烛真正渲染（canvas 出现涨跌色像素）；冷启动直连慢时刷新一次重试，避免环境抖动误报 */
+/** 等待盘口数据渲染；冷启动直连慢时刷新重试一次（避免实时数据抖动误报） */
+/** 等待深度图数据渲染；冷启动直连慢时刷新重试一次 */
+async function waitDepthReady(page: Page) {
+  const openPanel = async () => {
+    await page.getByRole('button', { name: '深度' }).click()
+    await page.getByTestId('depth-chart').waitFor({ timeout: 20_000 })
+  }
+  try {
+    await openPanel()
+  } catch {
+    await page.reload()
+    await page.waitForFunction(() => document.body.innerText.includes('实时'), { timeout: 30_000 })
+    await waitCandlesRendered(page)
+    await openPanel()
+  }
+}
+
+async function waitOrderBookReady(page: Page) {
+  const openPanel = async () => {
+    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByTestId('ob-bid').first().waitFor({ timeout: 20_000 })
+    await page.getByTestId('ob-ask').first().waitFor({ timeout: 20_000 })
+  }
+  try {
+    await openPanel()
+  } catch {
+    await page.reload()
+    await page.waitForFunction(() => document.body.innerText.includes('实时'), { timeout: 30_000 })
+    await waitCandlesRendered(page)
+    await openPanel()
+  }
+}
+
 async function waitCandlesRendered(page: Page) {
   const hasCandles = () =>
     page.waitForFunction(
@@ -286,10 +319,10 @@ test.describe('K 线应用冒烟', () => {
   test('深度/筹码面板开关', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: '深度' }).click()
-    await expect(page.getByText(/盘口深度/)).toBeVisible({ timeout: 15_000 })
+    await waitDepthReady(page)
+    await expect(page.getByText(/盘口深度/)).toBeVisible()
     // 深度图新标注：价差 + 买卖累计总量（K/M 紧凑格式）
-    await expect(page.getByTestId('depth-chart')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('depth-chart')).toBeVisible()
     await expect(page.getByText(/spread \d/)).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText(/^买 [\d.]+[KM]?$/)).toBeVisible()
     await expect(page.getByText(/^卖 [\d.]+[KM]?$/)).toBeVisible()
@@ -302,9 +335,9 @@ test.describe('K 线应用冒烟', () => {
   test('深度图 hover：十字线 + 买卖累计明细工具提示', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: '深度' }).click()
+    await waitDepthReady(page)
     const svg = page.getByTestId('depth-chart')
-    await expect(svg).toBeVisible({ timeout: 15_000 })
+    await expect(svg).toBeVisible()
     const box = await svg.boundingBox()
     expect(box).not.toBeNull()
     if (!box) return
@@ -401,9 +434,8 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await waitOrderBookReady(page)
     const bid = page.getByTestId('ob-bid').first()
-    await expect(bid).toBeVisible({ timeout: 20_000 })
     const bidPrice = Number(await bid.getAttribute('data-price'))
     const bidBox = await bid.boundingBox()
     await page.mouse.move(bidBox!.x + bidBox!.width / 2, bidBox!.y + bidBox!.height / 2)
@@ -426,9 +458,8 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await waitOrderBookReady(page)
     const ask = page.getByTestId('ob-ask').first()
-    await expect(ask).toBeVisible({ timeout: 20_000 })
     const askBox = await ask.boundingBox()
     await page.mouse.move(askBox!.x + askBox!.width / 2, askBox!.y + askBox!.height / 2)
     await expect(page.getByTestId('qo-sell')).toBeVisible({ timeout: 5000 })
@@ -489,6 +520,41 @@ test.describe('K 线应用冒烟', () => {
     // 数据行：ISO 时间 + 至少 5 个数值字段
     expect(lines[1].split(',')[0]).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(lines[1].split(',').slice(1, 6).every((v) => v !== '' && !Number.isNaN(Number(v)))).toBe(true)
+  })
+
+  test('区域截图：框选拖拽 → 裁剪导出 PNG + 按钮状态恢复', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 进入框选模式：按钮高亮 + 顶部提示条出现
+    await page.getByRole('button', { name: '框选' }).click()
+    await expect(page.getByText('拖拽', { exact: false })).toBeVisible({ timeout: 5000 })
+    const bg = await page
+      .getByRole('button', { name: '框选' })
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).toContain('41, 98, 255')
+    // 主图拖拽出矩形 → 触发下载（文件名含 _region.png）
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      (async () => {
+        await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.3)
+        await page.mouse.down()
+        await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.55, { steps: 6 })
+        await page.mouse.up()
+      })(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m_region\.png$/)
+    const path = await download.path()
+    expect(path).toBeTruthy()
+    // PNG 有效且非空（文件头 + 尺寸合理）
+    const buf = readFileSync(path!)
+    expect(buf.subarray(0, 4).toString('latin1')).toBe('\x89PNG')
+    expect(buf.length).toBeGreaterThan(1024)
+    // 松开后自动退出框选：提示条消失
+    await expect(page.getByText('拖拽', { exact: false })).toHaveCount(0)
   })
 
   test('主题色预设：切换红涨绿跌 → CSS 变量/图表联动 + 持久化', async ({ page }) => {

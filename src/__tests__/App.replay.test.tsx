@@ -36,6 +36,7 @@ vi.mock('../chart/adapter', () => ({
     setDrawings() {}
     setDrawingTool() {}
     setDrawingCallbacks() {}
+    onRegionCapture() {}
     setTheme() {}
     setLocale() {}
     fitContent() {}
