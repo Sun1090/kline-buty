@@ -11,6 +11,7 @@ import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
 import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY } from '../indicators/extras'
 import type { IndicatorParams } from '../indicators/params'
+import { useI18n, localeFor } from '../i18n'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'none'
@@ -88,6 +89,7 @@ export function ChartView({
   onDrawingSelect,
   themeMode = 'dark',
 }: ChartViewProps) {
+  const { t, lang } = useI18n()
   const theme = THEMES[themeMode]
   const UP = theme.up
   const DOWN = theme.down
@@ -172,6 +174,11 @@ export function ChartView({
       prevDataRef.current = null
     }
   }, [])
+
+  // 语言切换 → 画线默认文案 / 仓位线标签随语言更新（adapter 内部重绘）
+  useEffect(() => {
+    apiRef.current?.setLocale(lang)
+  }, [lang])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainLines = useMemo<{ id: string; points: ValuePoint[] }[]>(() => {
@@ -354,11 +361,11 @@ export function ChartView({
     const c = candleByTime.get(tooltip.time)
     if (!c) return null
     const rows: { label: string; value: string; color: string }[] = [
-      { label: '开', value: fmtPrice(c.open), color: c.open >= c.close ? DOWN : UP },
-      { label: '高', value: fmtPrice(c.high), color: c.high >= c.close ? DOWN : UP },
-      { label: '低', value: fmtPrice(c.low), color: c.low >= c.close ? DOWN : UP },
-      { label: '收', value: fmtPrice(c.close), color: c.close >= c.open ? UP : DOWN },
-      { label: '量', value: fmtVolume(c.volume), color: 'var(--text-dim)' },
+      { label: t('tooltip.open'), value: fmtPrice(c.open), color: c.open >= c.close ? DOWN : UP },
+      { label: t('tooltip.high'), value: fmtPrice(c.high), color: c.high >= c.close ? DOWN : UP },
+      { label: t('tooltip.low'), value: fmtPrice(c.low), color: c.low >= c.close ? DOWN : UP },
+      { label: t('tooltip.close'), value: fmtPrice(c.close), color: c.close >= c.open ? UP : DOWN },
+      { label: t('tooltip.volume'), value: fmtVolume(c.volume), color: 'var(--text-dim)' },
     ]
     for (const l of mainLines) {
       const v = lineMaps.get(l.id)?.get(tooltip.time)
@@ -379,7 +386,7 @@ export function ChartView({
       }
     }
     return { ...tooltip, rows }
-  }, [tooltip, candleByTime, mainLines, lineMaps, subLineMaps, subData])
+  }, [tooltip, candleByTime, mainLines, lineMaps, subLineMaps, subData, t])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -399,10 +406,10 @@ export function ChartView({
           }}
         >
           {status === 'loading'
-            ? '加载历史数据…'
+            ? t('status.loading')
             : status === 'error'
-              ? '行情数据加载失败：请检查网络或数据源可达性'
-              : '暂无数据'}
+              ? t('status.chartError')
+              : t('status.noData')}
         </div>
       )}
       <button
@@ -414,7 +421,7 @@ export function ChartView({
           a.download = `${symbol}_${period}.png`
           a.click()
         }}
-        title="截图分享"
+        title={t('drawing.screenshotTitle')}
         style={{
           position: 'absolute',
           top: 8,
@@ -429,7 +436,7 @@ export function ChartView({
           zIndex: 6,
         }}
       >
-        截图
+        {t('drawing.screenshot')}
       </button>
       {tooltipInfo && (
         <div
@@ -449,7 +456,7 @@ export function ChartView({
           }}
         >
           <div style={{ color: 'var(--text-dim)' }}>
-            {new Date(tooltipInfo.time * 1000).toLocaleString('zh-CN', { hour12: false })}
+            {new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false })}
           </div>
           {tooltipInfo.rows.map((r, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>

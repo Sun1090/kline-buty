@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, suggestLevels } from '../position/pnl'
+import { useI18n } from '../i18n'
 
 interface PositionPanelProps {
   position: Position | null
@@ -19,6 +20,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 export function PositionPanel({ position, currentPrice, onChange }: PositionPanelProps) {
+  const { t } = useI18n()
   const [entry, setEntry] = useState<string>(position ? String(position.entry) : '')
   const [quantity, setQuantity] = useState<string>(position ? String(position.quantity) : '')
   const [direction, setDirection] = useState<'long' | 'short'>(position?.direction ?? 'long')
@@ -66,13 +68,13 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontWeight: 600 }}>模拟仓位</span>
+        <span style={{ fontWeight: 600 }}>{t('position.title')}</span>
         {position && (
           <button
             onClick={() => onChange(null)}
             style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 12 }}
           >
-            平仓
+            {t('position.close')}
           </button>
         )}
       </div>
@@ -93,44 +95,44 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
               color: d === direction ? (d === 'long' ? 'var(--up)' : 'var(--down)') : 'var(--text-dim)',
             }}
           >
-            {d === 'long' ? '开多' : '开空'}
+            {d === 'long' ? t('position.long') : t('position.short')}
           </button>
         ))}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>开仓价</span>
-        <input style={inputStyle} value={entry} placeholder={currentPrice ? String(currentPrice.toFixed(2)) : '价格'} onChange={(e) => setEntry(e.target.value)} onFocus={fillPrice} />
+        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.entry')}</span>
+        <input style={inputStyle} value={entry} placeholder={currentPrice ? String(currentPrice.toFixed(2)) : t('common.price')} onChange={(e) => setEntry(e.target.value)} onFocus={fillPrice} />
         <button
           onClick={fillPrice}
           style={{ background: 'none', border: '1px solid #2a2e39', borderRadius: 4, color: 'var(--text-dim)', cursor: 'pointer', fontSize: 11, padding: '3px 6px' }}
         >
-          现价
+          {t('position.market')}
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>数量</span>
+        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.quantity')}</span>
         <input style={inputStyle} value={quantity} onChange={(e) => setQuantity(e.target.value)} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>止盈%</span>
+        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPct')}</span>
         <input style={inputStyle} type="number" value={tpPct} onChange={(e) => setTpPct(e.target.value)} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>止损%</span>
+        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPct')}</span>
         <input style={inputStyle} type="number" value={slPct} onChange={(e) => setSlPct(e.target.value)} />
       </div>
 
       {levels && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
-          <span>止盈线 <b style={{ color: 'var(--up)' }}>{levels.takeProfit.toFixed(2)}</b></span>
-          <span>止损线 <b style={{ color: 'var(--down)' }}>{levels.stopLoss.toFixed(2)}</b></span>
+          <span>{t('position.tpLine')} <b style={{ color: 'var(--up)' }}>{levels.takeProfit.toFixed(2)}</b></span>
+          <span>{t('position.slLine')} <b style={{ color: 'var(--down)' }}>{levels.stopLoss.toFixed(2)}</b></span>
         </div>
       )}
 
       {active ? (
         <div style={{ borderTop: '1px solid #2a2e39', paddingTop: 8, fontSize: 13 }}>
-          <span style={{ color: 'var(--text-dim)', marginRight: 8 }}>浮动盈亏</span>
+          <span style={{ color: 'var(--text-dim)', marginRight: 8 }}>{t('position.floatingPnl')}</span>
           <b style={{ color: pnlColor, fontVariantNumeric: 'tabular-nums' }}>
             {active.pnl >= 0 ? '+' : ''}
             {active.pnl.toFixed(2)} USDT（{active.pnlPct >= 0 ? '+' : ''}
@@ -152,7 +154,7 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
             color: valid ? '#fff' : 'var(--text-faint)',
           }}
         >
-          开仓
+          {t('position.open')}
         </button>
       )}
     </div>

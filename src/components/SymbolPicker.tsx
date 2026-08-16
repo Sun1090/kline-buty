@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
 import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
+import { useI18n } from '../i18n'
 
 const UP = 'var(--up)'
 const DOWN = 'var(--down)'
@@ -42,6 +43,7 @@ interface SymbolPickerProps {
 }
 
 export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -102,7 +104,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索交易对…"
+            placeholder={t('symbol.searchPlaceholder')}
             style={{
               width: '100%',
               boxSizing: 'border-box',
@@ -117,7 +119,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
           />
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
             {query === '' && (
-              <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>常用</div>
+              <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>{t('symbol.popular')}</div>
             )}
             {query === '' &&
               POPULAR_SYMBOLS.map((s) => {
@@ -153,7 +155,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
               })}
             {query !== '' && (
               <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>
-                搜索结果 {filtered.length}
+                {t('symbol.searchResults', { count: filtered.length })}
               </div>
             )}
             {query !== '' &&
@@ -179,7 +181,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
                 </div>
               ))}
             {query !== '' && filtered.length === 0 && (
-              <div style={{ color: 'var(--text-faint)', fontSize: 12, padding: '8px 6px' }}>无匹配交易对</div>
+              <div style={{ color: 'var(--text-faint)', fontSize: 12, padding: '8px 6px' }}>{t('symbol.noMatch')}</div>
             )}
           </div>
         </div>

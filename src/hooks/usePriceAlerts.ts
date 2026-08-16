@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PriceAlert } from '../alerts/engine'
 import { createAlert, shouldTrigger } from '../alerts/engine'
+import { useI18n } from '../i18n'
 
 const STORAGE_KEY = 'kline-buty:alerts'
 
@@ -56,6 +57,7 @@ export function playAlertBeep() {
 export function usePriceAlerts(
   latestPrice: { symbol: string; price: number } | null,
 ): AlertsApi {
+  const { t } = useI18n()
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
   const [permission, setPermission] = useState<NotificationPermissionState>(() =>
     typeof Notification === 'undefined'
@@ -110,8 +112,11 @@ export function usePriceAlerts(
     if (due.length === 0) return
     for (const a of due) {
       try {
-        new Notification('Kline Buty · 价格提醒', {
-          body: `${a.symbol} ${a.direction === 'above' ? '已到达' : '已跌破'} ${a.price}`,
+        new Notification(t('alert.notifyTitle'), {
+          body: t(
+            a.direction === 'above' ? 'alert.notifyAbove' : 'alert.notifyBelow',
+            { symbol: a.symbol, price: a.price },
+          ),
           tag: a.id,
           data: { symbol: a.symbol },
         })
@@ -124,7 +129,7 @@ export function usePriceAlerts(
     persistRef.current(
       alertsRef.current.map((a) => (triggeredIds.has(a.id) ? { ...a, triggered: true } : a)),
     )
-  }, [latestPrice, permission])
+  }, [latestPrice, permission, t])
 
   return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useI18n } from '../i18n'
 
 /** 网络在线/离线状态提示条 */
 export function useOnlineStatus(): boolean {
@@ -18,6 +19,7 @@ export function useOnlineStatus(): boolean {
 
 export function OfflineBanner() {
   const online = useOnlineStatus()
+  const { t } = useI18n()
   if (online) return null
   return (
     <div
@@ -30,7 +32,7 @@ export function OfflineBanner() {
         flexShrink: 0,
       }}
     >
-      网络已断开，行情暂停更新，恢复后自动重连
+      {t('offline.text')}
     </div>
   )
 }

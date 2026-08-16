@@ -40,15 +40,22 @@ self.addEventListener('fetch', (event) => {
 
 // ---- 后台价格提醒（尽力而为） ----
 // 限制：SW 无本地定时器保证，浏览器休眠后 SW 被终止即失效；
-// 通知权限与页面共享，页面同步 alerts 到 SW 内存。
+// 通知权限与页面共享，页面同步 alerts + lang 到 SW 内存。
+
+const NOTIFY_TEXT = {
+  'zh-CN': { title: 'Kline Buty · 价格提醒', above: '已到达', below: '已跌破' },
+  en: { title: 'Kline Buty · Price alert', above: 'reached', below: 'broke below' },
+}
 
 let alerts = []
 let notified = new Set()
+let lang = 'zh-CN'
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'alerts') {
     alerts = event.data.alerts ?? []
     notified = new Set()
+    if (event.data.lang === 'zh-CN' || event.data.lang === 'en') lang = event.data.lang
   }
 })
 
@@ -71,14 +78,16 @@ async function poll() {
     const hit = a.direction === 'above' ? price >= a.price : price <= a.price
     if (hit) {
       notified.add(a.id)
-      self.registration.showNotification('Kline Buty · 价格提醒', {
-        body: `${a.symbol} ${a.direction === 'above' ? '已到达' : '已跌破'} ${a.price}`,
+      const text = NOTIFY_TEXT[lang] ?? NOTIFY_TEXT['zh-CN']
+      self.registration.showNotification(text.title, {
+        body: `${a.symbol} ${a.direction === 'above' ? text.above : text.below} ${a.price}`,
         tag: a.id,
         data: { symbol: a.symbol },
       })
     }
   }
 }
+
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
@@ -94,4 +103,4 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-setInterval(poll, 30_000)
+setInterval(poll, 20_000)

@@ -165,4 +165,26 @@ test.describe('K 线应用冒烟', () => {
     await page.getByRole('button', { name: '深度' }).click()
     await expect(page.getByText(/盘口深度/)).toHaveCount(0)
   })
+
+  test('i18n：中/英文切换 → 界面文案切换并持久化', async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    // 默认中文 → 点 EN 切英文
+    await page.getByRole('button', { name: 'EN', exact: true }).click()
+    await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Type', { exact: false }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: '中文', exact: true })).toBeVisible()
+    // 语言持久化：刷新后仍为英文
+    await page.reload()
+    await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: '中文', exact: true })).toBeVisible()
+    // 切回中文恢复
+    await page.getByRole('button', { name: '中文', exact: true }).click()
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await page.evaluate(() => localStorage.clear())
+    await page.reload()
+  })
 })

@@ -26,25 +26,26 @@ import type { Position } from './position/pnl'
 import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ThemeMode } from './theme'
+import { useI18n, type MessageKey } from './i18n'
 
-const STATUS_TEXT: Record<string, string> = {
-  loading: '加载历史数据…',
-  connecting: '连接实时行情…',
-  live: '实时',
-  reconnecting: '重连中…',
-  closed: '连接断开',
-  error: '加载失败',
+const STATUS_TEXT: Record<string, MessageKey> = {
+  loading: 'status.loading',
+  connecting: 'status.connecting',
+  live: 'status.live',
+  reconnecting: 'status.reconnecting',
+  closed: 'status.closed',
+  error: 'status.error',
 }
 
-const MAIN_OPTIONS = [
+const MAIN_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] = [
   { value: 'ma', label: 'MA' },
   { value: 'ema', label: 'EMA' },
   { value: 'boll', label: 'BOLL' },
   { value: 'vwap', label: 'VWAP' },
-  { value: 'none', label: '无' },
+  { value: 'none', labelKey: 'common.none' },
 ]
 
-const SUB_OPTIONS = [
+const SUB_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] = [
   { value: 'volume', label: 'VOL' },
   { value: 'macd', label: 'MACD' },
   { value: 'kdj', label: 'KDJ' },
@@ -55,16 +56,25 @@ const SUB_OPTIONS = [
   { value: 'dmi', label: 'DMI' },
   { value: 'cci', label: 'CCI' },
   { value: 'psy', label: 'PSY' },
-  { value: 'none', label: '无' },
+  { value: 'none', labelKey: 'common.none' },
 ]
 
-const TYPE_OPTIONS = [
-  { value: 'candlestick', label: '蜡烛' },
-  { value: 'line', label: '折线' },
-  { value: 'area', label: '面积' },
+const TYPE_OPTIONS: { value: string; labelKey: MessageKey }[] = [
+  { value: 'candlestick', labelKey: 'chartType.candlestick' },
+  { value: 'line', labelKey: 'chartType.line' },
+  { value: 'area', labelKey: 'chartType.area' },
 ]
+
+/** 选项标签：有 labelKey 走字典，否则为固定缩写（MA/VOL 等） */
+function optionLabel(
+  o: { value: string; label?: string; labelKey?: MessageKey },
+  t: (k: MessageKey) => string,
+): string {
+  return o.labelKey ? t(o.labelKey) : (o.label ?? o.value)
+}
 
 export function App() {
+  const { t, lang, setLang } = useI18n()
   const [symbol, setSymbol] = usePersistedState('symbol', 'BTCUSDT')
   const [period, setPeriod] = usePersistedState<Period>('period', '1m')
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
@@ -146,8 +156,8 @@ export function App() {
   // 提醒数据同步到 SW（后台提醒尽力版）
   useEffect(() => {
     if (!import.meta.env.PROD || !navigator.serviceWorker.controller) return
-    navigator.serviceWorker.controller.postMessage({ type: 'alerts', alerts: alertsApi.alerts })
-  }, [alertsApi.alerts])
+    navigator.serviceWorker.controller.postMessage({ type: 'alerts', alerts: alertsApi.alerts, lang })
+  }, [alertsApi.alerts, lang])
   const depth = useDepth(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
 
@@ -230,20 +240,20 @@ export function App() {
         </span>
         <PeriodBar value={period} onChange={setPeriod} />
         <IndicatorBar
-          group="类型"
-          options={TYPE_OPTIONS}
+          group={t('group.type')}
+          options={TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
           value={chartType}
           onChange={(v) => setChartType(v as ChartType)}
         />
         <IndicatorBar
-          group="主图"
-          options={MAIN_OPTIONS}
+          group={t('group.main')}
+          options={MAIN_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
           value={mainIndicator}
           onChange={(v) => setMainIndicator(v as MainIndicatorKind)}
         />
         <IndicatorBar
-          group="副图"
-          options={SUB_OPTIONS}
+          group={t('group.sub')}
+          options={SUB_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
           value={subIndicator}
           onChange={(v) => setSubIndicator(v as SubIndicatorKind)}
         />
@@ -264,7 +274,7 @@ export function App() {
                 if (e.key === 'Enter') confirmTextDrawing()
                 if (e.key === 'Escape') setEditingTextId(null)
               }}
-              placeholder="文本内容"
+              placeholder={t('drawing.textPlaceholder')}
               autoFocus
               style={{
                 width: 120,
@@ -288,7 +298,7 @@ export function App() {
                 color: '#fff',
               }}
             >
-              确定
+              {t('common.confirm')}
             </button>
             <button
               onClick={() => setEditingTextId(null)}
@@ -302,7 +312,7 @@ export function App() {
                 color: 'var(--text-dim)',
               }}
             >
-              取消
+              {t('common.cancel')}
             </button>
           </div>
         )}
@@ -317,9 +327,9 @@ export function App() {
             background: layout !== 'single' ? 'rgba(41,98,255,0.25)' : 'transparent',
             color: layout !== 'single' ? '#4e9cf5' : 'var(--text-dim)',
           }}
-          title="布局切换（单图/双图/四图）"
+          title={t('layout.switchTitle')}
         >
-          {layout === 'single' ? '单图' : layout === 'pair' ? '双图' : '四图'}
+          {layout === 'single' ? t('layout.single') : layout === 'pair' ? t('layout.pair') : t('layout.quad')}
         </button>
         <button
           onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
@@ -332,9 +342,9 @@ export function App() {
             background: 'transparent',
             color: 'var(--text-dim)',
           }}
-          title="切换主题"
+          title={t('theme.switchTitle')}
         >
-          {themeMode === 'dark' ? '浅色' : '深色'}
+          {themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
         </button>
         <button
           onClick={() => setPositionOpen((v) => !v)}
@@ -347,9 +357,9 @@ export function App() {
             background: positionOpen || position ? 'rgba(41,98,255,0.25)' : 'transparent',
             color: positionOpen || position ? '#4e9cf5' : 'var(--text-dim)',
           }}
-          title="模拟仓位（开仓/止盈/止损线）"
+          title={t('panel.positionTitle')}
         >
-          仓位
+          {t('panel.position')}
         </button>
         <button
           onClick={() => setAlertsOpen((v) => !v)}
@@ -362,9 +372,9 @@ export function App() {
             background: alertsOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
             color: alertsOpen ? '#4e9cf5' : 'var(--text-dim)',
           }}
-          title="价格提醒"
+          title={t('panel.alertsTitle')}
         >
-          提醒
+          {t('panel.alerts')}
         </button>
         <button
           onClick={() => setDepthOpen((v) => !v)}
@@ -377,9 +387,9 @@ export function App() {
             background: depthOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
             color: depthOpen ? '#4e9cf5' : 'var(--text-dim)',
           }}
-          title="盘口深度图"
+          title={t('panel.depthTitle')}
         >
-          深度
+          {t('panel.depth')}
         </button>
         <button
           onClick={() => setVolumeProfileOpen((v) => !v)}
@@ -392,9 +402,9 @@ export function App() {
             background: volumeProfileOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
             color: volumeProfileOpen ? '#4e9cf5' : 'var(--text-dim)',
           }}
-          title="筹码分布（成交量分布 VPVR）"
+          title={t('panel.vpTitle')}
         >
-          筹码
+          {t('panel.vp')}
         </button>
         <button
           onClick={() =>
@@ -410,9 +420,9 @@ export function App() {
             color: replay ? 'var(--yellow)' : 'var(--text-dim)',
           }}
           disabled={candles.length < 30}
-          title={candles.length < 30 ? '数据不足（需 ≥30 根）' : '历史逐根回放'}
+          title={candles.length < 30 ? t('status.replayNotEnough') : t('replay.title')}
         >
-          回放
+          {t('replay.start')}
         </button>
         <button
           onClick={() => setSettingsOpen((v) => !v)}
@@ -426,12 +436,12 @@ export function App() {
             color: 'var(--text-dim)',
           }}
         >
-          参数
+          {t('panel.settings')}
         </button>
         <span style={{ marginLeft: 'auto' }} />
         <button
           onClick={toggleFullscreen}
-          title={isFullscreen ? '退出全屏' : '全屏'}
+          title={isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
           style={{
             padding: '3px 10px',
             fontSize: 11,
@@ -442,7 +452,22 @@ export function App() {
             color: 'var(--text-dim)',
           }}
         >
-          {isFullscreen ? '退出全屏' : '全屏'}
+          {isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
+        </button>
+        <button
+          onClick={() => setLang(lang === 'zh-CN' ? 'en' : 'zh-CN')}
+          title={t('lang.switchTo')}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: 'transparent',
+            color: 'var(--text-dim)',
+          }}
+        >
+          {lang === 'zh-CN' ? 'EN' : '中文'}
         </button>
         <SymbolPicker value={symbol} onChange={setSymbol} />
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: statusColor }}>
@@ -455,7 +480,7 @@ export function App() {
               display: 'inline-block',
             }}
           />
-          {error ?? STATUS_TEXT[status] ?? status}
+          {error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)}
         </span>
       </header>
       <StatsBar stats={stats} />

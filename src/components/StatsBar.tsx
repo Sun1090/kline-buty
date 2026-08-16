@@ -1,4 +1,5 @@
 import type { MarketStats } from '../hooks/useMarketStats'
+import { useI18n } from '../i18n'
 
 function fmtPrice(v: number) {
   return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
@@ -22,6 +23,7 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export function StatsBar({ stats }: StatsBarProps) {
+  const { t } = useI18n()
   const empty = stats.price === null && stats.fundingRate === null && stats.openInterest === null
   if (empty) return null
   const changeColor = (stats.changePct ?? 0) >= 0 ? 'var(--up)' : 'var(--down)'
@@ -41,44 +43,44 @@ export function StatsBar({ stats }: StatsBarProps) {
       }}
     >
       {stats.price !== null && (
-        <Item label="最新价">
+        <Item label={t('stats.lastPrice')}>
           <span style={{ fontWeight: 600, color: changeColor, fontVariantNumeric: 'tabular-nums' }}>
             {fmtPrice(stats.price)}
           </span>
         </Item>
       )}
       {stats.changePct !== null && (
-        <Item label="24h涨跌">
+        <Item label={t('stats.change24h')}>
           <span style={{ color: changeColor }}>{stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%</span>
         </Item>
       )}
       {stats.high !== null && (
-        <Item label="24h高">
+        <Item label={t('stats.high24h')}>
           <span style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(stats.high)}</span>
         </Item>
       )}
       {stats.low !== null && (
-        <Item label="24h低">
+        <Item label={t('stats.low24h')}>
           <span style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(stats.low)}</span>
         </Item>
       )}
       {stats.quoteVolume !== null && (
-        <Item label="24h额">
+        <Item label={t('stats.volume24h')}>
           <span style={{ color: 'var(--text)' }}>{fmtVolume(stats.quoteVolume)} USDT</span>
         </Item>
       )}
       {stats.fundingRate !== null && (
-        <Item label="资金费率">
+        <Item label={t('stats.fundingRate')}>
           <span style={{ color: fundingColor }}>{fundingPct.toFixed(4)}%</span>
         </Item>
       )}
       {stats.openInterest !== null && (
-        <Item label="未平仓">
+        <Item label={t('stats.openInterest')}>
           <span style={{ color: 'var(--text)' }}>{stats.openInterest.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
         </Item>
       )}
       {stats.markPrice !== null && (
-        <Item label="标记价">
+        <Item label={t('stats.markPrice')}>
           <span style={{ color: 'var(--text-dim)' }}>{fmtPrice(stats.markPrice)}</span>
         </Item>
       )}

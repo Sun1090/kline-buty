@@ -1,5 +1,6 @@
 import type { ReplayState } from '../replay/engine'
 import { REPLAY_SPEEDS } from '../replay/engine'
+import { useI18n, localeFor } from '../i18n'
 
 interface ReplayBarProps {
   replay: ReplayState
@@ -11,6 +12,7 @@ interface ReplayBarProps {
 }
 
 export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExit }: ReplayBarProps) {
+  const { t, lang } = useI18n()
   return (
     <div
       style={{
@@ -33,7 +35,7 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
           whiteSpace: 'nowrap',
         }}
       >
-        回放
+        {t('replay.start')}
       </span>
       <button
         onClick={onToggle}
@@ -48,7 +50,7 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
           minWidth: 56,
         }}
       >
-        {replay.playing ? '暂停' : '播放'}
+        {replay.playing ? t('replay.pause') : t('replay.play')}
       </button>
       {REPLAY_SPEEDS.map((s) => (
         <button
@@ -76,7 +78,7 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
         style={{ flex: 1, accentColor: 'var(--accent)' }}
       />
       <span style={{ fontSize: 11, color: 'var(--text-dim)', whiteSpace: 'nowrap', width: 150, textAlign: 'right' }}>
-        {cursorTime ? new Date(cursorTime * 1000).toLocaleString('zh-CN', { hour12: false }) : '—'}
+        {cursorTime ? new Date(cursorTime * 1000).toLocaleString(localeFor(lang), { hour12: false }) : '—'}
       </span>
       <span style={{ fontSize: 11, color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>
         {replay.cursor + 1} / {replay.total}
@@ -93,7 +95,7 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
           color: 'var(--down)',
         }}
       >
-        退出回放
+        {t('replay.exit')}
       </button>
     </div>
   )

@@ -25,6 +25,7 @@ import {
   type DrawingTool,
 } from '../drawings/logic'
 import { THEMES, type ChartTheme, type ThemeMode } from '../theme'
+import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
 
@@ -82,6 +83,8 @@ export interface ChartApi {
   takeScreenshot(): string | null
   /** 切换图表主题 */
   setTheme(theme: ThemeMode): void
+  /** 切换界面语言（文本标注默认文案 / 仓位线标签随语言更新） */
+  setLocale(lang: Lang): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -139,6 +142,7 @@ export class LightweightChartAdapter implements ChartApi {
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
   private theme: ChartTheme = THEMES.dark
+  private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
   private dragHandler: ((key: PositionLineKey, price: number) => void) | null = null
   private dragKey: PositionLineKey | null = null
   private hoverKey: PositionLineKey | null = null
@@ -241,6 +245,12 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
+  setLocale(lang: Lang) {
+    this.labels = chartLabelsFor(lang)
+    this.applyPositionLines()
+    this.draw()
+  }
+
   takeScreenshot(): string | null {
     const main = this.chart.takeScreenshot()
     if (!main) return null
@@ -311,7 +321,7 @@ export class LightweightChartAdapter implements ChartApi {
     if (d.type === 'text') {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return
-      const label = d.text && d.text.trim() ? d.text : '文本'
+      const label = d.text && d.text.trim() ? d.text : this.labels.defaultText
       ctx.font = '11px system-ui'
       const w = ctx.measureText(label).width + 12
       const h = 18
@@ -583,9 +593,9 @@ export class LightweightChartAdapter implements ChartApi {
     }
     if (!this.positionLines) return
     const specs: { key: 'entry' | 'takeProfit' | 'stopLoss'; price: number; color: string; label: string }[] = [
-      { key: 'entry', price: this.positionLines.entry, color: this.theme.yellow, label: '开仓' },
-      { key: 'takeProfit', price: this.positionLines.takeProfit ?? NaN, color: this.theme.up, label: '止盈' },
-      { key: 'stopLoss', price: this.positionLines.stopLoss ?? NaN, color: this.theme.down, label: '止损' },
+      { key: 'entry', price: this.positionLines.entry, color: this.theme.yellow, label: this.labels.entry },
+      { key: 'takeProfit', price: this.positionLines.takeProfit ?? NaN, color: this.theme.up, label: this.labels.tp },
+      { key: 'stopLoss', price: this.positionLines.stopLoss ?? NaN, color: this.theme.down, label: this.labels.sl },
     ]
     for (const s of specs) {
       if (!Number.isFinite(s.price)) continue

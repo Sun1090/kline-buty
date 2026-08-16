@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { AlertsApi } from '../hooks/usePriceAlerts'
+import { useI18n } from '../i18n'
 
 interface AlertPanelProps {
   symbol: string
@@ -18,6 +19,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps) {
+  const { t } = useI18n()
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
   const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission } = alertsApi
@@ -44,17 +46,17 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontWeight: 600 }}>价格提醒 · {symbol.replace('USDT', '/USDT')}</span>
+        <span style={{ fontWeight: 600 }}>{t('alert.title', { symbol: symbol.replace('USDT', '/USDT') })}</span>
         {permission === 'granted' ? (
-          <span style={{ color: 'var(--up)', fontSize: 11 }}>通知已开启</span>
+          <span style={{ color: 'var(--up)', fontSize: 11 }}>{t('alert.granted')}</span>
         ) : permission === 'unsupported' ? (
-          <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>环境不支持通知</span>
+          <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('alert.unsupported')}</span>
         ) : (
           <button
             onClick={() => void requestPermission()}
             style={{ background: 'none', border: '1px solid #2a2e39', borderRadius: 4, color: '#4e9cf5', cursor: 'pointer', fontSize: 11, padding: '2px 6px' }}
           >
-            开启通知
+            {t('alert.enable')}
           </button>
         )}
       </div>
@@ -75,14 +77,14 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
               color: d === direction ? '#fff' : 'var(--text-dim)',
             }}
           >
-            {d === 'above' ? '价格 ≥' : '价格 ≤'}
+            {d === 'above' ? t('alert.above') : t('alert.below')}
           </button>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         <input
           style={inputStyle}
-          placeholder={currentPrice ? String(currentPrice.toFixed(2)) : '价格'}
+          placeholder={currentPrice ? String(currentPrice.toFixed(2)) : t('common.price')}
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
@@ -105,12 +107,12 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
             color: valid ? '#fff' : 'var(--text-faint)',
           }}
         >
-          添加提醒
+          {t('alert.add')}
         </button>
       </div>
 
       {symbolAlerts.length === 0 ? (
-        <div style={{ color: 'var(--text-faint)' }}>暂无提醒</div>
+        <div style={{ color: 'var(--text-faint)' }}>{t('alert.none')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
           {symbolAlerts.map((a) => (
@@ -128,16 +130,16 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
             >
               <span style={{ color: a.triggered ? 'var(--yellow)' : 'var(--text)' }}>
                 {a.direction === 'above' ? '≥' : '≤'} {a.price.toFixed(2)}
-                {a.triggered && ' · 已触发'}
+                {a.triggered && ` · ${t('alert.triggered')}`}
               </span>
               <span style={{ display: 'flex', gap: 6 }}>
                 {a.triggered && (
                   <button onClick={() => resetAlert(a.id)} style={{ background: 'none', border: 'none', color: '#4e9cf5', cursor: 'pointer', fontSize: 11 }}>
-                    重置
+                    {t('alert.reset')}
                   </button>
                 )}
                 <button onClick={() => removeAlert(a.id)} style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 11 }}>
-                  删除
+                  {t('common.delete')}
                 </button>
               </span>
             </div>

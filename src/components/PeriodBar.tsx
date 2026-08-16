@@ -1,4 +1,5 @@
 import { PERIODS, type Period } from '../chart/types'
+import { useI18n, type MessageKey } from '../i18n'
 
 interface PeriodBarProps {
   value: Period
@@ -6,6 +7,7 @@ interface PeriodBarProps {
 }
 
 export function PeriodBar({ value, onChange }: PeriodBarProps) {
+  const { t } = useI18n()
   return (
     <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       {PERIODS.map((p) => (
@@ -22,7 +24,7 @@ export function PeriodBar({ value, onChange }: PeriodBarProps) {
             color: p.value === value ? '#fff' : 'var(--text-dim)',
           }}
         >
-          {p.label}
+          {t(p.labelKey as MessageKey)}
         </button>
       ))}
     </div>

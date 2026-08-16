@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { IndicatorParams } from '../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from './ChartView'
+import { useI18n, type TFunction } from '../i18n'
 
 interface Field {
   key: keyof IndicatorParams
@@ -16,25 +17,29 @@ interface IndicatorSettingsProps {
   onClose: () => void
 }
 
-function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind): Field[] {
+function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction): Field[] {
   const fields: Field[] = []
   if (main === 'ma' || main === 'ema')
-    fields.push({ key: 'maPeriods', label: `${main === 'ma' ? 'MA' : 'EMA'} 周期(逗号分隔)`, kind: 'list' })
+    fields.push({
+      key: 'maPeriods',
+      label: t('indicator.maPeriods', { name: main === 'ma' ? 'MA' : 'EMA' }),
+      kind: 'list',
+    })
   if (main === 'boll') {
-    fields.push({ key: 'bollPeriod', label: 'BOLL 周期', kind: 'number' })
-    fields.push({ key: 'bollMult', label: 'BOLL 标准差倍数', kind: 'number' })
+    fields.push({ key: 'bollPeriod', label: t('indicator.bollPeriod'), kind: 'number' })
+    fields.push({ key: 'bollMult', label: t('indicator.bollMult'), kind: 'number' })
   }
   if (sub === 'macd') {
-    fields.push({ key: 'macdFast', label: 'MACD 快线', kind: 'number' })
-    fields.push({ key: 'macdSlow', label: 'MACD 慢线', kind: 'number' })
-    fields.push({ key: 'macdSignal', label: 'MACD 信号', kind: 'number' })
+    fields.push({ key: 'macdFast', label: t('indicator.macdFast'), kind: 'number' })
+    fields.push({ key: 'macdSlow', label: t('indicator.macdSlow'), kind: 'number' })
+    fields.push({ key: 'macdSignal', label: t('indicator.macdSignal'), kind: 'number' })
   }
   if (sub === 'kdj') {
     fields.push({ key: 'kdjN', label: 'KDJ N', kind: 'number' })
     fields.push({ key: 'kdjM1', label: 'KDJ M1', kind: 'number' })
     fields.push({ key: 'kdjM2', label: 'KDJ M2', kind: 'number' })
   }
-  if (sub === 'rsi') fields.push({ key: 'rsiPeriod', label: 'RSI 周期', kind: 'number' })
+  if (sub === 'rsi') fields.push({ key: 'rsiPeriod', label: t('indicator.rsiPeriod'), kind: 'number' })
   return fields
 }
 
@@ -55,7 +60,8 @@ export function IndicatorSettings({
   onChange,
   onClose,
 }: IndicatorSettingsProps) {
-  const fields = fieldsFor(mainIndicator, subIndicator)
+  const { t } = useI18n()
+  const fields = fieldsFor(mainIndicator, subIndicator, t)
   const [draft, setDraft] = useState(() => ({ ...params }))
 
   const apply = (patch: Partial<IndicatorParams>) => {
@@ -81,7 +87,7 @@ export function IndicatorSettings({
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontWeight: 600 }}>指标参数</span>
+        <span style={{ fontWeight: 600 }}>{t('indicator.settings')}</span>
         <button
           onClick={onClose}
           style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13 }}
@@ -89,7 +95,7 @@ export function IndicatorSettings({
           ✕
         </button>
       </div>
-      {fields.length === 0 && <div style={{ color: 'var(--text-faint)' }}>当前指标无参数可调</div>}
+      {fields.length === 0 && <div style={{ color: 'var(--text-faint)' }}>{t('indicator.noParams')}</div>}
       {fields.map((f) => (
         <div key={String(f.key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
           <span style={{ color: 'var(--text-dim)' }}>{f.label}</span>

@@ -1,4 +1,5 @@
 import type { DrawingTool } from '../drawings/logic'
+import { useI18n, type MessageKey } from '../i18n'
 
 interface DrawingToolbarProps {
   tool: DrawingTool
@@ -9,13 +10,13 @@ interface DrawingToolbarProps {
   onEditSelectedText?: () => void
 }
 
-const TOOLS: { value: DrawingTool; label: string }[] = [
-  { value: 'none', label: '鼠标' },
-  { value: 'horizontal', label: '水平线' },
-  { value: 'trend', label: '趋势线' },
-  { value: 'channel', label: '平行通道' },
-  { value: 'fib', label: '斐波那契' },
-  { value: 'text', label: '文本' },
+const TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
+  { value: 'none', labelKey: 'drawing.mouse' },
+  { value: 'horizontal', labelKey: 'drawing.horizontal' },
+  { value: 'trend', labelKey: 'drawing.trend' },
+  { value: 'channel', labelKey: 'drawing.channel' },
+  { value: 'fib', labelKey: 'drawing.fib' },
+  { value: 'text', labelKey: 'drawing.text' },
 ]
 
 export function DrawingToolbar({
@@ -25,25 +26,26 @@ export function DrawingToolbar({
   onDeleteSelected,
   onEditSelectedText,
 }: DrawingToolbarProps) {
+  const { t } = useI18n()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-      <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>画线</span>
-      {TOOLS.map((t) => (
+      <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('drawing.group')}</span>
+      {TOOLS.map((o) => (
         <button
-          key={t.value}
-          onClick={() => onChange(t.value)}
-          title={t.label}
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          title={t(o.labelKey)}
           style={{
             padding: '3px 8px',
             fontSize: 11,
             border: 'none',
             borderRadius: 4,
             cursor: 'pointer',
-            background: t.value === tool ? 'var(--accent)' : 'transparent',
-            color: t.value === tool ? '#fff' : 'var(--text-dim)',
+            background: o.value === tool ? 'var(--accent)' : 'transparent',
+            color: o.value === tool ? '#fff' : 'var(--text-dim)',
           }}
         >
-          {t.label}
+          {t(o.labelKey)}
         </button>
       ))}
       {selected && (
@@ -61,7 +63,7 @@ export function DrawingToolbar({
                 color: 'var(--accent)',
               }}
             >
-              改字
+              {t('drawing.editText')}
             </button>
           )}
           <button
@@ -76,7 +78,7 @@ export function DrawingToolbar({
               color: 'var(--down)',
             }}
           >
-            删除
+            {t('common.delete')}
           </button>
         </>
       )}

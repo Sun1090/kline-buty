@@ -63,7 +63,8 @@ npm run build                # 生产构建
 - [x] 浅色/深色主题：CSS 变量化 + 图表主题联动 + 持久化
 - [x] 筹码分布（VPVR）：成交量按价格分桶、买卖量分色、密集区标记
 - [x] 四图联动：单图/双图/四图布局切换，时间轴全联动 + 防回环
-- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 6 场景
+- [x] i18n 多语言：中/英文界面一键切换（字典驱动 + localStorage 持久化 + `<html lang>` 同步），画线/仓位线标签随语言联动
+- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 7 场景
 
 ## 技术栈与结构
 
@@ -77,6 +78,7 @@ src/
 │   ├── binance/     # REST 分页、WS 客户端（心跳/退避重连/补数）
 │   └── market.ts    # K 线仓库：有序缓存 + 幂等合并
 ├── hooks/           # useKlineData：历史+实时编排
+├── i18n/            # 中/英文文案字典 + I18nProvider
 └── indicators/      # 指标引擎（纯函数，M3 扩展）
 ```
 
