@@ -25,10 +25,15 @@ const STANDARD: Record<string, number> = {
   dmiPeriod: 14,
   cciPeriod: 20,
   psyPeriod: 12,
+  stochK: 14,
+  stochSmooth: 3,
+  stochD: 3,
+  rocPeriod: 12,
+  momPeriod: 10,
 }
 
 describe('DEFAULT_INDICATOR_PARAMS', () => {
-  it('覆盖全部 22 个参数键（主图 10 + 副图 12）', () => {
+  it('覆盖全部 27 个参数键（主图 10 + 副图 17）', () => {
     const numericKeys = Object.keys(DEFAULT_INDICATOR_PARAMS).filter((k) => k !== 'maPeriods')
     expect(numericKeys.sort()).toEqual(Object.keys(STANDARD).sort())
   })

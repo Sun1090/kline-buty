@@ -718,7 +718,7 @@ test.describe('K 线应用冒烟', () => {
     await rsiInput.fill('7')
     await page.getByRole('button', { name: '✕', exact: true }).click()
     // 全指标切换无异常（含新接线参数的 WR/OBV/ATR/DMI/CCI/PSY/SAR/Ichimoku）
-    for (const name of ['WR', 'OBV', 'ATR', 'DMI', 'CCI', 'PSY']) {
+    for (const name of ['WR', 'OBV', 'ATR', 'DMI', 'CCI', 'PSY', 'STOCH', 'ROC', 'MOM']) {
       await page.getByRole('button', { name, exact: true }).click()
       await page.waitForTimeout(250)
     }

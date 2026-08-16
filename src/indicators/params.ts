@@ -24,6 +24,11 @@ export interface IndicatorParams {
   dmiPeriod: number
   cciPeriod: number
   psyPeriod: number
+  stochK: number
+  stochSmooth: number
+  stochD: number
+  rocPeriod: number
+  momPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -52,4 +57,9 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   dmiPeriod: 14,
   cciPeriod: 20,
   psyPeriod: 12,
+  stochK: 14,
+  stochSmooth: 3,
+  stochD: 3,
+  rocPeriod: 12,
+  momPeriod: 10,
 }

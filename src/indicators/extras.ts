@@ -150,3 +150,49 @@ export function calcDMI(candles: Candle[], n = 14): DmiPoint[] {
   }
   return out
 }
+
+export interface StochResult {
+  /** 随机指标 %K（SMA(rawK, kSmooth)） */
+  k: ValuePoint[]
+  /** 随机指标 %D（SMA(K, dPeriod)） */
+  d: ValuePoint[]
+}
+
+/**
+ * 随机指标 STOCH：rawK = (C − LLV(low,n)) / (HHV(high,n) − LLV(low,n)) × 100，
+ * K = SMA(rawK, kSmooth)，D = SMA(K, dPeriod)。标准默认 14/3/3。
+ */
+export function calcSTOCH(candles: Candle[], kPeriod = 14, kSmooth = 3, dPeriod = 3): StochResult {
+  const rawK: ValuePoint[] = []
+  for (let i = kPeriod - 1; i < candles.length; i++) {
+    let hh = -Infinity
+    let ll = Infinity
+    for (let j = i - kPeriod + 1; j <= i; j++) {
+      if (candles[j].high > hh) hh = candles[j].high
+      if (candles[j].low < ll) ll = candles[j].low
+    }
+    rawK.push({ time: candles[i].time, value: hh === ll ? 50 : ((candles[i].close - ll) / (hh - ll)) * 100 })
+  }
+  const k = calcSMA(rawK, kSmooth)
+  const d = calcSMA(k, dPeriod)
+  return { k, d }
+}
+
+/** 变动率 ROC(n)：((C − C[n]) / C[n]) × 100 */
+export function calcROC(candles: Candle[], n = 12): ValuePoint[] {
+  const out: ValuePoint[] = []
+  for (let i = n; i < candles.length; i++) {
+    const prev = candles[i - n].close
+    out.push({ time: candles[i].time, value: prev === 0 ? 0 : ((candles[i].close - prev) / prev) * 100 })
+  }
+  return out
+}
+
+/** 动量 MOM(n)：C − C[n] */
+export function calcMOM(candles: Candle[], n = 10): ValuePoint[] {
+  const out: ValuePoint[] = []
+  for (let i = n; i < candles.length; i++) {
+    out.push({ time: candles[i].time, value: candles[i].close - candles[i - n].close })
+  }
+  return out
+}

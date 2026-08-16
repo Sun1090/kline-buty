@@ -93,6 +93,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [menuPos, setMenuPos] = useState<{ left: number; top: number } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const { favorites, toggleFavorite } = useFavorites()
@@ -116,12 +117,26 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
     onChange(s)
     setOpen(false)
   }
+
+  /** 打开下拉：fixed 定位，按按钮位置动态取 left，保证 320px 面板不超出视口 */
+  const toggleOpen = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setOpen(true)
+    const r = rootRef.current?.getBoundingClientRect()
+    if (r) {
+      const left = Math.min(r.left, window.innerWidth - 328)
+      setMenuPos({ left: Math.max(8, left), top: r.bottom + 6 })
+    }
+  }
   const favTitle = (s: string) => (favorites.includes(s) ? t('symbol.favoriteRemove') : t('symbol.favoriteAdd'))
 
   return (
     <div style={{ position: 'relative' }} ref={rootRef}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         style={{
           padding: '3px 10px',
           fontSize: 12,
@@ -134,12 +149,12 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
       >
         {value.replace('USDT', '/USDT')} ▾
       </button>
-      {open && (
+      {open && menuPos && (
         <div
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
+            position: 'fixed',
+            left: menuPos.left,
+            top: menuPos.top,
             zIndex: 100,
             background: 'var(--panel)',
             border: '1px solid var(--border)',

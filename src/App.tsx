@@ -61,6 +61,9 @@ const SUB_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] = 
   { value: 'dmi', label: 'DMI' },
   { value: 'cci', label: 'CCI' },
   { value: 'psy', label: 'PSY' },
+  { value: 'stoch', label: 'STOCH' },
+  { value: 'roc', label: 'ROC' },
+  { value: 'mom', label: 'MOM' },
   { value: 'none', labelKey: 'common.none' },
 ]
 

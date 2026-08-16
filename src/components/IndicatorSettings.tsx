@@ -57,6 +57,13 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
   if (sub === 'dmi') fields.push({ key: 'dmiPeriod', label: t('indicator.dmiPeriod'), kind: 'number' })
   if (sub === 'cci') fields.push({ key: 'cciPeriod', label: t('indicator.cciPeriod'), kind: 'number' })
   if (sub === 'psy') fields.push({ key: 'psyPeriod', label: t('indicator.psyPeriod'), kind: 'number' })
+  if (sub === 'stoch') {
+    fields.push({ key: 'stochK', label: t('indicator.stochK'), kind: 'number' })
+    fields.push({ key: 'stochSmooth', label: t('indicator.stochSmooth'), kind: 'number' })
+    fields.push({ key: 'stochD', label: t('indicator.stochD'), kind: 'number' })
+  }
+  if (sub === 'roc') fields.push({ key: 'rocPeriod', label: t('indicator.rocPeriod'), kind: 'number' })
+  if (sub === 'mom') fields.push({ key: 'momPeriod', label: t('indicator.momPeriod'), kind: 'number' })
   return fields
 }
 
