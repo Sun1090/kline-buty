@@ -347,6 +347,32 @@ test.describe('K 线应用冒烟', () => {
     expect(lines[1].split(',').slice(1, 6).every((v) => v !== '' && !Number.isNaN(Number(v)))).toBe(true)
   })
 
+  test('主题色预设：切换红涨绿跌 → CSS 变量/图表联动 + 持久化', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 默认 classic：--up 为 #26a69a
+    const upBefore = await page.evaluate(() => document.documentElement.style.getPropertyValue('--up'))
+    expect(upBefore).toBe('#26a69a')
+    // 点击「红涨绿跌」预设
+    await page.locator('button[data-preset="a-share"]').click()
+    await page.waitForTimeout(300)
+    const upAfter = await page.evaluate(() => document.documentElement.style.getPropertyValue('--up'))
+    expect(upAfter).toBe('#ef5350')
+    const downAfter = await page.evaluate(() => document.documentElement.style.getPropertyValue('--down'))
+    expect(downAfter).toBe('#26a69a')
+    // 选中态按钮 aria-pressed=true
+    await expect(page.locator('button[data-preset="a-share"]')).toHaveAttribute('aria-pressed', 'true')
+    expect(errors).toHaveLength(0)
+    // 刷新后持久化保持
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    const upPersisted = await page.evaluate(() => document.documentElement.style.getPropertyValue('--up'))
+    expect(upPersisted).toBe('#ef5350')
+  })
+
   test('自选收藏：星标添加 → 置顶自选区 → 取消', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

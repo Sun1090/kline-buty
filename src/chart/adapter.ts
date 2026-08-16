@@ -30,7 +30,7 @@ import {
   type Drawing,
   type DrawingTool,
 } from '../drawings/logic'
-import { THEMES, type ChartTheme, type ThemeMode } from '../theme'
+import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
@@ -101,7 +101,7 @@ export interface ChartApi {
   /** 截图：主图 + 画线图层合成 PNG dataURL */
   takeScreenshot(): string | null
   /** 切换图表主题 */
-  setTheme(theme: ThemeMode): void
+  setTheme(theme: ThemeMode, presetId?: ColorPresetId): void
   /** 切换界面语言（文本标注默认文案 / 仓位线标签随语言更新） */
   setLocale(lang: Lang): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
@@ -265,8 +265,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
-  setTheme(mode: ThemeMode) {
-    this.theme = THEMES[mode]
+  setTheme(mode: ThemeMode, presetId: ColorPresetId = 'classic') {
+    this.theme = themeFor(mode, presetId)
     this.chart.applyOptions({
       layout: {
         background: { type: ColorType.Solid, color: this.theme.background },

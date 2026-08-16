@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { Period } from '../chart/types'
 import type { ChartType } from '../chart/adapter'
 import { ChartView, type MainIndicatorKind, type SubIndicatorKind } from './ChartView'
+import type { ColorPresetId } from '../theme'
 import { useKlineData } from '../hooks/useKlineData'
 import type { IndicatorParams } from '../indicators/params'
 
@@ -14,10 +15,11 @@ interface ChartPairProps {
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
   themeMode?: 'dark' | 'light'
+  colorPreset?: ColorPresetId
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark' }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic' }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
@@ -42,7 +44,7 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, mainIndicat
     setRangeA(r)
   }
 
-  const base = { period, chartType, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode }
+  const base = { period, chartType, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode, colorPreset }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

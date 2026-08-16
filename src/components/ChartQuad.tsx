@@ -3,6 +3,7 @@ import { ChartView, type MainIndicatorKind, type SubIndicatorKind } from './Char
 import type { Period } from '../chart/types'
 import type { ChartType } from '../chart/adapter'
 import type { IndicatorParams } from '../indicators/params'
+import type { ColorPresetId } from '../theme'
 import { useKlineData } from '../hooks/useKlineData'
 
 export interface Range2 {
@@ -17,11 +18,12 @@ interface CellProps {
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
+  colorPreset: ColorPresetId
   externalRange: Range2 | null
   onViewRangeChange: (r: Range2) => void
 }
 
-function QuadCell({ symbol, period, chartType, mainIndicator, subIndicator, indicatorParams, externalRange, onViewRangeChange }: CellProps) {
+function QuadCell({ symbol, period, chartType, mainIndicator, subIndicator, indicatorParams, colorPreset, externalRange, onViewRangeChange }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <ChartView
@@ -32,6 +34,7 @@ function QuadCell({ symbol, period, chartType, mainIndicator, subIndicator, indi
       mainIndicator={mainIndicator}
       subIndicator={subIndicator}
       indicatorParams={indicatorParams}
+      colorPreset={colorPreset}
       replay={null}
       hasMore={data.hasMore}
       onLoadMore={data.loadMore}
@@ -76,12 +79,13 @@ interface QuadChartProps {
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
   themeMode?: 'dark' | 'light'
+  colorPreset?: ColorPresetId
 }
 
 /** 四图联动：2×2 网格，时间轴全联动 */
-export function ChartQuad({ symbols, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark' }: QuadChartProps) {
+export function ChartQuad({ symbols, period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic' }: QuadChartProps) {
   const { ranges, broadcast } = useChartSync(4)
-  const base = { period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode }
+  const base = { period, chartType, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>

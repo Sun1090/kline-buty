@@ -60,6 +60,11 @@ export const zh = {
     switchTitle: '切换主题',
     toLight: '浅色',
     toDark: '深色',
+    pickTitle: '主题色预设（强调/涨跌色）',
+    presetClassic: '经典蓝',
+    presetAShare: '红涨绿跌',
+    presetPurple: '紫调',
+    presetTeal: '青调',
   },
   layout: {
     switchTitle: '布局切换（单图/双图/四图）',
@@ -302,6 +307,11 @@ export const en: Messages = {
     switchTitle: 'Toggle theme',
     toLight: 'Light',
     toDark: 'Dark',
+    pickTitle: 'Theme color presets (accent / up / down)',
+    presetClassic: 'Classic blue',
+    presetAShare: 'Red up / green down',
+    presetPurple: 'Purple',
+    presetTeal: 'Teal',
   },
   layout: {
     switchTitle: 'Switch layout (single/pair/quad)',
