@@ -11,6 +11,8 @@ export type DrawingTool =
   | 'fibfan'
   | 'pricelabel'
   | 'arrow'
+  | 'ellipse'
+  | 'circle'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -104,7 +106,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'arrow') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'arrow' || type === 'circle') return [a, b]
   if (type === 'fibext') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
@@ -212,6 +214,35 @@ export function hitTestDrawings(
             [{ x: right, y: top }, { x: right, y: bottom }],
           ]
           dist = Math.min(...edges.map(([p, q]) => distToSegment({ x: px, y: py }, p, q)))
+        }
+      }
+    } else if (d.type === 'ellipse') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        const top = Math.min(a.y, b.y)
+        const bottom = Math.max(a.y, b.y)
+        const cx = (left + right) / 2
+        const cy = (top + bottom) / 2
+        const rx = Math.max(1, (right - left) / 2)
+        const ry = Math.max(1, (bottom - top) / 2)
+        const nx = (px - cx) / rx
+        const ny = (py - cy) / ry
+        const r = Math.hypot(nx, ny)
+        // 内部区域命中；外部按到边缘的近似距离（归一化半径差 × 短轴）
+        dist = r <= 1 ? 0 : (r - 1) * Math.min(rx, ry)
+      }
+    } else if (d.type === 'circle') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const r = Math.hypot(b.x - a.x, b.y - a.y)
+        if (r > 0) {
+          const d = Math.hypot(px - a.x, py - a.y)
+          // 圆内区域命中；外部按到圆周距离
+          dist = d <= r ? 0 : d - r
         }
       }
     } else if (d.type === 'ray') {
