@@ -24,6 +24,11 @@ export default defineConfig({
         target: 'https://fapi.binance.com',
         changeOrigin: true,
       },
+      // 衍生品情绪数据（多空比/持仓量历史）→ fapi.binance.com
+      '/futures': {
+        target: 'https://fapi.binance.com',
+        changeOrigin: true,
+      },
     },
   },
   test: {

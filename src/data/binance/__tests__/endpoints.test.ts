@@ -17,6 +17,14 @@ describe('buildApiUrl', () => {
   it('direct 模式拼永续域名', () => {
     expect(buildApiUrl('direct', '/fapi/v1/premiumIndex')).toBe('https://fapi.binance.com/fapi/v1/premiumIndex')
   })
+  it('direct 模式拼衍生品情绪域名（/futures 走 fapi，带 CORS）', () => {
+    expect(buildApiUrl('direct', '/futures/data/openInterestHist?symbol=BTCUSDT')).toBe(
+      'https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT',
+    )
+  })
+  it('proxy 模式原样返回相对路径（含 /futures）', () => {
+    expect(buildApiUrl('proxy', '/futures/data/openInterestHist')).toBe('/futures/data/openInterestHist')
+  })
 })
 
 describe('buildWsUrl', () => {

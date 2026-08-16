@@ -470,7 +470,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('浮动盈亏')).toBeVisible({ timeout: 5000 })
   })
 
-  test('情绪面板：开合 + 四类指标标题可见（数据可加载中）', async ({ page }) => {
+  test('情绪面板：开合 + 四类指标标题可见 + 直连 CORS 修复后真实数据渲染', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: '情绪' }).click()
@@ -478,6 +478,12 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('大户持仓多空比')).toBeVisible()
     await expect(page.getByText('主动买卖比')).toBeVisible()
     await expect(page.getByText('未平仓 24h')).toBeVisible()
+    // 直连模式下 /futures/data 必须走 fapi.binance.com（带 CORS）：
+    // 有「多/空」+ 百分比即代表真实数据已渲染，而非停留在「加载中」
+    const panel = page.locator('[data-testid="sentiment-panel"]')
+    await expect(panel.getByText(/多/).first()).toBeVisible({ timeout: 15_000 })
+    await expect(panel.getByText(/%/).first()).toBeVisible()
+    await expect(panel.getByText(/^\d+\.\d+$/).first()).toBeVisible()
     await page.getByRole('button', { name: '情绪' }).click()
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
   })
