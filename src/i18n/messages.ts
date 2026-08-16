@@ -97,6 +97,9 @@ export const zh = {
     title: '复制当前品种与周期的分享链接',
     copy: '分享',
     copied: '已复制',
+    exportTitle: '导出当前品种/周期的 K 线 CSV（含当前指标列）',
+    export: '导出',
+    exported: '已导出',
   },
   replay: {
     start: '回放',
@@ -336,6 +339,9 @@ export const en: Messages = {
     title: 'Copy share link for current symbol & period',
     copy: 'Share',
     copied: 'Copied',
+    exportTitle: 'Export OHLCV CSV for current symbol/period (with active indicator columns)',
+    export: 'Export',
+    exported: 'Exported',
   },
   replay: {
     start: 'Replay',

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 /** 等待蜡烛真正渲染（canvas 出现涨跌色像素）；冷启动直连慢时刷新一次重试，避免环境抖动误报 */
 async function waitCandlesRendered(page: Page) {
@@ -323,6 +324,27 @@ test.describe('K 线应用冒烟', () => {
     const clip = await page.evaluate(() => navigator.clipboard.readText())
     expect(clip).toContain('symbol=ETHUSDT')
     expect(clip).toContain('period=1h')
+  })
+
+  test('CSV 导出：一键下载含当前指标列的 K 线文件', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 默认主图 MA（5/10/20）+ 副图 VOL → 头部应为 time,open,high,low,close,volume,MA5,MA10,MA20
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: '导出', exact: true }).click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m_\d{8}\.csv$/)
+    const path = await download.path()
+    expect(path).toBeTruthy()
+    const csv = readFileSync(path!, 'utf8').replace(/^\uFEFF/, '')
+    const lines = csv.trimEnd().split('\r\n')
+    expect(lines[0]).toBe('time,open,high,low,close,volume,MA5,MA10,MA20')
+    expect(lines.length).toBeGreaterThanOrEqual(2)
+    // 数据行：ISO 时间 + 至少 5 个数值字段
+    expect(lines[1].split(',')[0]).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(lines[1].split(',').slice(1, 6).every((v) => v !== '' && !Number.isNaN(Number(v)))).toBe(true)
   })
 
   test('自选收藏：星标添加 → 置顶自选区 → 取消', async ({ page }) => {

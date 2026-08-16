@@ -30,6 +30,7 @@ import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ThemeMode } from './theme'
 import { useI18n, type MessageKey } from './i18n'
+import { buildCsv, csvFileName } from './utils/csv'
 
 const STATUS_TEXT: Record<string, MessageKey> = {
   loading: 'status.loading',
@@ -105,6 +106,7 @@ export function App() {
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
@@ -239,6 +241,23 @@ export function App() {
     }
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  // 导出当前品种/周期的 K 线 CSV（含当前主/副图指标列），BOM + <a download> 触发下载
+  const exportCsv = () => {
+    if (candles.length === 0) return
+    const csv = buildCsv(candles, { symbol, period, mainIndicator, subIndicator, params: indicatorParams })
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = csvFileName(symbol, period)
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    setExported(true)
+    window.setTimeout(() => setExported(false), 1500)
   }
 
   // 键盘快捷键：[ ] 切周期，Space 回放播放/暂停，Delete 删除选中画线
@@ -549,6 +568,21 @@ export function App() {
           }}
         >
           {copied ? t('share.copied') : t('share.copy')}
+        </button>
+        <button
+          onClick={exportCsv}
+          title={t('share.exportTitle')}
+          style={{
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: exported ? 'rgba(41,98,255,0.25)' : 'transparent',
+            color: exported ? '#4e9cf5' : 'var(--text-dim)',
+          }}
+        >
+          {exported ? t('share.exported') : t('share.export')}
         </button>
         <SymbolPicker value={symbol} onChange={setSymbol} />
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: statusColor }}>
