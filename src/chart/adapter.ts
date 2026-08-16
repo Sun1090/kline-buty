@@ -422,6 +422,32 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'triangle') {
+      // 三角形：A/B/C 三点围合，半透明填充 + 描边（支持多段点击预览）
+      const [pa, pb, pc] = d.points
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = pb ? this.project(pb.time, pb.price) : null
+      const c = pc ? this.project(pc.time, pc.price) : null
+      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      if (b) ctx.lineTo(b.x, b.y)
+      if (c) ctx.lineTo(c.x, c.y)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.stroke()
+      for (const pt of [a, b, c]) {
+        if (!pt) continue
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
     if (d.type === 'fibext') {
       // 斐波那契扩展：A→B 主摆幅；回撤区在 A/B 之间，延伸区从 B 向右缘
       const [pa, pb, pc] = d.points
@@ -580,6 +606,27 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.beginPath()
         ctx.arc(a.x, a.y, r, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      for (const p of [a, b]) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'arc') {
+      // 圆弧：两点定弦，取该弦为直径的半圆（中心 = 弦中点，从 a 到 b 顺时针）
+      const mx = (a.x + b.x) / 2
+      const my = (a.y + b.y) / 2
+      const r = Math.hypot(b.x - a.x, b.y - a.y) / 2
+      if (r > 0) {
+        const start = Math.atan2(b.y - a.y, b.x - a.x)
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        ctx.beginPath()
+        ctx.arc(mx, my, r, start, start + Math.PI)
         ctx.stroke()
       }
       for (const p of [a, b]) {
