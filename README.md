@@ -38,7 +38,7 @@ npm run build                # 生产构建
 | [docs/03-技术方案.md](docs/03-技术方案.md) | 架构、数据流、代理策略、风险 |
 | [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
 | [docs/05-部署.md](docs/05-部署.md) | Docker/反向代理/GitHub Pages/Vercel 部署指南 |
-| [docs/knowledge/README.md](docs/knowledge/README.md) | 交易知识库（从入门到入土）：15 篇章 71 篇文档，现货/期货/股票/加密/外汇/期权/宏观/实战/生态/历史/理财/量化与系统对接 |
+| [docs/knowledge/README.md](docs/knowledge/README.md) | 交易知识库（从入门到入土）：26 篇章 150 篇文档约 3.8 万行，现货/期货/股票/加密/外汇/期权/宏观/实战/生态/历史/理财/量化/监管/数据解读/全球市场与系统对接 |
 
 ## 当前进度
 

@@ -1404,11 +1404,16 @@ test.describe('移动端（390×844 触屏视口）', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     )
     expect(overflow).toBeLessThanOrEqual(1)
+    // 移动端三行 header 紧凑：高度 < 240px（给图表留足可视区）
+    const headerBox = await page.getByTestId('mobile-header').boundingBox()
+    expect(headerBox).not.toBeNull()
+    expect(headerBox!.height).toBeLessThan(240)
     // 触屏点击周期按钮（工具栏自动滚动到可见）
     await page.getByRole('button', { name: '1时' }).tap()
     await page.waitForTimeout(500)
-    // 触屏进入画线模式（矩形）
-    await page.getByRole('button', { name: '矩形' }).tap()
+    // 触屏进入画线模式（画线菜单 → 矩形）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '矩形', exact: true }).tap()
     await page.waitForTimeout(300)
     // 图表仍有足够宽度
     const chart = page.locator('main div').first()
@@ -1428,7 +1433,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(box).not.toBeNull()
 
     // 画一条水平线（价格轴上部，固定价格）
-    await page.getByRole('button', { name: '水平线' }).tap()
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '水平线', exact: true }).tap()
     await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.25)
     const before = await findDrawnLineCenter(page)
     expect(before).not.toBeNull()

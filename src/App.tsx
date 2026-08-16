@@ -33,6 +33,8 @@ import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { ThemePicker } from './components/ThemePicker'
+import { MobileHeader } from './components/MobileHeader'
+import { MAIN_OPTIONS, SUB_OPTIONS, TYPE_OPTIONS, optionLabel } from './components/headerOptions'
 import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
@@ -44,47 +46,6 @@ const STATUS_TEXT: Record<string, MessageKey> = {
   reconnecting: 'status.reconnecting',
   closed: 'status.closed',
   error: 'status.error',
-}
-
-const MAIN_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] = [
-  { value: 'ma', label: 'MA' },
-  { value: 'ema', label: 'EMA' },
-  { value: 'boll', label: 'BOLL' },
-  { value: 'vwap', label: 'VWAP' },
-  { value: 'sar', labelKey: 'indicator.sar' },
-  { value: 'ichimoku', labelKey: 'indicator.ichimoku' },
-  { value: 'none', labelKey: 'common.none' },
-]
-
-const SUB_OPTIONS: { value: string; label?: string; labelKey?: MessageKey }[] = [
-  { value: 'volume', label: 'VOL' },
-  { value: 'macd', label: 'MACD' },
-  { value: 'kdj', label: 'KDJ' },
-  { value: 'rsi', label: 'RSI' },
-  { value: 'wr', label: 'WR' },
-  { value: 'obv', label: 'OBV' },
-  { value: 'atr', label: 'ATR' },
-  { value: 'dmi', label: 'DMI' },
-  { value: 'cci', label: 'CCI' },
-  { value: 'psy', label: 'PSY' },
-  { value: 'stoch', label: 'STOCH' },
-  { value: 'roc', label: 'ROC' },
-  { value: 'mom', label: 'MOM' },
-  { value: 'none', labelKey: 'common.none' },
-]
-
-const TYPE_OPTIONS: { value: string; labelKey: MessageKey }[] = [
-  { value: 'candlestick', labelKey: 'chartType.candlestick' },
-  { value: 'line', labelKey: 'chartType.line' },
-  { value: 'area', labelKey: 'chartType.area' },
-]
-
-/** 选项标签：有 labelKey 走字典，否则为固定缩写（MA/VOL 等） */
-function optionLabel(
-  o: { value: string; label?: string; labelKey?: MessageKey },
-  t: (k: MessageKey) => string,
-): string {
-  return o.labelKey ? t(o.labelKey) : (o.label ?? o.value)
 }
 
 export function App() {
@@ -122,7 +83,7 @@ export function App() {
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const headerRef = useRef<HTMLElement | null>(null)
+  const headerRef = useRef<HTMLElement>(null)
   const [headerH, setHeaderH] = useState(0)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
@@ -363,9 +324,65 @@ export function App() {
   const statusColor =
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
   const sidePanelOpen = depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen
+  const statusText = error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? 'min(380px, 88vw)' : '0px' }}>
+      {isMobile ? (
+        <MobileHeader
+          headerRef={headerRef}
+          symbol={symbol}
+          onSymbol={setSymbol}
+          statusText={statusText}
+          statusColor={statusColor}
+          period={period}
+          onPeriod={setPeriod}
+          chartType={chartType}
+          onChartType={setChartType}
+          mainIndicator={mainIndicator}
+          onMainIndicator={setMainIndicator}
+          subIndicator={subIndicator}
+          onSubIndicator={setSubIndicator}
+          drawingTool={drawingTool}
+          onDrawingTool={setDrawingTool}
+          drawingSelected={selectedDrawingId !== null}
+          onDeleteSelectedDrawing={deleteSelectedDrawing}
+          onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          layout={layout}
+          onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
+          themeMode={themeMode}
+          onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+          colorPreset={colorPreset}
+          onColorPreset={setColorPreset}
+          positionActive={positionOpen || position !== null}
+          onTogglePosition={() => setPositionOpen((v) => !v)}
+          alertsActive={alertsOpen}
+          onToggleAlerts={() => setAlertsOpen((v) => !v)}
+          depthActive={depthOpen}
+          onToggleDepth={() => setDepthOpen((v) => !v)}
+          orderBookActive={orderBookOpen}
+          onToggleOrderBook={() => setOrderBookOpen((v) => !v)}
+          vpActive={volumeProfileOpen}
+          onToggleVp={() => setVolumeProfileOpen((v) => !v)}
+          sentimentActive={sentimentOpen}
+          onToggleSentiment={() => setSentimentOpen((v) => !v)}
+          replayActive={replay !== null}
+          replayDisabled={candles.length < 30}
+          onReplay={() => setReplay((r) => r ?? createReplay(candles.length, Math.max(0, candles.length - 300)))}
+          settingsActive={settingsOpen}
+          onToggleSettings={() => setSettingsOpen((v) => !v)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+          shortcutsActive={shortcutsOpen}
+          onToggleShortcuts={() => setShortcutsOpen((v) => !v)}
+          langLabel={LANG_LABELS[lang]}
+          onCycleLang={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
+          copied={copied}
+          onShare={copyShareLink}
+          exported={exported}
+          onExport={exportCsv}
+        />
+      ) : (
       <header
         ref={headerRef}
         style={{
@@ -385,7 +402,7 @@ export function App() {
         <PeriodBar value={period} onChange={setPeriod} />
         <IndicatorBar
           group={t('group.type')}
-          options={TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+          options={TYPE_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
           value={chartType}
           onChange={(v) => setChartType(v as ChartType)}
         />
@@ -705,6 +722,7 @@ export function App() {
           {error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)}
         </span>
       </header>
+      )}
       <StatsBar stats={stats} />
       <OfflineBanner />
       {quickOrder && (
@@ -808,6 +826,7 @@ export function App() {
             right: 0,
             bottom: 0,
             width: isMobile ? '100%' : 'var(--side-panel-w)',
+            boxSizing: 'border-box',
             zIndex: 90,
             background: 'var(--panel)',
             borderLeft: '1px solid var(--border)',

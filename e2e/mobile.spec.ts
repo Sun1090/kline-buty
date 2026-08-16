@@ -54,8 +54,9 @@ test('移动端：切换周期/指标按钮可点（触摸友好）', async ({ p
   await page.waitForTimeout(800)
   const canvas = page.locator('canvas').first()
   await expect(canvas).toBeVisible()
-  // 切换指标（副图 MACD）不报错
-  await page.getByRole('button', { name: 'MACD' }).tap()
+  // 切换指标（副图菜单 → MACD）不报错
+  await page.getByTestId('mobile-menu-sub').tap()
+  await page.getByRole('button', { name: 'MACD', exact: true }).tap()
   await page.waitForTimeout(600)
   await expect(canvas).toBeVisible()
   expect(errs).toHaveLength(0)
