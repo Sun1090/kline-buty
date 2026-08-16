@@ -5,8 +5,11 @@ import { MarketStore } from '../data/market'
 import { fetchKlines } from '../data/binance/rest'
 import { createKlineWs, type WsStatus } from '../data/binance/ws'
 import { detectMode } from '../data/binance/endpoints'
+import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
 
 const PAGE_SIZE = 500
+/** 压测模式模拟实时帧的间隔（ms） */
+const PERF_TICK_MS = 1500
 
 export interface KlineDataState {
   candles: Candle[]
@@ -17,6 +20,11 @@ export interface KlineDataState {
 /**
  * K 线数据编排：REST 历史 + WS 实时 合并进 MarketStore，
  * symbol/period 变化时整体重置；loadMore 向左分页加载更早数据。
+ *
+ * - `publish` 复制数组产生新引用：ChartView 依赖引用变化触发增量 `updateCandle`，
+ *   否则 WS 帧只会改内存数组、图表序列永远不刷新（生产构建下图表冻结的根因）。
+ * - StrictMode 双执行守卫：仅当前生效的 store 允许 publish，避免 dev 下双 store 竞态。
+ * - `?perf=N`：合成数据压测模式（不联网），含模拟实时帧，供大数据量滚动/渲染验证。
  */
 export function useKlineData(symbol: string, period: Period) {
   const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading' })
@@ -32,9 +40,35 @@ export function useKlineData(symbol: string, period: Period) {
     setHasMore(true)
 
     const publish = () => {
-      if (aliveRef.current) setState((prev) => ({ ...prev, candles: store.all() }))
+      if (!aliveRef.current || storeRef.current !== store) return
+      // 复制数组：新引用驱动 ChartView 增量装载（updateCandle），而非全量 setData
+      setState((prev) => ({ ...prev, candles: store.all().slice() }))
     }
     setState({ candles: [], status: 'loading' })
+
+    // 压测模式：合成大数据量 + 模拟实时帧，不依赖交易所网络
+    const perfCount = readPerfParam()
+    if (perfCount > 0) {
+      const perf = generateSyntheticCandles(perfCount)
+      store.upsertAll(perf)
+      publish()
+      setHasMore(false)
+      setState((prev) => ({ ...prev, status: 'live' }))
+      let tick = 0
+      const timer = window.setInterval(() => {
+        if (!aliveRef.current) return
+        const all = store.all()
+        if (all.length === 0) return
+        tick += 1
+        store.upsert(tickSynthetic(all[all.length - 1], tick))
+        publish()
+      }, PERF_TICK_MS)
+      return () => {
+        aliveRef.current = false
+        window.clearInterval(timer)
+        storeRef.current = null
+      }
+    }
 
     fetchKlines(symbol, period, 800)
       .then((hist) => {
@@ -42,7 +76,7 @@ export function useKlineData(symbol: string, period: Period) {
         publish()
       })
       .catch((e: unknown) => {
-        if (aliveRef.current) {
+        if (aliveRef.current && storeRef.current === store) {
           setState({ candles: [], status: 'error', error: e instanceof Error ? e.message : String(e) })
         }
       })
@@ -89,7 +123,7 @@ export function useKlineData(symbol: string, period: Period) {
       const hist = await fetchKlines(symbol, period, PAGE_SIZE, endTime - PAGE_SIZE * PERIOD_MS[period], endTime)
       if (aliveRef.current && hist.length > 0) {
         store.upsertAll(hist)
-        setState((prev) => ({ ...prev, candles: store.all() }))
+        setState((prev) => ({ ...prev, candles: store.all().slice() }))
       }
       if (aliveRef.current && hist.length < PAGE_SIZE) setHasMore(false)
     } catch {
