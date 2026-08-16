@@ -5,6 +5,7 @@ import {
   fibExtPrices,
   fibFanRays,
   fibPrices,
+  gannFanRays,
   fibTimeLines,
   fibTimeXs,
   hitTestDrawings,
@@ -248,7 +249,7 @@ describe('requiredPoints（所需锚点数）', () => {
     expect(requiredPoints('pricelabel')).toBe(1)
   })
   it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头/椭圆/圆', () => {
-    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'arrow', 'ellipse', 'circle', 'arc'] as const) {
+    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'gann', 'arrow', 'ellipse', 'circle', 'arc'] as const) {
       expect(requiredPoints(t)).toBe(2)
     }
   })
@@ -289,6 +290,44 @@ describe('fibFanRays（斐波那契扇形）', () => {
     expect(rays[rays.length - 1].level).toBe(1)
     expect(rays[rays.length - 1].dir.price).toBe(200)
     expect(rays[0].dir.time).toBe(100)
+  })
+})
+
+describe('gannFanRays（江恩角度线）', () => {
+  it('9 条角度线：倍率 1/8 … 8×1，方向点价格 = A + 竖直摆幅 × 倍率', () => {
+    const rays = gannFanRays({ time: 0, price: 100 }, { time: 100, price: 200 })
+    expect(rays).toHaveLength(9)
+    expect(rays[0]).toMatchObject({ ratio: 1 / 8, label: '1×8' })
+    expect(rays[0].dir.price).toBeCloseTo(100 + 100 / 8)
+    expect(rays[4]).toMatchObject({ ratio: 1, label: '1×1' })
+    expect(rays[4].dir.price).toBe(200) // 1×1 即 A→B 本身
+    expect(rays[8]).toMatchObject({ ratio: 8, label: '8×1' })
+    expect(rays[8].dir.price).toBe(100 + 100 * 8)
+    for (const r of rays) expect(r.dir.time).toBe(100)
+  })
+  it('下跌摆幅：方向点价格按负摆幅 × 倍率', () => {
+    const rays = gannFanRays({ time: 0, price: 200 }, { time: 100, price: 100 })
+    expect(rays[4].dir.price).toBe(100)
+    expect(rays[8].dir.price).toBe(200 - 100 * 8)
+  })
+  it('两点交互：createDrawing / moveAnchor 保持 A→B 原始顺序（方向敏感）', () => {
+    const d = createDrawing('gann', [{ time: 100, price: 50 }, { time: 0, price: 100 }], 'g1')
+    expect(d.points[0]).toEqual({ time: 100, price: 50 })
+    expect(d.points[1]).toEqual({ time: 0, price: 100 })
+    const moved = moveAnchor(d, 1, { time: 200, price: 300 })
+    expect(moved.points[0]).toEqual({ time: 100, price: 50 })
+    expect(moved.points[1]).toEqual({ time: 200, price: 300 })
+  })
+  it('命中任一角度线（双向射线）', () => {
+    const d = createDrawing('gann', [{ time: 0, price: 100 }, { time: 100, price: 200 }], 'g1')
+    // 原点 (0,200) → 1×1 方向点 (100,100)：屏幕射线 y = 200 - x；射线上点 (50,150) 命中
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('g1')
+    // 反向延长线：(-50, 250) 在射线上（双向）
+    expect(hitTestDrawings([d], -50, 250, project)).toBe('g1')
+    // 1×2 射线方向点 (100, 300-100)= 价格 300 → 屏幕 (100,0)；原点 (0,200)。线上点 (50,100)
+    expect(hitTestDrawings([d], 50, 100, project)).toBe('g1')
+    // 远离所有线
+    expect(hitTestDrawings([d], 30, 280, project)).toBeNull()
   })
 })
 
