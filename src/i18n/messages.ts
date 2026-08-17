@@ -29,6 +29,9 @@ export const zh = {
     vpNotEnough: '数据不足',
     replayNotEnough: '数据不足（需 ≥30 根）',
   },
+  disclaimer: {
+    text: '数据仅供参考，不构成投资建议',
+  },
   chartType: {
     candlestick: '蜡烛',
     line: '折线',
@@ -122,6 +125,7 @@ export const zh = {
     group: '画线',
     mouse: '鼠标',
     horizontal: '水平线',
+    vertical: '垂直线',
     trend: '趋势线',
     channel: '平行通道',
     fib: '斐波那契',
@@ -253,6 +257,7 @@ export const zh = {
     qty: '数量',
     cum: '累计',
     spread: '价差',
+    markHint: '点击标记到主图（再点清除）；右侧快捷下单',
   },
   trade: {
     buy: "买入",
@@ -328,6 +333,9 @@ export const en: Messages = {
     depthLoading: 'Loading order book…',
     vpNotEnough: 'Not enough data',
     replayNotEnough: 'Not enough data (needs ≥30 candles)',
+  },
+  disclaimer: {
+    text: 'Data for reference only; not investment advice.',
   },
   chartType: {
     candlestick: 'Candles',
@@ -422,6 +430,7 @@ export const en: Messages = {
     group: 'Draw',
     mouse: 'Mouse',
     horizontal: 'Horizontal',
+    vertical: 'Vertical',
     trend: 'Trend line',
     channel: 'Channel',
     fib: 'Fibonacci',
@@ -553,6 +562,7 @@ export const en: Messages = {
     qty: 'Qty',
     cum: 'Total',
     spread: 'Spread',
+    markHint: 'Click to mark on main chart (click again to clear); quick order on the right',
   },
   trade: {
     buy: "Buy",
@@ -627,6 +637,10 @@ export const ja: Messages = {
     vpNotEnough: 'データ不足',
     replayNotEnough: 'データ不足（30 本以上必要）',
   },
+  disclaimer: {
+    text: 'データは参考用であり、投資助言ではありません。',
+  },
+
   chartType: {
     candlestick: 'ローソク',
     line: '折れ線',
@@ -720,6 +734,7 @@ export const ja: Messages = {
     group: '描画',
     mouse: 'マウス',
     horizontal: '水平線',
+    vertical: '垂直線',
     trend: 'トレンドライン',
     channel: 'チャネル',
     fib: 'フィボナッチ',
@@ -851,6 +866,7 @@ export const ja: Messages = {
     qty: '数量',
     cum: '累計',
     spread: 'スプレッド',
+    markHint: 'クリックでメインにマーク（再クリックで解除）；右側でクイック注文',
   },
   trade: {
     buy: "買い",
@@ -926,6 +942,10 @@ export const ko: Messages = {
     vpNotEnough: '데이터 부족',
     replayNotEnough: '데이터 부족 (30개 이상 필요)',
   },
+  disclaimer: {
+    text: '데이터는 참고용이며 투자 조언이 아닙니다.',
+  },
+
   chartType: {
     candlestick: '캔들',
     line: '라인',
@@ -1019,6 +1039,7 @@ export const ko: Messages = {
     group: '그리기',
     mouse: '마우스',
     horizontal: '수평선',
+    vertical: '수직선',
     trend: '추세선',
     channel: '채널',
     fib: '피보나치',
@@ -1150,6 +1171,7 @@ export const ko: Messages = {
     qty: '수량',
     cum: '누적',
     spread: '스프레드',
+    markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제); 오른쪽 빠른 주문',
   },
   trade: {
     buy: "매수",
@@ -1237,6 +1259,10 @@ export const es: Messages = {
     vpNotEnough: 'Datos insuficientes',
     replayNotEnough: 'Datos insuficientes (se necesitan ≥30 velas)',
   },
+  disclaimer: {
+    text: 'Los datos son solo de referencia; no constituyen asesoramiento de inversión.',
+  },
+
   chartType: {
     candlestick: 'Velas',
     line: 'Línea',
@@ -1329,6 +1355,7 @@ export const es: Messages = {
     group: 'Dibujar',
     mouse: 'Ratón',
     horizontal: 'Horizontal',
+    vertical: 'Vertical',
     trend: 'Línea de tendencia',
     channel: 'Canal',
     fib: 'Fibonacci',
@@ -1460,6 +1487,7 @@ export const es: Messages = {
     qty: 'Cant.',
     cum: 'Total',
     spread: 'Diferencial',
+    markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar); orden rápida a la derecha',
   },
   trade: {
     buy: "Comprar",
