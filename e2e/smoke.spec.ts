@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 /** 等待深度图数据渲染；冷启动直连慢时刷新重试一次 */
 async function waitDepthReady(page: Page) {
   const openPanel = async () => {
+    await openMore(page)
     await page.getByRole('button', { name: '深度' }).click()
     await page.getByTestId('depth-chart').waitFor({ timeout: 20_000 })
   }
@@ -21,6 +22,7 @@ async function waitDepthReady(page: Page) {
 
 async function waitOrderBookReady(page: Page) {
   const openPanel = async () => {
+    await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
     await page.getByTestId('ob-bid').first().waitFor({ timeout: 20_000 })
     await page.getByTestId('ob-ask').first().waitFor({ timeout: 20_000 })
@@ -67,6 +69,21 @@ async function waitCandlesRendered(page: Page) {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await hasCandles()
   }
+}
+
+
+/** 打开桌面端「更多」折叠面板（其余功能按钮都在里面）；已开则不动 */
+async function openMore(page: Page) {
+  const btn = page.getByTestId('header-more')
+  const expanded = await btn.getAttribute('aria-expanded')
+  if (expanded !== 'true') await btn.click()
+}
+
+/** 打开桌面端「画线」折叠面板（画线工具都在里面）；已开则不动 */
+async function openDrawing(page: Page) {
+  const btn = page.getByTestId('drawing-toggle')
+  const expanded = await btn.getAttribute('aria-expanded')
+  if (expanded !== 'true') await btn.click()
 }
 
 /** 扫描画线 overlay 画布，返回黄色线条像素的几何中点（CSS 坐标，含容器偏移） */
@@ -237,6 +254,7 @@ test.describe('K 线应用冒烟', () => {
   test('回放：进入 → 播放 → 游标推进 → 退出', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await openMore(page)
     await page.getByRole('button', { name: '回放', exact: true }).click()
     await expect(page.getByRole('button', { name: '播放' })).toBeVisible()
     await page.getByRole('button', { name: '播放' }).click()
@@ -249,6 +267,7 @@ test.describe('K 线应用冒烟', () => {
   test('仓位：开仓 → 浮动盈亏显示 → 平仓', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await openMore(page)
     await page.getByRole('button', { name: '仓位' }).click()
     await expect(page.getByText('模拟仓位')).toBeVisible()
     await page.getByRole('button', { name: '开空' }).click()
@@ -266,6 +285,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openDrawing(page)
     await page.getByRole('button', { name: '水平线' }).click()
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
@@ -300,6 +320,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openDrawing(page)
     await page.getByRole('button', { name: '垂直线' }).click()
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
@@ -336,6 +357,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openDrawing(page)
     await page.getByRole('button', { name: '平行通道' }).click()
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
@@ -355,6 +377,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openDrawing(page)
     await page.getByRole('button', { name: '文本' }).click()
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
@@ -382,8 +405,10 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText(/spread \d/)).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText(/^买 [\d.]+[KM]?$/)).toBeVisible()
     await expect(page.getByText(/^卖 [\d.]+[KM]?$/)).toBeVisible()
+    await openMore(page)
     await page.getByRole('button', { name: '筹码' }).click()
     await expect(page.getByText(/筹码分布/)).toBeVisible()
+    await openMore(page)
     await page.getByRole('button', { name: '深度' }).click()
     await expect(page.getByText(/盘口深度/)).toHaveCount(0)
   })
@@ -415,6 +440,7 @@ test.describe('K 线应用冒烟', () => {
   test('盘口订单簿：开合 + 买卖档位/价差渲染', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
     await expect(page.getByTestId('order-book')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText(/盘口订单簿/)).toBeVisible({ timeout: 15_000 })
@@ -423,6 +449,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByTestId('ob-bid')).toHaveCount(8)
     await expect(page.getByTestId('ob-spread')).toBeVisible()
     // 关闭
+    await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
     await expect(page.getByTestId('order-book')).toHaveCount(0)
   })
@@ -432,6 +459,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
     const row = page.getByTestId('ob-bid').first()
     await expect(row).toBeVisible({ timeout: 20_000 })
@@ -460,6 +488,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
     const row = page.getByTestId('ob-bid').first()
     await expect(row).toBeVisible({ timeout: 20_000 })
@@ -529,6 +558,7 @@ test.describe('K 线应用冒烟', () => {
   test('情绪面板：开合 + 四类指标标题可见 + 直连 CORS 修复后真实数据渲染', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await openMore(page)
     await page.getByRole('button', { name: '情绪' }).click()
     await expect(page.getByText('全账户多空比')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('大户持仓多空比')).toBeVisible()
@@ -540,6 +570,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(panel.getByText(/多/).first()).toBeVisible({ timeout: 15_000 })
     await expect(panel.getByText(/%/).first()).toBeVisible({ timeout: 20_000 })
     await expect(panel.getByText(/^\d+\.\d+$/).first()).toBeVisible()
+    await openMore(page)
     await page.getByRole('button', { name: '情绪' }).click()
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
   })
@@ -556,6 +587,7 @@ test.describe('K 线应用冒烟', () => {
       .evaluate((el) => getComputedStyle(el).backgroundColor)
     expect(bg).toBe('rgb(41, 98, 255)')
     // 复制分享链接 → 剪贴板含当前品种与周期
+    await openMore(page)
     await page.getByRole('button', { name: '分享' }).click()
     await expect(page.getByText('已复制')).toBeVisible({ timeout: 5000 })
     const clip = await page.evaluate(() => navigator.clipboard.readText())
@@ -568,6 +600,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 默认主图 MA（5/10/20）+ 副图 VOL → 头部应为 time,open,high,low,close,volume,MA5,MA10,MA20
+    await openMore(page)
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: '导出', exact: true }).click(),
@@ -639,8 +672,9 @@ test.describe('K 线应用冒烟', () => {
     await page.keyboard.press('/')
     await expect(page.getByPlaceholder('搜索交易对')).toBeVisible({ timeout: 5000 })
     await page.keyboard.press('Escape')
-    // 布局 2/3/1
+    // 布局 2/3/1（布局按钮在「更多」折叠内）
     await page.keyboard.press('2')
+    await openMore(page)
     await expect(page.getByTestId('layout-toggle')).toHaveText('双图')
     await page.keyboard.press('3')
     await expect(page.getByTestId('layout-toggle')).toHaveText('四图')
@@ -683,7 +717,8 @@ test.describe('K 线应用冒烟', () => {
     // 默认 classic：--up 为 #26a69a
     const upBefore = await page.evaluate(() => document.documentElement.style.getPropertyValue('--up'))
     expect(upBefore).toBe('#26a69a')
-    // 点击「红涨绿跌」预设
+    // 点击「红涨绿跌」预设（色盘在「更多」折叠内）
+    await openMore(page)
     await page.locator('button[data-preset="a-share"]').click()
     await page.waitForTimeout(300)
     const upAfter = await page.evaluate(() => document.documentElement.style.getPropertyValue('--up'))
@@ -724,6 +759,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 矩形：拖出两对角锚点
+    await openDrawing(page)
     await page.getByRole('button', { name: '矩形' }).click()
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
@@ -734,6 +770,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 射线：锚点 + 方向点
+    await openDrawing(page)
     await page.getByRole('button', { name: '射线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -754,6 +791,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 椭圆：拖出两对角锚点（外接框）
+    await openDrawing(page)
     await page.getByRole('button', { name: '椭圆' }).click()
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
@@ -764,6 +802,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 圆：圆心 + 半径点
+    await openDrawing(page)
     await page.getByRole('button', { name: '圆', exact: true }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -783,6 +822,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 三角形：三点点击（A/B/C）集满提交
+    await openDrawing(page)
     await page.getByRole('button', { name: '三角形' }).click()
     await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.5)
@@ -792,6 +832,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 圆弧：拖出两点定弦
+    await openDrawing(page)
     await page.getByRole('button', { name: '圆弧' }).click()
     await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -812,6 +853,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 斐波那契扩展：三点点击（A/B/C）集满提交
+    await openDrawing(page)
     await page.getByRole('button', { name: '斐波那契扩展' }).click()
     await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.25)
     await page.mouse.click(box!.x + box!.width * 0.6, box!.y + box!.height * 0.45)
@@ -821,6 +863,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 斐波那契扇形：拖出原点 + 方向点
+    await openDrawing(page)
     await page.getByRole('button', { name: '斐波那契扇形' }).click()
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
@@ -831,6 +874,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 价格标签：单击放置
+    await openDrawing(page)
     await page.getByRole('button', { name: '价格标签' }).click()
     await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
@@ -838,6 +882,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 箭头：拖出 A→B
+    await openDrawing(page)
     await page.getByRole('button', { name: '箭头' }).click()
     await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
     await page.mouse.down()
@@ -864,6 +909,7 @@ test.describe('K 线应用冒烟', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
+    await openDrawing(page)
     await page.getByRole('button', { name: '斐波那契时间线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.35)
     await page.mouse.down()
@@ -916,6 +962,7 @@ test.describe('K 线应用冒烟', () => {
     }
 
     // 切回鼠标：点任一竖线仍可选中 → 删除
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标', exact: true }).click()
     await page.mouse.click(box!.x + lineXs[3], box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
@@ -938,6 +985,7 @@ test.describe('K 线应用冒烟', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
+    await openDrawing(page)
     await page.getByRole('button', { name: '江恩角度线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -988,6 +1036,7 @@ test.describe('K 线应用冒烟', () => {
     await expect.poll(() => yellowPx(), { timeout: 10_000 }).toBeGreaterThan(4000)
 
     // 切回鼠标：反向（A 左侧延长线）命中仍可选中 → 删除
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标', exact: true }).click()
     // 从 overlay 找反向侧（原点左侧）任一画线像素点（必在某条角度线延长线上），点击选中
     const hit = await page.evaluate(() => {
@@ -1037,6 +1086,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 趋势线工具画一条线
+    await openDrawing(page)
     await page.getByRole('button', { name: '趋势线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
     await page.mouse.down()
@@ -1062,6 +1112,7 @@ test.describe('K 线应用冒烟', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标（只读）→ 定位画线实际中心 → 按住拖拽整线
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标' }).click()
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const center = (await findDrawnLineCenter(page))!
@@ -1105,6 +1156,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 画一条趋势线（左→右，锚点按时间排序）
+    await openDrawing(page)
     await page.getByRole('button', { name: '趋势线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
     await page.mouse.down()
@@ -1130,6 +1182,7 @@ test.describe('K 线应用冒烟', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标 → 拖拽最右侧（尾）锚点；实时行情会平移图表，重试直到仅尾锚点移动
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标' }).click()
     const tailMoved = await dragSelectedAnchorUntil(
       page,
@@ -1162,6 +1215,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 画一条射线：锚点 → 方向点（向右上延伸）
+    await openDrawing(page)
     await page.getByRole('button', { name: '射线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -1187,6 +1241,7 @@ test.describe('K 线应用冒烟', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标 → 拖拽最左侧（首）锚点；实时行情会平移图表，重试直到锚点移动且方向点保留
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标' }).click()
     const anchorMoved = await dragSelectedAnchorUntil(
       page,
@@ -1220,6 +1275,7 @@ test.describe('K 线应用冒烟', () => {
 
     // 多段线：依次点击 3 个顶点，最后双击收尾提交
     // （Playwright 合成点击的 pointerdown.detail 恒为 0，双击收尾用 detail=2 的合成 PointerEvent 模拟真实浏览器双击）
+    await openDrawing(page)
     await page.getByRole('button', { name: '多段线' }).click()
     await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
     await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.5)
@@ -1248,6 +1304,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
     // 切回鼠标 → 点折线任一段命中选中 → 删除
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标', exact: true }).click()
     await page.mouse.click(box!.x + box!.width * 0.32, box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
@@ -1264,6 +1321,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 量度：拖出 A→B（与趋势线同两点手势）
+    await openDrawing(page)
     await page.getByRole('button', { name: '量度' }).click()
     await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.35)
     await page.mouse.down()
@@ -1318,6 +1376,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 速度线：拖出 A→B（与趋势线同两点手势）
+    await openDrawing(page)
     await page.getByRole('button', { name: '速度线' }).click()
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
     await page.mouse.down()
@@ -1357,6 +1416,7 @@ test.describe('K 线应用冒烟', () => {
     expect(box).not.toBeNull()
 
     // 回归通道：拖出 A→B 定时间窗
+    await openDrawing(page)
     await page.getByRole('button', { name: '回归通道' }).click()
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.4)
     await page.mouse.down()
@@ -1383,6 +1443,7 @@ test.describe('K 线应用冒烟', () => {
     expect(saved!.points[1].time).toBeGreaterThan(saved!.points[0].time)
 
     // 切回鼠标（只读）→ 点击中线附近可选中（命中检测走 K 线回归线段）
+    await openDrawing(page)
     await page.getByRole('button', { name: '鼠标' }).click()
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const center = (await findDrawnLineCenter(page))!
@@ -1398,15 +1459,17 @@ test.describe('K 线应用冒烟', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
-    // 默认中文 → 点「中文」切英文
+    // 默认中文 → 点「中文」切英文（语言按钮在「更多」折叠内）
+    await openMore(page)
     await page.getByRole('button', { name: '中文', exact: true }).click()
     await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Type', { exact: false }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Fullscreen', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'EN', exact: true })).toBeVisible()
-    // 语言持久化：刷新后仍为英文
+    // 语言持久化：刷新后仍为英文（折叠面板已复位 → 先展开）
     await page.reload()
     await expect(page.getByText('Live', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await openMore(page)
     await expect(page.getByRole('button', { name: 'EN', exact: true })).toBeVisible()
     // EN → 日本語
     await page.getByRole('button', { name: 'EN', exact: true }).click()
@@ -1418,9 +1481,10 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('유형', { exact: false }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: '한국어', exact: true })).toBeVisible()
-    // 刷新持久化：仍为韩语
+    // 刷新持久化：仍为韩语（折叠面板已复位 → 先展开）
     await page.reload()
     await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+    await openMore(page)
     await expect(page.getByRole('button', { name: '한국어', exact: true })).toBeVisible()
     // 韩国语 → Español
     await page.getByRole('button', { name: '한국어', exact: true }).click()
@@ -1525,8 +1589,9 @@ test.describe('K 线应用冒烟', () => {
       },
       { timeout: 30_000 },
     )
-    // 打开 RSI 参数：默认 14 → 改为 7
+    // 打开 RSI 参数：默认 14 → 改为 7（「参数」按钮在更多折叠面板内）
     await page.getByRole('button', { name: 'RSI', exact: true }).click()
+    await openMore(page)
     await page.getByRole('button', { name: '参数', exact: true }).click()
     await expect(page.getByText('RSI 周期', { exact: true })).toBeVisible()
     const rsiInput = page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')
@@ -1543,8 +1608,9 @@ test.describe('K 线应用冒烟', () => {
     await page.getByRole('button', { name: 'Ichimoku', exact: true }).click()
     await page.waitForTimeout(800)
     expect(errors).toHaveLength(0)
-    // 切回 RSI：参数已持久化为 7
+    // 切回 RSI：参数已持久化为 7（「参数」按钮在更多折叠面板内）
     await page.getByRole('button', { name: 'RSI', exact: true }).click()
+    await openMore(page)
     await page.getByRole('button', { name: '参数', exact: true }).click()
     await expect(page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')).toHaveValue('7')
     await page.getByRole('button', { name: '✕', exact: true }).click()
@@ -1557,6 +1623,8 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
+    // 缩放按钮在「更多」折叠内
+    await openMore(page)
     const toggle = page.getByTestId('scale-toggle')
     await expect(toggle).toHaveText('线性')
     // 切到对数：按钮高亮 + 无异常；价格轴仍渲染数字刻度
@@ -1567,6 +1635,7 @@ test.describe('K 线应用冒烟', () => {
     // 刷新持久化
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await openMore(page)
     await expect(page.getByTestId('scale-toggle')).toHaveText('对数')
     expect(errors).toHaveLength(0)
   })

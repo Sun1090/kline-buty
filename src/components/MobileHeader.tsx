@@ -18,7 +18,7 @@ import {
 
 type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more'
 
-interface MobileHeaderProps {
+export interface MobileHeaderProps {
   /** 由 App 注入，供 ResizeObserver 测 header 高度（右侧抽屉/面板定位依赖） */
   headerRef?: RefObject<HTMLElement>
   symbol: string

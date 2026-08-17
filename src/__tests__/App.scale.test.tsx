@@ -81,6 +81,7 @@ afterEach(() => {
 describe('价格坐标轴（线性/对数）', () => {
   it('桌面：默认线性 → 点击切对数 → adapter 生效 + 文案切换 + 持久化', () => {
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     const btn = screen.getByTestId('scale-toggle')
     expect(btn.textContent).toBe('线性')
     fireEvent.click(btn)
@@ -92,6 +93,7 @@ describe('价格坐标轴（线性/对数）', () => {
   it('桌面：刷新后保持对数（localStorage 持久化）', () => {
     localStorage.setItem('kline-buty:priceScale', '"log"')
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     const btn = screen.getByTestId('scale-toggle')
     expect(btn.textContent).toBe('对数')
     // 挂载即应用对数模式

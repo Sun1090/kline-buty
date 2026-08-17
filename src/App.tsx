@@ -3,9 +3,6 @@ import { PERIODS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
 import { ChartQuad } from './components/ChartQuad'
-import { PeriodBar } from './components/PeriodBar'
-import { SymbolPicker } from './components/SymbolPicker'
-import { IndicatorBar } from './components/IndicatorBar'
 import { IndicatorSettings } from './components/IndicatorSettings'
 import { ReplayBar } from './components/ReplayBar'
 import { useKlineData } from './hooks/useKlineData'
@@ -18,7 +15,6 @@ import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from './indicators/par
 import { createReplay, tickReplay, seekReplay, setSpeed, type ReplayState } from './replay/engine'
 import { PositionPanel } from './components/PositionPanel'
 import { AlertPanel } from './components/AlertPanel'
-import { DrawingToolbar } from './components/DrawingToolbar'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { DepthChart } from './components/DepthChart'
@@ -32,9 +28,9 @@ import { buildPositionFromOrder, type OrderSide } from './trade/order'
 import type { Drawing, DrawingTool } from './drawings/logic'
 import { createDrawing } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
-import { ThemePicker } from './components/ThemePicker'
 import { MobileHeader } from './components/MobileHeader'
-import { MAIN_OPTIONS, SUB_OPTIONS, TYPE_OPTIONS, optionLabel } from './components/headerOptions'
+import { DesktopHeader } from './components/DesktopHeader'
+import { MAIN_OPTIONS, SUB_OPTIONS } from './components/headerOptions'
 import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
@@ -386,361 +382,69 @@ export function App() {
           onExport={exportCsv}
         />
       ) : (
-      <header
-        ref={headerRef}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 8,
-          padding: '8px 16px',
-          borderBottom: '1px solid #2a2e39',
-          background: 'var(--panel)',
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontWeight: 600, fontSize: 15 }}>
-          {symbol.replace('USDT', '/USDT')}
-        </span>
-        <PeriodBar value={period} onChange={setPeriod} />
-        <IndicatorBar
-          group={t('group.type')}
-          options={TYPE_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={chartType}
-          onChange={(v) => setChartType(v as ChartType)}
-        />
-        <button
-          onClick={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
-          data-testid="scale-toggle"
-          title={t('scale.title')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: priceScaleMode === 'log' ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: priceScaleMode === 'log' ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-        >
-          {priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}
-        </button>
-        <IndicatorBar
-          group={t('group.main')}
-          options={MAIN_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={mainIndicator}
-          onChange={(v) => setMainIndicator(v as MainIndicatorKind)}
-        />
-        <IndicatorBar
-          group={t('group.sub')}
-          options={SUB_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={subIndicator}
-          onChange={(v) => setSubIndicator(v as SubIndicatorKind)}
-        />
-        <DrawingToolbar
-          tool={drawingTool}
-          onChange={setDrawingTool}
-          selected={selectedDrawingId !== null}
-          selectedText={selectedDrawing?.type === 'text' ? selectedDrawing.text : undefined}
-          onDeleteSelected={deleteSelectedDrawing}
+        <DesktopHeader
+          headerRef={headerRef}
+          symbol={symbol}
+          onSymbol={setSymbol}
+          statusText={statusText}
+          statusColor={statusColor}
+          period={period}
+          onPeriod={setPeriod}
+          chartType={chartType}
+          onChartType={setChartType}
+          priceScaleMode={priceScaleMode}
+          onToggleScale={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
+          mainIndicator={mainIndicator}
+          onMainIndicator={setMainIndicator}
+          subIndicator={subIndicator}
+          onSubIndicator={setSubIndicator}
+          drawingTool={drawingTool}
+          onDrawingTool={setDrawingTool}
+          drawingSelected={selectedDrawingId !== null}
+          onDeleteSelectedDrawing={deleteSelectedDrawing}
           onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          layout={layout}
+          onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
+          themeMode={themeMode}
+          onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+          colorPreset={colorPreset}
+          onColorPreset={setColorPreset}
+          positionActive={positionOpen || position !== null}
+          onTogglePosition={() => setPositionOpen((v) => !v)}
+          alertsActive={alertsOpen}
+          onToggleAlerts={() => setAlertsOpen((v) => !v)}
+          depthActive={depthOpen}
+          onToggleDepth={() => setDepthOpen((v) => !v)}
+          orderBookActive={orderBookOpen}
+          onToggleOrderBook={() => setOrderBookOpen((v) => !v)}
+          vpActive={volumeProfileOpen}
+          onToggleVp={() => setVolumeProfileOpen((v) => !v)}
+          sentimentActive={sentimentOpen}
+          onToggleSentiment={() => setSentimentOpen((v) => !v)}
+          replayActive={replay !== null}
+          replayDisabled={candles.length < 30}
+          onReplay={() => setReplay((r) => r ?? createReplay(candles.length, Math.max(0, candles.length - 300)))}
+          settingsActive={settingsOpen}
+          onToggleSettings={() => setSettingsOpen((v) => !v)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+          shortcutsActive={shortcutsOpen}
+          onToggleShortcuts={() => setShortcutsOpen((v) => !v)}
+          langLabel={LANG_LABELS[lang]}
+          onCycleLang={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
+          copied={copied}
+          onShare={copyShareLink}
+          exported={exported}
+          onExport={exportCsv}
+          editingTextId={editingTextId}
+          textDraft={textDraft}
+          onTextDraftChange={setTextDraft}
+          onConfirmText={confirmTextDrawing}
+          onCancelText={() => {
+            setEditingTextId(null)
+            setTextDraft('')
+          }}
         />
-        {editingTextId && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input
-              value={textDraft}
-              onChange={(e) => setTextDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') confirmTextDrawing()
-                if (e.key === 'Escape') setEditingTextId(null)
-              }}
-              placeholder={t('drawing.textPlaceholder')}
-              autoFocus
-              style={{
-                width: 120,
-                fontSize: 11,
-                padding: '3px 6px',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                background: 'var(--panel)',
-                color: 'var(--text)',
-              }}
-            />
-            <button
-              onClick={confirmTextDrawing}
-              style={{
-                padding: '3px 8px',
-                fontSize: 11,
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                background: 'var(--accent)',
-                color: '#fff',
-              }}
-            >
-              {t('common.confirm')}
-            </button>
-            <button
-              onClick={() => setEditingTextId(null)}
-              style={{
-                padding: '3px 8px',
-                fontSize: 11,
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                background: 'transparent',
-                color: 'var(--text-dim)',
-              }}
-            >
-              {t('common.cancel')}
-            </button>
-          </div>
-        )}
-        <button
-          data-testid="layout-toggle"
-          onClick={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: layout !== 'single' ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: layout !== 'single' ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('layout.switchTitle')}
-        >
-          {layout === 'single' ? t('layout.single') : layout === 'pair' ? t('layout.pair') : t('layout.quad')}
-        </button>
-        <button
-          onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-dim)',
-          }}
-          title={t('theme.switchTitle')}
-        >
-          {themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
-        </button>
-        <ThemePicker value={colorPreset} onChange={setColorPreset} />
-        <button
-          onClick={() => setPositionOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: positionOpen || position ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: positionOpen || position ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.positionTitle')}
-        >
-          {t('panel.position')}
-        </button>
-        <button
-          onClick={() => setAlertsOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: alertsOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: alertsOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.alertsTitle')}
-        >
-          {t('panel.alerts')}
-        </button>
-        <button
-          onClick={() => setDepthOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: depthOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: depthOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.depthTitle')}
-        >
-          {t('panel.depth')}
-        </button>
-        <button
-          onClick={() => setOrderBookOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: orderBookOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: orderBookOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.orderBookTitle')}
-        >
-          {t('panel.orderBook')}
-        </button>
-        <button
-          onClick={() => setVolumeProfileOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: volumeProfileOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: volumeProfileOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.vpTitle')}
-        >
-          {t('panel.vp')}
-        </button>
-        <button
-          onClick={() => setSentimentOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: sentimentOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: sentimentOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-          title={t('panel.sentimentTitle')}
-        >
-          {t('panel.sentiment')}
-        </button>
-        <button
-          onClick={() =>
-            setReplay((r) => r ?? createReplay(candles.length, Math.max(0, candles.length - 300)))
-          }
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: replay ? 'rgba(245,192,47,0.15)' : 'transparent',
-            color: replay ? 'var(--yellow)' : 'var(--text-dim)',
-          }}
-          disabled={candles.length < 30}
-          title={candles.length < 30 ? t('status.replayNotEnough') : t('replay.title')}
-        >
-          {t('replay.start')}
-        </button>
-        <button
-          onClick={() => setSettingsOpen((v) => !v)}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-dim)',
-          }}
-        >
-          {t('panel.settings')}
-        </button>
-        <span style={{ marginLeft: 'auto' }} />
-        <button
-          onClick={toggleFullscreen}
-          title={isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
-          style={{
-            padding: '3px 10px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-dim)',
-          }}
-        >
-          {isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
-        </button>
-        <button
-          onClick={() => setShortcutsOpen((v) => !v)}
-          title={t('shortcuts.hint')}
-          data-testid="shortcuts-toggle"
-          style={{
-            padding: '3px 10px',
-            fontSize: 11,
-            border: '1px solid #2a2e39',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: shortcutsOpen ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: shortcutsOpen ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-        >
-          ?
-        </button>
-        <button
-          onClick={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
-          title={t('lang.switchTo')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-dim)',
-          }}
-        >
-          {LANG_LABELS[lang]}
-        </button>
-        <button
-          onClick={copyShareLink}
-          title={t('share.title')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: copied ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: copied ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-        >
-          {copied ? t('share.copied') : t('share.copy')}
-        </button>
-        <button
-          onClick={exportCsv}
-          title={t('share.exportTitle')}
-          style={{
-            padding: '3px 8px',
-            fontSize: 11,
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            background: exported ? 'rgba(41,98,255,0.25)' : 'transparent',
-            color: exported ? '#4e9cf5' : 'var(--text-dim)',
-          }}
-        >
-          {exported ? t('share.exported') : t('share.export')}
-        </button>
-        <SymbolPicker value={symbol} onChange={setSymbol} />
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: statusColor }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: statusColor,
-              display: 'inline-block',
-            }}
-          />
-          {error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)}
-        </span>
-      </header>
       )}
       <StatsBar stats={stats} live={state.live} />
       <OfflineBanner />

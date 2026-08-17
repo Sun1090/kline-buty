@@ -77,6 +77,7 @@ afterEach(() => {
 describe('回放集成', () => {
   it('点击回放 → 控制条出现（游标从倒数 300 根开始）', () => {
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByText('回放'))
     expect(screen.getByText('播放')).toBeDefined()
     expect(screen.getByText('501 / 800')).toBeDefined()
@@ -84,6 +85,7 @@ describe('回放集成', () => {
 
   it('播放推进游标，到末尾自动暂停', () => {
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByText('回放'))
     fireEvent.click(screen.getByText('播放'))
     act(() => {
@@ -99,6 +101,7 @@ describe('回放集成', () => {
 
   it('拖动进度条 seek', () => {
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByText('回放'))
     const range = screen.getByRole('slider') as HTMLInputElement
     fireEvent.change(range, { target: { value: '100' } })
@@ -107,6 +110,7 @@ describe('回放集成', () => {
 
   it('退出回放 → 控制条消失', () => {
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByText('回放'))
     fireEvent.click(screen.getByText('退出回放'))
     expect(screen.queryByText('播放')).toBeNull()
@@ -119,6 +123,7 @@ describe('回放集成', () => {
       loadMore: vi.fn(),
     })
     render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
     const btn = screen.getByText('回放') as HTMLButtonElement
     expect(btn.disabled).toBe(true)
   })

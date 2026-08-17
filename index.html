@@ -41,6 +41,9 @@
       button { touch-action: manipulation; }
       /* K 线区触摸手势（平移/双指缩放）归图表，不滚动页面（含 lwc 内部包装层） */
       .chart-container, .chart-container * { touch-action: none; }
+      /* 桌面顶栏单行：内部工具栏可横滚但隐藏滚动条，避免出现横向滚动条 */
+      header[data-testid="desktop-header"] .scroll-toolbar { scrollbar-width: none; -ms-overflow-style: none; }
+      header[data-testid="desktop-header"] .scroll-toolbar::-webkit-scrollbar { display: none; }
       /* 工具栏横向滚动条细且不挤占空间 */
       .scroll-toolbar { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
       .scroll-toolbar::-webkit-scrollbar { height: 4px; }
