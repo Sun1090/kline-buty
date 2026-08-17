@@ -194,6 +194,14 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.locator('canvas').first()).toBeVisible()
     // 信息条数据（资金费率等）
     await expect(page.getByText('资金费率', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    // WS 帧驱动的实时价（无需手动刷新，帧到达即跳动更新）：
+    // 默认 1 分周期帧稀疏、视觉跳动细微，切到 1 秒周期后价格应持续变动
+    const livePrice = page.getByTestId('live-price')
+    await expect(livePrice).toBeVisible({ timeout: 20_000 })
+    await expect(livePrice).toContainText(/[\d.,]+/)
+    await page.getByRole('button', { name: '1秒' }).click()
+    const p1 = (await livePrice.textContent()) ?? ''
+    await expect.poll(() => livePrice.textContent(), { timeout: 30_000 }).not.toBe(p1)
   })
 
   test('切换周期/指标/交易对无异常', async ({ page }) => {
