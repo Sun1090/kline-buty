@@ -983,6 +983,23 @@ export function App() {
           </button>
         </div>
       )}
+      <footer
+        data-testid="disclaimer"
+        style={{
+          flexShrink: 0,
+          padding: '3px 16px',
+          fontSize: 11,
+          color: 'var(--text-faint)',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--panel)',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {t('disclaimer.text')}
+      </footer>
     </div>
   )
 }

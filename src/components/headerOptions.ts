@@ -44,6 +44,7 @@ export const SUB_OPTIONS: HeaderOption[] = [
 export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'none', labelKey: 'drawing.mouse' },
   { value: 'horizontal', labelKey: 'drawing.horizontal' },
+  { value: 'vertical', labelKey: 'drawing.vertical' },
   { value: 'trend', labelKey: 'drawing.trend' },
   { value: 'channel', labelKey: 'drawing.channel' },
   { value: 'fib', labelKey: 'drawing.fib' },

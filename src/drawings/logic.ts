@@ -1,6 +1,7 @@
 export type DrawingTool =
   | 'none'
   | 'horizontal'
+  | 'vertical'
   | 'trend'
   | 'fib'
   | 'channel'
@@ -58,7 +59,7 @@ export function fibPrices(from: number, to: number): number[] {
 
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
-  if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return 1
+  if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'polyline') return POLYLINE_MAX_POINTS
   if (type === 'fibext' || type === 'triangle') return 3
   return 2
@@ -249,7 +250,7 @@ export function measureInfo(a: { price: number }, b: { price: number }): { diff:
 
 /** 归一化锚点：单点工具只保留一点；方向敏感工具（射线/扇形/箭头/斐波那契扩展）保持原始顺序；其余两点工具按时间排序 */
 export function normalizePoints(type: DrawingType, pts: { time: number; price: number }[]) {
-  if (type === 'horizontal' || type === 'text' || type === 'pricelabel') return [pts[0]]
+  if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines') return [a, b]
@@ -344,6 +345,9 @@ export function hitTestDrawings(
     if (d.type === 'horizontal') {
       const a = project(d.points[0].time, d.points[0].price)
       if (a) dist = Math.abs(py - a.y)
+    } else if (d.type === 'vertical') {
+      const a = project(d.points[0].time, d.points[0].price)
+      if (a) dist = Math.abs(px - a.x)
     } else if (d.type === 'text') {
       const a = project(d.points[0].time, d.points[0].price)
       if (a && Math.abs(px - a.x) <= TEXT_HIT_HALF_W && Math.abs(py - a.y) <= TEXT_HIT_HALF_H) {

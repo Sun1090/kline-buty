@@ -27,6 +27,7 @@ import {
 const project: Project = (time, price) => ({ x: time, y: 300 - price })
 
 const horizontal: Drawing = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')
+const vertical: Drawing = createDrawing('vertical', [{ time: 40, price: 100 }], 'v1')
 const trend: Drawing = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 't1')
 const fib: Drawing = createDrawing('fib', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'f1')
 
@@ -38,6 +39,12 @@ describe('normalizePoints', () => {
   })
   it('水平线只保留一点', () => {
     expect(normalizePoints('horizontal', [{ time: 1, price: 2 }, { time: 3, price: 4 }])).toHaveLength(1)
+  })
+  it('垂直线只保留一点', () => {
+    expect(normalizePoints('vertical', [{ time: 1, price: 2 }, { time: 3, price: 4 }])).toHaveLength(1)
+  })
+  it('垂直线锚点数 = 1', () => {
+    expect(requiredPoints('vertical')).toBe(1)
   })
 })
 
@@ -56,13 +63,20 @@ describe('fibPrices', () => {
 })
 
 describe('hitTestDrawings', () => {
-  const all = [horizontal, trend, fib]
+  const all = [horizontal, vertical, trend, fib]
 
   it('命中水平线（价格 ±8px）', () => {
     // y = 300-100 = 200
     expect(hitTestDrawings(all, 50, 200, project)).toBe('h1')
     expect(hitTestDrawings(all, 50, 205, project)).toBe('h1')
     expect(hitTestDrawings(all, 50, 210, project)).toBeNull()
+  })
+
+  it('命中垂直线（时间 ±8px）', () => {
+    // x = 40；y 取 100 避开 fib 锚点 y=150 的干扰
+    expect(hitTestDrawings(all, 40, 100, project)).toBe('v1')
+    expect(hitTestDrawings(all, 45, 100, project)).toBe('v1')
+    expect(hitTestDrawings(all, 50, 100, project)).toBeNull()
   })
 
   it('命中趋势线（点到线段距离）', () => {

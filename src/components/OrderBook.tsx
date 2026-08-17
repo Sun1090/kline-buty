@@ -54,7 +54,7 @@ function Row({
         onHoverPrice?.(null)
       }}
       onClick={() => onMarkPrice?.(row.price)}
-      title="点击标记到主图（再点清除）；右侧快捷下单"
+      title={t('orderBook.markHint')}
       style={{
         position: 'relative',
         display: 'grid',

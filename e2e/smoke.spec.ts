@@ -204,6 +204,18 @@ test.describe('K 线应用冒烟', () => {
     await expect.poll(() => livePrice.textContent(), { timeout: 30_000 }).not.toBe(p1)
   })
 
+  test('图表水印 + 免责声明可见', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // 图表右下水印：交易对 · 周期
+    const watermark = page.getByTestId('chart-watermark')
+    await expect(watermark).toBeVisible({ timeout: 20_000 })
+    await expect(watermark).toContainText('BTC/USDT')
+    // 页脚免责声明
+    await expect(page.getByTestId('disclaimer')).toBeVisible()
+    await expect(page.getByTestId('disclaimer')).toContainText(/参考|advice|referencia/i)
+  })
+
   test('切换周期/指标/交易对无异常', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -271,6 +283,42 @@ test.describe('K 线应用冒烟', () => {
             try {
               const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
               return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(0)
+    // 创建后自动选中 → 删除按钮出现
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
+  test('画线：垂直线 → 选中 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await page.getByRole('button', { name: '垂直线' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 单点工具：单击放置（down → 微动 → up）
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.51, box!.y + box!.height * 0.4, { steps: 2 })
+    await page.mouse.up()
+    // 画线已提交并持久化（type = vertical）
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'vertical').length
             } catch {
               return 0
             }

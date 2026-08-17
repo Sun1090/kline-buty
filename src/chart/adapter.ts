@@ -538,6 +538,18 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'vertical') {
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      ctx.beginPath()
+      ctx.moveTo(a.x, 0)
+      ctx.lineTo(a.x, this.overlay.height / (window.devicePixelRatio || 1))
+      ctx.stroke()
+      this.drawLabel(ctx, a.x, a.y, new Date(d.points[0].time * 1000).toLocaleDateString(), 'left')
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
+      return
+    }
+
     if (d.type === 'text') {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { PERIOD_MS, type Candle, type Period } from '../chart/types'
+import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import { cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
@@ -14,7 +14,7 @@ import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
-import { useI18n, localeFor } from '../i18n'
+import { useI18n, localeFor, type MessageKey } from '../i18n'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'none'
@@ -716,6 +716,23 @@ export function ChartView({
           ))}
         </div>
       )}
+      <div
+        data-testid="chart-watermark"
+        style={{
+          position: 'absolute',
+          left: 10,
+          bottom: 6,
+          fontSize: 11,
+          color: 'var(--text-faint)',
+          opacity: 0.55,
+          pointerEvents: 'none',
+          userSelect: 'none',
+          zIndex: 3,
+        }}
+      >
+        {symbol.replace('USDT', '/USDT')} ·{' '}
+        {t((PERIODS.find((pp) => pp.value === period)?.labelKey ?? 'period.1m') as MessageKey)}
+      </div>
     </div>
   )
 }

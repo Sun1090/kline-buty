@@ -1,6 +1,6 @@
 import type { OiPoint, RatioPoint, TakerPoint } from '../data/binance/rest'
 import type { SentimentData } from '../hooks/useSentiment'
-import { useI18n } from '../i18n'
+import { useI18n, localeFor, type Lang } from '../i18n'
 import { Sparkline } from './Sparkline'
 
 function last<T>(arr: T[]): T | undefined {
@@ -11,8 +11,12 @@ function fmtRatio(v: number) {
   return v.toFixed(2)
 }
 
-function fmtOiOz(v: number) {
-  return v >= 1e4 ? `${(v / 1e4).toFixed(2)}万` : v.toFixed(2)
+function fmtOiOz(v: number, lang: Lang) {
+  // 本地化紧凑格式：zh 显示「万」，en 显示 K 等，避免硬编码中文单位
+  return new Intl.NumberFormat(localeFor(lang), {
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(v)
 }
 
 interface RatioBlockProps {
@@ -86,7 +90,7 @@ interface OiBlockProps {
 
 /** 未平仓历史块：当前值 + 24h 变化 + 走势 */
 function OiBlock({ title, points }: OiBlockProps) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const cur = last(points)
   const first = points[0]
   if (!cur) {
@@ -100,7 +104,7 @@ function OiBlock({ title, points }: OiBlockProps) {
   const color = change >= 0 ? 'var(--up)' : 'var(--down)'
   return (
     <Block title={title}>
-      <span style={{ fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtOiOz(cur.oi)}</span>
+      <span style={{ fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtOiOz(cur.oi, lang)}</span>
       <span style={{ color, fontSize: 11 }}>{change >= 0 ? '+' : ''}{(change * 100).toFixed(2)}%</span>
       <Sparkline fluid points={points.map((p) => p.oi)} />
     </Block>
