@@ -68,7 +68,7 @@ beforeEach(() => {
   scaleModes.length = 0
   vi.useFakeTimers()
   mockUseKlineData.mockReturnValue({
-    state: { candles: makeCandles(800), status: 'live' },
+    state: { candles: makeCandles(800), status: 'live', live: null },
     hasMore: true,
     loadMore: vi.fn(),
   })

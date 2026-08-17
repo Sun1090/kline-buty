@@ -742,7 +742,7 @@ export function App() {
         </span>
       </header>
       )}
-      <StatsBar stats={stats} />
+      <StatsBar stats={stats} live={state.live} />
       <OfflineBanner />
       {quickOrder && (
         <QuickOrder

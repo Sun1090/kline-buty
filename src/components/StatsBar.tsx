@@ -1,4 +1,5 @@
 import type { MarketStats } from '../hooks/useMarketStats'
+import type { LiveTick } from '../hooks/useKlineData'
 import { useI18n } from '../i18n'
 
 function fmtPrice(v: number) {
@@ -11,6 +12,8 @@ function fmtVolume(v: number) {
 
 interface StatsBarProps {
   stats: MarketStats
+  /** WS 实时帧（最新价 + 方向）：非空时覆盖轮询价并做跳动高亮 */
+  live?: LiveTick | null
 }
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
@@ -22,13 +25,20 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export function StatsBar({ stats }: StatsBarProps) {
+export function StatsBar({ stats, live }: StatsBarProps) {
   const { t } = useI18n()
-  const empty = stats.price === null && stats.fundingRate === null && stats.openInterest === null
+  const empty = stats.price === null && stats.fundingRate === null && stats.openInterest === null && !live
   if (empty) return null
   const changeColor = (stats.changePct ?? 0) >= 0 ? 'var(--up)' : 'var(--down)'
   const fundingPct = (stats.fundingRate ?? 0) * 100
   const fundingColor = fundingPct >= 0 ? 'var(--up)' : 'var(--down)'
+  // 实时帧优先：价 + 方向 + 闪烁（帧到达即高亮一次，肉眼可见行情在推）
+  const price = live?.price ?? stats.price
+  const dirColor =
+    live && live.dir !== 0 ? (live.dir > 0 ? 'var(--up)' : 'var(--down)') : changeColor
+  const arrow = live ? (live.dir > 0 ? '▲' : live.dir < 0 ? '▼' : '') : ''
+  const flashClass =
+    live && live.dir !== 0 ? (live.dir > 0 ? 'tick-flash-up' : 'tick-flash-down') : undefined
   return (
     <div
       style={{
@@ -42,10 +52,37 @@ export function StatsBar({ stats }: StatsBarProps) {
         overflowX: 'auto',
       }}
     >
-      {stats.price !== null && (
+      {price !== null && (
         <Item label={t('stats.lastPrice')}>
-          <span style={{ fontWeight: 600, color: changeColor, fontVariantNumeric: 'tabular-nums' }}>
-            {fmtPrice(stats.price)}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+            {live && (
+              <span
+                title={t('status.live')}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: 'var(--up)',
+                  display: 'inline-block',
+                  animation: 'live-pulse 1.2s ease-in-out infinite',
+                }}
+              />
+            )}
+            <span
+              data-testid="live-price"
+              key={live?.ts ?? 0}
+              className={flashClass}
+              style={{
+                fontWeight: 600,
+                color: dirColor,
+                fontVariantNumeric: 'tabular-nums',
+                borderRadius: 3,
+                padding: '0 2px',
+              }}
+            >
+              {arrow}
+              {fmtPrice(price)}
+            </span>
           </span>
         </Item>
       )}

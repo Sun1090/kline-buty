@@ -11,10 +11,20 @@ const PAGE_SIZE = 500
 /** 压测模式模拟实时帧的间隔（ms） */
 const PERF_TICK_MS = 1500
 
+/** 最近一次 WS 实时帧（驱动「最新价」实时跳动，让实时行情肉眼可见） */
+export interface LiveTick {
+  price: number
+  /** 帧到达时间戳（ms），用作闪烁动画 key */
+  ts: number
+  /** 相对上一帧的方向：1 涨 / -1 跌 / 0 平 */
+  dir: -1 | 0 | 1
+}
+
 export interface KlineDataState {
   candles: Candle[]
   status: 'loading' | 'error' | WsStatus
   error?: string
+  live: LiveTick | null
 }
 
 /**
@@ -23,11 +33,13 @@ export interface KlineDataState {
  *
  * - `publish` 复制数组产生新引用：ChartView 依赖引用变化触发增量 `updateCandle`，
  *   否则 WS 帧只会改内存数组、图表序列永远不刷新（生产构建下图表冻结的根因）。
+ * - 每帧同时更新 `live`（最新价 + 方向）：StatsBar 用它做实时跳动高亮，
+ *   用户无需手动刷新即可感知行情在推送。
  * - StrictMode 双执行守卫：仅当前生效的 store 允许 publish，避免 dev 下双 store 竞态。
  * - `?perf=N`：合成数据压测模式（不联网），含模拟实时帧，供大数据量滚动/渲染验证。
  */
 export function useKlineData(symbol: string, period: Period) {
-  const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading' })
+  const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading', live: null })
   const [hasMore, setHasMore] = useState(true)
   const aliveRef = useRef(true)
   const storeRef = useRef<MarketStore | null>(null)
@@ -38,13 +50,15 @@ export function useKlineData(symbol: string, period: Period) {
     const store = new MarketStore()
     storeRef.current = store
     setHasMore(true)
+    /** 上一帧收盘价（用于计算实时跳动方向）；REST 补数/切周期时重置 */
+    let prevClose: number | null = null
 
-    const publish = () => {
+    const publish = (live?: LiveTick) => {
       if (!aliveRef.current || storeRef.current !== store) return
       // 复制数组：新引用驱动 ChartView 增量装载（updateCandle），而非全量 setData
-      setState((prev) => ({ ...prev, candles: store.all().slice() }))
+      setState((prev) => ({ ...prev, candles: store.all().slice(), live: live ?? prev.live }))
     }
-    setState({ candles: [], status: 'loading' })
+    setState({ candles: [], status: 'loading', live: null })
 
     // 压测模式：合成大数据量 + 模拟实时帧，不依赖交易所网络
     const perfCount = readPerfParam()
@@ -60,8 +74,11 @@ export function useKlineData(symbol: string, period: Period) {
         const all = store.all()
         if (all.length === 0) return
         tick += 1
-        store.upsert(tickSynthetic(all[all.length - 1], tick))
-        publish()
+        const last = all[all.length - 1]
+        const next = tickSynthetic(last, tick)
+        store.upsert(next)
+        const dir: -1 | 0 | 1 = next.close > last.close ? 1 : next.close < last.close ? -1 : 0
+        publish({ price: next.close, ts: Date.now(), dir })
       }, PERF_TICK_MS)
       return () => {
         aliveRef.current = false
@@ -77,7 +94,7 @@ export function useKlineData(symbol: string, period: Period) {
       })
       .catch((e: unknown) => {
         if (aliveRef.current && storeRef.current === store) {
-          setState({ candles: [], status: 'error', error: e instanceof Error ? e.message : String(e) })
+          setState({ candles: [], status: 'error', error: e instanceof Error ? e.message : String(e), live: null })
         }
       })
 
@@ -88,7 +105,10 @@ export function useKlineData(symbol: string, period: Period) {
       ws = createKlineWs(symbol, period, {
         onKline: (c) => {
           store.upsert(c)
-          publish()
+          const dir: -1 | 0 | 1 =
+            prevClose == null ? 0 : c.close > prevClose ? 1 : c.close < prevClose ? -1 : 0
+          prevClose = c.close
+          publish({ price: c.close, ts: Date.now(), dir })
         },
         onStatus: (s) => {
           if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
