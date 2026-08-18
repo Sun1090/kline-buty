@@ -30,6 +30,7 @@ import {
   gannBoxSegments,
   gannFanRays,
   cycleLines,
+  fibChannelLevels,
   hitTestDrawings,
   measureInfo,
   moveAnchor,
@@ -753,6 +754,44 @@ export class LightweightChartAdapter implements ChartApi {
           const c = this.project(pc.time, pc.price)
           if (c) this.drawAnchor(ctx, c.x, c.y)
         }
+      }
+      return
+    }
+
+    if (d.type === 'fibchannel') {
+      // 斐波那契通道：基线 A→B（level 0 实线）+ 8 条平行分位线（0.236…1.618 虚线），横贯全宽，左侧标 level
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = this.project(pb.time, pb.price)
+      if (!b) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const dir = { x: b.x - a.x, y: b.y - a.y }
+      if (dir.x === 0 && dir.y === 0) return
+      for (const { level, price } of fibChannelLevels(pa, pb)) {
+        const p0 = this.project(pa.time, price)
+        if (!p0) continue
+        const slope = dir.y / dir.x
+        const y0 = p0.y + slope * (0 - p0.x)
+        const y1 = p0.y + slope * (w - p0.x)
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.lineWidth = selected ? 1.6 : 1
+        if (level === 0) {
+          ctx.setLineDash([])
+        } else {
+          ctx.setLineDash([4, 3])
+        }
+        ctx.beginPath()
+        ctx.moveTo(0, y0)
+        ctx.lineTo(w, y1)
+        ctx.stroke()
+        ctx.setLineDash([])
+        this.drawLabel(ctx, 0, y0, level === 0 ? '0' : level.toFixed(3), 'left')
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }

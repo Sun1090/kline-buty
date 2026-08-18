@@ -733,6 +733,102 @@ test.describe('K 线应用冒烟', () => {
     })) === 0).toBe(true)
   })
 
+  test('画线：斐波那契通道 → A→B 定义摆幅 → 落库两点保序 → 像素校验选中蓝色平行线（≥4 条）→ 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '斐波那契通道' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 拖出 A→B（带价格摆幅）：基线 + 8 条平行分位线横贯全宽
+    await page.mouse.move(box!.x + box!.width * 0.45, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.57, box!.y + box!.height * 0.45, { steps: 5 })
+    await page.mouse.up()
+    // 落库：type=fibchannel，两点保持 A→B 原始顺序
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[0].time).toBeLessThan(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：刚创建处于选中态 → overlay 出现蓝色平行线（基线 + 8 条分位线，横贯全宽）。
+    // 平行斜线每列都有 9 条线穿过（每列约 24px），故断言蓝色总量大 + 覆盖 ≥100 个 x 列（证明横贯全宽，而非仅锚点）
+    const blueLineStats = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { n: 0, cols: 0 }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { n: 0, cols: 0 }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        let n = 0
+        const colCount = new Map<number, number>()
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            const x = (i / 4) % w
+            colCount.set(x, (colCount.get(x) ?? 0) + 1)
+          }
+        }
+        const cols = [...colCount.values()].filter((c) => c > 15).length
+        return { n, cols }
+      })
+    await expect.poll(() => blueLineStats().then((s) => s.n), { timeout: 10_000 }).toBeGreaterThan(5000)
+    await expect.poll(() => blueLineStats().then((s) => s.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(100)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(async () => (await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        return Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel').length
+      } catch {
+        return -1
+      }
+    })) === 0).toBe(true)
+  })
+
   test('深度/筹码面板开关', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
