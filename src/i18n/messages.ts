@@ -31,6 +31,7 @@ export const zh = {
   },
   disclaimer: {
     text: '数据仅供参考，不构成投资建议',
+    watermark: '仅供学习参考 · 不构成投资建议',
   },
   chartType: {
     candlestick: '蜡烛',
@@ -146,6 +147,7 @@ export const zh = {
     arrow: '箭头',
     polyline: '多段线',
     measure: '量度',
+    measureBars: '{bars}根',
     speedlines: '速度线',
     regchan: '回归通道',
     hchannel: '水平通道',
@@ -340,6 +342,7 @@ export const en: Messages = {
   },
   disclaimer: {
     text: 'Data for reference only; not investment advice.',
+    watermark: 'For reference only · Not investment advice',
   },
   chartType: {
     candlestick: 'Candles',
@@ -455,6 +458,7 @@ export const en: Messages = {
     arrow: 'Arrow',
     polyline: 'Polyline',
     measure: 'Measure',
+    measureBars: '{bars} bars',
     speedlines: 'Speed Lines',
     regchan: 'Regression Channel',
     hchannel: 'Horizontal Channel',
@@ -647,6 +651,7 @@ export const ja: Messages = {
   },
   disclaimer: {
     text: 'データは参考用であり、投資助言ではありません。',
+    watermark: '参考用のみ・投資助言ではありません',
   },
 
   chartType: {
@@ -763,6 +768,7 @@ export const ja: Messages = {
     arrow: '矢印',
     polyline: '折れ線',
     measure: '計測',
+    measureBars: '{bars}本',
     speedlines: 'スピードライン',
     regchan: '回帰チャネル',
     hchannel: '水平チャネル',
@@ -956,6 +962,7 @@ export const ko: Messages = {
   },
   disclaimer: {
     text: '데이터는 참고용이며 투자 조언이 아닙니다.',
+    watermark: '참고용·투자 조언 아님',
   },
 
   chartType: {
@@ -1072,6 +1079,7 @@ export const ko: Messages = {
     arrow: '화살표',
     polyline: '다중선',
     measure: '측정',
+    measureBars: '{bars}개',
     speedlines: '스피드 라인',
     regchan: '회귀 채널',
     hchannel: '수평 채널',
@@ -1277,6 +1285,7 @@ export const es: Messages = {
   },
   disclaimer: {
     text: 'Los datos son solo de referencia; no constituyen asesoramiento de inversión.',
+    watermark: 'Solo referencia · No es asesoramiento de inversión',
   },
 
   chartType: {
@@ -1392,6 +1401,7 @@ export const es: Messages = {
     arrow: 'Flecha',
     polyline: 'Polilínea',
     measure: 'Medición',
+    measureBars: '{bars} barras',
     speedlines: 'Líneas de Velocidad',
     regchan: 'Canal de Regresión',
     hchannel: 'Canal Horizontal',
@@ -1584,6 +1594,10 @@ export interface ChartLabels {
   entry: string
   tp: string
   sl: string
+  /** 量度标签的 K 线根数单位（{bars} 占位） */
+  measureBars: string
+  /** 图表水印文案（免责声明） */
+  watermark: string
 }
 
 export function chartLabelsFor(lang: Lang): ChartLabels {
@@ -1593,6 +1607,8 @@ export function chartLabelsFor(lang: Lang): ChartLabels {
     entry: m.position.lineEntry,
     tp: m.position.lineTp,
     sl: m.position.lineSl,
+    measureBars: m.drawing.measureBars,
+    watermark: m.disclaimer.watermark,
   }
 }
 
