@@ -36,6 +36,7 @@ export type DrawingTool =
   | 'timerange'
   | 'pband'
   | 'fibtz'
+  | 'rr'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -109,7 +110,7 @@ export function fibPrices(from: number, to: number): number[] {
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return 3
   return 2
 }
 
@@ -433,6 +434,18 @@ export function priceBandYs(aY: number, bY: number): { top: number; bottom: numb
   return { top: Math.min(aY, bY), bottom: Math.max(aY, bY) }
 }
 
+/** 风险回报比（R:R）：A 入场、B 止损、C 止盈。
+ * risk = |A.price − B.price|，reward = |A.price − C.price|，ratio = reward / risk（risk 为 0 时返回 0）。 */
+export function riskRewardRatio(
+  a: { price: number },
+  b: { price: number },
+  c: { price: number },
+): { risk: number; reward: number; ratio: number } {
+  const risk = Math.abs(a.price - b.price)
+  const reward = Math.abs(a.price - c.price)
+  return { risk, reward, ratio: risk === 0 ? 0 : reward / risk }
+}
+
 /** 速度线（Speed Lines）：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线。
  * 返回 [主对角线 A→B, B 处竖直线, A→1/3, A→2/3] 四条线段。 */
 export function speedLines(
@@ -521,7 +534,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -937,6 +950,14 @@ export function hitTestDrawings(
         } else {
           dist = Math.min(Math.abs(py - top), Math.abs(py - bottom))
         }
+      }
+    } else if (d.type === 'rr') {
+      // 风险回报：命中三条水平线（入场/止损/止盈）任一条的竖直距离
+      const a = d.points[0] ? project(d.points[0].time, d.points[0].price) : null
+      const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
+      const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y), Math.abs(py - c.y))
       }
     } else if (d.type === 'pitchfork') {
       // 安德鲁叉：命中三条射线（中轨 + 上下平行轨）任一条

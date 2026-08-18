@@ -35,6 +35,7 @@ import {
   hitTestDrawings,
   timeRangeXs,
   priceBandYs,
+  riskRewardRatio,
   trendAngleDeg,
   measureInfo,
   moveAnchor,
@@ -1112,6 +1113,33 @@ export class LightweightChartAdapter implements ChartApi {
         this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
         if (selected) this.drawAnchor(ctx, 0, p.y)
       }
+      return
+    }
+
+    if (d.type === 'rr') {
+      // 风险回报（R:R）：A 入场 / B 止损 / C 止盈 → 三条水平线横贯全宽（止损/止盈虚线）+ 左侧价格标签 + 右侧盈亏比标签
+      const pts = [d.points[0], d.points[1], d.points[2]]
+      const ys = pts.map((p) => (p ? this.project(p.time, p.price) : null))
+      if (ys.some((y) => !y)) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      for (let i = 0; i < 3; i++) {
+        const p = pts[i]
+        const pt = ys[i]!
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        if (i > 0) ctx.setLineDash([5, 4])
+        ctx.beginPath()
+        ctx.moveTo(0, pt.y)
+        ctx.lineTo(w, pt.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        this.drawLabel(ctx, 0, pt.y, p!.price.toFixed(2), 'left')
+        if (selected) this.drawAnchor(ctx, 0, pt.y)
+      }
+      // 盈亏比标签：右侧（入场线附近），显示 1:ratio
+      const { ratio } = riskRewardRatio(d.points[0], d.points[1], d.points[2])
+      const entry = ys[0]!
+      this.drawLabel(ctx, w - 8, entry.y - 8, this.labels.rrRatio.replace('{ratio}', ratio.toFixed(2)), 'right')
       return
     }
 
