@@ -17,6 +17,9 @@ import {
   gannFanRays,
   fibTimeLines,
   fibTimeXs,
+  fibTimeZones,
+  fibTimeZoneXs,
+  FIB_TIME_ZONE_NUMS,
   hitTestDrawings,
   linearRegression,
   parallelRaySpec,
@@ -1365,5 +1368,79 @@ describe('价格带（pband，时间区间的横向孪生）', () => {
     expect(hitTestDrawings([d], 100, 220, project)).toBe('pb2') // 下边框
     expect(hitTestDrawings([d], 50, 224, project)).toBe('pb2') // 下侧 4px 内
     expect(hitTestDrawings([d], 50, 260, project)).toBeNull() // 距边框 40px
+  })
+})
+
+describe('斐波那契时间区间（fibtz）', () => {
+  it('FIB_TIME_ZONE_NUMS：斐波那契倍数（1,2,3,5,8,13,21,34,55）', () => {
+    expect(FIB_TIME_ZONE_NUMS[0]).toBe(1)
+    expect(FIB_TIME_ZONE_NUMS[1]).toBe(2)
+    expect(FIB_TIME_ZONE_NUMS[2]).toBe(3)
+    expect(FIB_TIME_ZONE_NUMS[3]).toBe(5)
+    expect(FIB_TIME_ZONE_NUMS[8]).toBe(55)
+  })
+
+  it('fibTimeZones：A 为原点、span=|B.time-A.time| 向右等比延伸', () => {
+    // A(100) B(110) → span=10 → 分界时间 = 100 + 10*n
+    const lines = fibTimeZones({ time: 100 }, { time: 110 })
+    expect(lines).toHaveLength(FIB_TIME_ZONE_NUMS.length)
+    expect(lines[0]).toEqual({ n: 1, time: 110 })
+    expect(lines[1]).toEqual({ n: 2, time: 120 })
+    expect(lines[3]).toEqual({ n: 5, time: 150 })
+    expect(lines[8]).toEqual({ n: 55, time: 650 })
+  })
+
+  it('fibTimeZones：B 在 A 左侧时 span 取绝对值，仍向 A 右侧延伸', () => {
+    const lines = fibTimeZones({ time: 100 }, { time: 90 })
+    expect(lines[1]).toEqual({ n: 2, time: 120 })
+  })
+
+  it('fibTimeZones：退化（span=0）分界时间全部等于 A', () => {
+    const lines = fibTimeZones({ time: 100 }, { time: 100 })
+    expect(lines.every((l) => l.time === 100)).toBe(true)
+  })
+
+  it('fibTimeZoneXs：以 A 的 x 为原点按倍数延伸（命中测试用）', () => {
+    // A x=0, B x=10 → 分界 x = 0 + 10*n
+    const xs = fibTimeZoneXs(0, 10)
+    expect(xs[0]).toEqual({ n: 1, x: 10 })
+    expect(xs[1]).toEqual({ n: 2, x: 20 })
+    expect(xs[3]).toEqual({ n: 5, x: 50 })
+  })
+
+  it('requiredPoints：斐波那契时间区间为两点', () => {
+    expect(requiredPoints('fibtz')).toBe(2)
+  })
+
+  it('normalizePoints：保持 A→B 原始顺序（方向敏感，向 B 侧延伸）', () => {
+    const a = normalizePoints('fibtz', [{ time: 100, price: 50 }, { time: 110, price: 60 }])
+    expect(a[0].time).toBe(100)
+    expect(a[1].time).toBe(110)
+    const b = normalizePoints('fibtz', [{ time: 110, price: 60 }, { time: 100, price: 50 }])
+    expect(b[0].time).toBe(110)
+    expect(b[1].time).toBe(100)
+  })
+
+  it('createDrawing / moveAnchor 保持两点', () => {
+    const d = createDrawing('fibtz', [{ time: 100, price: 50 }, { time: 110, price: 60 }], 'ft1')
+    expect(d.points).toHaveLength(2)
+    const moved = moveAnchor(d, 1, { time: 120, price: 70 })
+    expect(moved.points[1].time).toBe(120)
+  })
+
+  it('hitTest：相邻分界之间的竖带内部区域命中（任意 y）', () => {
+    // A x=0, B x=10 → 分界 x = [10,20,30,50,...]，带 [10,20] 内任意位置命中
+    const d = createDrawing('fibtz', [{ time: 0, price: 100 }, { time: 10, price: 100 }], 'ft2')
+    expect(hitTestDrawings([d], 15, 999, project)).toBe('ft2') // 带内任意 y
+    expect(hitTestDrawings([d], 12, 100, project)).toBe('ft2')
+  })
+
+  it('hitTest：分界线上命中；带外按到最近分界线的水平距离', () => {
+    const d = createDrawing('fibtz', [{ time: 0, price: 100 }, { time: 10, price: 100 }], 'ft3')
+    expect(hitTestDrawings([d], 10, 200, project)).toBe('ft3') // n=1 分界线
+    expect(hitTestDrawings([d], 23, 200, project)).toBe('ft3') // 带 [20,30] 内
+    expect(hitTestDrawings([d], 31, 200, project)).toBe('ft3') // 分界线 30 右侧 1px（下一带 [30,50] 内）
+    expect(hitTestDrawings([d], 8, 200, project)).toBe('ft3') // 原点 A 左侧 2px（距分界 10 为 2px）
+    expect(hitTestDrawings([d], 1, 200, project)).toBeNull() // 距最近分界 9px（超出 8px 阈值）
   })
 })

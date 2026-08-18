@@ -35,6 +35,7 @@ export type DrawingTool =
   | 'angle'
   | 'timerange'
   | 'pband'
+  | 'fibtz'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -297,6 +298,25 @@ export function cycleXs(aX: number, bX: number, count = CYCLE_LINE_COUNT): numbe
   return Array.from({ length: count }, (_, k) => aX + (bX - aX) * k)
 }
 
+/** 斐波那契时间区间（Fib Time Zones）：分界线的斐波那契倍数（1,2,3,5,8,13,21,34,55…，0 为 A 锚点原点） */
+export const FIB_TIME_ZONE_NUMS = [1, 2, 3, 5, 8, 13, 21, 34, 55]
+
+/** 斐波那契时间区间分界线时间：A 为原点，span = |B.time - A.time|，向右按斐波那契倍数延伸 */
+export function fibTimeZones(
+  a: { time: number },
+  b: { time: number },
+): { n: number; time: number }[] {
+  const span = Math.abs(b.time - a.time)
+  if (span <= 0) return FIB_TIME_ZONE_NUMS.map((n) => ({ n, time: a.time }))
+  return FIB_TIME_ZONE_NUMS.map((n) => ({ n, time: a.time + span * n }))
+}
+
+/** 斐波那契时间区间分界线屏幕 x：以 A 的 x 为原点，span 像素 = B.x - A.x，向右按斐波那契倍数延伸（命中测试用） */
+export function fibTimeZoneXs(aX: number, bX: number): { n: number; x: number }[] {
+  const span = bX - aX
+  return FIB_TIME_ZONE_NUMS.map((n) => ({ n, x: aX + span * n }))
+}
+
 /** 平行通道：基线 a→b，平行线垂直偏移 delta = b.price - a.price */
 export function channelLine(
   a: { time: number; price: number },
@@ -492,7 +512,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
   if (type === 'hchannel' || type === 'pband') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -800,6 +820,26 @@ export function hitTestDrawings(
       if (a && b) {
         dist = Infinity
         for (const x of cycleXs(a.x, b.x)) dist = Math.min(dist, Math.abs(px - x))
+      }
+    } else if (d.type === 'fibtz') {
+      // 斐波那契时间区间：命中任一相邻分界线之间的竖带内部（区域命中），外部按到最近分界线的水平距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const xs = fibTimeZoneXs(a.x, b.x)
+        let inside = false
+        for (let i = 0; i + 1 < xs.length; i++) {
+          if (px >= xs[i].x && px <= xs[i + 1].x) {
+            inside = true
+            break
+          }
+        }
+        if (inside) {
+          dist = 0
+        } else {
+          dist = Infinity
+          for (const { x } of xs) dist = Math.min(dist, Math.abs(px - x))
+        }
       }
     } else if (d.type === 'polyline') {
       // 多段折线：命中任一相邻线段
