@@ -32,6 +32,8 @@ export type DrawingTool =
   | 'pitchfork'
   | 'parray'
   | 'pchannel'
+  | 'angle'
+  | 'timerange'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -387,6 +389,18 @@ export function widthChannelSpec(a: Point, b: Point, c: Point): WidthChannelSpec
     widthFrom: b,
     widthTo: c,
   }
+}
+
+
+/** 趋势角度（屏幕空间）：A→B 线段相对水平方向的夹角（度）。
+ * 屏幕 y 向下，返回值按「图表直觉」取号：向右上涨为正（+），下跌为负（−），范围 (-90, 90]。 */
+export function trendAngleDeg(a: Point, b: Point): number {
+  return (Math.atan2(a.y - b.y, b.x - a.x) * 180) / Math.PI
+}
+
+/** 时间区间竖带屏幕 x 范围（A→B 锚点 x 之间，左小右大） */
+export function timeRangeXs(aX: number, bX: number): { left: number; right: number } {
+  return { left: Math.min(aX, bX), right: Math.max(aX, bX) }
 }
 
 /** 速度线（Speed Lines）：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线。
@@ -828,6 +842,23 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)
       if (a && b) dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y))
+    } else if (d.type === 'angle') {
+      // 趋势角度：命中 A→B 线段（点到线段距离，与趋势线一致）
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
+    } else if (d.type === 'timerange') {
+      // 时间区间：竖带内部任意位置可选中（区域命中）；外部按到左右边框的水平距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const { left, right } = timeRangeXs(a.x, b.x)
+        if (px >= left && px <= right) {
+          dist = 0
+        } else {
+          dist = Math.min(Math.abs(px - left), Math.abs(px - right))
+        }
+      }
     } else if (d.type === 'pitchfork') {
       // 安德鲁叉：命中三条射线（中轨 + 上下平行轨）任一条
       const a = project(d.points[0].time, d.points[0].price)

@@ -32,6 +32,8 @@ import {
   cycleLines,
   fibChannelLevels,
   hitTestDrawings,
+  timeRangeXs,
+  trendAngleDeg,
   measureInfo,
   moveAnchor,
   parallelRaySpec,
@@ -945,6 +947,83 @@ export class LightweightChartAdapter implements ChartApi {
         const price = p === p1 ? d.points[0].price : d.points[1].price
         this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
         if (selected) this.drawAnchor(ctx, 0, p.y)
+      }
+      return
+    }
+
+
+    if (d.type === 'angle') {
+      // 趋势角度：A→B 线段 + 相对水平夹角标签（屏幕空间，向上为正）+ A 端小圆弧示意
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      const b = this.project(d.points[1].time, d.points[1].price)
+      if (!b) return
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      // 角度标签：图表直觉取号（向右上涨为正）
+      const deg = trendAngleDeg(a, b)
+      const sign = deg >= 0 ? '+' : ''
+      const label = `${sign}${deg.toFixed(1)}°`
+      const mx = (a.x + b.x) / 2
+      const my = (a.y + b.y) / 2
+      this.drawLabel(ctx, mx + 6, my - 8, label, 'left')
+      // A 端小圆弧：从水平方向到线段方向的夹角（canvas y 向下，角度取反）
+      const rad = Math.max(12, Math.min(26, Math.hypot(b.x - a.x, b.y - a.y) / 3))
+      const canvasAng = Math.atan2(b.y - a.y, b.x - a.x)
+      ctx.beginPath()
+      ctx.arc(a.x, a.y, rad, 0, canvasAng, canvasAng < 0)
+      ctx.stroke()
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
+    if (d.type === 'timerange') {
+      // 时间区间：A→B 时间点之间画主图区半透明竖带 + 左右边框 + 顶部日期区间标签
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = this.project(pb.time, pb.price)
+      if (!b) return
+      const { left, right } = timeRangeXs(a.x, b.x)
+      const dpr = window.devicePixelRatio || 1
+      const cRect = this.container.getBoundingClientRect()
+      const paneEl = this.chart.panes()[0]?.getHTMLElement() ?? null
+      let top = 0
+      let bottom = this.overlay.height / dpr
+      if (paneEl) {
+        const pRect = paneEl.getBoundingClientRect()
+        top = pRect.top - cRect.top
+        bottom = pRect.bottom - cRect.top
+      }
+      // 半透明竖带
+      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillRect(left, top, right - left, bottom - top)
+      // 左右边框
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+      ctx.lineWidth = selected ? 1.6 : 1
+      for (const x of [left, right]) {
+        ctx.beginPath()
+        ctx.moveTo(x, top)
+        ctx.lineTo(x, bottom)
+        ctx.stroke()
+      }
+      // 顶部日期区间标签（与周期线标签同位置）
+      const fmt = (t: number) => {
+        const dt = new Date(t * 1000)
+        return `${dt.toLocaleDateString()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`
+      }
+      this.drawLabel(ctx, left, top + 7, `${fmt(pa.time)} ~ ${fmt(pb.time)}`, 'left')
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }

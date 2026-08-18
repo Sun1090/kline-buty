@@ -32,6 +32,8 @@ import {
   regressionSegments,
   requiredPoints,
   speedLines,
+  timeRangeXs,
+  trendAngleDeg,
   textHitExtents,
   FIB_LEVELS,
   type Drawing,
@@ -1265,5 +1267,61 @@ describe('平行射线/宽度通道（M30 新工具）', () => {
     const moved = moveAnchor(d, 2, { time: 80, price: 60 })
     expect(moved.points).toHaveLength(3)
     expect(moved.points[2]).toEqual({ time: 80, price: 60 })
+  })
+})
+
+describe('趋势角度 / 时间区间（M 新工具）', () => {
+  it('trendAngleDeg：水平 0° / 右上 45° / 右下 −45° / 竖直 ±90°', () => {
+    expect(trendAngleDeg({ x: 0, y: 100 }, { x: 100, y: 100 })).toBeCloseTo(0)
+    expect(trendAngleDeg({ x: 0, y: 100 }, { x: 100, y: 0 })).toBeCloseTo(45) // 屏幕右上 = 上涨
+    expect(trendAngleDeg({ x: 0, y: 100 }, { x: 100, y: 200 })).toBeCloseTo(-45) // 屏幕右下 = 下跌
+    expect(trendAngleDeg({ x: 0, y: 100 }, { x: 0, y: 0 })).toBeCloseTo(90)
+    expect(trendAngleDeg({ x: 0, y: 100 }, { x: 0, y: 200 })).toBeCloseTo(-90)
+  })
+
+  it('timeRangeXs：左小右大（无序输入归一）', () => {
+    expect(timeRangeXs(80, 20)).toEqual({ left: 20, right: 80 })
+    expect(timeRangeXs(20, 80)).toEqual({ left: 20, right: 80 })
+  })
+
+  it('requiredPoints：趋势角度/时间区间均为两点', () => {
+    expect(requiredPoints('angle')).toBe(2)
+    expect(requiredPoints('timerange')).toBe(2)
+  })
+
+  it('normalizePoints：趋势角度/时间区间均按时间排序（先左后右）', () => {
+    const a = normalizePoints('angle', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(a[0].time).toBe(0)
+    expect(a[1].time).toBe(100)
+    const b = normalizePoints('timerange', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(b[0].time).toBe(0)
+    expect(b[1].time).toBe(100)
+  })
+
+  it('createDrawing / moveAnchor 保持两点', () => {
+    const d = createDrawing('angle', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'a1')
+    expect(d.points).toHaveLength(2)
+    const moved = moveAnchor(d, 1, { time: 120, price: 40 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[1]).toEqual({ time: 120, price: 40 })
+    const t = createDrawing('timerange', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 't1')
+    expect(t.points).toHaveLength(2)
+  })
+
+  it('hitTest 趋势角度：线段命中 / 远处不命中', () => {
+    // A(0,100) B(100,50) → 屏幕 (0,200)/(100,250)
+    const d = createDrawing('angle', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'a2')
+    expect(hitTestDrawings([d], 50, 225, project)).toBe('a2') // 线段中点
+    expect(hitTestDrawings([d], 50, 190, project)).toBeNull() // 距线段 35px
+  })
+
+  it('hitTest 时间区间：带内任意位置区域命中 / 边框外按水平距离 / 远处不命中', () => {
+    // A(0,100) B(100,50) → 屏幕 (0,200)/(100,250)，竖带 [0,100]
+    const d = createDrawing('timerange', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'tr1')
+    expect(hitTestDrawings([d], 50, 999, project)).toBe('tr1') // 带内任意 y
+    expect(hitTestDrawings([d], 0, 200, project)).toBe('tr1') // 左边框
+    expect(hitTestDrawings([d], 100, 250, project)).toBe('tr1') // 右边框
+    expect(hitTestDrawings([d], 104, 225, project)).toBe('tr1') // 右侧 4px 内
+    expect(hitTestDrawings([d], 140, 225, project)).toBeNull() // 距边框 40px
   })
 })
