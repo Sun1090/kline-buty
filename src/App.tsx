@@ -210,12 +210,17 @@ export function App() {
     }))
   }
   const selectedDrawing = drawings.find((d) => d.id === selectedDrawingId)
+  const startEditingText = (id: string) => {
+    const d = drawings.find((x) => x.id === id)
+    if (!d || d.type !== 'text') return
+    setSelectedDrawingId(id)
+    setTextDraft(d.text ?? '')
+    setTextFontSize(d.fontSize ?? DEFAULT_TEXT_FONT_SIZE)
+    setTextColor(d.color ?? '')
+    setEditingTextId(id)
+  }
   const startEditingSelectedText = () => {
-    if (selectedDrawing?.type !== 'text') return
-    setTextDraft(selectedDrawing.text ?? '')
-    setTextFontSize(selectedDrawing.fontSize ?? DEFAULT_TEXT_FONT_SIZE)
-    setTextColor(selectedDrawing.color ?? '')
-    setEditingTextId(selectedDrawing.id)
+    if (selectedDrawing?.type === 'text') startEditingText(selectedDrawing.id)
   }
   const deleteSelectedDrawing = () => {
     if (!selectedDrawingId) return
@@ -574,6 +579,7 @@ export function App() {
             onDrawingCommit={commitDrawing}
             onDrawingSelect={setSelectedDrawingId}
             onDrawingUpdate={updateDrawing}
+            onEditText={startEditingText}
           />
         )}
       </main>
