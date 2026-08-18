@@ -373,6 +373,100 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：水平通道 + XABCD 形态 + 艾略特波浪 → 绘制 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 水平通道：拖出两条水平线（上下沿）
+    await openDrawing(page)
+    await page.getByRole('button', { name: '水平通道' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.55, { steps: 5 })
+    await page.mouse.up()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'hchannel').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(0)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // XABCD 形态：五点点击（X/A/B/C/D）集满提交
+    await openDrawing(page)
+    await page.getByRole('button', { name: 'XABCD 形态' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.25)
+    await page.mouse.click(box!.x + box!.width * 0.42, box!.y + box!.height * 0.4)
+    await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.68, box!.y + box!.height * 0.45)
+    await page.mouse.click(box!.x + box!.width * 0.8, box!.y + box!.height * 0.35)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const xs = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'xabcd')
+              return xs.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 艾略特波浪：五点点击（1/2/3/4/5）集满提交
+    await openDrawing(page)
+    await page.getByRole('button', { name: '艾略特波浪' }).click()
+    await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.4)
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.58, box!.y + box!.height * 0.4)
+    await page.mouse.click(box!.x + box!.width * 0.72, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.85, box!.y + box!.height * 0.42)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'elliott').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  })
+
   test('画线：文本标注 → 输入文字 → 确定 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

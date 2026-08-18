@@ -702,6 +702,58 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'hchannel') {
+      // 水平通道：上下两条水平线横贯全宽 + 半透明区间填充 + 价格标签
+      const p1 = this.project(d.points[0].time, d.points[0].price)
+      const p2 = this.project(d.points[1].time, d.points[1].price)
+      if (!p1 || !p2) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const top = Math.min(p1.y, p2.y)
+      const bottom = Math.max(p1.y, p2.y)
+      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillRect(0, top, w, bottom - top)
+      for (const p of [p1, p2]) {
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        ctx.beginPath()
+        ctx.moveTo(0, p.y)
+        ctx.lineTo(w, p.y)
+        ctx.stroke()
+        const price = p === p1 ? d.points[0].price : d.points[1].price
+        this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
+        if (selected) this.drawAnchor(ctx, 0, p.y)
+      }
+      return
+    }
+
+    if (d.type === 'xabcd' || d.type === 'elliott') {
+      // XABCD 谐波形态 / 艾略特波浪：5 锚点依次连线 + 点位标注
+      const labels = d.type === 'xabcd' ? ['X', 'A', 'B', 'C', 'D'] : ['1', '2', '3', '4', '5']
+      const pts: Point[] = []
+      for (const p of d.points) {
+        const pt = this.project(p.time, p.price)
+        if (!pt) return
+        pts.push(pt)
+      }
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
+      ctx.stroke()
+      ctx.font = '10px system-ui'
+      ctx.textBaseline = 'middle'
+      for (let i = 0; i < pts.length; i++) {
+        ctx.beginPath()
+        ctx.arc(pts[i].x, pts[i].y, 3, 0, Math.PI * 2)
+        ctx.fill()
+        const off = i % 2 === 0 ? -8 : 8
+        ctx.fillText(labels[i] ?? '', pts[i].x + 6, pts[i].y + off)
+      }
+      if (selected) for (const p of pts) this.drawAnchor(ctx, p.x, p.y)
+      return
+    }
+
     const a = this.project(d.points[0].time, d.points[0].price)
     const b = this.project(d.points[1].time, d.points[1].price)
     if (!a || !b) return
