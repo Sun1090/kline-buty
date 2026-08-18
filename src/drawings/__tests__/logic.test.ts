@@ -23,6 +23,7 @@ import {
   moveAnchor,
   pitchforkMid,
   pitchforkRays,
+  wedgeLines,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
@@ -1108,5 +1109,65 @@ describe('安德鲁叉 pitchfork（3 锚点）', () => {
     expect(hitTestDrawings([d], 50, 100, project)).toBeNull()
     // 远离三条射线不命中
     expect(hitTestDrawings([d], 0, 300, project)).toBeNull()
+  })
+})
+
+describe('楔形 wedge（3 锚点）', () => {
+  // project: x=time, y=300-price
+  // A(0,100)→屏(0,200)；B(100,150)→屏(100,150)；C(100,50)→屏(100,250)
+  const A = { time: 0, price: 100 }
+  const B = { time: 100, price: 150 }
+  const C = { time: 100, price: 50 }
+
+  it('requiredPoints = 3', () => {
+    expect(requiredPoints('wedge')).toBe(3)
+  })
+
+  it('normalizePoints 保留 A/B/C 原始顺序（方向敏感，不做时间排序）', () => {
+    const pts = normalizePoints('wedge', [
+      { time: 100, price: 50 },
+      { time: 0, price: 100 },
+      { time: 50, price: 200 },
+    ])
+    expect(pts).toHaveLength(3)
+    expect(pts.map((p) => p.price)).toEqual([50, 100, 200])
+  })
+
+  it('createDrawing 只保留前 3 点', () => {
+    const d = createDrawing('wedge', [A, B, C, { time: 200, price: 300 }], 'wg1')
+    expect(d.points).toHaveLength(3)
+  })
+
+  it('wedgeLines：下边 A→C、上边 B→C 两条线段', () => {
+    const a = project(A.time, A.price)!
+    const b = project(B.time, B.price)!
+    const c = project(C.time, C.price)!
+    const lines = wedgeLines(a, b, c)
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toEqual({ from: { x: 0, y: 200 }, to: { x: 100, y: 250 } })
+    expect(lines[1]).toEqual({ from: { x: 100, y: 150 }, to: { x: 100, y: 250 } })
+  })
+
+  it('命中：任一条边（含收敛点 C 附近）可选中，远离不命中', () => {
+    const d = createDrawing('wedge', [A, B, C], 'wg1')
+    // 下边 A→C 中点 (50,225) 命中
+    expect(hitTestDrawings([d], 50, 225, project)).toBe('wg1')
+    // 上边 B→C 竖线 x=100 上 (100,200) 命中
+    expect(hitTestDrawings([d], 100, 200, project)).toBe('wg1')
+    // 收敛点 C 附近 (101, 250) 命中（容差内）
+    expect(hitTestDrawings([d], 101, 250, project)).toBe('wg1')
+    // 边外延伸 50px 不命中（线段端点截断）
+    expect(hitTestDrawings([d], 150, 250, project)).toBeNull()
+    // 上方远处不命中
+    expect(hitTestDrawings([d], 50, 100, project)).toBeNull()
+  })
+
+  it('moveAnchor 拖第三锚点后仍三点且顺序不变', () => {
+    const d = createDrawing('wedge', [A, B, C], 'wg1')
+    const moved = moveAnchor(d, 2, { time: 80, price: 60 })
+    expect(moved.points).toHaveLength(3)
+    expect(moved.points[0]).toEqual(A)
+    expect(moved.points[1]).toEqual(B)
+    expect(moved.points[2]).toEqual({ time: 80, price: 60 })
   })
 })

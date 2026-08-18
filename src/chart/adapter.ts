@@ -704,6 +704,44 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'wedge') {
+      // 楔形：A/B 为两条边起点、C 为收敛点；边实线 + C 之后沿同方向虚线延伸（投影收敛）
+      const [pa, pb, pc] = d.points
+      const a = pa ? this.project(pa.time, pa.price) : null
+      const b = pb ? this.project(pb.time, pb.price) : null
+      const c = pc ? this.project(pc.time, pc.price) : null
+      if (!c) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      for (const pt of [a, b]) {
+        if (!pt) continue
+        ctx.beginPath()
+        ctx.moveTo(pt.x, pt.y)
+        ctx.lineTo(c.x, c.y)
+        ctx.stroke()
+        // C 之后虚线延伸（投影方向继续向外）
+        const dx = c.x - pt.x
+        const dy = c.y - pt.y
+        const t = dx !== 0 ? (w - c.x) / dx : 0
+        if (t > 0) {
+          ctx.setLineDash([4, 4])
+          ctx.beginPath()
+          ctx.moveTo(c.x, c.y)
+          ctx.lineTo(c.x + dx * t, c.y + dy * t)
+          ctx.stroke()
+          ctx.setLineDash([])
+        }
+      }
+      for (const pt of [a, b, c]) {
+        if (!pt) continue
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return
+    }
+
     if (d.type === 'fibext') {
       // 斐波那契扩展：A→B 主摆幅；回撤区在 A/B 之间，延伸区从 B 向右缘
       const [pa, pb, pc] = d.points
