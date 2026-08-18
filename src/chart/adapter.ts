@@ -33,6 +33,7 @@ import {
   fibChannelLevels,
   hitTestDrawings,
   timeRangeXs,
+  priceBandYs,
   trendAngleDeg,
   measureInfo,
   moveAnchor,
@@ -1032,6 +1033,29 @@ export class LightweightChartAdapter implements ChartApi {
       if (selected) {
         this.drawAnchor(ctx, a.x, a.y)
         this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
+    if (d.type === 'pband') {
+      // 价格带：上下两条水平线横贯全宽 + 半透明水平带填充 + 左侧价格标签（与时间区间互为孪生）
+      const p1 = this.project(d.points[0].time, d.points[0].price)
+      const p2 = this.project(d.points[1].time, d.points[1].price)
+      if (!p1 || !p2) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const { top, bottom } = priceBandYs(p1.y, p2.y)
+      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillRect(0, top, w, bottom - top)
+      for (const p of [p1, p2]) {
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        ctx.beginPath()
+        ctx.moveTo(0, p.y)
+        ctx.lineTo(w, p.y)
+        ctx.stroke()
+        const price = p === p1 ? d.points[0].price : d.points[1].price
+        this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
+        if (selected) this.drawAnchor(ctx, 0, p.y)
       }
       return
     }
