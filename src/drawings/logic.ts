@@ -20,6 +20,7 @@ export type DrawingTool =
   | 'ellipse'
   | 'circle'
   | 'triangle'
+  | 'wedge'
   | 'arc'
   | 'polyline'
   | 'measure'
@@ -98,7 +99,7 @@ export function fibPrices(from: number, to: number): number[] {
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle' || type === 'pitchfork') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork') return 3
   return 2
 }
 
@@ -328,6 +329,20 @@ export function pitchforkMid(b: Point, c: Point): Point {
   return { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 }
 }
 
+/** 楔形（Wedge）：A/B 为两条边的起点，C 为收敛点。
+ * 下边 A→C、上边 B→C 两条线段（屏幕坐标），渲染与命中检测共用。 */
+export interface WedgeLine {
+  from: Point
+  to: Point
+}
+
+export function wedgeLines(a: Point, b: Point, c: Point): WedgeLine[] {
+  return [
+    { from: a, to: c },
+    { from: b, to: c },
+  ]
+}
+
 export interface SegmentLine {
   from: { time: number; price: number }
   to: { time: number; price: number }
@@ -421,7 +436,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle' || type === 'pitchfork') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -593,6 +608,16 @@ export function hitTestDrawings(
         } else {
           dist = Math.min(distToSegment(p, a, b), distToSegment(p, b, c), distToSegment(p, c, a))
         }
+      }
+    } else if (d.type === 'wedge') {
+      // 楔形：两条边 A→C 与 B→C（收敛于 C），命中任一条线段
+      const [pa, pb, pc] = d.points
+      const a = pa ? project(pa.time, pa.price) : null
+      const b = pb ? project(pb.time, pb.price) : null
+      const c = pc ? project(pc.time, pc.price) : null
+      if (a && b && c) {
+        const p = { x: px, y: py }
+        dist = Math.min(distToSegment(p, a, c), distToSegment(p, b, c))
       }
     } else if (d.type === 'arc') {
       const a = project(d.points[0].time, d.points[0].price)

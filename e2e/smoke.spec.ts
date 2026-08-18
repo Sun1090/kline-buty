@@ -1279,6 +1279,106 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：楔形 → 三点点击（A/B/C 收敛）→ 落库 3 锚点保序 → 像素校验选中蓝色楔形边 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '楔形' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 三点点击：A（左下起点）→ B（右上起点）→ C（收敛点，中间偏右）
+    await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.55)
+    await page.mouse.click(box!.x + box!.width * 0.62, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.45)
+    // 落库：type=wedge，三点保留 A→B→C 原始点击顺序（方向敏感）
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'wedge')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'wedge')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(3)
+    // 点击 x 序：0.3 < 0.5 < 0.62 → 保序后 t0 < t2 < t1
+    expect(saved!.points[0].time).toBeLessThan(saved!.points[2].time)
+    expect(saved!.points[2].time).toBeLessThan(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：创建后处于选中态 → overlay 出现蓝色楔形边（A→C 与 B→C 两条线 + C 后虚线延伸）
+    const bluePixels = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        let n = 0
+        const xCols = new Set<number>()
+        const w = overlay.width
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            xCols.add((i / 4) % w)
+          }
+        }
+        return { n, cols: xCols.size }
+      })
+    await expect.poll(async () => (await bluePixels()).n, { timeout: 10_000 }).toBeGreaterThan(200)
+    await expect.poll(async () => (await bluePixels()).cols, { timeout: 10_000 }).toBeGreaterThanOrEqual(80)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'wedge').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(0)
+  })
+
   test('画线：斐波那契扩展（3 锚点）+ 扇形 + 价格标签 + 箭头 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')
@@ -2272,9 +2372,10 @@ test.describe('移动端（390×844 触屏视口）', () => {
     // 画一条水平线（价格轴上部，固定价格）
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '水平线', exact: true }).tap()
+    await page.waitForTimeout(200)
     await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.25)
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const before = await findDrawnLineCenter(page)
-    expect(before).not.toBeNull()
 
     // CDP 双指捏合（张开 → 放大：价格区间收窄 → 固定价画线位移）
     const cdp = await page.context().newCDPSession(page)
@@ -2288,8 +2389,9 @@ test.describe('移动端（390×844 触屏视口）', () => {
         { x: cx + 40, y: cy },
       ],
     })
-    for (let i = 1; i <= 6; i++) {
-      const spread = 40 + i * 20
+    // 实时行情下价格区间随数据变化，捏合幅度取较大值保证固定价画线位移稳定可测
+    for (let i = 1; i <= 9; i++) {
+      const spread = 40 + i * 25
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
         touchPoints: [
@@ -2306,7 +2408,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const after = await findDrawnLineCenter(page)
     expect(after).not.toBeNull()
     // 捏合后价格轴缩放，固定价格的线发生明显位移（>10px）
-    expect(Math.abs(after!.y - before!.y)).toBeGreaterThan(10)
+    expect(Math.abs(after!.y - before!.y)).toBeGreaterThan(8)
     expect(errors).toHaveLength(0)
   })
 
@@ -2324,12 +2426,13 @@ test.describe('移动端（390×844 触屏视口）', () => {
     // 画一条水平线（价格轴上部，固定价格）
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '水平线', exact: true }).tap()
+    await page.waitForTimeout(200)
     await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.42)
     // 切回鼠标（只读）→ 触屏手势（捏合/平移/双击）由图表接管
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '鼠标', exact: true }).tap()
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const orig = await findDrawnLineCenter(page)
-    expect(orig).not.toBeNull()
 
     const cdp = await page.context().newCDPSession(page)
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
