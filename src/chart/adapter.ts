@@ -303,8 +303,16 @@ export class LightweightChartAdapter implements ChartApi {
   private touchHoldTimer: number | null = null
   /** 长按起点（clientX/clientY，供定时器回调显示十字线） */
   private touchHoldPos: { x: number; y: number } | null = null
+  /** 长按钉线已触发（本触摸会话内，抬起时据此决定保留十字光标） */
+  private touchHoldFired = false
+  /** 十字光标松手保留计时器（拖完/长按抬起后保留片刻便于读 OHLC，轻点或新手势立即消除） */
+  private touchLingerTimer: number | null = null
+  /** 十字光标正处于松手保留期 */
+  private touchLingering = false
   /** 长按显示十字光标阈值（ms） */
   private static readonly TOUCH_HOLD_MS = 250
+  /** 十字光标松手保留时长（ms）：拖完/长按抬起后保留片刻，轻点立即消除 */
+  private static readonly TOUCH_LINGER_MS = 2000
   /** 拖动判定的移动阈值（px，与之前一致） */
   private static readonly TOUCH_MOVE_PX = 10
   /** 双击复位间隔（ms） */
@@ -1898,8 +1906,36 @@ export class LightweightChartAdapter implements ChartApi {
     this.touchHoldPos = null
   }
 
+  /** 十字光标松手保留：拖完/长按抬起后保留 2s（期间轻点立即消除），到期自动清除 */
+  private startTouchLinger() {
+    this.clearTouchLinger()
+    if (!this.touchCrosshair) return
+    this.touchLingering = true
+    this.touchLingerTimer = window.setTimeout(() => {
+      this.touchLingerTimer = null
+      this.touchLingering = false
+      if (this.touchCrosshair) this.setTouchCrosshair(false)
+    }, LightweightChartAdapter.TOUCH_LINGER_MS)
+  }
+
+  /** 取消松手保留计时器（不主动清十字光标，由调用方决定） */
+  private clearTouchLinger() {
+    if (this.touchLingerTimer !== null) {
+      window.clearTimeout(this.touchLingerTimer)
+      this.touchLingerTimer = null
+    }
+    this.touchLingering = false
+  }
+
   /** 触屏按下：单指（非画线）长按文本打开编辑器 / 长按钉十字光标 / 拖拽编辑；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
+    this.clearTouchHold()
+    // 新手势开始：若上一手势的十字光标正保留中 → 立即消除（轻点/再拖/捏合均先消失，随后按需重显）
+    if (this.touchLingering) {
+      this.clearTouchLinger()
+      this.setTouchCrosshair(false)
+    }
+    this.touchHoldFired = false
     this.pinch = null
     this.touchMoved = false
     this.touchStartPos = null
@@ -1966,6 +2002,7 @@ export class LightweightChartAdapter implements ChartApi {
         this.touchHoldTimer = null
         if (!this.touchMoved && this.touchHoldPos) {
           this.showCrosshairAt(this.touchHoldPos.x, this.touchHoldPos.y)
+          this.touchHoldFired = true
           // 钉线成功触觉反馈（Android）
           vibrateIfSupported(navigator.vibrate?.bind(navigator), TOUCH_PIN_VIBRATE_MS)
         }
@@ -2024,20 +2061,35 @@ export class LightweightChartAdapter implements ChartApi {
   /** 触屏抬起/取消：结束十字光标与捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
   private onTouchEnd = (e: TouchEvent) => {
     this.clearTouchHold()
-    if (this.touchCrosshair) this.setTouchCrosshair(false)
     const wasPinch = !!this.pinch
     this.pinch = null
     this.pinchStepVibrated = 0
-    if (wasPinch || e.touches.length > 0 || e.changedTouches.length !== 1) return
+    if (wasPinch || e.touches.length > 0) {
+      // 双指捏合结束：不保留十字光标
+      this.clearTouchLinger()
+      if (this.touchCrosshair) this.setTouchCrosshair(false)
+      return
+    }
+    if (e.changedTouches.length !== 1) return
     // 画线/锚点拖拽手势不参与双击复位计数（触屏绘制由 pointer 事件驱动）
     if (this.drawingTool !== 'none' || this.dragEdit) {
       this.touchMoved = false
+      this.clearTouchLinger()
+      if (this.touchCrosshair) this.setTouchCrosshair(false)
       return
     }
-    // 单指拖动（平移/十字光标跟随）不算轻点，避免两次快速拖动误触发复位
+    // 单指拖动（平移/十字光标跟随）不算轻点，避免两次快速拖动误触发复位；松手后十字光标保留片刻
     if (this.touchMoved) {
       this.touchMoved = false
       this.lastTapAt = 0
+      this.startTouchLinger()
+      return
+    }
+    // 长按钉线后抬起：同样保留片刻（不再是「抬起即消失」）
+    if (this.touchHoldFired) {
+      this.touchHoldFired = false
+      this.lastTapAt = 0
+      this.startTouchLinger()
       return
     }
     const now = Date.now()
@@ -2468,6 +2520,7 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   destroy() {
+    this.clearTouchLinger()
     this.container.removeEventListener('pointermove', this.onPointerMove)
     this.container.removeEventListener('pointerdown', this.onPointerDown)
     this.container.removeEventListener('pointerup', this.onPointerUp)

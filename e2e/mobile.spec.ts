@@ -62,7 +62,7 @@ test('移动端：切换周期/指标按钮可点（触摸友好）', async ({ p
   expect(errs).toHaveLength(0)
 })
 
-test('移动端：触屏拖动显示十字光标（OHLC 可读，抬起清除）', async ({ page }) => {
+test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻点立即清 / 超时自动清）', async ({ page }) => {
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))
   await page.goto('/')
@@ -136,24 +136,44 @@ test('移动端：触屏拖动显示十字光标（OHLC 可读，抬起清除）
   await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
-  for (let i = 1; i <= 6; i++) {
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: cx + i * 10, y: cy }],
-    })
-    await page.waitForTimeout(40)
+  const dragMove = async (dx: number, dy: number) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+    for (let i = 1; i <= 6; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: cx + (dx * i) / 6, y: cy + (dy * i) / 6 }],
+      })
+      await page.waitForTimeout(40)
+    }
+    await page.waitForTimeout(300)
   }
-  await page.waitForTimeout(300)
+
+  // 第一次：拖出十字光标 → 松手保留 2s → 超时自动清除
+  await dragMove(60, 0)
   const during = await countCrosshair()
   // 拖动中十字光标出现（贯穿主图，像素数明显）
   expect(during).toBeGreaterThan(200)
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  // 松手 ~500ms 仍保留（便于读 OHLC）
+  await page.waitForTimeout(500)
+  const linger = await countCrosshair()
+  expect(linger).toBeGreaterThan(200)
+  // 距松手已过 ~2.7s → 自动清除
+  await page.waitForTimeout(2200)
+  const autoCleared = await countCrosshair()
+  expect(autoCleared).toBeLessThan(50)
+
+  // 第二次：拖出十字光标 → 松手保留期间轻点 → 立即清除
+  await dragMove(60, 0)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
   await page.waitForTimeout(400)
-  const after = await countCrosshair()
-  // 抬起后清除十字光标
-  expect(after).toBeLessThan(during)
+  expect(await countCrosshair()).toBeGreaterThan(200)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(300)
+  const tapCleared = await countCrosshair()
+  expect(tapCleared).toBeLessThan(50)
   expect(errs).toHaveLength(0)
 })
 
