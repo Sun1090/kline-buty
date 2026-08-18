@@ -34,8 +34,12 @@ export interface Drawing {
   id: string
   type: DrawingType
   points: { time: number; price: number }[]
-  /** 文本标注内容（仅 type === 'text'） */
+  /** 文本标注内容（仅 type === 'text'，支持 \n 多行） */
   text?: string
+  /** 文本标注字号（仅 type === 'text'，缺省 14） */
+  fontSize?: number
+  /** 文本标注颜色（仅 type === 'text'，缺省跟随主题黄） */
+  color?: string
 }
 
 export interface Point {
@@ -49,9 +53,35 @@ export type Project = (time: number, price: number) => Point | null
 const HIT_THRESHOLD_PX = 8
 /** 多段折线最大锚点数（集满自动提交，实际交互靠双击收尾，故设大值） */
 export const POLYLINE_MAX_POINTS = 64
-/** 文本标注命中框（半宽/半高，px） */
+/** 文本标注默认字号（px） */
+export const DEFAULT_TEXT_FONT_SIZE = 14
+/** 文本标注最小/最大字号（px） */
+export const TEXT_FONT_SIZE_MIN = 10
+export const TEXT_FONT_SIZE_MAX = 32
+/** 文本标注颜色可选色板（含「默认=跟随主题」） */
+export const TEXT_COLOR_OPTIONS: { id: string; color: string }[] = [
+  { id: 'default', color: '' },
+  { id: 'yellow', color: '#f5c02f' },
+  { id: 'blue', color: '#4e9cf5' },
+  { id: 'red', color: '#ef4444' },
+  { id: 'green', color: '#22c55e' },
+  { id: 'white', color: '#ffffff' },
+  { id: 'purple', color: '#a855f7' },
+]
+/** 文本标注固定命中框下限（px） */
 const TEXT_HIT_HALF_W = 24
 const TEXT_HIT_HALF_H = 12
+
+/** 文本标注命中框（按行数/字号动态放大，半宽/半高 px） */
+export function textHitExtents(d: Drawing): { halfW: number; halfH: number } {
+  const fontSize = d.fontSize ?? DEFAULT_TEXT_FONT_SIZE
+  const lines = (d.text ?? '').split('\n')
+  const longest = lines.reduce((m, l) => Math.max(m, l.length), 1)
+  // 平均字宽按 0.8×字号估算（中英混排取中），左右各留 6px 内边距
+  const halfW = Math.max(TEXT_HIT_HALF_W, (fontSize * longest * 0.8) / 2 + 6)
+  const halfH = Math.max(TEXT_HIT_HALF_H, (fontSize * 1.4 * Math.max(lines.length, 1)) / 2 + 6)
+  return { halfW, halfH }
+}
 
 /** 斐波那契回撤分位（从高位向低位） */
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
@@ -441,8 +471,12 @@ export function hitTestDrawings(
       if (a) dist = Math.abs(px - a.x)
     } else if (d.type === 'text') {
       const a = project(d.points[0].time, d.points[0].price)
-      if (a && Math.abs(px - a.x) <= TEXT_HIT_HALF_W && Math.abs(py - a.y) <= TEXT_HIT_HALF_H) {
-        dist = Math.hypot(px - a.x, py - a.y)
+      if (a) {
+        const { halfW, halfH } = textHitExtents(d)
+        // 文本框区域整体可选中（类似矩形区域命中），锚点附近优先
+        if (Math.abs(px - a.x) <= halfW && Math.abs(py - a.y) <= halfH) {
+          dist = Math.min(HIT_THRESHOLD_PX - 1, Math.hypot(px - a.x, py - a.y))
+        }
       }
     } else if (d.type === 'channel') {
       const a = project(d.points[0].time, d.points[0].price)

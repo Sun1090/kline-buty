@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   channelLine,
   createDrawing,
+  DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
   fibFanRays,
   fibPrices,
@@ -22,6 +23,7 @@ import {
   regressionSegments,
   requiredPoints,
   speedLines,
+  textHitExtents,
   FIB_LEVELS,
   type Drawing,
   type Project,
@@ -157,6 +159,30 @@ describe('hitTestDrawings（通道/文本）', () => {
   it('文本框外不命中', () => {
     expect(hitTestDrawings([text], 90, 210, project)).toBeNull()
     expect(hitTestDrawings([text], 50, 240, project)).toBeNull()
+  })
+  it('多行 + 大字号文本命中框随内容放大', () => {
+    const multi: Drawing = {
+      ...createDrawing('text', [{ time: 50, price: 90 }], 'm1'),
+      text: '关键位\n支撑位',
+      fontSize: 20,
+      color: '#4e9cf5',
+    }
+    // 默认（单行 11px）框只有 24×12 半框；多行 20px 后半高应明显增大
+    const { halfW, halfH } = textHitExtents(multi)
+    expect(halfW).toBeGreaterThan(24)
+    expect(halfH).toBeGreaterThan(12)
+    // 多行第 2 行（锚点下方 ~20px）仍可命中（旧固定半高 12 会漏掉）
+    expect(hitTestDrawings([multi], 50, 232, project)).toBe('m1')
+    // 超出放大后命中框则不命中
+    expect(hitTestDrawings([multi], 50, 300, project)).toBeNull()
+  })
+  it('textHitExtents 默认字号/空文本回退下限', () => {
+    const plain: Drawing = createDrawing('text', [{ time: 0, price: 0 }], 'p1')
+    const { halfW, halfH } = textHitExtents(plain)
+    expect(halfW).toBeGreaterThanOrEqual(24)
+    expect(halfH).toBeGreaterThanOrEqual(12)
+    const big: Drawing = { ...plain, text: 'ABCDEF', fontSize: DEFAULT_TEXT_FONT_SIZE }
+    expect(textHitExtents(big).halfW).toBeGreaterThanOrEqual(textHitExtents(plain).halfW)
   })
   it('多工具混合命中最近优先', () => {
     const all = [channel, text]

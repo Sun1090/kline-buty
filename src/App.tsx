@@ -25,8 +25,15 @@ import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
 import type { Position } from './position/pnl'
 import { buildPositionFromOrder, type OrderSide } from './trade/order'
-import type { Drawing, DrawingTool } from './drawings/logic'
-import { createDrawing } from './drawings/logic'
+import {
+  createDrawing,
+  DEFAULT_TEXT_FONT_SIZE,
+  TEXT_COLOR_OPTIONS,
+  TEXT_FONT_SIZE_MAX,
+  TEXT_FONT_SIZE_MIN,
+  type Drawing,
+  type DrawingTool,
+} from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { MobileHeader } from './components/MobileHeader'
 import { DesktopHeader } from './components/DesktopHeader'
@@ -65,6 +72,8 @@ export function App() {
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [textDraft, setTextDraft] = useState('')
+  const [textFontSize, setTextFontSize] = useState(DEFAULT_TEXT_FONT_SIZE)
+  const [textColor, setTextColor] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
   const [position, setPosition] = useState<Position | null>(null)
@@ -182,10 +191,14 @@ export function App() {
     const text = textDraft.trim()
     setDrawingsBySymbol((prev) => ({
       ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === editingTextId ? { ...d, text } : d)),
+      [symbol]: (prev[symbol] ?? []).map((d) =>
+        d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined } : d,
+      ),
     }))
     setEditingTextId(null)
     setTextDraft('')
+    setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
+    setTextColor('')
   }
   const updateDrawing = (id: string, points: { time: number; price: number }[]) => {
     setDrawingsBySymbol((prev) => ({
@@ -197,6 +210,8 @@ export function App() {
   const startEditingSelectedText = () => {
     if (selectedDrawing?.type !== 'text') return
     setTextDraft(selectedDrawing.text ?? '')
+    setTextFontSize(selectedDrawing.fontSize ?? DEFAULT_TEXT_FONT_SIZE)
+    setTextColor(selectedDrawing.color ?? '')
     setEditingTextId(selectedDrawing.id)
   }
   const deleteSelectedDrawing = () => {
@@ -300,6 +315,8 @@ export function App() {
           else if (editingTextId) {
             setEditingTextId(null)
             setTextDraft('')
+            setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
+            setTextColor('')
           } else if (selectedDrawingId) {
             setSelectedDrawingId(null)
           }
@@ -443,11 +460,17 @@ export function App() {
           onExport={exportCsv}
           editingTextId={editingTextId}
           textDraft={textDraft}
+          textFontSize={textFontSize}
+          textColor={textColor}
           onTextDraftChange={setTextDraft}
+          onTextFontSizeChange={setTextFontSize}
+          onTextColorChange={setTextColor}
           onConfirmText={confirmTextDrawing}
           onCancelText={() => {
             setEditingTextId(null)
             setTextDraft('')
+            setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
+            setTextColor('')
           }}
         />
       )}
@@ -635,7 +658,7 @@ export function App() {
             transform: 'translateX(-50%)',
             zIndex: 120,
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             gap: 6,
             padding: '8px 10px',
             background: 'var(--panel)',
@@ -645,56 +668,132 @@ export function App() {
             maxWidth: 'calc(100vw - 24px)',
           }}
         >
-          <input
-            value={textDraft}
-            onChange={(e) => setTextDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') confirmTextDrawing()
-              if (e.key === 'Escape') setEditingTextId(null)
-            }}
-            placeholder={t('drawing.textPlaceholder')}
-            autoFocus
-            data-testid="mobile-text-input"
-            style={{
-              width: 170,
-              fontSize: 13,
-              padding: '6px 8px',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              background: 'var(--panel)',
-              color: 'var(--text)',
-            }}
-          />
-          <button
-            onClick={confirmTextDrawing}
-            data-testid="mobile-text-confirm"
-            style={{
-              padding: '6px 12px',
-              fontSize: 12,
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: 'var(--accent)',
-              color: '#fff',
-            }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <textarea
+              value={textDraft}
+              onChange={(e) => setTextDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) confirmTextDrawing()
+                if (e.key === 'Escape') setEditingTextId(null)
+              }}
+              placeholder={t('drawing.textPlaceholder')}
+              autoFocus
+              rows={2}
+              data-testid="mobile-text-input"
+              style={{
+                width: 170,
+                minHeight: 44,
+                fontSize: 13,
+                padding: '6px 8px',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                background: 'var(--panel)',
+                color: 'var(--text)',
+                resize: 'vertical',
+                lineHeight: 1.4,
+              }}
+            />
+            <button
+              onClick={confirmTextDrawing}
+              data-testid="mobile-text-confirm"
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'var(--accent)',
+                color: '#fff',
+              }}
+            >
+              {t('common.confirm')}
+            </button>
+            <button
+              onClick={() => setEditingTextId(null)}
+              data-testid="mobile-text-cancel"
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'transparent',
+                color: 'var(--text-dim)',
+              }}
+            >
+              {t('common.cancel')}
+            </button>
+          </div>
+          <div
+            data-testid="mobile-text-options"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
           >
-            {t('common.confirm')}
-          </button>
-          <button
-            onClick={() => setEditingTextId(null)}
-            data-testid="mobile-text-cancel"
-            style={{
-              padding: '6px 12px',
-              fontSize: 12,
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: 'transparent',
-              color: 'var(--text-dim)',
-            }}
-          >
-            {t('common.cancel')}
-          </button>
+            <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{t('drawing.fontSize')}</span>
+            <button
+              onClick={() => setTextFontSize(Math.max(TEXT_FONT_SIZE_MIN, textFontSize - 2))}
+              data-testid="mobile-text-font-dec"
+              aria-label={`${t('drawing.fontSize')} -`}
+              style={{
+                padding: '2px 8px',
+                fontSize: 12,
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                cursor: 'pointer',
+                background: 'transparent',
+                color: 'var(--text)',
+              }}
+            >
+              A−
+            </button>
+            <span data-testid="mobile-text-font-value" style={{ fontSize: 12, color: 'var(--text)', minWidth: 22, textAlign: 'center' }}>
+              {textFontSize}
+            </span>
+            <button
+              onClick={() => setTextFontSize(Math.min(TEXT_FONT_SIZE_MAX, textFontSize + 2))}
+              data-testid="mobile-text-font-inc"
+              aria-label={`${t('drawing.fontSize')} +`}
+              style={{
+                padding: '2px 8px',
+                fontSize: 12,
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                cursor: 'pointer',
+                background: 'transparent',
+                color: 'var(--text)',
+              }}
+            >
+              A+
+            </button>
+            <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 4 }}>{t('drawing.color')}</span>
+            {TEXT_COLOR_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                data-testid={`mobile-text-color-${opt.id}`}
+                aria-label={`${t('drawing.color')} ${opt.id}`}
+                aria-pressed={textColor === opt.color}
+                onClick={() => setTextColor(opt.color)}
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  border: textColor === opt.color ? '2px solid #fff' : '1px solid var(--border)',
+                  cursor: 'pointer',
+                  background: opt.color || 'transparent',
+                  ...(opt.color
+                    ? {}
+                    : {
+                        background: 'transparent',
+                        border: '1px dashed var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 11,
+                        lineHeight: '18px',
+                      }),
+                }}
+              >
+                {opt.color ? '' : 'A'}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <footer

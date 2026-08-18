@@ -21,6 +21,7 @@ import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
 import {
   channelLine,
+  DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
   fibFanRays,
   fibPrices,
@@ -639,20 +640,27 @@ export class LightweightChartAdapter implements ChartApi {
     if (d.type === 'text') {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return
-      const label = d.text && d.text.trim() ? d.text : this.labels.defaultText
-      ctx.font = '11px system-ui'
-      const w = ctx.measureText(label).width + 12
-      const h = 18
+      const fontSize = d.fontSize ?? DEFAULT_TEXT_FONT_SIZE
+      const fill = d.color || this.theme.yellow
+      // 多行文本：按 \n 分段逐行渲染，行高 = 字号 × 1.4
+      const raw = d.text && d.text.trim() ? d.text : this.labels.defaultText
+      const lines = raw.split('\n')
+      ctx.font = `${fontSize}px system-ui`
+      const lineH = Math.round(fontSize * 1.4)
+      const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 12
+      const h = lineH * lines.length + 8
       const bx = a.x - w / 2
       const by = a.y - h / 2
       ctx.fillStyle = this.theme.background + 'e6'
       ctx.fillRect(bx, by, w, h)
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '99'
+      ctx.strokeStyle = selected ? '#4e9cf5' : fill + '99'
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.strokeRect(bx, by, w, h)
-      ctx.fillStyle = color
+      ctx.fillStyle = selected ? '#4e9cf5' : fill
       ctx.textBaseline = 'middle'
-      ctx.fillText(label, bx + 6, by + h / 2 + 0.5)
+      lines.forEach((line, i) => {
+        ctx.fillText(line, bx + 6, by + 4 + lineH * i + lineH / 2 + 0.5)
+      })
       if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
