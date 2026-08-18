@@ -535,11 +535,15 @@ export function ChartView({
     apiRef.current?.setMarkerPrice(markerPrice ?? null)
   }, [markerPrice])
 
-  // 画线独立 effect：数据/工具变化时重绘
+  // 画线重绘 effect：数据变化时仅重绘（保留当前选中态，避免确认文本/更新画线后选中被清）
   useEffect(() => {
     apiRef.current?.setDrawings(drawings ?? [])
+  }, [drawings])
+
+  // 画线工具 effect：工具变化时切换（切换非 none 工具会清空选中，符合预期）
+  useEffect(() => {
     apiRef.current?.setDrawingTool(drawingTool ?? 'none')
-  }, [drawings, drawingTool])
+  }, [drawingTool])
 
   // 选中画线同步（拖拽判定依赖）
   useEffect(() => {
