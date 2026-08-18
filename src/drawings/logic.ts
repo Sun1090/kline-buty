@@ -22,6 +22,9 @@ export type DrawingTool =
   | 'measure'
   | 'speedlines'
   | 'regchan'
+  | 'hchannel'
+  | 'xabcd'
+  | 'elliott'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -60,7 +63,7 @@ export function fibPrices(from: number, to: number): number[] {
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
-  if (type === 'polyline') return POLYLINE_MAX_POINTS
+  if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
   if (type === 'fibext' || type === 'triangle') return 3
   return 2
 }
@@ -254,6 +257,8 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines') return [a, b]
+  if (type === 'hchannel') return a.price <= b.price ? [a, b] : [b, a]
+  if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
   if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
@@ -541,6 +546,22 @@ export function hitTestDrawings(
         const a = project(d.points[0].time, d.points[0].price)
         const b = project(d.points[1].time, d.points[1].price)
         if (a && b) dist = distToSegment({ x: px, y: py }, a, b)
+      }
+    } else if (d.type === 'hchannel') {
+      // 水平通道：命中上下任一条水平线（与水平线一致按竖直距离）
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y))
+    } else if (d.type === 'xabcd' || d.type === 'elliott') {
+      // XABCD 形态 / 艾略特波浪：命中任一相邻连线
+      dist = Infinity
+      const projected: Point[] = []
+      for (const p of d.points) {
+        const pt = project(p.time, p.price)
+        if (pt) projected.push(pt)
+      }
+      for (let i = 0; i + 1 < projected.length; i++) {
+        dist = Math.min(dist, distToSegment({ x: px, y: py }, projected[i], projected[i + 1]))
       }
     } else {
       const a = project(d.points[0].time, d.points[0].price)

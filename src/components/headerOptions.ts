@@ -65,6 +65,9 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'measure', labelKey: 'drawing.measure' },
   { value: 'speedlines', labelKey: 'drawing.speedlines' },
   { value: 'regchan', labelKey: 'drawing.regchan' },
+  { value: 'hchannel', labelKey: 'drawing.hchannel' },
+  { value: 'xabcd', labelKey: 'drawing.xabcd' },
+  { value: 'elliott', labelKey: 'drawing.elliott' },
 ]
 
 /** 选项标签：有 labelKey 走字典，否则为固定缩写（MA/VOL 等） */

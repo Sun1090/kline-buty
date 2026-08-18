@@ -267,13 +267,67 @@ describe('requiredPoints（所需锚点数）', () => {
     expect(requiredPoints('pricelabel')).toBe(1)
   })
   it('两点工具：趋势/通道/斐波那契/矩形/射线/扇形/箭头/椭圆/圆', () => {
-    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'gann', 'arrow', 'ellipse', 'circle', 'arc'] as const) {
+    for (const t of ['trend', 'channel', 'fib', 'rect', 'ray', 'fibfan', 'gann', 'arrow', 'ellipse', 'circle', 'arc', 'hchannel'] as const) {
       expect(requiredPoints(t)).toBe(2)
     }
   })
   it('三点工具：斐波那契扩展/三角形', () => {
     expect(requiredPoints('fibext')).toBe(3)
     expect(requiredPoints('triangle')).toBe(3)
+  })
+  it('五点工具：XABCD 形态/艾略特波浪', () => {
+    expect(requiredPoints('xabcd')).toBe(5)
+    expect(requiredPoints('elliott')).toBe(5)
+  })
+})
+
+describe('normalizePoints/hitTest（水平通道/XABCD/艾略特波浪）', () => {
+  it('水平通道按价格排序（低价在前）', () => {
+    const pts = normalizePoints('hchannel', [{ time: 5, price: 120 }, { time: 9, price: 80 }])
+    expect(pts[0].price).toBe(80)
+    expect(pts[1].price).toBe(120)
+  })
+  it('XABCD 保持 X→A→B→C→D 顺序（5 点）', () => {
+    const pts = normalizePoints('xabcd', [
+      { time: 10, price: 100 }, { time: 30, price: 120 }, { time: 50, price: 90 },
+      { time: 70, price: 110 }, { time: 90, price: 95 },
+    ])
+    expect(pts).toHaveLength(5)
+    expect(pts.map((p) => p.time)).toEqual([10, 30, 50, 70, 90])
+  })
+  it('艾略特波浪截断到 5 点', () => {
+    const pts = normalizePoints('elliott', [
+      { time: 0, price: 50 }, { time: 10, price: 70 }, { time: 20, price: 60 },
+      { time: 30, price: 90 }, { time: 40, price: 80 }, { time: 50, price: 100 },
+    ])
+    expect(pts).toHaveLength(5)
+  })
+  it('命中水平通道上下任一条线', () => {
+    // 点 (0,80) → y=220；(100,120) → y=180
+    const d = createDrawing('hchannel', [{ time: 0, price: 80 }, { time: 100, price: 120 }], 'hc1')
+    expect(hitTestDrawings([d], 50, 220, project)).toBe('hc1')
+    expect(hitTestDrawings([d], 50, 180, project)).toBe('hc1')
+    expect(hitTestDrawings([d], 50, 200, project)).toBeNull()
+  })
+  it('命中 XABCD 任一连线', () => {
+    // X(0,100)→y200, A(40,120)→y180, B(80,90)→y210, C(120,110)→y190, D(160,95)→y205
+    const d = createDrawing('xabcd', [
+      { time: 0, price: 100 }, { time: 40, price: 120 }, { time: 80, price: 90 },
+      { time: 120, price: 110 }, { time: 160, price: 95 },
+    ], 'xa1')
+    expect(hitTestDrawings([d], 20, 190, project)).toBe('xa1') // XA 段
+    expect(hitTestDrawings([d], 100, 200, project)).toBe('xa1') // BC 段
+    expect(hitTestDrawings([d], 140, 198, project)).toBe('xa1') // CD 段
+    expect(hitTestDrawings([d], 200, 100, project)).toBeNull()
+  })
+  it('命中艾略特波浪任一连线', () => {
+    const d = createDrawing('elliott', [
+      { time: 0, price: 80 }, { time: 50, price: 120 }, { time: 100, price: 90 },
+      { time: 150, price: 130 }, { time: 200, price: 100 },
+    ], 'el1')
+    expect(hitTestDrawings([d], 25, 200, project)).toBe('el1') // 1-2 段
+    expect(hitTestDrawings([d], 175, 185, project)).toBe('el1') // 4-5 段
+    expect(hitTestDrawings([d], 250, 100, project)).toBeNull()
   })
 })
 
