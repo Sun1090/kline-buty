@@ -41,6 +41,7 @@ vi.mock('../chart/adapter', () => ({
     setTheme() {}
     setLocale() {}
     setPeriodSeconds() {}
+    setWatermark() {}
     setPriceScaleMode(mode: string) {
       scaleModes.push(mode)
     }

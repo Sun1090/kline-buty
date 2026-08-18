@@ -83,6 +83,8 @@ interface ChartViewProps {
   themeMode?: 'dark' | 'light'
   /** 主题色预设（涨跌/强调色） */
   colorPreset?: ColorPresetId
+  /** 免责声明水印开关 */
+  showWatermark?: boolean
 }
 
 interface Tooltip {
@@ -118,6 +120,7 @@ export function ChartView({
   onDrawingUpdate,
   themeMode = 'dark',
   colorPreset = 'classic',
+  showWatermark = true,
 }: ChartViewProps) {
   const { t, lang } = useI18n()
   const theme = themeFor(themeMode, colorPreset)
@@ -275,6 +278,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setPeriodSeconds(PERIOD_MS[period] / 1000)
   }, [period])
+
+  // 免责声明水印开关
+  useEffect(() => {
+    apiRef.current?.setWatermark(showWatermark)
+  }, [showWatermark])
 
   // 价格坐标轴模式（线性/对数）
   useEffect(() => {

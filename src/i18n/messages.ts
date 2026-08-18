@@ -33,6 +33,11 @@ export const zh = {
     text: '数据仅供参考，不构成投资建议',
     watermark: '仅供学习参考 · 不构成投资建议',
   },
+  settings: {
+    watermark: '图表水印',
+    watermarkTitle: '显示/隐藏图表免责声明水印',
+  },
+
   chartType: {
     candlestick: '蜡烛',
     line: '折线',
@@ -344,6 +349,11 @@ export const en: Messages = {
     text: 'Data for reference only; not investment advice.',
     watermark: 'For reference only · Not investment advice',
   },
+  settings: {
+    watermark: 'Chart watermark',
+    watermarkTitle: 'Show/hide the disclaimer watermark on the chart',
+  },
+
   chartType: {
     candlestick: 'Candles',
     line: 'Line',
@@ -652,6 +662,10 @@ export const ja: Messages = {
   disclaimer: {
     text: 'データは参考用であり、投資助言ではありません。',
     watermark: '参考用のみ・投資助言ではありません',
+  },
+  settings: {
+    watermark: 'チャート透かし',
+    watermarkTitle: 'チャートの免責事項透かしを表示/非表示',
   },
 
   chartType: {
@@ -963,6 +977,10 @@ export const ko: Messages = {
   disclaimer: {
     text: '데이터는 참고용이며 투자 조언이 아닙니다.',
     watermark: '참고용·투자 조언 아님',
+  },
+  settings: {
+    watermark: '차트 워터마크',
+    watermarkTitle: '차트 면책 워터마크 표시/숨기기',
   },
 
   chartType: {
@@ -1286,6 +1304,10 @@ export const es: Messages = {
   disclaimer: {
     text: 'Los datos son solo de referencia; no constituyen asesoramiento de inversión.',
     watermark: 'Solo referencia · No es asesoramiento de inversión',
+  },
+  settings: {
+    watermark: 'Marca de agua',
+    watermarkTitle: 'Mostrar/ocultar la marca de agua de exención en el gráfico',
   },
 
   chartType: {

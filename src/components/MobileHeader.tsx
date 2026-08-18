@@ -46,6 +46,8 @@ export interface MobileHeaderProps {
   onToggleTheme: () => void
   colorPreset: ColorPresetId
   onColorPreset: (c: ColorPresetId) => void
+  showWatermark: boolean
+  onToggleWatermark: () => void
   positionActive: boolean
   onTogglePosition: () => void
   alertsActive: boolean
@@ -88,6 +90,8 @@ const PANEL_STYLE: CSSProperties = {
   padding: '10px 12px',
   maxHeight: '48vh',
   overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
+  overscrollBehavior: 'contain',
 }
 
 /** 弹层内网格选项按钮（类型/主图/副图/画线） */
@@ -502,6 +506,23 @@ export function MobileHeader(props: MobileHeaderProps) {
                   }}
                 >
                   {props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+                </button>
+                <button
+                  onClick={props.onToggleWatermark}
+                  data-testid="watermark-toggle"
+                  title={t('settings.watermarkTitle')}
+                  aria-pressed={props.showWatermark}
+                  style={{
+                    padding: '10px 8px',
+                    fontSize: 12,
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: props.showWatermark ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.05)',
+                    color: props.showWatermark ? '#4e9cf5' : 'var(--text-dim)',
+                  }}
+                >
+                  {t('settings.watermark')}
                 </button>
                 <button
                   onClick={props.onCycleLang}

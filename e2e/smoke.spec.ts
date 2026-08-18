@@ -72,6 +72,35 @@ async function waitCandlesRendered(page: Page) {
 }
 
 
+/** 读取主图 canvas 水印带（纵向中心 42% 高度 ±6px，横向 25%–75%）像素，用于验证免责声明水印显隐 */
+async function readChartBand(page: Page): Promise<number[]> {
+  return page.evaluate(() => {
+    const cs = [...document.querySelectorAll('canvas')]
+      .filter((c) => c.width >= 400 && c.height >= 200)
+      .sort((a, b) => b.width * b.height - a.width * a.height)
+    const c = cs[0]
+    const ctx = c.getContext('2d')
+    if (!ctx) throw new Error('main chart canvas ctx unavailable')
+    const { width: w, height: h } = c
+    const y0 = Math.max(0, Math.floor(h * 0.42) - 6)
+    const y1 = Math.min(h, Math.floor(h * 0.42) + 6)
+    const x0 = Math.floor(w * 0.25)
+    const x1 = Math.floor(w * 0.75)
+    return Array.from(ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data)
+  })
+}
+
+/** 两个像素带之间「显著变化」的像素数（RGB 合成差 > 12 记为变化） */
+function countBandDiff(a: number[], b: number[]): number {
+  if (a.length !== b.length) return Number.POSITIVE_INFINITY
+  let n = 0
+  for (let i = 0; i < a.length; i += 4) {
+    const d = Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2])
+    if (d > 12) n++
+  }
+  return n
+}
+
 /** 打开桌面端「更多」折叠面板（其余功能按钮都在里面）；已开则不动 */
 async function openMore(page: Page) {
   const btn = page.getByTestId('header-more')
@@ -231,6 +260,37 @@ test.describe('K 线应用冒烟', () => {
     // 页脚免责声明
     await expect(page.getByTestId('disclaimer')).toBeVisible()
     await expect(page.getByTestId('disclaimer')).toContainText(/参考|advice|referencia/i)
+  })
+
+  test('图表水印开关：更多面板切换 → canvas 水印消失/恢复 + 持久化', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 默认开：更多面板内「图表水印」为激活态
+    await openMore(page)
+    const toggle = page.getByTestId('watermark-toggle')
+    await expect(toggle).toBeVisible()
+    const isActive = async () => (await toggle.getAttribute('aria-pressed')) === 'true'
+    expect(await isActive()).toBe(true)
+    // canvas 水印带像素：关掉前后应显著变化
+    const on1 = await readChartBand(page)
+    await toggle.click()
+    const off = await readChartBand(page)
+    expect(countBandDiff(on1, off)).toBeGreaterThan(30)
+    expect(await isActive()).toBe(false)
+    expect(await page.evaluate(() => localStorage.getItem('kline-buty:watermark'))).toBe('false')
+    // 再开 → 水印带恢复（差异应重新变大）
+    await toggle.click()
+    const on2 = await readChartBand(page)
+    expect(countBandDiff(off, on2)).toBeGreaterThan(30)
+    expect(await page.evaluate(() => localStorage.getItem('kline-buty:watermark'))).toBe('true')
+    // 持久化：关掉后刷新仍为关闭
+    await toggle.click()
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openMore(page)
+    expect(await isActive()).toBe(false)
   })
 
   test('切换周期/指标/交易对无异常', async ({ page }) => {

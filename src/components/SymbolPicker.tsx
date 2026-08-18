@@ -202,7 +202,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
               marginBottom: 6,
             }}
           />
-          <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+          <div style={{ maxHeight: 320, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
             {query === '' && favorites.length > 0 && (
               <>
                 <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>{t('symbol.favorites')}</div>
