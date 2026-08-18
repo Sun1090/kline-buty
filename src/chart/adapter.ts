@@ -1747,6 +1747,23 @@ export class LightweightChartAdapter implements ChartApi {
     if (e.touches.length === 1) {
       const t = e.touches[0]
       this.touchStartPos = { x: t.clientX, y: t.clientY }
+      // 触碰已选画线或其锚点时，手势将用于整线/锚点拖拽编辑，不启动长按钉线
+      const rect = this.container.getBoundingClientRect()
+      const lx = t.clientX - rect.left
+      const ly = t.clientY - rect.top
+      const selected = this.selectedDrawingId
+        ? this.drawings.find((d) => d.id === this.selectedDrawingId)
+        : null
+      const onSelected =
+        !!selected &&
+        (nearestAnchor(selected, lx, ly, (tm, p) => this.project(tm, p)) !== null ||
+          hitTestDrawings(this.drawings, lx, ly, (tm, p) => this.project(tm, p)) === selected.id)
+      if (onSelected) {
+        this.clearTouchHold()
+        this.setTouchCrosshair(false)
+        this.touchHoldPos = null
+        return
+      }
       // 长按 250ms 未移动 → 钉住十字光标（轻点/快扫不闪线）
       this.clearTouchHold()
       this.touchHoldPos = { x: t.clientX, y: t.clientY }
@@ -1770,6 +1787,8 @@ export class LightweightChartAdapter implements ChartApi {
       if (moved) {
         // 移动超过阈值视为拖动（平移/十字光标跟随），取消长按
         this.touchMoved = true
+        // 画线整线/锚点拖拽由 pointer 事件驱动，触屏事件不再显示十字光标（避免编辑时跟随手指的视觉噪音）
+        if (this.dragEdit) return
         this.clearTouchHold()
         this.showCrosshairAt(t.clientX, t.clientY)
       } else if (this.touchCrosshair) {
