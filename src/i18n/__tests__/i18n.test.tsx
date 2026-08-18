@@ -63,12 +63,47 @@ describe('字典完整性', () => {
     expect(translate(en, 'position.lineSl')).toBe('SL')
   })
 
-  it('chartLabelsFor 按语言取 adapter 标签（无硬编码）', () => {
-    expect(chartLabelsFor('zh-CN')).toEqual({ defaultText: '文本', entry: '开仓', tp: '止盈', sl: '止损' })
-    expect(chartLabelsFor('en')).toEqual({ defaultText: 'Text', entry: 'Entry', tp: 'TP', sl: 'SL' })
-    expect(chartLabelsFor('ja')).toEqual({ defaultText: 'テキスト', entry: 'エントリー', tp: '利確 (TP)', sl: '損切り (SL)' })
-    expect(chartLabelsFor('ko')).toEqual({ defaultText: '텍스트', entry: '진입', tp: '익절 (TP)', sl: '손절 (SL)' })
-    expect(chartLabelsFor('es')).toEqual({ defaultText: 'Texto', entry: 'Entrada', tp: 'TP', sl: 'SL' })
+  it('chartLabelsFor 按语言取 adapter 标签（含量度单位/水印，无硬编码）', () => {
+    expect(chartLabelsFor('zh-CN')).toEqual({
+      defaultText: '文本',
+      entry: '开仓',
+      tp: '止盈',
+      sl: '止损',
+      measureBars: '{bars}根',
+      watermark: '仅供学习参考 · 不构成投资建议',
+    })
+    expect(chartLabelsFor('en')).toEqual({
+      defaultText: 'Text',
+      entry: 'Entry',
+      tp: 'TP',
+      sl: 'SL',
+      measureBars: '{bars} bars',
+      watermark: 'For reference only · Not investment advice',
+    })
+    expect(chartLabelsFor('ja')).toEqual({
+      defaultText: 'テキスト',
+      entry: 'エントリー',
+      tp: '利確 (TP)',
+      sl: '損切り (SL)',
+      measureBars: '{bars}本',
+      watermark: '参考用のみ・投資助言ではありません',
+    })
+    expect(chartLabelsFor('ko')).toEqual({
+      defaultText: '텍스트',
+      entry: '진입',
+      tp: '익절 (TP)',
+      sl: '손절 (SL)',
+      measureBars: '{bars}개',
+      watermark: '참고용·투자 조언 아님',
+    })
+    expect(chartLabelsFor('es')).toEqual({
+      defaultText: 'Texto',
+      entry: 'Entrada',
+      tp: 'TP',
+      sl: 'SL',
+      measureBars: '{bars} barras',
+      watermark: 'Solo referencia · No es asesoramiento de inversión',
+    })
   })
 
   it('titleFor 按语言取页面标题', () => {

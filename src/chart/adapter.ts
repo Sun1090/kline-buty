@@ -101,6 +101,31 @@ export function normalizeRegionRect(
 }
 
 /**
+ * 图表水印锚点（overlay 坐标系，CSS px）：主图区约占容器上部
+ * （副图 + 时间轴在底部），取 42% 高度居中。
+ */
+export function watermarkAnchor(w: number, h: number): { x: number; y: number } {
+  return { x: w / 2, y: h * 0.42 }
+}
+
+/**
+ * 水印字号自适应：按字符数估算宽度，保证总宽 ≤ 容器 82%（min 12px）。
+ * 平均字符宽按 0.62em 估算，适合中英文混合文案。
+ */
+export function watermarkFitSize(
+  containerWidth: number,
+  textLength: number,
+  base = 26,
+  min = 12,
+): number {
+  const avgCharEm = 0.62
+  const usable = containerWidth * 0.82
+  const est = base * avgCharEm * textLength
+  if (est <= usable) return base
+  return Math.max(min, Math.floor(usable / (avgCharEm * textLength)))
+}
+
+/**
  * 渲染层隔离接口：UI/数据层只依赖它，不直接触碰具体图表库。
  * 将来替换渲染引擎（自研 Canvas / klinecharts）时仅需新实现本接口。
  */
@@ -200,6 +225,22 @@ const SUB_LINE_COLORS: Record<string, string> = {
 }
 
 const SUB_PANE_HEIGHT = 90
+
+/** 长按钉住十字光标的触觉反馈时长（ms，Android vibrate） */
+export const TOUCH_PIN_VIBRATE_MS = 10
+
+/**
+ * 触觉反馈：兼容不支持/navigator 缺失的环境。
+ * 传入真实 vibrate 函数（需 bind navigator），返回是否成功触发。
+ */
+export function vibrateIfSupported(vibrate: ((ms: number) => boolean) | undefined, ms: number): boolean {
+  if (typeof vibrate !== 'function') return false
+  try {
+    return vibrate(ms)
+  } catch {
+    return false
+  }
+}
 
 export class LightweightChartAdapter implements ChartApi {
   private chart: IChartApi
@@ -472,6 +513,9 @@ export class LightweightChartAdapter implements ChartApi {
     const h = this.overlay.height / dpr
     ctx.clearRect(0, 0, w, h)
 
+    // 免责声明水印：最底层绘制（画线在上），低透明度不抢视觉、不拦截交互
+    this.drawWatermark(ctx, w, h)
+
     for (const d of this.drawings) {
       // 拖拽中的画线由预览态绘制（实时跟随指针）
       if (this.dragEdit && d.id === this.dragEdit.id) continue
@@ -507,6 +551,22 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.font = '10px system-ui'
       ctx.fillText(Math.round(rect.w) + '×' + Math.round(rect.h), rect.x + 4, Math.max(10, rect.y - 4))
     }
+  }
+
+  /** 免责声明水印：主图区居中、低透明度、跟随主题色；overlay 无 pointer-events 不拦截交互 */
+  private drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    const text = this.labels.watermark
+    if (!text) return
+    const size = watermarkFitSize(w, text.length)
+    ctx.save()
+    ctx.globalAlpha = 0.055
+    ctx.fillStyle = this.theme.textColor
+    ctx.font = `600 ${size}px system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const { x, y } = watermarkAnchor(w, h)
+    ctx.fillText(text, x, y)
+    ctx.restore()
   }
 
   /** 锚点小圆点 */
@@ -841,7 +901,7 @@ export class LightweightChartAdapter implements ChartApi {
       const info = measureInfo(d.points[0], d.points[1])
       const bars = Math.max(1, Math.round(Math.abs(d.points[1].time - d.points[0].time) / this.periodSeconds))
       const sign = info.diff >= 0 ? '+' : ''
-      const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${bars}根`
+      const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${this.labels.measureBars.replace('{bars}', String(bars))}`
       this.drawLabel(ctx, (a.x + b.x) / 2, (a.y + b.y) / 2 - 8, label, 'left')
       return
     }
@@ -1498,6 +1558,8 @@ export class LightweightChartAdapter implements ChartApi {
         this.touchHoldTimer = null
         if (!this.touchMoved && this.touchHoldPos) {
           this.showCrosshairAt(this.touchHoldPos.x, this.touchHoldPos.y)
+          // 钉线成功触觉反馈（Android）
+          vibrateIfSupported(navigator.vibrate?.bind(navigator), TOUCH_PIN_VIBRATE_MS)
         }
       }, LightweightChartAdapter.TOUCH_HOLD_MS)
     }
@@ -1543,7 +1605,7 @@ export class LightweightChartAdapter implements ChartApi {
       const steps = [0.85, 1, 1.15]
       const near = steps.some((st) => Math.abs(factor - st) < 0.06)
       if (near) {
-        navigator.vibrate(8)
+        vibrateIfSupported(navigator.vibrate?.bind(navigator), 8)
         this.pinchStepVibrated = factor
       }
     }
@@ -1574,7 +1636,7 @@ export class LightweightChartAdapter implements ChartApi {
       this.chart.priceScale('right').setAutoScale(true)
       this.chart.timeScale().resetTimeScale()
       // 复位触觉反馈（Android）
-      if (navigator.vibrate) navigator.vibrate(12)
+      vibrateIfSupported(navigator.vibrate?.bind(navigator), 12)
     } else {
       this.lastTapAt = now
     }
