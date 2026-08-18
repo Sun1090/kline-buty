@@ -531,3 +531,78 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
   expect(after).toBe(0)
   expect(errors).toHaveLength(0)
 })
+
+
+test('移动端：OHLC 十字光标浮层防溢出——长按底部区域翻转到手指上方、始终完整落在视口内', async ({ page }) => {
+  const errs: string[] = []
+  page.on('pageerror', (e) => errs.push(e.message))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          for (const c of document.querySelectorAll('canvas')) {
+            const ctx = c.getContext('2d')
+            if (!ctx || c.width < 100) continue
+            const d = ctx.getImageData(0, 0, c.width, c.height).data
+            for (let i = 0; i < d.length; i += 200) {
+              if ((d[i + 1] > 140 && d[i] < 80 && d[i + 2] < 140) || (d[i] > 200 && d[i + 1] < 120 && d[i + 2] < 120)) return true
+            }
+          }
+          return false
+        }),
+      { timeout: 30_000 },
+    )
+    .toBe(true)
+
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+
+  const findTooltip = () =>
+    page.evaluate(() => {
+      let best: { top: number; bottom: number } | null = null
+      let bestArea = Infinity
+      for (const el of document.querySelectorAll('div')) {
+        const st = getComputedStyle(el)
+        if (st.position !== 'absolute') continue
+        const txt = el.textContent || ''
+        if (!txt.includes('开') || !txt.includes('收')) continue
+        const r = el.getBoundingClientRect()
+        const area = r.width * r.height
+        if (area > 0 && area < bestArea && r.height < 400 && r.width < 400) {
+          bestArea = area
+          best = { top: r.top, bottom: r.bottom }
+        }
+      }
+      return best
+    })
+
+  const probe = async (y: number) => {
+    const x = box.x + box.width / 2
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    await page.waitForTimeout(400)
+    const tip = await findTooltip()
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(2400) // 等松手保留期过期，避免串扰
+    return tip
+  }
+
+  // 长按底部（贴近下沿）→ 浮层翻转在手指上方且完整可见
+  const bottomTip = await probe(box.y + box.height - 30)
+  expect(bottomTip).not.toBeNull()
+  expect(bottomTip!.top).toBeGreaterThanOrEqual(0)
+  expect(bottomTip!.bottom).toBeLessThanOrEqual(page.viewportSize()!.height)
+
+  // 中部 → 仍位于手指下方且完整可见
+  const midTip = await probe(box.y + box.height * 0.4)
+  expect(midTip).not.toBeNull()
+  expect(midTip!.top).toBeGreaterThanOrEqual(0)
+  expect(midTip!.bottom).toBeLessThanOrEqual(page.viewportSize()!.height)
+
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  expect(errs).toHaveLength(0)
+})
