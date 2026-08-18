@@ -637,6 +637,102 @@ test.describe('K 线应用冒烟', () => {
     })) === 0).toBe(true)
   })
 
+  test('画线：周期线 → A→B 定义周期 → 落库两点 → 像素校验选中蓝色周期竖线（≥3 根等比线）→ 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '周期线' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 拖出 A→B（A 为原点，B 定义周期）：横向跨度约 12% 宽 → 延伸线多根可见
+    await page.mouse.move(box!.x + box!.width * 0.45, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.57, box!.y + box!.height * 0.4, { steps: 5 })
+    await page.mouse.up()
+    // 落库：type=cycle，两点保持 A→B 原始顺序
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'cycle')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'cycle')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[0].time).toBeLessThan(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：刚创建处于选中态 → overlay 出现蓝色周期竖线（选中色）。
+    // 断言蓝色像素量明显，且分布在 ≥3 个独立 x 列（锚点线 + 至少两根延伸虚线），证明多根等比周期线已渲染
+    const blueLineStats = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { n: 0, cols: 0 }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { n: 0, cols: 0 }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        let n = 0
+        const colCount = new Map<number, number>()
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            const x = (i / 4) % w
+            colCount.set(x, (colCount.get(x) ?? 0) + 1)
+          }
+        }
+        const cols = [...colCount.values()].filter((c) => c > 20).length
+        return { n, cols }
+      })
+    await expect.poll(() => blueLineStats().then((s) => s.n), { timeout: 10_000 }).toBeGreaterThan(500)
+    await expect.poll(() => blueLineStats().then((s) => s.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(3)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(async () => (await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        return Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'cycle').length
+      } catch {
+        return -1
+      }
+    })) === 0).toBe(true)
+  })
+
   test('深度/筹码面板开关', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

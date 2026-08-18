@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   channelLine,
   createDrawing,
+  cycleLines,
+  cycleXs,
+  CYCLE_LINE_COUNT,
   DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
   fibFanRays,
@@ -742,6 +745,56 @@ describe('fibtimed（M27）', () => {
     // 区间 [0,50]：竖线 0 / 11.8 / 19.1 / 25 / 30.9 / 39.3 / 50
     expect(hitTestDrawings([moved], 25, 150, project)).toBe('ft')
     expect(hitTestDrawings([moved], 60, 150, project)).toBeNull()
+  })
+})
+
+describe('cycle（周期线）', () => {
+  it('cycleLines：以 A 为原点、周期=|B-A|，向右等比延伸 count 根（含 k=0 锚点线）', () => {
+    const lines = cycleLines({ time: 100 }, { time: 300 })
+    expect(lines).toHaveLength(CYCLE_LINE_COUNT)
+    expect(lines[0]).toEqual({ index: 0, time: 100 })
+    expect(lines[1]).toEqual({ index: 1, time: 300 })
+    expect(lines[2]).toEqual({ index: 2, time: 500 })
+    expect(lines[lines.length - 1].time).toBe(100 + 200 * (CYCLE_LINE_COUNT - 1))
+  })
+  it('cycleLines：B 在 A 左侧时周期取绝对值，仍从 A 向右延伸', () => {
+    const lines = cycleLines({ time: 500 }, { time: 300 })
+    expect(lines[0].time).toBe(500)
+    expect(lines[1].time).toBe(700)
+    expect(lines[2].time).toBe(900)
+  })
+  it('cycleLines：周期为 0 退化为单根线', () => {
+    expect(cycleLines({ time: 100 }, { time: 100 })).toEqual([{ index: 0, time: 100 }])
+  })
+  it('cycleXs：屏幕等比延伸（命中测试）', () => {
+    const xs = cycleXs(100, 300, 4)
+    expect(xs).toEqual([100, 300, 500, 700])
+  })
+  it('两点交互：normalizePoints 保持原始顺序（A 为原点，B 只定义周期）', () => {
+    const d = createDrawing('cycle', [{ time: 200, price: 100 }, { time: 0, price: 90 }], 'cy1')
+    expect(d.points[0].time).toBe(200)
+    expect(d.points[1].time).toBe(0)
+  })
+  it('moveAnchor 拖动锚点后仍保持原始顺序', () => {
+    const d = createDrawing('cycle', [{ time: 0, price: 90 }, { time: 200, price: 100 }], 'cy2')
+    const moved = moveAnchor(d, 0, { time: 50, price: 80 })
+    expect(moved.points[0].time).toBe(50)
+    expect(moved.points[1].time).toBe(200)
+  })
+  it('命中任一条周期竖线（水平距离 ±8px，可命中 A 右侧延伸线）', () => {
+    const d = createDrawing('cycle', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'cy3')
+    // 周期 100s → 竖线 x = 0,100,200,…,1100
+    expect(hitTestDrawings([d], 0, 150, project)).toBe('cy3') // A 锚点线
+    expect(hitTestDrawings([d], 205, 150, project)).toBe('cy3') // 延伸线 200 附近
+    expect(hitTestDrawings([d], 1095, 150, project)).toBe('cy3') // 最远延伸线 1100 附近
+    expect(hitTestDrawings([d], 50, 150, project)).toBeNull() // 两线之间（距两侧 >8px）
+    expect(hitTestDrawings([d], 350, 150, project)).toBeNull() // 距 300/400 均 >8px
+  })
+  it('周期改变后命中新的竖线位置', () => {
+    const d = createDrawing('cycle', [{ time: 0, price: 100 }, { time: 50, price: 100 }], 'cy4')
+    // 周期 50s → 竖线 x = 0,50,100,150,…
+    expect(hitTestDrawings([d], 150, 150, project)).toBe('cy4')
+    expect(hitTestDrawings([d], 120, 150, project)).toBeNull()
   })
 })
 

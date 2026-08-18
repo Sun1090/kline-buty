@@ -29,6 +29,7 @@ import {
   gannBoxRect,
   gannBoxSegments,
   gannFanRays,
+  cycleLines,
   hitTestDrawings,
   measureInfo,
   moveAnchor,
@@ -788,6 +789,52 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         ctx.setLineDash([])
         this.drawLabel(ctx, x, top + 7, level.toFixed(3), 'left')
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
+    if (d.type === 'cycle') {
+      // 周期线：以 A 为原点、A→B 时间间隔为周期，向右等比延伸竖线。
+      // 优先按真实时间换算 x（轴上留白/滚动仍准确），timeToCoordinate 越界返回 null 时退回屏幕等比外推（与命中测试一致）。
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = this.project(pb.time, pb.price)
+      if (!b) return
+      const dpr = window.devicePixelRatio || 1
+      const cRect = this.container.getBoundingClientRect()
+      const paneEl = this.chart.panes()[0]?.getHTMLElement() ?? null
+      let top = 0
+      let bottom = this.overlay.height / dpr
+      if (paneEl) {
+        const pRect = paneEl.getBoundingClientRect()
+        top = pRect.top - cRect.top
+        bottom = pRect.bottom - cRect.top
+      }
+      const xOf = (time: number, index: number): number => {
+        const x = this.chart.timeScale().timeToCoordinate(time as never)
+        return x === null ? a.x + (b.x - a.x) * index : x
+      }
+      for (const { index, time } of cycleLines(pa, pb)) {
+        const x = xOf(time, index)
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.lineWidth = selected ? 1.6 : 1
+        if (index === 0) {
+          ctx.setLineDash([])
+        } else {
+          ctx.setLineDash([4, 3])
+        }
+        ctx.beginPath()
+        ctx.moveTo(x, top)
+        ctx.lineTo(x, bottom)
+        ctx.stroke()
+        ctx.setLineDash([])
+        if (index > 0) this.drawLabel(ctx, x, top + 7, `+${index}`, 'left')
       }
       if (selected) {
         this.drawAnchor(ctx, a.x, a.y)

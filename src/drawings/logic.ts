@@ -11,6 +11,7 @@ export type DrawingTool =
   | 'fibext'
   | 'fibfan'
   | 'fibtimed'
+  | 'cycle'
   | 'gann'
   | 'gannbox'
   | 'pricelabel'
@@ -246,6 +247,24 @@ export function fibTimeXs(aX: number, bX: number): { level: number; x: number }[
   const right = Math.max(aX, bX)
   return FIB_LEVELS.map((level) => ({ level, x: left + (right - left) * level }))
 }
+/** 周期线（Cycle Lines）默认延伸根数（含 A 锚点线） */
+export const CYCLE_LINE_COUNT = 12
+
+/** 周期线：以 A 为原点，周期 = |B.time - A.time|，向右等比延伸 count 根竖线（k=0 即 A 锚点线） */
+export function cycleLines(
+  a: { time: number },
+  b: { time: number },
+  count = CYCLE_LINE_COUNT,
+): { index: number; time: number }[] {
+  const span = Math.abs(b.time - a.time)
+  if (span <= 0) return [{ index: 0, time: a.time }]
+  return Array.from({ length: count }, (_, k) => ({ index: k, time: a.time + span * k }))
+}
+
+/** 周期线竖线屏幕 x：以 A 的 x 为原点，周期像素 = B.x - A.x，等比延伸 count 根（命中测试用，等价于等宽柱距下的时间换算） */
+export function cycleXs(aX: number, bX: number, count = CYCLE_LINE_COUNT): number[] {
+  return Array.from({ length: count }, (_, k) => aX + (bX - aX) * k)
+}
 
 /** 平行通道：基线 a→b，平行线垂直偏移 delta = b.price - a.price */
 export function channelLine(
@@ -372,7 +391,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle') return [a, b]
   if (type === 'hchannel') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -648,6 +667,14 @@ export function hitTestDrawings(
       if (a && b) {
         dist = Infinity
         for (const { x } of fibTimeXs(a.x, b.x)) dist = Math.min(dist, Math.abs(px - x))
+      }
+    } else if (d.type === 'cycle') {
+      // 周期线：命中任一周期竖线（水平距离），延伸到 A 右侧
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        dist = Infinity
+        for (const x of cycleXs(a.x, b.x)) dist = Math.min(dist, Math.abs(px - x))
       }
     } else if (d.type === 'polyline') {
       // 多段折线：命中任一相邻线段
