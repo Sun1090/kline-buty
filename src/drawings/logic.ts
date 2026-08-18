@@ -26,6 +26,7 @@ export type DrawingTool =
   | 'hchannel'
   | 'xabcd'
   | 'elliott'
+  | 'pitchfork'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -65,7 +66,7 @@ export function fibPrices(from: number, to: number): number[] {
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'pitchfork') return 3
   return 2
 }
 
@@ -229,6 +230,30 @@ export function channelLine(
 }
 
 /** 画线线段（时间/价格坐标，渲染与命中检测共用） */
+/** 安德鲁叉（Andrews Pitchfork）：A 为起点，B/C 为右侧两枢轴点。
+ * 中轨：A → B/C 中点连线；上轨/下轨：过 B/C 与中轨平行（三点连线恰构成叉形）。
+ * 返回屏幕空间三条射线（起点 + 方向指示点，方向点非端点，仅供求方向），渲染与命中检测共用。 */
+export interface PitchforkRay {
+  from: Point
+  dir: Point
+}
+
+export function pitchforkRays(a: Point, b: Point, c: Point): PitchforkRay[] {
+  const mid = { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 }
+  const dx = mid.x - a.x
+  const dy = mid.y - a.y
+  return [
+    { from: a, dir: mid },
+    { from: b, dir: { x: b.x + dx, y: b.y + dy } },
+    { from: c, dir: { x: c.x + dx, y: c.y + dy } },
+  ]
+}
+
+/** 安德鲁叉 B/C 中点（屏幕坐标），用于渲染中轨记号 */
+export function pitchforkMid(b: Point, c: Point): Point {
+  return { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 }
+}
+
 export interface SegmentLine {
   from: { time: number; price: number }
   to: { time: number; price: number }
@@ -322,7 +347,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'pitchfork') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -637,6 +662,17 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)
       if (a && b) dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y))
+    } else if (d.type === 'pitchfork') {
+      // 安德鲁叉：命中三条射线（中轨 + 上下平行轨）任一条
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
+      const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        dist = Infinity
+        for (const ray of pitchforkRays(a, b, c)) {
+          dist = Math.min(dist, distToRay({ x: px, y: py }, ray.from, ray.dir))
+        }
+      }
     } else if (d.type === 'xabcd' || d.type === 'elliott') {
       // XABCD 形态 / 艾略特波浪：命中任一相邻连线
       dist = Infinity

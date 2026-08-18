@@ -14,6 +14,8 @@ import {
   linearRegression,
   measureInfo,
   moveAnchor,
+  pitchforkMid,
+  pitchforkRays,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
@@ -928,5 +930,62 @@ describe('regressionSegments（回归通道）', () => {
   })
   it('requiredPoints 为 2', () => {
     expect(requiredPoints('regchan')).toBe(2)
+  })
+})
+
+describe('安德鲁叉 pitchfork（3 锚点）', () => {
+  // project: x=time, y=300-price
+  const A = { time: 0, price: 100 } // 屏幕 (0, 200)
+  const B = { time: 100, price: 200 } // 屏幕 (100, 100)
+  const C = { time: 100, price: 0 } // 屏幕 (100, 300)
+
+  it('requiredPoints = 3', () => {
+    expect(requiredPoints('pitchfork')).toBe(3)
+  })
+
+  it('normalizePoints 保留 A/B/C 三点原始顺序（方向敏感，不做时间排序）', () => {
+    const pts = normalizePoints('pitchfork', [
+      { time: 100, price: 50 },
+      { time: 0, price: 100 },
+      { time: 50, price: 200 },
+    ])
+    expect(pts).toHaveLength(3)
+    expect(pts.map((p) => p.price)).toEqual([50, 100, 200])
+  })
+
+  it('createDrawing 只保留前 3 点', () => {
+    const d = createDrawing('pitchfork', [A, B, C, { time: 200, price: 300 }], 'pf1')
+    expect(d.points).toHaveLength(3)
+  })
+
+  it('pitchforkRays：中轨 A→B/C 中点；上下轨过 B/C 平行', () => {
+    const a = project(A.time, A.price)!
+    const b = project(B.time, B.price)!
+    const c = project(C.time, C.price)!
+    const rays = pitchforkRays(a, b, c)
+    expect(rays).toHaveLength(3)
+    // 中轨：A → (100, 200)
+    expect(rays[0].from).toEqual({ x: 0, y: 200 })
+    expect(rays[0].dir).toEqual({ x: 100, y: 200 })
+    // 上轨：B → B + (100, 0)
+    expect(rays[1].from).toEqual({ x: 100, y: 100 })
+    expect(rays[1].dir).toEqual({ x: 200, y: 100 })
+    // 下轨：C → C + (100, 0)
+    expect(rays[2].from).toEqual({ x: 100, y: 300 })
+    expect(rays[2].dir).toEqual({ x: 200, y: 300 })
+    // B/C 中点
+    expect(pitchforkMid(b, c)).toEqual({ x: 100, y: 200 })
+  })
+
+  it('命中：中轨/上轨/下轨任一射线可选中，远离不命中', () => {
+    const d = createDrawing('pitchfork', [A, B, C], 'pf1')
+    // 本投影下三条射线均为水平：中轨 y=200、上轨 y=100、下轨 y=300
+    expect(hitTestDrawings([d], 50, 200, project)).toBe('pf1')
+    expect(hitTestDrawings([d], 150, 100, project)).toBe('pf1')
+    expect(hitTestDrawings([d], 150, 300, project)).toBe('pf1')
+    // 射线非线段：上轨起点（B，x=100）左侧同高度不命中（射线向后截断）
+    expect(hitTestDrawings([d], 50, 100, project)).toBeNull()
+    // 远离三条射线不命中
+    expect(hitTestDrawings([d], 0, 300, project)).toBeNull()
   })
 })

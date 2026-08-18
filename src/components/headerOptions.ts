@@ -67,6 +67,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'speedlines', labelKey: 'drawing.speedlines' },
   { value: 'regchan', labelKey: 'drawing.regchan' },
   { value: 'hchannel', labelKey: 'drawing.hchannel' },
+  { value: 'pitchfork', labelKey: 'drawing.pitchfork' },
   { value: 'xabcd', labelKey: 'drawing.xabcd' },
   { value: 'elliott', labelKey: 'drawing.elliott' },
 ]
