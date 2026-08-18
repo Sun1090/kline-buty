@@ -37,6 +37,7 @@ import {
   speedLines,
   timeRangeXs,
   priceBandYs,
+  riskRewardRatio,
   trendAngleDeg,
   textHitExtents,
   toggleDrawingHidden,
@@ -1445,6 +1446,53 @@ describe('斐波那契时间区间（fibtz）', () => {
     expect(hitTestDrawings([d], 31, 200, project)).toBe('ft3') // 分界线 30 右侧 1px（下一带 [30,50] 内）
     expect(hitTestDrawings([d], 8, 200, project)).toBe('ft3') // 原点 A 左侧 2px（距分界 10 为 2px）
     expect(hitTestDrawings([d], 1, 200, project)).toBeNull() // 距最近分界 9px（超出 8px 阈值）
+  })
+})
+
+describe('风险回报（rr，A 入场 / B 止损 / C 止盈）', () => {
+  it('riskRewardRatio：正常多头设置（止损在下、止盈在上）', () => {
+    const r = riskRewardRatio({ price: 100 }, { price: 80 }, { price: 150 })
+    expect(r.risk).toBeCloseTo(20)
+    expect(r.reward).toBeCloseTo(50)
+    expect(r.ratio).toBeCloseTo(2.5)
+  })
+
+  it('riskRewardRatio：空头设置（止损在上、止盈在下）取绝对值', () => {
+    const r = riskRewardRatio({ price: 100 }, { price: 120 }, { price: 60 })
+    expect(r.risk).toBeCloseTo(20)
+    expect(r.reward).toBeCloseTo(40)
+    expect(r.ratio).toBeCloseTo(2)
+  })
+
+  it('riskRewardRatio：止损与入场同价（risk=0）返回 ratio 0 不崩溃', () => {
+    const r = riskRewardRatio({ price: 100 }, { price: 100 }, { price: 150 })
+    expect(r.risk).toBe(0)
+    expect(r.reward).toBe(50)
+    expect(r.ratio).toBe(0)
+  })
+
+  it('requiredPoints：风险回报为三点', () => {
+    expect(requiredPoints('rr')).toBe(3)
+  })
+
+  it('createDrawing / moveAnchor 保持三点（多锚点工具不重排，按点击顺序）', () => {
+    const d = createDrawing('rr', [{ time: 0, price: 100 }, { time: 50, price: 80 }, { time: 100, price: 150 }], 'r1')
+    expect(d.points).toHaveLength(3)
+    expect(d.points[0]).toEqual({ time: 0, price: 100 })
+    expect(d.points[1]).toEqual({ time: 50, price: 80 })
+    expect(d.points[2]).toEqual({ time: 100, price: 150 })
+    const moved = moveAnchor(d, 2, { time: 110, price: 160 })
+    expect(moved.points).toHaveLength(3)
+    expect(moved.points[2]).toEqual({ time: 110, price: 160 })
+  })
+
+  it('hitTest 风险回报：三条水平线（入场/止损/止盈）任一条附近命中', () => {
+    // A(0,100)→(0,200) 入场线；B(50,50)→(50,250) 止损线；C(100,150)→(100,150) 止盈线
+    const d = createDrawing('rr', [{ time: 0, price: 100 }, { time: 50, price: 50 }, { time: 100, price: 150 }], 'r2')
+    expect(hitTestDrawings([d], 30, 200, project)).toBe('r2') // 入场线
+    expect(hitTestDrawings([d], 10, 250, project)).toBe('r2') // 止损线
+    expect(hitTestDrawings([d], 90, 150, project)).toBe('r2') // 止盈线
+    expect(hitTestDrawings([d], 50, 300, project)).toBeNull() // 距最近线 50px
   })
 })
 

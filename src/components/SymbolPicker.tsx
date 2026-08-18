@@ -149,7 +149,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
   const favTitle = (s: string) => (favorites.includes(s) ? t('symbol.favoriteRemove') : t('symbol.favoriteAdd'))
 
   return (
-    <div style={{ position: 'relative' }} ref={rootRef}>
+    <div style={{ position: 'relative', flexShrink: 1, minWidth: 0 }} ref={rootRef}>
       <button
         onClick={toggleOpen}
         style={{
@@ -160,6 +160,10 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
           cursor: 'pointer',
           background: 'transparent',
           color: 'var(--text)',
+          whiteSpace: 'nowrap',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         {value.replace('USDT', '/USDT')} ▾

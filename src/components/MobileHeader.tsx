@@ -238,8 +238,10 @@ export function MobileHeader(props: MobileHeaderProps) {
         }}
       >
         {/* 第 1 行：交易对（点击开搜索）+ 状态 + 主题 + 更多 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <SymbolPicker value={props.symbol} onChange={selectSymbol} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div style={{ flexShrink: 1, minWidth: 0 }}>
+            <SymbolPicker value={props.symbol} onChange={selectSymbol} />
+          </div>
           <span
             style={{
               display: 'flex',
@@ -247,7 +249,9 @@ export function MobileHeader(props: MobileHeaderProps) {
               gap: 6,
               fontSize: 12,
               color: props.statusColor,
+              flex: '0 1 auto',
               minWidth: 0,
+              maxWidth: '42%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -267,7 +271,7 @@ export function MobileHeader(props: MobileHeaderProps) {
               {props.statusText}
             </span>
           </span>
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             <button
               onClick={props.onToggleTheme}
               title={t('theme.switchTitle')}
@@ -304,8 +308,8 @@ export function MobileHeader(props: MobileHeaderProps) {
           </span>
         </div>
 
-        {/* 第 2 行：周期横滚（高频操作保留） */}
-        <PeriodBar value={props.period} onChange={props.onPeriod} />
+        {/* 第 2 行：周期单行横滚（高频操作保留，窄屏不换行占两行） */}
+        <PeriodBar value={props.period} onChange={props.onPeriod} scrollable />
 
         {/* 第 3 行：类型/主图/副图/画线弹层 + 布局/回放/全屏 */}
         <div style={{ display: 'flex', gap: 4 }}>

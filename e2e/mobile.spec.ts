@@ -97,6 +97,39 @@ test('移动端：切换周期/指标按钮可点（触摸友好）', async ({ p
   expect(errs).toHaveLength(0)
 })
 
+test('移动端：周期条单行横滚——不换行占两行、隐藏滚动条、无横向滚动条、末尾周期可点', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  const bar = page.getByTestId('period-bar')
+  await expect(bar).toBeVisible()
+  const style = await bar.evaluate((el) => ({
+    flexWrap: getComputedStyle(el).flexWrap,
+    overflowX: getComputedStyle(el).overflowX,
+    height: el.getBoundingClientRect().height,
+    scrollW: el.scrollWidth,
+    clientW: el.clientWidth,
+  }))
+  // 单行：nowrap + 可横向滚动，且高度为一行的 30px 以内（此前换行占两行 ~52px）
+  expect(style.flexWrap).toBe('nowrap')
+  expect(style.overflowX).toBe('auto')
+  expect(style.height).toBeLessThanOrEqual(30)
+  // 内容超出可视宽度 → 真正可横滚（而非换行）
+  expect(style.scrollW).toBeGreaterThan(style.clientW)
+  // 顶栏整体紧凑（此前进两行 header 高 ~136px）
+  const headerH = await page.getByTestId('mobile-header').evaluate((el) => el.getBoundingClientRect().height)
+  expect(headerH).toBeLessThan(120)
+  // 页面无横向滚动条
+  const noHScroll = await page.evaluate(() => document.documentElement.scrollWidth === window.innerWidth)
+  expect(noHScroll).toBe(true)
+  // 末尾周期「周」初始不在可视区（在横滚条内），tap 会自动滚入并选中
+  const week = page.getByRole('button', { name: '周', exact: true })
+  await week.scrollIntoViewIfNeeded()
+  await week.tap()
+  await page.waitForTimeout(400)
+  const bg = await week.evaluate((el) => (el as HTMLElement).style.background)
+  expect(bg).toContain('var(--accent)')
+})
+
 test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻点立即清 / 超时自动清）', async ({ page }) => {
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))

@@ -70,6 +70,7 @@ describe('字典完整性', () => {
       tp: '止盈',
       sl: '止损',
       measureBars: '{bars}根',
+      rrRatio: '盈亏比 1:{ratio}',
       watermark: '仅供学习参考 · 不构成投资建议',
     })
     expect(chartLabelsFor('en')).toEqual({
@@ -78,6 +79,7 @@ describe('字典完整性', () => {
       tp: 'TP',
       sl: 'SL',
       measureBars: '{bars} bars',
+      rrRatio: 'R:R 1:{ratio}',
       watermark: 'For reference only · Not investment advice',
     })
     expect(chartLabelsFor('ja')).toEqual({
@@ -86,6 +88,7 @@ describe('字典完整性', () => {
       tp: '利確 (TP)',
       sl: '損切り (SL)',
       measureBars: '{bars}本',
+      rrRatio: 'リスクリワード 1:{ratio}',
       watermark: '参考用のみ・投資助言ではありません',
     })
     expect(chartLabelsFor('ko')).toEqual({
@@ -94,6 +97,7 @@ describe('字典完整性', () => {
       tp: '익절 (TP)',
       sl: '손절 (SL)',
       measureBars: '{bars}개',
+      rrRatio: '손익비 1:{ratio}',
       watermark: '참고용·투자 조언 아님',
     })
     expect(chartLabelsFor('es')).toEqual({
@@ -102,6 +106,7 @@ describe('字典完整性', () => {
       tp: 'TP',
       sl: 'SL',
       measureBars: '{bars} barras',
+      rrRatio: 'R:R 1:{ratio}',
       watermark: 'Solo referencia · No es asesoramiento de inversión',
     })
   })

@@ -163,6 +163,8 @@ export const zh = {
     polyline: '多段线',
     measure: '量度',
     measureBars: '{bars}根',
+    rr: '风险回报',
+    rrRatio: '盈亏比 1:{ratio}',
     speedlines: '速度线',
     regchan: '回归通道',
     hchannel: '水平通道',
@@ -503,6 +505,8 @@ export const en: Messages = {
     polyline: 'Polyline',
     measure: 'Measure',
     measureBars: '{bars} bars',
+    rr: 'Risk/Reward',
+    rrRatio: 'R:R 1:{ratio}',
     speedlines: 'Speed Lines',
     regchan: 'Regression Channel',
     hchannel: 'Horizontal Channel',
@@ -841,6 +845,8 @@ export const ja: Messages = {
     polyline: '折れ線',
     measure: '計測',
     measureBars: '{bars}本',
+    rr: 'リスクリワード',
+    rrRatio: 'リスクリワード 1:{ratio}',
     speedlines: 'スピードライン',
     regchan: '回帰チャネル',
     hchannel: '水平チャネル',
@@ -1180,6 +1186,8 @@ export const ko: Messages = {
     polyline: '다중선',
     measure: '측정',
     measureBars: '{bars}개',
+    rr: '손익비',
+    rrRatio: '손익비 1:{ratio}',
     speedlines: '스피드 라인',
     regchan: '회귀 채널',
     hchannel: '수평 채널',
@@ -1530,6 +1538,8 @@ export const es: Messages = {
     polyline: 'Polilínea',
     measure: 'Medición',
     measureBars: '{bars} barras',
+    rr: 'Riesgo/Beneficio',
+    rrRatio: 'R:R 1:{ratio}',
     speedlines: 'Líneas de Velocidad',
     regchan: 'Canal de Regresión',
     hchannel: 'Canal Horizontal',
@@ -1738,6 +1748,8 @@ export interface ChartLabels {
   sl: string
   /** 量度标签的 K 线根数单位（{bars} 占位） */
   measureBars: string
+  /** 风险回报比标签（{ratio} 占位） */
+  rrRatio: string
   /** 图表水印文案（免责声明） */
   watermark: string
 }
@@ -1750,6 +1762,7 @@ export function chartLabelsFor(lang: Lang): ChartLabels {
     tp: m.position.lineTp,
     sl: m.position.lineSl,
     measureBars: m.drawing.measureBars,
+    rrRatio: m.drawing.rrRatio,
     watermark: m.disclaimer.watermark,
   }
 }
