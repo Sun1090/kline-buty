@@ -5,6 +5,8 @@ import {
   fibExtPrices,
   fibFanRays,
   fibPrices,
+  gannBoxRect,
+  gannBoxSegments,
   gannFanRays,
   fibTimeLines,
   fibTimeXs,
@@ -400,6 +402,42 @@ describe('gannFanRays（江恩角度线）', () => {
     expect(hitTestDrawings([d], 50, 100, project)).toBe('g1')
     // 远离所有线
     expect(hitTestDrawings([d], 30, 280, project)).toBeNull()
+  })
+})
+
+describe('gannBox（江恩箱）', () => {
+  it('10 条角度线：1×1 双对角 + 四角 1×2/2×1，端点精确', () => {
+    const segs = gannBoxSegments({ time: 0, price: 100 }, { time: 100, price: 200 }, project)
+    expect(segs).toHaveLength(10)
+    // 1×1 主对角线：BL(0,200)→TR(100,100) 与 TL(0,100)→BR(100,200)
+    expect(segs[0]).toEqual({ from: { x: 0, y: 200 }, to: { x: 100, y: 100 } })
+    expect(segs[1]).toEqual({ from: { x: 0, y: 100 }, to: { x: 100, y: 200 } })
+    // 1×2：左下 → 右边中点 (100,150)
+    expect(segs[2]).toEqual({ from: { x: 0, y: 200 }, to: { x: 100, y: 150 } })
+    // 2×1：左下 → 上边中点 (50,100)
+    expect(segs[6]).toEqual({ from: { x: 0, y: 200 }, to: { x: 50, y: 100 } })
+  })
+  it('矩形范围：按两点投影取 min/max', () => {
+    const r = gannBoxRect({ time: 0, price: 100 }, { time: 100, price: 200 }, project)
+    expect(r).toEqual({ left: 0, top: 100, right: 100, bottom: 200 })
+  })
+  it('requiredPoints = 2；两点交互按时间排序（与矩形一致）', () => {
+    expect(requiredPoints('gannbox')).toBe(2)
+    const d = createDrawing('gannbox', [{ time: 100, price: 50 }, { time: 0, price: 100 }], 'gb1')
+    expect(d.points[0]).toEqual({ time: 0, price: 100 })
+    expect(d.points[1]).toEqual({ time: 100, price: 50 })
+  })
+  it('命中：矩形内部区域命中 + 角度线延伸段命中，远离不命中', () => {
+    const d = createDrawing('gannbox', [{ time: 0, price: 100 }, { time: 100, price: 200 }], 'gb1')
+    // 矩形中心
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('gb1')
+    // 1×1 对角线上
+    expect(hitTestDrawings([d], 25, 175, project)).toBe('gb1')
+    // 矩形外贴边（右侧边缘 1px）仍命中
+    expect(hitTestDrawings([d], 101, 199, project)).toBe('gb1')
+    // 远离矩形与所有线不命中
+    expect(hitTestDrawings([d], 150, 125, project)).toBeNull()
+    expect(hitTestDrawings([d], 150, 50, project)).toBeNull()
   })
 })
 

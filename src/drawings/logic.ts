@@ -12,6 +12,7 @@ export type DrawingTool =
   | 'fibfan'
   | 'fibtimed'
   | 'gann'
+  | 'gannbox'
   | 'pricelabel'
   | 'arrow'
   | 'ellipse'
@@ -134,6 +135,66 @@ export function gannFanRays(
     label,
     dir: { time: b.time, price: a.price + dy * ratio },
   }))
+}
+
+/** 江恩箱：A→B 两点定矩形（屏幕投影），内部从四角发出 1×1 / 1×2 / 2×1 角度线。
+ * 1×1 = 对角全幅；1×2 = 到对边中点（半速）；2×1 = 到邻边中点（双速）。
+ * 返回屏幕空间线段数组（渲染与命中检测共用）。 */
+export function gannBoxSegments(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+  project: Project,
+): { from: Point; to: Point }[] {
+  const pa = project(a.time, a.price)
+  const pb = project(b.time, b.price)
+  if (!pa || !pb) return []
+  const left = Math.min(pa.x, pb.x)
+  const right = Math.max(pa.x, pb.x)
+  const top = Math.min(pa.y, pb.y)
+  const bottom = Math.max(pa.y, pb.y)
+  if (right - left < 1 || bottom - top < 1) return []
+  const midX = (left + right) / 2
+  const midY = (top + bottom) / 2
+  const BL = { x: left, y: bottom }
+  const TL = { x: left, y: top }
+  const BR = { x: right, y: bottom }
+  const TR = { x: right, y: top }
+  const midTop = { x: midX, y: top }
+  const midBottom = { x: midX, y: bottom }
+  const midLeft = { x: left, y: midY }
+  const midRight = { x: right, y: midY }
+  return [
+    // 1×1 主对角线（两条）
+    { from: BL, to: TR },
+    { from: TL, to: BR },
+    // 1×2：左下/左上/右下/右上 → 对边中点
+    { from: BL, to: midRight },
+    { from: TL, to: midRight },
+    { from: BR, to: midLeft },
+    { from: TR, to: midLeft },
+    // 2×1：四角 → 邻边中点
+    { from: BL, to: midTop },
+    { from: BR, to: midTop },
+    { from: TR, to: midBottom },
+    { from: TL, to: midBottom },
+  ]
+}
+
+/** 江恩箱矩形范围（屏幕投影），null 表示投影失败 */
+export function gannBoxRect(
+  a: { time: number; price: number },
+  b: { time: number; price: number },
+  project: Project,
+): { left: number; top: number; right: number; bottom: number } | null {
+  const pa = project(a.time, a.price)
+  const pb = project(b.time, b.price)
+  if (!pa || !pb) return null
+  return {
+    left: Math.min(pa.x, pb.x),
+    right: Math.max(pa.x, pb.x),
+    top: Math.min(pa.y, pb.y),
+    bottom: Math.max(pa.y, pb.y),
+  }
 }
 
 /** 斐波那契时间线：A→B 时间区间按黄金分割分位取时间点（0 / 0.236 / 0.382 / 0.5 / 0.618 / 0.786 / 1） */
@@ -473,6 +534,30 @@ export function hitTestDrawings(
           if (!dirPt) continue
           const back = { x: a.x - (dirPt.x - a.x), y: a.y - (dirPt.y - a.y) }
           dist = Math.min(dist, distToRay({ x: px, y: py }, a, dirPt), distToRay({ x: px, y: py }, a, back))
+        }
+      }
+    } else if (d.type === 'gannbox') {
+      // 江恩箱：矩形内部区域命中；外部按到矩形边缘/角度线的最近距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        const top = Math.min(a.y, b.y)
+        const bottom = Math.max(a.y, b.y)
+        if (px >= left && px <= right && py >= top && py <= bottom) {
+          dist = 0
+        } else {
+          const edges: [Point, Point][] = [
+            [{ x: left, y: top }, { x: right, y: top }],
+            [{ x: left, y: bottom }, { x: right, y: bottom }],
+            [{ x: left, y: top }, { x: left, y: bottom }],
+            [{ x: right, y: top }, { x: right, y: bottom }],
+          ]
+          dist = Math.min(...edges.map(([p, q]) => distToSegment({ x: px, y: py }, p, q)))
+          for (const seg of gannBoxSegments(d.points[0], d.points[1], project)) {
+            dist = Math.min(dist, distToSegment({ x: px, y: py }, seg.from, seg.to))
+          }
         }
       }
     } else if (d.type === 'fibext') {

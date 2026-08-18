@@ -25,6 +25,8 @@ import {
   fibFanRays,
   fibPrices,
   fibTimeXs,
+  gannBoxRect,
+  gannBoxSegments,
   gannFanRays,
   hitTestDrawings,
   measureInfo,
@@ -1116,6 +1118,50 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.beginPath()
         ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
         ctx.fill()
+      }
+      return
+    }
+
+    if (d.type === 'gannbox') {
+      // 江恩箱：A→B 定矩形 + 四角 1×1/1×2/2×1 角度线（选中蓝色，1×1 主对角线加粗）
+      const rect = gannBoxRect(d.points[0], d.points[1], (t, p) => this.project(t, p))
+      const segs = gannBoxSegments(d.points[0], d.points[1], (t, p) => this.project(t, p))
+      if (!rect || segs.length === 0) return
+      const w = rect.right - rect.left
+      const h = rect.bottom - rect.top
+      // 1×1 主对角线（BL→TR、TL→BR）加粗；其余 1×2/2×1 细线
+      const diagIdx = new Set([0, 1])
+      for (let i = 0; i < segs.length; i++) {
+        const { from, to } = segs[i]
+        ctx.strokeStyle = diagIdx.has(i) ? (selected ? '#4e9cf5' : this.theme.yellow) : selected ? '#4e9cf5' : this.theme.yellow + 'aa'
+        ctx.lineWidth = diagIdx.has(i) ? (selected ? 1.8 : 1.3) : 1
+        ctx.beginPath()
+        ctx.moveTo(from.x, from.y)
+        ctx.lineTo(to.x, to.y)
+        ctx.stroke()
+      }
+      ctx.lineWidth = 1
+      // 矩形边框（半透明，稍粗）
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+      ctx.lineWidth = selected ? 1.6 : 1.2
+      ctx.strokeRect(rect.left, rect.top, w, h)
+      ctx.lineWidth = 1
+      // 四角小标签：1×1 / 1×2 / 2×1
+      const corners: { x: number; y: number; dx: number; dy: number }[] = [
+        { x: rect.left, y: rect.bottom, dx: 3, dy: -3 },
+        { x: rect.right, y: rect.bottom, dx: -20, dy: -3 },
+        { x: rect.left, y: rect.top, dx: 3, dy: 12 },
+        { x: rect.right, y: rect.top, dx: -20, dy: 12 },
+      ]
+      ctx.fillStyle = selected ? '#4e9cf5' : this.theme.yellow
+      for (const c of corners) {
+        this.drawLabel(ctx, c.x, c.y, '1×1', c.dx < 0 ? 'right' : 'left')
+        this.drawLabel(ctx, c.x, c.y + (c.dy < 0 ? 10 : -2), '1×2', c.dx < 0 ? 'right' : 'left')
+        this.drawLabel(ctx, c.x + (c.dx < 0 ? -16 : 16), c.y, '2×1', c.dx < 0 ? 'right' : 'left')
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }
