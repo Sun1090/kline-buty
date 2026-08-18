@@ -232,14 +232,26 @@ export class LightweightChartAdapter implements ChartApi {
   private selectedDrawingId: string | null = null
   /** 双指捏合纵向缩放状态（指距 / 起始价格区间） */
   private pinch: { dist: number; range: IRange<number> } | null = null
+  /** 最近一次已震动的缩放因子（跨步进才重复震动） */
+  private pinchStepVibrated = 0
   /** 触屏双击重置计时 */
   private lastTapAt = 0
   /** 本次单指触摸是否已移动（拖动≠轻点：避免两次快速拖动误触发复位） */
   private touchMoved = false
   /** 单指触摸起点（判移动阈值用） */
   private touchStartPos: { x: number; y: number } | null = null
-  /** 单指触屏十字光标跟踪中（移动端无 hover，拖动时跟随手指显示 OHLC） */
+  /** 单指触屏十字光标跟踪中（移动端无 hover，拖动/长按时跟随手指显示 OHLC） */
   private touchCrosshair = false
+  /** 单指长按计时器（250ms 未移动即钉住十字光标，轻点不闪线） */
+  private touchHoldTimer: number | null = null
+  /** 长按起点（clientX/clientY，供定时器回调显示十字线） */
+  private touchHoldPos: { x: number; y: number } | null = null
+  /** 长按显示十字光标阈值（ms） */
+  private static readonly TOUCH_HOLD_MS = 250
+  /** 拖动判定的移动阈值（px，与之前一致） */
+  private static readonly TOUCH_MOVE_PX = 10
+  /** 双击复位间隔（ms） */
+  private static readonly DOUBLE_TAP_MS = 300
   /** 框选截图模式 */
   private regionSelect = false
   private regionDown: { x: number; y: number } | null = null
@@ -1402,14 +1414,25 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
-  /** 触屏按下：单指（非画线/非拖拽）显示十字光标跟随手指；双指记录起始指距与价格区间 */
+  /** 取消长按定时器并清空起点 */
+  private clearTouchHold() {
+    if (this.touchHoldTimer !== null) {
+      window.clearTimeout(this.touchHoldTimer)
+      this.touchHoldTimer = null
+    }
+    this.touchHoldPos = null
+  }
+
+  /** 触屏按下：单指（非画线/非拖拽）长按/拖动显示十字光标；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.pinch = null
     this.touchMoved = false
     this.touchStartPos = null
     if (this.drawingTool !== 'none' || this.dragEdit) return
     if (e.touches.length === 2) {
+      this.clearTouchHold()
       this.setTouchCrosshair(false)
+      this.pinchStepVibrated = 0
       const [t1, t2] = [e.touches[0], e.touches[1]]
       const range = this.chart.priceScale('right').getVisibleRange()
       if (!range) return
@@ -1420,19 +1443,35 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
     if (e.touches.length === 1) {
-      this.setTouchCrosshair(true, e.touches[0])
-      this.touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      const t = e.touches[0]
+      this.touchStartPos = { x: t.clientX, y: t.clientY }
+      // 长按 250ms 未移动 → 钉住十字光标（轻点/快扫不闪线）
+      this.clearTouchHold()
+      this.touchHoldPos = { x: t.clientX, y: t.clientY }
+      this.touchHoldTimer = window.setTimeout(() => {
+        this.touchHoldTimer = null
+        if (!this.touchMoved && this.touchHoldPos) {
+          this.showCrosshairAt(this.touchHoldPos.x, this.touchHoldPos.y)
+        }
+      }, LightweightChartAdapter.TOUCH_HOLD_MS)
     }
   }
 
   /** 触屏移动：单指更新十字光标；双指按指距比例缩放价格区间 */
   private onTouchMove = (e: TouchEvent) => {
-    if (e.touches.length === 1 && this.touchCrosshair) {
-      this.setTouchCrosshair(true, e.touches[0])
-      // 移动超过阈值视为拖动（平移/十字光标跟随），不算轻点
+    if (e.touches.length === 1) {
       const t = e.touches[0]
       const s0 = this.touchStartPos
-      if (s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > 10) this.touchMoved = true
+      const moved = !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
+      if (moved) {
+        // 移动超过阈值视为拖动（平移/十字光标跟随），取消长按
+        this.touchMoved = true
+        this.clearTouchHold()
+        this.showCrosshairAt(t.clientX, t.clientY)
+      } else if (this.touchCrosshair) {
+        // 长按已显示十字线，轻微移动跟随手指
+        this.showCrosshairAt(t.clientX, t.clientY)
+      }
       return
     }
     if (!this.pinch || this.drawingTool !== 'none' || this.dragEdit) return
@@ -1453,13 +1492,24 @@ export class LightweightChartAdapter implements ChartApi {
     scale.setAutoScale(false)
     scale.setVisibleRange({ from: next.from, to: next.to })
     this.pinch = { dist, range: { from: next.from, to: next.to } }
+    // 缩放步进触觉反馈（Android，跨 1.15/0.85 步进才震）
+    if (navigator.vibrate && this.pinchStepVibrated !== factor) {
+      const steps = [0.85, 1, 1.15]
+      const near = steps.some((st) => Math.abs(factor - st) < 0.06)
+      if (near) {
+        navigator.vibrate(8)
+        this.pinchStepVibrated = factor
+      }
+    }
   }
 
   /** 触屏抬起/取消：结束十字光标与捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
   private onTouchEnd = (e: TouchEvent) => {
+    this.clearTouchHold()
     if (this.touchCrosshair) this.setTouchCrosshair(false)
     const wasPinch = !!this.pinch
     this.pinch = null
+    this.pinchStepVibrated = 0
     if (wasPinch || e.touches.length > 0 || e.changedTouches.length !== 1) return
     // 画线/锚点拖拽手势不参与双击复位计数（触屏绘制由 pointer 事件驱动）
     if (this.drawingTool !== 'none' || this.dragEdit) {
@@ -1473,10 +1523,12 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
     const now = Date.now()
-    if (now - this.lastTapAt < 300) {
+    if (now - this.lastTapAt < LightweightChartAdapter.DOUBLE_TAP_MS) {
       this.lastTapAt = 0
       this.chart.priceScale('right').setAutoScale(true)
       this.chart.timeScale().resetTimeScale()
+      // 复位触觉反馈（Android）
+      if (navigator.vibrate) navigator.vibrate(12)
     } else {
       this.lastTapAt = now
     }
@@ -1498,14 +1550,19 @@ export class LightweightChartAdapter implements ChartApi {
    * 抬起/捏合时清除。坐标映射失败（越界）时保持不显示。
    */
   private setTouchCrosshair(active: boolean, touch?: Touch) {
-    if (!active) {
+    if (!active || !touch) {
       this.touchCrosshair = false
       this.chart.clearCrosshairPosition()
       return
     }
+    this.showCrosshairAt(touch.clientX, touch.clientY)
+  }
+
+  /** 在指定手指坐标（client 系）显示十字光标；坐标映射失败时清除 */
+  private showCrosshairAt(clientX: number, clientY: number) {
     const rect = this.container.getBoundingClientRect()
-    const x = touch!.clientX - rect.left
-    const y = touch!.clientY - rect.top
+    const x = clientX - rect.left
+    const y = clientY - rect.top
     const time = this.chart.timeScale().coordinateToTime(x)
     const price = this.mainSeries.coordinateToPrice(y)
     if (time === null || price === null) {
