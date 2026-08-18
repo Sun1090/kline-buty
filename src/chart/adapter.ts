@@ -59,6 +59,8 @@ export interface DrawingCallbacks {
   onSelect: (id: string | null) => void
   /** 画线编辑提交（拖拽整线/锚点后） */
   onUpdate?: (id: string, points: { time: number; price: number }[]) => void
+  /** 文本标注快捷编辑（桌面双击 / 移动端长按命中文本时触发） */
+  onEditText?: (id: string) => void
 }
 
 /** 副图指标数据（UI 层计算，本层渲染） */
@@ -376,6 +378,7 @@ export class LightweightChartAdapter implements ChartApi {
     container.addEventListener('pointerdown', this.onPointerDown)
     container.addEventListener('pointerup', this.onPointerUp)
     container.addEventListener('pointerleave', this.onPointerLeave)
+    container.addEventListener('dblclick', this.onDblClick)
     // 双指捏合（纵向缩放）与双击重置：passive 不拦截，横向捏合仍由图表库原生处理
     container.addEventListener('touchstart', this.onTouchStart, { passive: true })
     container.addEventListener('touchmove', this.onTouchMove, { passive: true })
@@ -1537,6 +1540,22 @@ export class LightweightChartAdapter implements ChartApi {
     this.dragHandler = cb
   }
 
+  /** 双击命中文本标注 → 快捷打开文本编辑器（桌面端） */
+  private onDblClick = (e: MouseEvent) => {
+    if (this.drawingTool !== 'none') return
+    const rect = this.container.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
+    if (!hit) return
+    const d = this.drawings.find((dd) => dd.id === hit && dd.type === 'text')
+    if (!d) return
+    this.selectedDrawingId = d.id
+    this.drawingCallbacks?.onSelect?.(d.id)
+    this.drawingCallbacks?.onEditText?.(d.id)
+    this.draw()
+  }
+
   private onPointerDown = (e: PointerEvent) => {
     this.lastDownDetail = e.detail
     const rect = this.container.getBoundingClientRect()
@@ -1800,13 +1819,14 @@ export class LightweightChartAdapter implements ChartApi {
     this.touchHoldPos = null
   }
 
-  /** 触屏按下：单指（非画线/非拖拽）长按/拖动显示十字光标；双指记录起始指距与价格区间 */
+  /** 触屏按下：单指（非画线）长按文本打开编辑器 / 长按钉十字光标 / 拖拽编辑；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.pinch = null
     this.touchMoved = false
     this.touchStartPos = null
-    if (this.drawingTool !== 'none' || this.dragEdit) return
+    if (this.drawingTool !== 'none') return
     if (e.touches.length === 2) {
+      if (this.dragEdit) return
       this.clearTouchHold()
       this.setTouchCrosshair(false)
       this.pinchStepVibrated = 0
@@ -1822,17 +1842,38 @@ export class LightweightChartAdapter implements ChartApi {
     if (e.touches.length === 1) {
       const t = e.touches[0]
       this.touchStartPos = { x: t.clientX, y: t.clientY }
-      // 触碰已选画线或其锚点时，手势将用于整线/锚点拖拽编辑，不启动长按钉线
       const rect = this.container.getBoundingClientRect()
       const lx = t.clientX - rect.left
       const ly = t.clientY - rect.top
+      const hitId = hitTestDrawings(this.drawings, lx, ly, (tm, p) => this.project(tm, p))
+      // 命中文本标注 → 长按直接打开编辑器（无论是否已选中；pointer 已开启的拖拽不阻断，长按优先）
+      const hitText = hitId ? this.drawings.find((d) => d.id === hitId && d.type === 'text') : null
+      if (hitText) {
+        this.clearTouchHold()
+        this.touchHoldPos = { x: t.clientX, y: t.clientY }
+        this.touchHoldTimer = window.setTimeout(() => {
+          this.touchHoldTimer = null
+          if (!this.touchMoved && this.touchHoldPos) {
+            // 长按文本：选中并打开编辑器；标记 touchMoved 避免抬起被计入双击复位
+            this.touchMoved = true
+            this.selectedDrawingId = hitText.id
+            this.drawingCallbacks?.onSelect?.(hitText.id)
+            this.drawingCallbacks?.onEditText?.(hitText.id)
+            this.setTouchCrosshair(false)
+            this.draw()
+          }
+        }, LightweightChartAdapter.TOUCH_HOLD_MS)
+        return
+      }
+      // 画线/锚点拖拽手势（pointer 已接管）不参与触屏长按钉线
+      if (this.dragEdit) return
       const selected = this.selectedDrawingId
         ? this.drawings.find((d) => d.id === this.selectedDrawingId)
         : null
       const onSelected =
         !!selected &&
-        (nearestAnchor(selected, lx, ly, (tm, p) => this.project(tm, p)) !== null ||
-          hitTestDrawings(this.drawings, lx, ly, (tm, p) => this.project(tm, p)) === selected.id)
+        (nearestAnchor(selected, lx, ly, (tm, p) => this.project(tm, p)) !== null || hitId === selected.id)
+      // 触碰已选画线/锚点时，手势将用于整线/锚点拖拽编辑，不启动长按钉线
       if (onSelected) {
         this.clearTouchHold()
         this.setTouchCrosshair(false)
@@ -2352,6 +2393,7 @@ export class LightweightChartAdapter implements ChartApi {
     this.container.removeEventListener('pointerdown', this.onPointerDown)
     this.container.removeEventListener('pointerup', this.onPointerUp)
     this.container.removeEventListener('pointerleave', this.onPointerLeave)
+    this.container.removeEventListener('dblclick', this.onDblClick)
     this.resizeObserver?.disconnect()
     this.overlay.remove()
     this.chart.remove()

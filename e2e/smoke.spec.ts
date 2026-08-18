@@ -636,6 +636,71 @@ test.describe('K 线应用冒烟', () => {
       }
     })) === 0).toBe(true)
   })
+  test('画线：文本标注快捷编辑 → 桌面双击文本本体直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '文本' }).click()
+    await page.waitForTimeout(200)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+    // 单击放置文本
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.52, box.y + box.height * 0.4, { steps: 2 })
+    await page.mouse.up()
+    await expect(page.getByPlaceholder('文本内容')).toBeVisible({ timeout: 5000 })
+    await page.getByPlaceholder('文本内容').fill('快捷编辑')
+    await page.getByTestId('text-confirm').click()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    // 桌面工具保持「文本」，切回「鼠标」只读模式后双击才走快捷编辑
+    await openDrawing(page)
+    await page.getByTestId('desktop-drawing-panel').getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.waitForTimeout(300)
+    // 双击文本本体（以 overlay 实际渲染位置为准）→ 编辑器直接打开且内容回填
+    const center = await findDrawnLineCenter(page)
+    expect(center).not.toBeNull()
+    if (!center) return
+    await page.mouse.dblclick(center.x, center.y)
+    await expect(page.getByPlaceholder('文本内容')).toHaveValue('快捷编辑', { timeout: 5000 })
+    // 改字 → 确认 → 落库
+    await page.getByPlaceholder('文本内容').fill('快捷编辑v2')
+    await page.getByTestId('text-confirm').click()
+    await expect(page.getByPlaceholder('文本内容')).toHaveCount(0)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)[0] as { type: string; text?: string }[]
+        return arr[0] ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('text')
+    expect(saved!.text).toBe('快捷编辑v2')
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)[0]?.length ?? -1
+            } catch {
+              return -2
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
 
   test('画线：周期线 → A→B 定义周期 → 落库两点 → 像素校验选中蓝色周期竖线（≥3 根等比线）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
@@ -3119,5 +3184,91 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .poll(() => count(), { timeout: 5000 })
       .toBe(0)
     expect(errors).toHaveLength(0)
+  })
+  test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as { type: string; text?: string }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+
+    // 触屏放置文本 → 移动端编辑器 → 确认（工具自动切回「鼠标」）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '文本', exact: true }).tap()
+    await page.waitForTimeout(200)
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width * 0.4, y: box.y + box.height * 0.4 }],
+    })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    await page.getByTestId('mobile-text-input').fill('长按编辑')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await page.waitForTimeout(400)
+
+    // 长按文本本体（overlay 实际渲染位置，250ms 不动 → 快捷编辑）→ 编辑器打开且内容回填
+    const center = await findDrawnLineCenter(page)
+    expect(center).not.toBeNull()
+    if (!center) return
+    cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: center.x, y: center.y }],
+    })
+    await page.waitForTimeout(300)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('mobile-text-input')).toHaveValue('长按编辑')
+
+    // 改字 → 确认 → 落库
+    await page.getByTestId('mobile-text-input').fill('长按改字')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    const updated = await readFirst()
+    expect(updated).not.toBeNull()
+    expect(updated!.type).toBe('text')
+    expect(updated!.text).toBe('长按改字')
+    expect(errors).toHaveLength(0)
+
+    // 删除
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)[0]?.length ?? -1
+            } catch {
+              return -2
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
   })
 })

@@ -79,6 +79,8 @@ interface ChartViewProps {
   onDrawingSelect?: (id: string | null) => void
   /** 画线编辑提交回调（整线移动/锚点拖拽后） */
   onDrawingUpdate?: (id: string, points: { time: number; price: number }[]) => void
+  /** 文本标注快捷编辑回调（桌面双击 / 移动端长按） */
+  onEditText?: (id: string) => void
   /** 主题模式（canvas 渲染色） */
   themeMode?: 'dark' | 'light'
   /** 主题色预设（涨跌/强调色） */
@@ -118,6 +120,7 @@ export function ChartView({
   onDrawingCommit,
   onDrawingSelect,
   onDrawingUpdate,
+  onEditText,
   themeMode = 'dark',
   colorPreset = 'classic',
   showWatermark = true,
@@ -157,6 +160,8 @@ export function ChartView({
   onDrawingSelectRef.current = onDrawingSelect
   const onDrawingUpdateRef = useRef(onDrawingUpdate)
   onDrawingUpdateRef.current = onDrawingUpdate
+  const onEditTextRef = useRef(onEditText)
+  onEditTextRef.current = onEditText
   const [regionSelecting, setRegionSelecting] = useState(false)
   const regionCaptureRef = useRef<(rect: { x: number; y: number; w: number; h: number }) => void>(
     () => {},
@@ -220,11 +225,12 @@ export function ChartView({
     api.setPositionDragHandler(onPositionDrag ?? null)
     api.setTheme(themeMode, colorPreset)
     api.setDrawingCallbacks(
-      onDrawingCommit || onDrawingSelect || onDrawingUpdate
+      onDrawingCommit || onDrawingSelect || onDrawingUpdate || onEditText
         ? {
             onCommit: (d) => onDrawingCommitRef.current?.(d),
             onSelect: (id) => onDrawingSelectRef.current?.(id),
             onUpdate: (id, points) => onDrawingUpdateRef.current?.(id, points),
+            onEditText: (id) => onEditTextRef.current?.(id),
           }
         : null,
     )
