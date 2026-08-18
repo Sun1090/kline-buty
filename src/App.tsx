@@ -59,6 +59,7 @@ export function App() {
   const [layout, setLayout] = usePersistedState<'single' | 'pair' | 'quad'>('layout', 'single')
   const [themeMode, setThemeMode] = usePersistedState<ThemeMode>('theme', 'dark')
   const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
+  const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
@@ -353,6 +354,8 @@ export function App() {
           onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
+          showWatermark={showWatermark}
+          onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position !== null}
           onTogglePosition={() => setPositionOpen((v) => !v)}
           alertsActive={alertsOpen}
@@ -409,6 +412,8 @@ export function App() {
           onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
+          showWatermark={showWatermark}
+          onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position !== null}
           onTogglePosition={() => setPositionOpen((v) => !v)}
           alertsActive={alertsOpen}
@@ -491,6 +496,7 @@ export function App() {
             secondSymbol="ETHUSDT"
             themeMode={themeMode}
             colorPreset={colorPreset}
+            showWatermark={showWatermark}
             period={period}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
@@ -505,6 +511,7 @@ export function App() {
             symbols={['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']}
             themeMode={themeMode}
             colorPreset={colorPreset}
+            showWatermark={showWatermark}
             period={period}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
@@ -520,6 +527,7 @@ export function App() {
             status={status}
             themeMode={themeMode}
             colorPreset={colorPreset}
+            showWatermark={showWatermark}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
             mainIndicator={mainIndicator}
@@ -559,6 +567,8 @@ export function App() {
             boxShadow: '-8px 0 24px rgba(0,0,0,0.35)',
             overflowY: 'auto',
             overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
             display: 'flex',
             flexDirection: 'column',
           }}

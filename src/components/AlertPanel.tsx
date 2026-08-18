@@ -114,7 +114,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
       {symbolAlerts.length === 0 ? (
         <div style={{ color: 'var(--text-faint)' }}>{t('alert.none')}</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {symbolAlerts.map((a) => (
             <div
               key={a.id}

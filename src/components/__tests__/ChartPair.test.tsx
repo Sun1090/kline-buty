@@ -48,6 +48,7 @@ vi.mock('../../chart/adapter', () => {
     onRegionCapture = vi.fn()
     setTheme = vi.fn()
     setLocale = vi.fn()
+    setWatermark = vi.fn()
     setPeriodSeconds = vi.fn()
     setPriceScaleMode = vi.fn()
     fitContent = vi.fn()

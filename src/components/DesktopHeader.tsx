@@ -108,6 +108,7 @@ function PanelButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
+      aria-pressed={active}
       style={{
         flex: '0 0 auto',
         padding: '7px 10px',
@@ -454,6 +455,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               {props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
             </PanelButton>
             <ThemePicker value={props.colorPreset} onChange={props.onColorPreset} />
+            <PanelButton onClick={props.onToggleWatermark} title={t('settings.watermarkTitle')} active={props.showWatermark} testId="watermark-toggle">
+              {t('settings.watermark')}
+            </PanelButton>
           </div>
           <SectionTitle>{t('common.more')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>

@@ -20,11 +20,12 @@ interface CellProps {
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
   colorPreset: ColorPresetId
+  showWatermark: boolean
   externalRange: Range2 | null
   onViewRangeChange: (r: Range2) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, colorPreset, externalRange, onViewRangeChange }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <ChartView
@@ -41,6 +42,7 @@ function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', mainIn
       hasMore={data.hasMore}
       onLoadMore={data.loadMore}
       onViewRangeChange={onViewRangeChange}
+      showWatermark={showWatermark}
       externalRange={externalRange}
     />
   )
@@ -83,12 +85,13 @@ interface QuadChartProps {
   indicatorParams: IndicatorParams
   themeMode?: 'dark' | 'light'
   colorPreset?: ColorPresetId
+  showWatermark?: boolean
 }
 
 /** 四图联动：2×2 网格，时间轴全联动 */
-export function ChartQuad({ symbols, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic' }: QuadChartProps) {
+export function ChartQuad({ symbols, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
   const { ranges, broadcast } = useChartSync(4)
-  const base = { period, chartType, priceScaleMode, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset }
+  const base = { period, chartType, priceScaleMode, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>

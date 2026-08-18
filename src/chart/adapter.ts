@@ -172,6 +172,8 @@ export interface ChartApi {
   setTheme(theme: ThemeMode, presetId?: ColorPresetId): void
   /** 切换界面语言（文本标注默认文案 / 仓位线标签随语言更新） */
   setLocale(lang: Lang): void
+  /** 显示/隐藏免责声明水印 */
+  setWatermark(show: boolean): void
   /** 设置 K 线周期秒数（量度工具标签计算根数用） */
   setPeriodSeconds(sec: number): void
   /** 价格坐标轴模式：线性 / 对数（对标 TradingView/币安） */
@@ -259,6 +261,8 @@ export class LightweightChartAdapter implements ChartApi {
   private markerPriceLine: IPriceLine | null = null
   private theme: ChartTheme = THEMES.dark
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
+  /** 免责声明水印开关（默认开） */
+  private showWatermark = true
   /** 当前 K 线周期秒数（量度标签根数） */
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
@@ -428,6 +432,12 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
+  setWatermark(show: boolean) {
+    if (this.showWatermark === show) return
+    this.showWatermark = show
+    this.draw()
+  }
+
   setPeriodSeconds(sec: number) {
     this.periodSeconds = sec
   }
@@ -555,6 +565,7 @@ export class LightweightChartAdapter implements ChartApi {
 
   /** 免责声明水印：主图区居中、低透明度、跟随主题色；overlay 无 pointer-events 不拦截交互 */
   private drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    if (!this.showWatermark) return
     const text = this.labels.watermark
     if (!text) return
     const size = watermarkFitSize(w, text.length)

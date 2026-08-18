@@ -34,6 +34,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onShare: vi.fn(),
     onExport: vi.fn(),
     onToggleScale: vi.fn(),
+    onToggleWatermark: vi.fn(),
   }
   const props: Parameters<typeof MobileHeader>[0] = {
     symbol: 'BTCUSDT',
@@ -49,6 +50,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     layout: 'single',
     themeMode: 'dark',
     colorPreset: 'classic',
+    showWatermark: true,
     positionActive: false,
     alertsActive: false,
     depthActive: false,
@@ -110,6 +112,13 @@ describe('MobileHeader（移动端工具栏整合）', () => {
     fireEvent.click(screen.getByTestId('mobile-more'))
     fireEvent.click(screen.getByText('仓位'))
     expect(h.onTogglePosition).toHaveBeenCalledTimes(1)
+  })
+
+  it('更多弹层：图表水印开关回调 + 激活态', () => {
+    const h = setup()
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    fireEvent.click(screen.getByTestId('watermark-toggle'))
+    expect(h.onToggleWatermark).toHaveBeenCalledTimes(1)
   })
 
   it('外部点击收起弹层', () => {
