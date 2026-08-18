@@ -2693,4 +2693,120 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(tailMoved).toBe(true)
     expect(errors).toHaveLength(0)
   })
+
+  test('移动端：触屏文本标注 → 创建/确认后选中态保持（蓝框/锚点）→ 改字改字号颜色 → 落库 → 删除', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    // 扫描画线 overlay 蓝色选中像素量（选中边框/锚点 #4e9cf5）
+    const overlayBluePx = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        let n = 0
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 100 && r < 130 && g > 110 && g < 200 && b > 190) n++
+        }
+        return n
+      })
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            type: string
+            text?: string
+            fontSize?: number
+            color?: string
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+
+    // 触屏放置文本（pointer 事件驱动，单点即建锚点并打开编辑器）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '文本', exact: true }).tap()
+    await page.waitForTimeout(200)
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width * 0.4, y: box.y + box.height * 0.4 }],
+    })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+
+    // 输入文字并确认 → 默认黄色文本 + 蓝色选中态（边框/锚点）必须保留
+    // （回归：确认更新文本后，drawings 变化不能再通过 setDrawingTool 清掉 adapter 选中态）
+    await page.getByTestId('mobile-text-input').fill('触屏标注')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await expect.poll(() => overlayBluePx(), { timeout: 5000 }).toBeGreaterThan(0)
+    expect(errors).toHaveLength(0)
+
+    // 落库：type=text + 文本
+    const saved = await readFirst()
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('text')
+    expect(saved!.text).toBe('触屏标注')
+
+    // 画线面板「改字」可见（App 选中态保持）→ 重开编辑器恢复内容 → A+ 一次 + 红色 → 确认
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await expect(page.getByRole('button', { name: '改字' })).toBeVisible()
+    await page.getByRole('button', { name: '改字' }).tap()
+    await expect(page.getByTestId('mobile-text-input')).toHaveValue('触屏标注')
+    await page.getByTestId('mobile-text-font-inc').tap()
+    await page.getByTestId('mobile-text-color-red').tap()
+    await page.getByTestId('mobile-text-confirm').tap()
+    await page.waitForTimeout(400)
+
+    const updated = await readFirst()
+    expect(updated).not.toBeNull()
+    expect(updated!.text).toBe('触屏标注')
+    expect(updated!.fontSize).toBe(16) // 默认 14 → A+ 一次
+    expect(updated!.color).toBe('#ef4444')
+    // 红色文字 + 蓝色选中边框仍可见
+    await expect.poll(() => overlayBluePx(), { timeout: 5000 }).toBeGreaterThan(0)
+    expect(errors).toHaveLength(0)
+
+    // 删除
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)[0]?.length ?? -1
+            } catch {
+              return -2
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
 })
