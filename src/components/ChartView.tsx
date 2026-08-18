@@ -15,6 +15,7 @@ import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n, localeFor, type MessageKey } from '../i18n'
+import { clampTooltipPos } from './tooltipPos'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'none'
@@ -706,12 +707,21 @@ export function ChartView({
           {t('drawing.regionHint')}
         </div>
       )}
-      {tooltipInfo && (
+      {tooltipInfo &&
+        (() => {
+          const pos = clampTooltipPos(
+            tooltipInfo.x,
+            tooltipInfo.y,
+            tooltipInfo.rows.length,
+            containerRef.current?.clientWidth ?? window.innerWidth,
+            containerRef.current?.clientHeight ?? window.innerHeight,
+          )
+          return (
         <div
           style={{
             position: 'absolute',
-            left: Math.min(tooltipInfo.x + 12, window.innerWidth - 180),
-            top: tooltipInfo.y + 8,
+            left: pos.left,
+            top: pos.top,
             pointerEvents: 'none',
             background: 'var(--panel)',
             border: '1px solid #2a2e39',
@@ -733,7 +743,8 @@ export function ChartView({
             </div>
           ))}
         </div>
-      )}
+          )
+        })()}
       <div
         data-testid="chart-watermark"
         style={{
