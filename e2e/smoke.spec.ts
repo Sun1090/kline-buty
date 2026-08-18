@@ -2565,7 +2565,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '水平线', exact: true }).tap()
     await page.waitForTimeout(200)
-    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.25)
+    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.3)
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const before = await findDrawnLineCenter(page)
 
@@ -2581,9 +2581,10 @@ test.describe('移动端（390×844 触屏视口）', () => {
         { x: cx + 40, y: cy },
       ],
     })
-    // 实时行情下价格区间随数据变化，捏合幅度取较大值保证固定价画线位移稳定可测
+    // 实时行情下价格区间随数据变化；画线完成后工具自动切回「鼠标」，
+    // 捏合真正生效（总放大 ≈ 67/40 ≈ 1.68 倍），幅度取适中值保证位移可测且画线不滑出可视区
     for (let i = 1; i <= 9; i++) {
-      const spread = 40 + i * 25
+      const spread = 40 + i * 3
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
         touchPoints: [
@@ -2639,8 +2640,9 @@ test.describe('移动端（390×844 触屏视口）', () => {
         { x: cx + 40, y: cy },
       ],
     })
-    // 温和捏合（价格区间收窄但画线保持可见）
-    for (let i = 1; i <= 4; i++) {
+    // 温和捏合（总放大 ≈ 100/40 = 2.5 倍，画线保持可见且位移足够大，
+    // 使复位断言 resetGap < zoomGap/2 对实时行情漂移有充足余量）
+    for (let i = 1; i <= 6; i++) {
       const spread = 40 + i * 10
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
@@ -3000,5 +3002,122 @@ test.describe('移动端（390×844 触屏视口）', () => {
         { timeout: 5000 },
       )
       .toBe(0)
+  })
+
+  test('移动端：画线完成自动切回鼠标 → 文本确认后直接触屏拖拽本体 → 空白轻点不误建画线', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            type: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const count = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          return Object.values(d)[0]?.length ?? -1
+        } catch {
+          return -2
+        }
+      })
+
+    // 触屏放置文本（pointer 事件驱动）→ 移动端编辑器 → 确认
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '文本', exact: true }).tap()
+    await page.waitForTimeout(200)
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width * 0.4, y: box.y + box.height * 0.4 }],
+    })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    await page.getByTestId('mobile-text-input').fill('自动切回')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await page.waitForTimeout(400)
+
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.type).toBe('text')
+    expect(before!.points).toHaveLength(1)
+    expect(await count()).toBe(1)
+
+    // 工具已自动切回「鼠标」：无需手动点鼠标，直接触屏拖拽文本本体（黄字/蓝框像素中心）
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+    const center = (await findDrawnLineCenter(page))!
+    cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+    for (let i = 1; i <= 6; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: center.x + i * 8, y: center.y + i * 10 }],
+      })
+      await page.waitForTimeout(25)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(500)
+
+    await expect
+      .poll(
+        async () => {
+          const after = await readFirst()
+          if (!after || after.points.length !== 1) return false
+          const dT = after.points[0].time - before!.points[0].time
+          const dP = after.points[0].price - before!.points[0].price
+          return after.id === before!.id && (Math.abs(dT) > 0.5 || Math.abs(dP) > 0.01)
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true)
+
+    // 空白处轻点：工具是 none（已切回鼠标），不会误建新画线（仍 1 条）
+    cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width * 0.15, y: box.y + box.height * 0.85 }],
+    })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(500)
+    expect(await count()).toBe(1)
+
+    // 空白轻点已取消选中 → 重新点选文本 → 删除
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+    const reCenter = (await findDrawnLineCenter(page))!
+    await page.touchscreen.tap(reCenter.x, reCenter.y)
+    await page.waitForTimeout(400)
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(() => count(), { timeout: 5000 })
+      .toBe(0)
+    expect(errors).toHaveLength(0)
   })
 })

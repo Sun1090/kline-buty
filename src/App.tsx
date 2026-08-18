@@ -181,6 +181,9 @@ export function App() {
       [symbol]: [...(prev[symbol] ?? []), created],
     }))
     setSelectedDrawingId(created.id)
+    // 移动端画线完成自动切回「鼠标」只读模式：避免再次轻点误建画线，
+    // 且可直接触屏拖拽编辑（桌面端保持工具不切，连续画线）
+    if (isMobile) setDrawingTool('none')
     if (d.type === 'text') {
       setTextDraft('')
       setEditingTextId(created.id)
