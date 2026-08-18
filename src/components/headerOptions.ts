@@ -64,6 +64,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'fibfan', labelKey: 'drawing.fibfan' },
   { value: 'fibtimed', labelKey: 'drawing.fibTime' },
   { value: 'cycle', labelKey: 'drawing.cycle' },
+  { value: 'fibtz', labelKey: 'drawing.fibtz' },
   { value: 'timerange', labelKey: 'drawing.timerange' },
   { value: 'pband', labelKey: 'drawing.pband' },
   { value: 'gann', labelKey: 'drawing.gann' },

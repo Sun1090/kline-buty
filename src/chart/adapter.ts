@@ -30,6 +30,7 @@ import {
   gannBoxSegments,
   gannFanRays,
   cycleLines,
+  fibTimeZones,
   fibChannelLevels,
   hitTestDrawings,
   timeRangeXs,
@@ -928,6 +929,58 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         ctx.setLineDash([])
         if (index > 0) this.drawLabel(ctx, x, top + 7, `+${index}`, 'left')
+      }
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
+    if (d.type === 'fibtz') {
+      // 斐波那契时间区间：A 为原点、A→B 间隔为基期，向右按斐波那契倍数画分界线 + 相邻分界交替半透明竖带 + 顶部倍数标签
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = this.project(pb.time, pb.price)
+      if (!b) return
+      const dpr = window.devicePixelRatio || 1
+      const cRect = this.container.getBoundingClientRect()
+      const paneEl = this.chart.panes()[0]?.getHTMLElement() ?? null
+      let top = 0
+      let bottom = this.overlay.height / dpr
+      if (paneEl) {
+        const pRect = paneEl.getBoundingClientRect()
+        top = pRect.top - cRect.top
+        bottom = pRect.bottom - cRect.top
+      }
+      const xOf = (time: number, n: number): number => {
+        const x = this.chart.timeScale().timeToCoordinate(time as never)
+        return x === null ? a.x + (b.x - a.x) * n : x
+      }
+      const lines = fibTimeZones(pa, pb)
+      // 相邻分界之间的竖带（偶数段填充，形成交替带）
+      for (let i = 0; i + 1 < lines.length; i++) {
+        const x0 = xOf(lines[i].time, lines[i].n)
+        const x1 = xOf(lines[i + 1].time, lines[i + 1].n)
+        if (i % 2 === 0) {
+          ctx.fillStyle = this.theme.yellow + '12'
+          ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0), bottom - top)
+        }
+      }
+      // 分界线
+      for (const { n, time } of lines) {
+        const x = xOf(time, n)
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.lineWidth = selected ? 1.6 : 1
+        ctx.setLineDash(n === 1 ? [] : [4, 3])
+        ctx.beginPath()
+        ctx.moveTo(x, top)
+        ctx.lineTo(x, bottom)
+        ctx.stroke()
+        ctx.setLineDash([])
+        this.drawLabel(ctx, x, top + 7, String(n), 'left')
       }
       if (selected) {
         this.drawAnchor(ctx, a.x, a.y)
