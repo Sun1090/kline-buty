@@ -59,6 +59,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'fibfan', labelKey: 'drawing.fibfan' },
   { value: 'fibtimed', labelKey: 'drawing.fibTime' },
   { value: 'gann', labelKey: 'drawing.gann' },
+  { value: 'gannbox', labelKey: 'drawing.gannbox' },
   { value: 'pricelabel', labelKey: 'drawing.pricelabel' },
   { value: 'arrow', labelKey: 'drawing.arrow' },
   { value: 'polyline', labelKey: 'drawing.polyline' },

@@ -1174,6 +1174,81 @@ test.describe('K 线应用冒烟', () => {
     await expect.poll(async () => (await readGann()) === null).toBe(true)
   })
 
+  test('画线：江恩箱 → 拖 A→B → 矩形 + 10 条角度线（1×1/1×2/2×1）→ 区域点击选中 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
+    await page.getByRole('button', { name: '5分', exact: true }).click()
+    await page.waitForTimeout(800)
+    await page.getByRole('button', { name: '1分', exact: true }).click()
+    await waitCandlesRendered(page)
+    await page.waitForTimeout(600)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    await openDrawing(page)
+    await page.getByRole('button', { name: '江恩箱' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.55, { steps: 8 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 10_000 })
+
+    // 数据：type=gannbox、2 锚点
+    const readBox = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as { id: string; type: string; points: { time: number; price: number }[] }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const drawing = await readBox()
+    expect(drawing).not.toBeNull()
+    expect(drawing!.type).toBe('gannbox')
+    expect(drawing!.points).toHaveLength(2)
+
+    // 像素：矩形边框 + 10 条角度线 → 黄色像素总量显著高于单条线段
+    const yellowPx = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const { width, height } = overlay
+        const img = ctx.getImageData(0, 0, width, height).data
+        let n = 0
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          const yellow = a > 100 && r > 190 && g > 130 && g < 235 && b < 110
+          const blue = a > 100 && b > 190 && g > 110 && g < 200 && r < 130
+          if (yellow || blue) n++
+        }
+        return n
+      })
+    await expect.poll(() => yellowPx(), { timeout: 10_000 }).toBeGreaterThan(4000)
+
+    // 切回鼠标：点矩形内部（区域命中）→ 选中 → 删除
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(box!.x + box!.width * 0.42, box!.y + box!.height * 0.45)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 10_000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(async () => (await readBox()) === null).toBe(true)
+  })
+
   test('画线：趋势线 → 鼠标拖拽整线移动 → 锚点增量一致 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')
