@@ -31,6 +31,8 @@ import {
   TEXT_COLOR_OPTIONS,
   TEXT_FONT_SIZE_MAX,
   TEXT_FONT_SIZE_MIN,
+  toggleDrawingHidden,
+  toggleDrawingLocked,
   type Drawing,
   type DrawingTool,
 } from './drawings/logic'
@@ -231,6 +233,31 @@ export function App() {
     setSelectedDrawingId(null)
   }
 
+  // 图层管理：按 id 切换隐藏/锁定、删除单条、清空当前交易对全部画线
+  const toggleHidden = (id: string) => {
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? toggleDrawingHidden(d) : d)),
+    }))
+  }
+  const toggleLocked = (id: string) => {
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? toggleDrawingLocked(d) : d)),
+    }))
+  }
+  const deleteDrawing = (id: string) => {
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).filter((d) => d.id !== id),
+    }))
+    if (selectedDrawingId === id) setSelectedDrawingId(null)
+  }
+  const clearDrawings = () => {
+    setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: [] }))
+    setSelectedDrawingId(null)
+  }
+
   // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -373,6 +400,13 @@ export function App() {
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}
           onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          drawings={drawings}
+          selectedDrawingId={selectedDrawingId}
+          onSelectDrawing={setSelectedDrawingId}
+          onToggleDrawingHidden={toggleHidden}
+          onToggleDrawingLocked={toggleLocked}
+          onDeleteDrawing={deleteDrawing}
+          onClearDrawings={clearDrawings}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -431,6 +465,13 @@ export function App() {
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}
           onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          drawings={drawings}
+          selectedDrawingId={selectedDrawingId}
+          onSelectDrawing={setSelectedDrawingId}
+          onToggleDrawingHidden={toggleHidden}
+          onToggleDrawingLocked={toggleLocked}
+          onDeleteDrawing={deleteDrawing}
+          onClearDrawings={clearDrawings}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}

@@ -49,6 +49,10 @@ export interface Drawing {
   fontSize?: number
   /** 文本标注颜色（仅 type === 'text'，缺省跟随主题黄） */
   color?: string
+  /** 图层管理：隐藏（不渲染 + 不参与命中，画线仍保留在数据里） */
+  hidden?: boolean
+  /** 图层管理：锁定（仍渲染但不可选中/拖拽编辑） */
+  locked?: boolean
 }
 
 export interface Point {
@@ -534,6 +538,21 @@ export function moveDrawing(d: Drawing, dTime: number, dPrice: number): Drawing 
   return { ...d, points: d.points.map((p) => ({ time: p.time + dTime, price: p.price + dPrice })) }
 }
 
+/** 图层管理：切换画线隐藏态（隐藏 = 不渲染 + 不参与命中） */
+export function toggleDrawingHidden(d: Drawing): Drawing {
+  return { ...d, hidden: !d.hidden }
+}
+
+/** 图层管理：切换画线锁定态（锁定 = 仍渲染但不可选中/拖拽） */
+export function toggleDrawingLocked(d: Drawing): Drawing {
+  return { ...d, locked: !d.locked }
+}
+
+/** 图层管理：按 id 打补丁（保留其余字段，含 hidden/locked） */
+export function patchDrawing<T extends Drawing>(list: T[], id: string, patch: Partial<Drawing>): T[] {
+  return list.map((d) => (d.id === id ? { ...d, ...patch } : d))
+}
+
 /** 拖动单个锚点到新位置（射线保持锚点顺序，其余按时间重排） */
 export function moveAnchor(d: Drawing, idx: number, point: { time: number; price: number }): Drawing {
   const points = d.points.map((p, i) => (i === idx ? point : p))
@@ -602,6 +621,8 @@ export function hitTestDrawings(
   let bestId: string | null = null
   let bestDist = Infinity
   for (const d of drawings) {
+    // 图层管理：隐藏或锁定的画线不参与命中（锁定仍渲染但不可选中/拖拽）
+    if (d.hidden || d.locked) continue
     let dist = Infinity
     if (d.type === 'horizontal') {
       const a = project(d.points[0].time, d.points[0].price)
