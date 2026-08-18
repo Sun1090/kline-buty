@@ -7,6 +7,9 @@ import {
   CYCLE_LINE_COUNT,
   DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
+  fibChannelLevels,
+  FIB_CHANNEL_LEVELS,
+  distToLine,
   fibFanRays,
   fibPrices,
   gannBoxRect,
@@ -745,6 +748,45 @@ describe('fibtimed（M27）', () => {
     // 区间 [0,50]：竖线 0 / 11.8 / 19.1 / 25 / 30.9 / 39.3 / 50
     expect(hitTestDrawings([moved], 25, 150, project)).toBe('ft')
     expect(hitTestDrawings([moved], 60, 150, project)).toBeNull()
+  })
+})
+
+describe('fibchannel（斐波那契通道）', () => {
+  it('fibChannelLevels：基线 level 0 + 8 条分位平行线（向 B 方向偏移）', () => {
+    const levels = fibChannelLevels({ price: 100 }, { price: 200 })
+    expect(levels).toHaveLength(1 + FIB_CHANNEL_LEVELS.length)
+    expect(levels[0]).toEqual({ level: 0, price: 100 })
+    expect(levels.find((l) => l.level === 0.5)?.price).toBe(150)
+    expect(levels.find((l) => l.level === 1.618)?.price).toBeCloseTo(100 + 100 * 1.618)
+  })
+  it('fibChannelLevels：B 低于 A 时偏移为负（向下方延伸）', () => {
+    const levels = fibChannelLevels({ price: 200 }, { price: 100 })
+    expect(levels.find((l) => l.level === 0.5)?.price).toBe(150)
+    expect(levels.find((l) => l.level === 1)?.price).toBe(100)
+    expect(levels.find((l) => l.level === 1.618)?.price).toBeCloseTo(200 - 100 * 1.618)
+  })
+  it('fibChannelLevels：平摆幅时所有线同价（退化）', () => {
+    const levels = fibChannelLevels({ price: 100 }, { price: 100 })
+    expect(levels.every((l) => l.price === 100)).toBe(true)
+  })
+  it('normalizePoints 保持 A→B 原始顺序（方向决定平行线偏移侧）', () => {
+    const d = createDrawing('fibchannel', [{ time: 200, price: 100 }, { time: 0, price: 200 }], 'fc1')
+    expect(d.points[0].time).toBe(200)
+    expect(d.points[1].time).toBe(0)
+  })
+  it('distToLine：无限直线垂直距离', () => {
+    // 水平线 y=100
+    expect(distToLine(50, 100, { x: 0, y: 100 }, { x: 10, y: 0 })).toBe(0)
+    expect(distToLine(50, 105, { x: 0, y: 100 }, { x: 10, y: 0 })).toBe(5)
+  })
+  it('命中基线或任一条平行分位线（垂距 ±8px）', () => {
+    // project: x=time, y=300-price。A=(0,100) B=(100,200)：屏幕 a=(0,200) b=(100,100)，方向 (100,-100)
+    // level 0.5 线过 (0,150)：y=150-x；基线过 (0,200)：y=200-x
+    const d = createDrawing('fibchannel', [{ time: 0, price: 100 }, { time: 100, price: 200 }], 'fc2')
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('fc2') // 基线 (y=200-50=150)
+    expect(hitTestDrawings([d], 50, 100, project)).toBe('fc2') // level 0.5 线 (y=150-50=100)
+    expect(hitTestDrawings([d], 50, 104, project)).toBe('fc2') // level 0.5 线 4px 内
+    expect(hitTestDrawings([d], 50, 250, project)).toBeNull() // 通道外（基线 y=150，距 100px）
   })
 })
 

@@ -9,6 +9,7 @@ export type DrawingTool =
   | 'rect'
   | 'ray'
   | 'fibext'
+  | 'fibchannel'
   | 'fibfan'
   | 'fibtimed'
   | 'cycle'
@@ -116,6 +117,30 @@ export function fibExtPrices(a: { price: number }, b: { price: number }): FibLev
     level,
     price: level < 1 ? a.price + swing * level : b.price + swing * (level - 1),
   }))
+}
+
+/** 斐波那契通道分位（相对 A→B 摆幅的平行线偏移，0=基线，向 B 方向延伸） */
+export const FIB_CHANNEL_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.272, 1.618]
+
+export interface FibChannelLevel {
+  level: number
+  price: number
+}
+
+/** 斐波那契通道：基线 A→B（level 0），其余平行线过 (A.time, A.price + swing×L)，L 取 FIB_CHANNEL_LEVELS（摆动向下时为负偏移） */
+export function fibChannelLevels(a: { price: number }, b: { price: number }): FibChannelLevel[] {
+  const swing = b.price - a.price
+  return [
+    { level: 0, price: a.price },
+    ...FIB_CHANNEL_LEVELS.map((level) => ({ level, price: a.price + swing * level })),
+  ]
+}
+
+/** 点到无限直线距离（平行线命中检测用）：过 p0、方向 dir 的直线，取垂直距离 */
+export function distToLine(px: number, py: number, p0: Point, dir: Point): number {
+  const lenSq = dir.x * dir.x + dir.y * dir.y
+  if (lenSq === 0) return Math.hypot(px - p0.x, py - p0.y)
+  return Math.abs((px - p0.x) * dir.y - (py - p0.y) * dir.x) / Math.sqrt(lenSq)
 }
 
 /** 斐波那契扇形分位（射线从 A 原点发出，方向点取 A→B 竖直距离的分位） */
@@ -391,7 +416,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle') return [a, b]
+  if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel') return [a, b]
   if (type === 'hchannel') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -658,6 +683,20 @@ export function hitTestDrawings(
         if (pc) {
           const c = project(pc.time, pc.price)
           if (c && Math.abs(px - c.x) <= HIT_THRESHOLD_PX) dist = Math.min(dist, Math.abs(py - c.y))
+        }
+      }
+    } else if (d.type === 'fibchannel') {
+      // 斐波那契通道：命中基线或任一平行分位线（点到无限直线垂距）
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = project(pa.time, pa.price)
+      const b = project(pb.time, pb.price)
+      if (a && b) {
+        const dir = { x: b.x - a.x, y: b.y - a.y }
+        dist = Infinity
+        for (const { price } of fibChannelLevels(pa, pb)) {
+          const anchorPt = project(pa.time, price)
+          if (anchorPt) dist = Math.min(dist, distToLine(px, py, anchorPt, dir))
         }
       }
     } else if (d.type === 'fibtimed') {
