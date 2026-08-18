@@ -19,6 +19,8 @@ import {
   fibTimeXs,
   hitTestDrawings,
   linearRegression,
+  parallelRaySpec,
+  widthChannelSpec,
   measureInfo,
   moveAnchor,
   pitchforkMid,
@@ -1168,6 +1170,100 @@ describe('楔形 wedge（3 锚点）', () => {
     expect(moved.points).toHaveLength(3)
     expect(moved.points[0]).toEqual(A)
     expect(moved.points[1]).toEqual(B)
+    expect(moved.points[2]).toEqual({ time: 80, price: 60 })
+  })
+})
+
+describe('平行射线/宽度通道（M30 新工具）', () => {
+  it('requiredPoints = 3（多点点击收集）', () => {
+    expect(requiredPoints('parray')).toBe(3)
+    expect(requiredPoints('pchannel')).toBe(3)
+  })
+
+  it('normalizePoints 保留 A→B→C 原始点击顺序（方向敏感）', () => {
+    const pts = normalizePoints('parray', [
+      { time: 0, price: 150 },
+      { time: 100, price: 50 },
+      { time: 50, price: 100 },
+    ])
+    expect(pts.map((p) => p.price)).toEqual([150, 50, 100])
+    const pts2 = normalizePoints('pchannel', [
+      { time: 100, price: 50 },
+      { time: 0, price: 150 },
+      { time: 40, price: 90 },
+    ])
+    expect(pts2.map((p) => p.price)).toEqual([50, 150, 90])
+  })
+
+  it('parallelRaySpec：射线从 C 出发、方向 = B−A', () => {
+    const a = { x: 0, y: 150 }
+    const b = { x: 100, y: 250 }
+    const c = { x: 50, y: 200 }
+    const spec = parallelRaySpec(a, b, c)
+    expect(spec.helperFrom).toEqual(a)
+    expect(spec.helperTo).toEqual(b)
+    expect(spec.rayFrom).toEqual(c)
+    expect(spec.rayDir).toEqual({ x: 150, y: 300 }) // C + (B−A) = (50+100, 200+100)
+  })
+
+  it('widthChannelSpec：两平行线分别过 A/C，方向 = B−A；宽度连线 B→C', () => {
+    const a = { x: 0, y: 150 }
+    const b = { x: 100, y: 250 }
+    const c = { x: 30, y: 210 }
+    const spec = widthChannelSpec(a, b, c)
+    expect(spec.lineA.p0).toEqual(a)
+    expect(spec.lineA.dir).toEqual({ x: 100, y: 100 })
+    expect(spec.lineC.p0).toEqual(c)
+    expect(spec.lineC.dir).toEqual({ x: 100, y: 100 })
+    expect(spec.widthFrom).toEqual(b)
+    expect(spec.widthTo).toEqual(c)
+  })
+
+  it('hitTest 平行射线：射线垂距命中 / 方向参考段命中 / 射线后方远处不命中', () => {
+    // A(0,150) B(100,50) C(50,100) → 屏幕 (0,150)/(100,250)/(50,200)，方向 (1,1)，射线从 (50,200) 沿 (1,1)
+    const d = createDrawing(
+      'parray',
+      [
+        { time: 0, price: 150 },
+        { time: 100, price: 50 },
+        { time: 50, price: 100 },
+      ],
+      'pr1',
+    )
+    expect(hitTestDrawings([d], 55, 195, project)).toBe('pr1') // 射线垂距 ~7px（(55,195) 到过 (50,200) 方向 (1,1)）
+    expect(hitTestDrawings([d], 10, 155, project)).toBe('pr1') // 方向参考段 A→B 附近
+    expect(hitTestDrawings([d], 10, 140, project)).toBeNull() // 射线起点后方（t<0）且距参考段 >8px
+  })
+
+  it('hitTest 宽度通道：两平行线任一条垂距命中 / 宽度连线命中 / 远处不命中', () => {
+    // A(0,150) B(100,50) C(30,90) → 屏幕 (0,150)/(100,250)/(30,210)，方向 (1,1)
+    const d = createDrawing(
+      'pchannel',
+      [
+        { time: 0, price: 150 },
+        { time: 100, price: 50 },
+        { time: 30, price: 90 },
+      ],
+      'pc1',
+    )
+    expect(hitTestDrawings([d], 10, 160, project)).toBe('pc1') // 过 A 线附近 (10,160) 距 (0,150)+dir(1,1) ~7px
+    expect(hitTestDrawings([d], 40, 220, project)).toBe('pc1') // 过 C 线附近 (40,220) 距 (30,210)+dir(1,1) ~7px
+    expect(hitTestDrawings([d], 60, 235, project)).toBe('pc1') // B→C 宽度连线中点附近
+    expect(hitTestDrawings([d], 200, 120, project)).toBeNull() // 远处不命中
+  })
+
+  it('moveAnchor 拖第三锚点后仍三点且顺序不变', () => {
+    const d = createDrawing(
+      'pchannel',
+      [
+        { time: 0, price: 150 },
+        { time: 100, price: 50 },
+        { time: 30, price: 90 },
+      ],
+      'pc1',
+    )
+    const moved = moveAnchor(d, 2, { time: 80, price: 60 })
+    expect(moved.points).toHaveLength(3)
     expect(moved.points[2]).toEqual({ time: 80, price: 60 })
   })
 })

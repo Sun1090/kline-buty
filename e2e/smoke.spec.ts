@@ -1207,7 +1207,7 @@ test.describe('K 线应用冒烟', () => {
 
     // 射线：锚点 + 方向点
     await openDrawing(page)
-    await page.getByRole('button', { name: '射线' }).click()
+    await page.getByRole('button', { name: '射线', exact: true }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
@@ -1370,6 +1370,198 @@ test.describe('K 线应用冒烟', () => {
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'wedge').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(0)
+  })
+
+test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落库 3 锚点保序 → 像素校验蓝色射线 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '平行射线' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 三点点击：A（左中）→ B（右上）→ C（中下，射线起点）
+    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.55)
+    await page.mouse.click(box!.x + box!.width * 0.62, box!.y + box!.height * 0.3)
+    await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.6)
+    // 落库：type=parray，三点保留 A→B→C 原始点击顺序（方向敏感）
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'parray')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'parray')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(3)
+    // 点击 x 序：0.25 < 0.4 < 0.62 → 保序后 t0 < t2 < t1
+    expect(saved!.points[0].time).toBeLessThan(saved!.points[2].time)
+    expect(saved!.points[2].time).toBeLessThan(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：创建后处于选中态 → overlay 出现蓝色平行射线（C 起点向右上无限延伸）
+    const bluePixels = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        let n = 0
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) n++
+        }
+        return n
+      })
+    await expect.poll(bluePixels, { timeout: 10_000 }).toBeGreaterThan(200)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'parray').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(0)
+  })
+
+  test('画线：宽度通道 → 三点点击（A/B 方向 + C 定宽）→ 落库 3 锚点 → 像素校验蓝色平行线 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '宽度通道' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 三点点击：A（左下）→ B（右上）→ C（中上，第二平行线位置）
+    await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.7)
+    await page.mouse.click(box!.x + box!.width * 0.6, box!.y + box!.height * 0.25)
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.4)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pchannel')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'pchannel')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(3)
+    // 方向敏感：保留 A→B→C 原始点击顺序
+    expect(saved!.points[0].time).toBeLessThan(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：两条蓝色无限平行线（过 A/过 C）+ 宽度连线
+    const bluePixels = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        let n = 0
+        const xCols = new Set<number>()
+        const w = overlay.width
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            xCols.add((i / 4) % w)
+          }
+        }
+        return { n, cols: xCols.size }
+      })
+    await expect.poll(async () => (await bluePixels()).n, { timeout: 10_000 }).toBeGreaterThan(300)
+    await expect.poll(async () => (await bluePixels()).cols, { timeout: 10_000 }).toBeGreaterThanOrEqual(120)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pchannel').length
             } catch {
               return -1
             }
@@ -1902,7 +2094,7 @@ test.describe('K 线应用冒烟', () => {
 
     // 画一条射线：锚点 → 方向点（向右上延伸）
     await openDrawing(page)
-    await page.getByRole('button', { name: '射线' }).click()
+    await page.getByRole('button', { name: '射线', exact: true }).click()
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })

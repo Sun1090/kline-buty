@@ -55,6 +55,8 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'wedge', labelKey: 'drawing.wedge' },
   { value: 'arc', labelKey: 'drawing.arc' },
   { value: 'ray', labelKey: 'drawing.ray' },
+  { value: 'parray', labelKey: 'drawing.parray' },
+  { value: 'pchannel', labelKey: 'drawing.pchannel' },
   { value: 'text', labelKey: 'drawing.text' },
   { value: 'fibext', labelKey: 'drawing.fibext' },
   { value: 'fibchannel', labelKey: 'drawing.fibchannel' },
