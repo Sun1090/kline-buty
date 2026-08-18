@@ -3,6 +3,7 @@ import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import { cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
+import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
@@ -145,6 +146,8 @@ export function ChartView({
   /** 当前全量数据长度（渲染期同步，供可见区间回调读取） */
   const dataLenRef = useRef(0)
   const [tooltip, setTooltip] = useState<Tooltip | null>(null)
+  /** 可见区间是否停在最新 K 线（回看历史时显示「回到最新」按钮） */
+  const [atLatest, setAtLatest] = useState(true)
 
   const hasMoreRef = useRef(hasMore)
   hasMoreRef.current = hasMore
@@ -246,6 +249,7 @@ export function ChartView({
       const gTo = base + to
       lastVisibleRef.current = { from: gFrom, to: gTo }
       const len = dataLenRef.current
+      setAtLatest(!isAwayFromLatest(gTo, len))
       // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
       if (shouldCull(len)) {
         const target = cullWindow(len, { from: gFrom, to: gTo })
@@ -745,6 +749,36 @@ export function ChartView({
         </div>
           )
         })()}
+      {!atLatest && !replay && candles.length > 1 && (
+        <button
+          data-testid="back-to-latest"
+          onClick={() => {
+            apiRef.current?.scrollToRealTime()
+            setAtLatest(true)
+          }}
+          title={t('common.backToLatest')}
+          style={{
+            position: 'absolute',
+            right: 10,
+            bottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '5px 12px',
+            fontSize: 12,
+            border: '1px solid #2a2e39',
+            borderRadius: 999,
+            cursor: 'pointer',
+            background: 'var(--panel)',
+            color: '#4e9cf5',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
+            zIndex: 6,
+          }}
+        >
+          <span style={{ fontSize: 13, lineHeight: 1 }}>⤓</span>
+          {t('common.backToLatest')}
+        </button>
+      )}
       <div
         data-testid="chart-watermark"
         style={{

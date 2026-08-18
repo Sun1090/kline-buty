@@ -6,6 +6,41 @@ test.use({
   hasTouch: true,
 })
 
+/** 等待蜡烛真正渲染（canvas 出现涨跌色像素）；冷启动直连慢时刷新一次重试 */
+async function waitCandlesRendered(page: import('@playwright/test').Page) {
+  const hasCandles = () =>
+    page.waitForFunction(
+      () => {
+        const cs = [...document.querySelectorAll('canvas')]
+        for (const c of cs) {
+          try {
+            const ctx = c.getContext('2d')
+            if (!ctx || c.width < 100) continue
+            const d = ctx.getImageData(0, 0, c.width, c.height).data
+            for (let i = 0; i < d.length; i += 200) {
+              const r = d[i]
+              const g = d[i + 1]
+              const b = d[i + 2]
+              if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+            }
+          } catch {
+            /* noop */
+          }
+        }
+        return false
+      },
+      { timeout: 30_000 },
+    )
+  try {
+    await hasCandles()
+  } catch {
+    // 首次冷启动直连币安偶发慢：刷新页面重试一次
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await hasCandles()
+  }
+}
+
 test('移动端：K 线渲染 + 触摸拖动图表不滚动页面', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -604,5 +639,40 @@ test('移动端：OHLC 十字光标浮层防溢出——长按底部区域翻转
   expect(midTip!.bottom).toBeLessThanOrEqual(page.viewportSize()!.height)
 
   await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  expect(errs).toHaveLength(0)
+})
+
+test('移动端：回看历史 → 「回到最新」按钮出现 → 点击回到最新消失', async ({ page }) => {
+  const errs: string[] = []
+  page.on('pageerror', (e) => errs.push(e.message))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  const canvas = page.locator('canvas').first()
+  await expect(canvas).toBeVisible({ timeout: 15_000 })
+  const btn = page.getByTestId('back-to-latest')
+  // 初始停在最新 → 无按钮
+  await expect(btn).toHaveCount(0)
+
+  const box = await canvas.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  // 向右拖动 → 视图进入历史
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  for (let i = 1; i <= 20; i++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: cx + i * 22, y: cy }] })
+    await page.waitForTimeout(20)
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(300) // 等视图停稳再点击
+  await expect(btn).toBeVisible({ timeout: 8000 })
+
+  await btn.tap()
+  await expect(btn).toHaveCount(0, { timeout: 8000 })
   expect(errs).toHaveLength(0)
 })
