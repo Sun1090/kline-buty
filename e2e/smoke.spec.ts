@@ -2789,6 +2789,184 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：图层管理 → 水平线+趋势线两行 → 隐藏（像素减少+落库）→ 锁定不可选中 → 解锁选中 → 行内删除 → 全清空', async ({ page }) => {
+    test.setTimeout(120_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+
+    const chart = page.locator('main div').first()
+    const toggle = page.getByTestId('drawing-toggle')
+
+    /** 落库画线摘要（type/hidden/locked） */
+    const storedDrawings = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          return Object.values(d)
+            .flat()
+            .map((x) => ({
+              type: (x as { type?: string }).type ?? '',
+              hidden: !!(x as { hidden?: boolean }).hidden,
+              locked: !!(x as { locked?: boolean }).locked,
+            }))
+        } catch {
+          return []
+        }
+      })
+
+    /** 画线 overlay 黄色/蓝色像素计数 + 黄色质心（CSS 坐标） */
+    const yellowBlue = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { yellow: 0, blue: 0, cx: null, cy: null }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { yellow: 0, blue: 0, cx: null, cy: null }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        const dpr = window.devicePixelRatio || 1
+        const rect = overlay.getBoundingClientRect()
+        let y = 0
+        let b = 0
+        let sx = 0
+        let sy = 0
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const bl = img[i + 2]
+          const a = img[i + 3]
+          const yellow = a > 100 && r > 190 && g > 130 && g < 235 && bl < 110
+          const blue = a > 100 && bl > 190 && g > 110 && g < 200 && r < 130
+          if (yellow) {
+            y++
+            sx += (i / 4) % w / dpr
+            sy += Math.floor(i / 4 / w) / dpr
+          }
+          if (blue) b++
+        }
+        return { yellow: y, blue: b, cx: y ? rect.left + sx / y : null, cy: y ? rect.top + sy / y : null }
+      })
+
+    /** 选工具：开面板 → 点工具 → 等面板收起 + 图表进入画线光标（生产构建直连，状态即时） */
+    const pick = async (name: string) => {
+      await openDrawing(page)
+      await page.getByRole('button', { name, exact: true }).click()
+      await page.waitForFunction(
+        () => document.querySelector('[data-testid="drawing-toggle"]')?.getAttribute('aria-expanded') === 'false',
+        { timeout: 5000 },
+      )
+      if (name !== '鼠标') {
+        await page.waitForFunction(() => {
+          const el = document.querySelector('.chart-container')
+          return !!el && getComputedStyle(el).cursor === 'crosshair'
+        }, { timeout: 8000 })
+      }
+    }
+    const closeToggle = async () => {
+      if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click()
+    }
+
+    // 1) 水平线（单点）——画在 0.3h，与趋势线错开
+    await pick('水平线')
+    let box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.3)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.51, box!.y + box!.height * 0.3, { steps: 2 })
+    await page.mouse.up()
+    await expect
+      .poll(async () => (await storedDrawings()).filter((x) => x.type === 'horizontal').length, { timeout: 10_000 })
+      .toBe(1)
+
+    // 2) 趋势线（拖 A→B）——对角线 0.25w,0.7h → 0.75w,0.3h
+    await pick('趋势线')
+    box = await chart.boundingBox()
+    await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.7)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.75, box!.y + box!.height * 0.3, { steps: 6 })
+    await page.mouse.up()
+    await expect
+      .poll(async () => (await storedDrawings()).filter((x) => x.type === 'trend').length, { timeout: 10_000 })
+      .toBe(1)
+
+    // 3) 切回鼠标并点空白取消选中（两线都变黄）
+    await pick('鼠标')
+    box = await chart.boundingBox()
+    await page.mouse.click(box!.x + box!.width * 0.12, box!.y + box!.height * 0.12)
+    await expect.poll(async () => (await yellowBlue()).blue, { timeout: 5000 }).toBe(0)
+
+    // 4) 打开图层 → 2 行
+    await openDrawing(page)
+    await page.getByTestId('drawing-layers-open').click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(2)
+    const labels = (await page.getByTestId('drawing-layer-row').allTextContents()).map((x) => x.trim())
+    expect(labels.some((x) => x.startsWith('水平线'))).toBe(true)
+    expect(labels.some((x) => x.startsWith('趋势线'))).toBe(true)
+
+    // 5) 隐藏第一行（水平线）→ 黄色像素减少 + hidden 落库；再显示 → 恢复；再隐藏
+    const y0 = (await yellowBlue()).yellow
+    await page.getByTestId('drawing-layer-eye').first().click()
+    await expect
+      .poll(async () => (await storedDrawings()).find((x) => x.type === 'horizontal')?.hidden, { timeout: 5000 })
+      .toBe(true)
+    await expect.poll(async () => (await yellowBlue()).yellow, { timeout: 5000 }).toBeLessThan(y0)
+    await page.getByTestId('drawing-layer-eye').first().click()
+    await expect
+      .poll(async () => (await storedDrawings()).find((x) => x.type === 'horizontal')?.hidden, { timeout: 5000 })
+      .toBe(false)
+    await page.getByTestId('drawing-layer-eye').first().click()
+    await expect
+      .poll(async () => (await storedDrawings()).find((x) => x.type === 'horizontal')?.hidden, { timeout: 5000 })
+      .toBe(true)
+
+    // 6) 锁定第二行（趋势线）→ locked 落库
+    await page.getByTestId('drawing-layer-lock').nth(1).click()
+    await expect
+      .poll(async () => (await storedDrawings()).find((x) => x.type === 'trend')?.locked, { timeout: 5000 })
+      .toBe(true)
+
+    // 7) 返回工具视图并收起面板 → 点趋势线中心（此时水平线已隐藏，质心即趋势线）→ 锁定线不可选中（无蓝色像素）
+    await page.getByTestId('drawing-layer-back').click()
+    await page.waitForTimeout(300)
+    await closeToggle()
+    await expect.poll(async () => (await yellowBlue()).cx, { timeout: 5000 }).not.toBeNull()
+    let px = await yellowBlue()
+    await page.mouse.click(px.cx!, px.cy!)
+    await expect.poll(async () => (await yellowBlue()).blue, { timeout: 5000 }).toBe(0)
+
+    // 8) 解锁 → 再点趋势线 → 应选中（蓝色像素 + 行 data-selected=true）
+    await openDrawing(page)
+    await page.getByTestId('drawing-layers-open').click()
+    await page.getByTestId('drawing-layer-lock').nth(1).click()
+    await expect
+      .poll(async () => (await storedDrawings()).find((x) => x.type === 'trend')?.locked, { timeout: 5000 })
+      .toBe(false)
+    await page.getByTestId('drawing-layer-back').click()
+    await page.waitForTimeout(300)
+    await closeToggle()
+    px = await yellowBlue()
+    await page.mouse.click(px.cx!, px.cy!)
+    await expect.poll(async () => (await yellowBlue()).blue, { timeout: 5000 }).toBeGreaterThan(0)
+    await openDrawing(page)
+    await page.getByTestId('drawing-layers-open').click()
+    await expect(page.getByTestId('drawing-layer-row').nth(1)).toHaveAttribute('data-selected', 'true')
+
+    // 9) 行内删除第一行（隐藏的水平线）→ 剩 1 行 + 落库移除
+    await page.getByTestId('drawing-layer-delete').first().click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(1)
+    await expect
+      .poll(async () => (await storedDrawings()).some((x) => x.type === 'horizontal'), { timeout: 5000 })
+      .toBe(false)
+
+    // 10) 全部清除 → 空态 + 落库清空
+    await page.getByTestId('drawing-layer-clear').click()
+    await expect(page.getByTestId('drawing-layer-empty')).toHaveCount(1)
+    await expect.poll(async () => (await storedDrawings()).length, { timeout: 5000 }).toBe(0)
+  })
+
   test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())

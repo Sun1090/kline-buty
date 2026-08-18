@@ -39,6 +39,9 @@ import {
   priceBandYs,
   trendAngleDeg,
   textHitExtents,
+  toggleDrawingHidden,
+  toggleDrawingLocked,
+  patchDrawing,
   FIB_LEVELS,
   type Drawing,
   type Project,
@@ -1442,5 +1445,64 @@ describe('斐波那契时间区间（fibtz）', () => {
     expect(hitTestDrawings([d], 31, 200, project)).toBe('ft3') // 分界线 30 右侧 1px（下一带 [30,50] 内）
     expect(hitTestDrawings([d], 8, 200, project)).toBe('ft3') // 原点 A 左侧 2px（距分界 10 为 2px）
     expect(hitTestDrawings([d], 1, 200, project)).toBeNull() // 距最近分界 9px（超出 8px 阈值）
+  })
+})
+
+describe('图层管理（hidden/locked/patch）', () => {
+  it('toggleDrawingHidden：翻转隐藏态并保留其余字段', () => {
+    const d = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')
+    const h = toggleDrawingHidden(d)
+    expect(h.hidden).toBe(true)
+    expect(h.type).toBe('horizontal')
+    expect(h.points).toEqual(d.points)
+    expect(h.id).toBe('h1')
+    // 再切一次恢复
+    expect(toggleDrawingHidden(h).hidden).toBe(false)
+    // 原对象不被修改
+    expect(d.hidden).toBeUndefined()
+  })
+
+  it('toggleDrawingLocked：翻转锁定态并保留其余字段', () => {
+    const d = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 't1')
+    const l = toggleDrawingLocked(d)
+    expect(l.locked).toBe(true)
+    expect(l.type).toBe('trend')
+    expect(l.points).toEqual(d.points)
+    expect(toggleDrawingLocked(l).locked).toBe(false)
+  })
+
+  it('patchDrawing：仅命中 id 的条目打补丁，其余原样保留', () => {
+    const a = createDrawing('horizontal', [{ time: 10, price: 100 }], 'a')
+    const b = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'b')
+    const out = patchDrawing([a, b], 'b', { locked: true })
+    expect(out[0]).toBe(a) // 未命中条目引用不变
+    expect(out[1].locked).toBe(true)
+    expect(out[1].id).toBe('b')
+    expect(out[1].type).toBe('trend')
+    // 不存在的 id 原样返回
+    const same = patchDrawing([a, b], 'nope', { hidden: true })
+    expect(same[0]).toBe(a)
+    expect(same[1]).toBe(b)
+  })
+
+  it('hitTestDrawings：隐藏的画线不参与命中', () => {
+    const d = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')
+    expect(hitTestDrawings([d], 50, 200, project)).toBe('h1')
+    const hidden = { ...d, hidden: true }
+    expect(hitTestDrawings([hidden], 50, 200, project)).toBeNull()
+  })
+
+  it('hitTestDrawings：锁定的画线不可选中（不参与命中但保留数据）', () => {
+    const d = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 't1')
+    expect(hitTestDrawings([d], 50, 225, project)).toBe('t1')
+    const locked = { ...d, locked: true }
+    expect(hitTestDrawings([locked], 50, 225, project)).toBeNull()
+  })
+
+  it('hitTestDrawings：隐藏的条目不遮挡其他可见画线', () => {
+    // 同一点上，隐藏的在前、可见的在后 → 应命中可见的那条
+    const hidden = { ...createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1'), hidden: true }
+    const visible = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h2')
+    expect(hitTestDrawings([hidden, visible], 50, 200, project)).toBe('h2')
   })
 })

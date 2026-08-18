@@ -6,6 +6,7 @@ import {
   type DrawingTool,
 } from '../drawings/logic'
 import { useI18n, type MessageKey } from '../i18n'
+import { DrawingLayers } from './DrawingLayers'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
 import { ThemePicker } from './ThemePicker'
@@ -19,7 +20,7 @@ import {
 } from './headerOptions'
 import type { MobileHeaderProps } from './MobileHeader'
 
-type MenuId = 'drawing' | 'more' | null
+type MenuId = 'drawing' | 'more' | 'layers' | null
 
 export interface DesktopHeaderProps extends MobileHeaderProps {
   /** 文本标注编辑态：输入框临时出现在可见行 */
@@ -441,6 +442,38 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               props.onDrawingTool(v as DrawingTool)
               setMenu(null)
             }}
+          />
+          <button
+            data-testid="drawing-layers-open"
+            onClick={() => setMenu('layers')}
+            style={{
+              marginTop: 8,
+              padding: '7px 12px',
+              fontSize: 12,
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              background: 'rgba(255,255,255,0.06)',
+              color: 'var(--text-dim)',
+            }}
+          >
+            {t('layers.title')}（{props.drawings.length}）
+          </button>
+        </div>
+      )}
+
+      {/* 画线图层管理面板 */}
+      {menu === 'layers' && (
+        <div style={PANEL_STYLE} data-testid="desktop-layers-panel">
+          <DrawingLayers
+            drawings={props.drawings}
+            selectedId={props.selectedDrawingId}
+            onSelect={props.onSelectDrawing}
+            onToggleHidden={props.onToggleDrawingHidden}
+            onToggleLocked={props.onToggleDrawingLocked}
+            onDelete={props.onDeleteDrawing}
+            onClearAll={props.onClearDrawings}
+            onBack={() => setMenu('drawing')}
           />
         </div>
       )}

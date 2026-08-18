@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import type { Period } from '../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from './ChartView'
-import type { DrawingTool } from '../drawings/logic'
+import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { ColorPresetId, ThemeMode } from '../theme'
 import { useI18n, type MessageKey } from '../i18n'
+import { DrawingLayers } from './DrawingLayers'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
 import { ThemePicker } from './ThemePicker'
@@ -16,7 +17,7 @@ import {
   type HeaderOption,
 } from './headerOptions'
 
-type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more'
+type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more' | 'layers'
 
 export interface MobileHeaderProps {
   /** 由 App 注入，供 ResizeObserver 测 header 高度（右侧抽屉/面板定位依赖） */
@@ -40,6 +41,14 @@ export interface MobileHeaderProps {
   drawingSelected: boolean
   onDeleteSelectedDrawing: () => void
   onEditSelectedText?: () => void
+  /** 图层管理：当前交易对全部画线 + 操作回调 */
+  drawings: Drawing[]
+  selectedDrawingId: string | null
+  onSelectDrawing: (id: string) => void
+  onToggleDrawingHidden: (id: string) => void
+  onToggleDrawingLocked: (id: string) => void
+  onDeleteDrawing: (id: string) => void
+  onClearDrawings: () => void
   layout: 'single' | 'pair' | 'quad'
   onCycleLayout: () => void
   themeMode: ThemeMode
@@ -463,7 +472,36 @@ export function MobileHeader(props: MobileHeaderProps) {
                   closePanel()
                 }}
               />
+              <button
+                data-testid="drawing-layers-open"
+                onClick={() => setMenu('layers')}
+                style={{
+                  marginTop: 8,
+                  width: '100%',
+                  padding: '8px 10px',
+                  fontSize: 12,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'var(--text-dim)',
+                }}
+              >
+                {t('layers.title')}（{props.drawings.length}）
+              </button>
             </>
+          )}
+          {menu === 'layers' && (
+            <DrawingLayers
+              drawings={props.drawings}
+              selectedId={props.selectedDrawingId}
+              onSelect={props.onSelectDrawing}
+              onToggleHidden={props.onToggleDrawingHidden}
+              onToggleLocked={props.onToggleDrawingLocked}
+              onDelete={props.onDeleteDrawing}
+              onClearAll={props.onClearDrawings}
+              onBack={() => setMenu('drawing')}
+            />
           )}
           {menu === 'more' && (
             <>

@@ -548,6 +548,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.drawWatermark(ctx, w, h)
 
     for (const d of this.drawings) {
+      // 图层管理：隐藏的画线不渲染（数据仍保留，取消隐藏即恢复）
+      if (d.hidden) continue
       // 拖拽中的画线由预览态绘制（实时跟随指针）
       if (this.dragEdit && d.id === this.dragEdit.id) continue
       this.drawOne(ctx, d, d.id === this.selectedDrawingId)
