@@ -211,15 +211,21 @@ export function DesktopHeader(props: DesktopHeaderProps) {
   const layoutLabel =
     props.layout === 'single' ? t('layout.single') : props.layout === 'pair' ? t('layout.pair') : t('layout.quad')
 
+  // 触发外部面板/浮层的功能：点击后收起更多面板（避免遮挡右侧面板/弹层，与移动端一致）
+  // 纯切换类（类型/主图/副图指标/布局/主题/语言等）保持展开，方便连续操作
+  const closeMore = (fn: () => void) => () => {
+    fn()
+    setMenu(null)
+  }
   const moreToggles: { label: string; active: boolean; onToggle: () => void; title?: string; disabled?: boolean }[] = [
-    { label: t('panel.position'), active: props.positionActive, onToggle: props.onTogglePosition, title: t('panel.positionTitle') },
-    { label: t('panel.alerts'), active: props.alertsActive, onToggle: props.onToggleAlerts, title: t('panel.alertsTitle') },
-    { label: t('panel.depth'), active: props.depthActive, onToggle: props.onToggleDepth, title: t('panel.depthTitle') },
-    { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: props.onToggleOrderBook, title: t('panel.orderBookTitle') },
-    { label: t('panel.vp'), active: props.vpActive, onToggle: props.onToggleVp, title: t('panel.vpTitle') },
-    { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: props.onToggleSentiment, title: t('panel.sentimentTitle') },
-    { label: t('replay.start'), active: props.replayActive, onToggle: props.onReplay, title: t('replay.title'), disabled: props.replayDisabled },
-    { label: t('panel.settings'), active: props.settingsActive, onToggle: props.onToggleSettings },
+    { label: t('panel.position'), active: props.positionActive, onToggle: closeMore(props.onTogglePosition), title: t('panel.positionTitle') },
+    { label: t('panel.alerts'), active: props.alertsActive, onToggle: closeMore(props.onToggleAlerts), title: t('panel.alertsTitle') },
+    { label: t('panel.depth'), active: props.depthActive, onToggle: closeMore(props.onToggleDepth), title: t('panel.depthTitle') },
+    { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: closeMore(props.onToggleOrderBook), title: t('panel.orderBookTitle') },
+    { label: t('panel.vp'), active: props.vpActive, onToggle: closeMore(props.onToggleVp), title: t('panel.vpTitle') },
+    { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: closeMore(props.onToggleSentiment), title: t('panel.sentimentTitle') },
+    { label: t('replay.start'), active: props.replayActive, onToggle: closeMore(props.onReplay), title: t('replay.title'), disabled: props.replayDisabled },
+    { label: t('panel.settings'), active: props.settingsActive, onToggle: closeMore(props.onToggleSettings) },
   ]
 
   return (
