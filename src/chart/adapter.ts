@@ -31,6 +31,7 @@ import {
   hitTestDrawings,
   measureInfo,
   moveAnchor,
+  pitchforkRays,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
@@ -1233,6 +1234,58 @@ export class LightweightChartAdapter implements ChartApi {
       if (selected) {
         this.drawAnchor(ctx, a.x, a.y)
         this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+    if (d.type === 'pitchfork') {
+      // 安德鲁叉（Andrews Pitchfork）：A 起点 → B/C 中点连中轨，过 B/C 作平行上/下轨，向右无限延伸（canvas 裁剪）
+      const [pa, pb, pc] = d.points
+      const a = this.project(pa.time, pa.price)
+      if (!a) return
+      const b = pb ? this.project(pb.time, pb.price) : null
+      const c = pc ? this.project(pc.time, pc.price) : null
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      const s2 = Math.max(w, h) * 2
+      if (b && c) {
+        const rays = pitchforkRays(a, b, c)
+        rays.forEach((ray, i) => {
+          const dx = ray.dir.x - ray.from.x
+          const dy = ray.dir.y - ray.from.y
+          const len = Math.hypot(dx, dy)
+          if (len === 0) return
+          ctx.strokeStyle = i === 0 ? (selected ? '#4e9cf5' : this.theme.yellow) : selected ? '#4e9cf5' : this.theme.yellow + 'aa'
+          ctx.lineWidth = i === 0 ? (selected ? 1.8 : 1.3) : 1
+          ctx.beginPath()
+          ctx.moveTo(ray.from.x, ray.from.y)
+          ctx.lineTo(ray.from.x + (dx / len) * s2, ray.from.y + (dy / len) * s2)
+          ctx.stroke()
+        })
+        ctx.lineWidth = 1
+        // B→C 中点小记号（浅色虚线，指示叉心）
+        const mid = { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 }
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '55'
+        ctx.setLineDash([3, 3])
+        ctx.beginPath()
+        ctx.moveTo(b.x, b.y)
+        ctx.lineTo(mid.x, mid.y)
+        ctx.lineTo(c.x, c.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.beginPath()
+        ctx.arc(mid.x, mid.y, 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      for (const pt of [a, b, c]) {
+        if (!pt) continue
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      if (selected) {
+        for (const pt of [a, b, c]) {
+          if (pt) this.drawAnchor(ctx, pt.x, pt.y)
+        }
       }
       return
     }
