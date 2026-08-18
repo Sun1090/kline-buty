@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import type { DrawingTool } from '../drawings/logic'
+import {
+  TEXT_COLOR_OPTIONS,
+  TEXT_FONT_SIZE_MAX,
+  TEXT_FONT_SIZE_MIN,
+  type DrawingTool,
+} from '../drawings/logic'
 import { useI18n, type MessageKey } from '../i18n'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
@@ -20,7 +25,11 @@ export interface DesktopHeaderProps extends MobileHeaderProps {
   /** 文本标注编辑态：输入框临时出现在可见行 */
   editingTextId: string | null
   textDraft: string
+  textFontSize: number
+  textColor: string
   onTextDraftChange: (v: string) => void
+  onTextFontSizeChange: (n: number) => void
+  onTextColorChange: (c: string) => void
   onConfirmText: () => void
   onCancelText: () => void
 }
@@ -275,54 +284,131 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           </>
         )}
         {props.editingTextId && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
-            <input
-              value={props.textDraft}
-              onChange={(e) => props.onTextDraftChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') props.onConfirmText()
-                if (e.key === 'Escape') props.onCancelText()
-              }}
-              placeholder={t('drawing.textPlaceholder')}
-              autoFocus
-              style={{
-                width: 120,
-                fontSize: 11,
-                padding: '3px 6px',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                background: 'var(--panel)',
-                color: 'var(--text)',
-              }}
-            />
-            <button
-              onClick={props.onConfirmText}
-              style={{
-                padding: '3px 8px',
-                fontSize: 11,
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                background: 'var(--accent)',
-                color: '#fff',
-              }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '0 0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <textarea
+                value={props.textDraft}
+                onChange={(e) => props.onTextDraftChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) props.onConfirmText()
+                  if (e.key === 'Escape') props.onCancelText()
+                }}
+                placeholder={t('drawing.textPlaceholder')}
+                autoFocus
+                rows={2}
+                style={{
+                  width: 120,
+                  minHeight: 30,
+                  fontSize: 11,
+                  padding: '3px 6px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  background: 'var(--panel)',
+                  color: 'var(--text)',
+                  resize: 'vertical',
+                  lineHeight: 1.4,
+                }}
+              />
+              <button
+                onClick={props.onConfirmText}
+                data-testid="text-confirm"
+                style={{
+                  padding: '3px 8px',
+                  fontSize: 11,
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'var(--accent)',
+                  color: '#fff',
+                }}
+              >
+                {t('common.confirm')}
+              </button>
+              <button
+                onClick={props.onCancelText}
+                style={{
+                  padding: '3px 8px',
+                  fontSize: 11,
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: 'var(--text-dim)',
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+            <div
+              data-testid="text-options"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}
             >
-              {t('common.confirm')}
-            </button>
-            <button
-              onClick={props.onCancelText}
-              style={{
-                padding: '3px 8px',
-                fontSize: 11,
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                background: 'transparent',
-                color: 'var(--text-dim)',
-              }}
-            >
-              {t('common.cancel')}
-            </button>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{t('drawing.fontSize')}</span>
+              <button
+                onClick={() => props.onTextFontSizeChange(Math.max(TEXT_FONT_SIZE_MIN, props.textFontSize - 2))}
+                data-testid="text-font-dec"
+                aria-label={`${t('drawing.fontSize')} -`}
+                style={{
+                  padding: '1px 6px',
+                  fontSize: 11,
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                }}
+              >
+                A−
+              </button>
+              <span data-testid="text-font-value" style={{ fontSize: 11, color: 'var(--text)', minWidth: 20, textAlign: 'center' }}>
+                {props.textFontSize}
+              </span>
+              <button
+                onClick={() => props.onTextFontSizeChange(Math.min(TEXT_FONT_SIZE_MAX, props.textFontSize + 2))}
+                data-testid="text-font-inc"
+                aria-label={`${t('drawing.fontSize')} +`}
+                style={{
+                  padding: '1px 6px',
+                  fontSize: 11,
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                }}
+              >
+                A+
+              </button>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 4 }}>{t('drawing.color')}</span>
+              {TEXT_COLOR_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  data-testid={`text-color-${opt.id}`}
+                  aria-label={`${t('drawing.color')} ${opt.id}`}
+                  aria-pressed={props.textColor === opt.color}
+                  onClick={() => props.onTextColorChange(opt.color)}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    border: props.textColor === opt.color ? '2px solid #fff' : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: opt.color || 'transparent',
+                    ...(opt.color
+                      ? {}
+                      : {
+                          background: 'transparent',
+                          border: '1px dashed var(--border)',
+                          color: 'var(--text)',
+                          fontSize: 10,
+                          lineHeight: '14px',
+                        }),
+                  }}
+                >
+                  {opt.color ? '' : 'A'}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         <span style={{ marginLeft: 'auto' }} />

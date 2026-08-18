@@ -551,6 +551,92 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：文本标注多行/字号/颜色 → 落库 → 重新编辑恢复 → 像素校验 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '文本' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 单击放置（down → 微动 → up）
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.4)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.52, box!.y + box!.height * 0.4, { steps: 2 })
+    await page.mouse.up()
+    await expect(page.getByPlaceholder('文本内容')).toBeVisible({ timeout: 5000 })
+    // 多行文本 + 字号 +2 两次 → 18 + 蓝色
+    await page.getByPlaceholder('文本内容').fill('关键位\n支撑位')
+    await page.getByTestId('text-font-inc').click()
+    await page.getByTestId('text-font-inc').click()
+    await expect(page.getByTestId('text-font-value')).toHaveText('18')
+    await page.getByTestId('text-color-blue').click()
+    await expect(page.getByTestId('text-color-blue')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('text-confirm').click()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 落库：多行文本 + fontSize + color
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)[0] as { type: string; text?: string; fontSize?: number; color?: string }[]
+        return arr[0] ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.type).toBe('text')
+    expect(saved!.text).toBe('关键位\n支撑位')
+    expect(saved!.fontSize).toBe(18)
+    expect(saved!.color).toBe('#4e9cf5')
+
+    // 重新编辑：恢复多行文本 / 字号 / 颜色
+    await page.getByRole('button', { name: '改字' }).click()
+    await expect(page.getByPlaceholder('文本内容')).toHaveValue('关键位\n支撑位')
+    await expect(page.getByTestId('text-font-value')).toHaveText('18')
+    await expect(page.getByTestId('text-color-blue')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('text-confirm').click()
+    await page.waitForTimeout(300)
+
+    // 像素：overlay 出现蓝色文本（18px 两行）→ 蓝色像素量明显
+    const bluePx = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return 0
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return 0
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        let n = 0
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 100 && r < 130 && g > 110 && g < 200 && b > 190) n++
+        }
+        return n
+      })
+    await expect.poll(() => bluePx(), { timeout: 10_000 }).toBeGreaterThan(150)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(async () => (await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        return Object.values(d)[0]?.length ?? -1
+      } catch {
+        return -2
+      }
+    })) === 0).toBe(true)
+  })
+
   test('深度/筹码面板开关', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
