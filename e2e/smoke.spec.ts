@@ -992,6 +992,107 @@ test.describe('K 线应用冒烟', () => {
       .toBe(0)
   })
 
+  test('画线：价格带 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色水平带双边框 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '价格带' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 拖出 A→B（纵向跨度 → 水平带）
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.3)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.6, { steps: 5 })
+    await page.mouse.up()
+    // 落库：type=pband，两点按价格排序（低价在前）
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const arr = Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pband')
+              return arr.length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'pband')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[0].price).toBeLessThan(saved!.points[1].price)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 像素：刚创建处于选中态 → overlay 出现蓝色水平带双边框（≥2 个独立 y 行），且带内区域半透明填充
+    const blueBandStats = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { n: 0, rows: 0 }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { n: 0, rows: 0 }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        let n = 0
+        const rowCount = new Map<number, number>()
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            const y = Math.floor((i / 4) / w)
+            rowCount.set(y, (rowCount.get(y) ?? 0) + 1)
+          }
+        }
+        const rows = [...rowCount.values()].filter((c) => c > 20).length
+        return { n, rows }
+      })
+    await expect.poll(() => blueBandStats().then((s) => s.n), { timeout: 10_000 }).toBeGreaterThan(300)
+    await expect.poll(() => blueBandStats().then((s) => s.rows), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+
+    // 删除
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pband').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
+
   test('画线：斐波那契通道 → A→B 定义摆幅 → 落库两点保序 → 像素校验选中蓝色平行线（≥4 条）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')

@@ -34,6 +34,7 @@ export type DrawingTool =
   | 'pchannel'
   | 'angle'
   | 'timerange'
+  | 'pband'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -403,6 +404,11 @@ export function timeRangeXs(aX: number, bX: number): { left: number; right: numb
   return { left: Math.min(aX, bX), right: Math.max(aX, bX) }
 }
 
+/** 价格带屏幕 y 范围（A→B 锚点 y 之间，上小下大；屏幕 y 向下） */
+export function priceBandYs(aY: number, bY: number): { top: number; bottom: number } {
+  return { top: Math.min(aY, bY), bottom: Math.max(aY, bY) }
+}
+
 /** 速度线（Speed Lines）：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线。
  * 返回 [主对角线 A→B, B 处竖直线, A→1/3, A→2/3] 四条线段。 */
 export function speedLines(
@@ -487,7 +493,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel') return [a, b]
-  if (type === 'hchannel') return a.price <= b.price ? [a, b] : [b, a]
+  if (type === 'hchannel' || type === 'pband') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
@@ -857,6 +863,18 @@ export function hitTestDrawings(
           dist = 0
         } else {
           dist = Math.min(Math.abs(px - left), Math.abs(px - right))
+        }
+      }
+    } else if (d.type === 'pband') {
+      // 价格带：水平带内任意位置可选中（区域命中）；外部按到上下边框的竖直距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const { top, bottom } = priceBandYs(a.y, b.y)
+        if (py >= top && py <= bottom) {
+          dist = 0
+        } else {
+          dist = Math.min(Math.abs(py - top), Math.abs(py - bottom))
         }
       }
     } else if (d.type === 'pitchfork') {

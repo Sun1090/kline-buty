@@ -33,6 +33,7 @@ import {
   requiredPoints,
   speedLines,
   timeRangeXs,
+  priceBandYs,
   trendAngleDeg,
   textHitExtents,
   FIB_LEVELS,
@@ -1323,5 +1324,46 @@ describe('趋势角度 / 时间区间（M 新工具）', () => {
     expect(hitTestDrawings([d], 100, 250, project)).toBe('tr1') // 右边框
     expect(hitTestDrawings([d], 104, 225, project)).toBe('tr1') // 右侧 4px 内
     expect(hitTestDrawings([d], 140, 225, project)).toBeNull() // 距边框 40px
+  })
+})
+
+describe('价格带（pband，时间区间的横向孪生）', () => {
+  it('priceBandYs：上小下大（无序输入归一）', () => {
+    expect(priceBandYs(250, 200)).toEqual({ top: 200, bottom: 250 })
+    expect(priceBandYs(200, 250)).toEqual({ top: 200, bottom: 250 })
+  })
+
+  it('requiredPoints：价格带为两点', () => {
+    expect(requiredPoints('pband')).toBe(2)
+  })
+
+  it('normalizePoints：价格带按价格排序（低价在前）', () => {
+    const a = normalizePoints('pband', [{ time: 0, price: 120 }, { time: 100, price: 80 }])
+    expect(a[0].price).toBe(80)
+    expect(a[1].price).toBe(120)
+    const b = normalizePoints('pband', [{ time: 100, price: 80 }, { time: 0, price: 120 }])
+    expect(b[0].price).toBe(80)
+    expect(b[1].price).toBe(120)
+  })
+
+  it('createDrawing / moveAnchor 保持两点并按价重排', () => {
+    const d = createDrawing('pband', [{ time: 0, price: 120 }, { time: 100, price: 80 }], 'pb1')
+    expect(d.points).toHaveLength(2)
+    expect(d.points[0].price).toBe(80)
+    expect(d.points[1].price).toBe(120)
+    const moved = moveAnchor(d, 1, { time: 100, price: 130 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[0].price).toBe(80)
+    expect(moved.points[1].price).toBe(130)
+  })
+
+  it('hitTest 价格带：带内任意位置区域命中 / 边框外按竖直距离 / 远处不命中', () => {
+    // A(0,120) B(100,80) → 屏幕 (0,180)/(100,220)，水平带 [180,220]（屏幕 y 向下）
+    const d = createDrawing('pband', [{ time: 0, price: 120 }, { time: 100, price: 80 }], 'pb2')
+    expect(hitTestDrawings([d], 999, 200, project)).toBe('pb2') // 带内任意 x
+    expect(hitTestDrawings([d], 0, 180, project)).toBe('pb2') // 上边框
+    expect(hitTestDrawings([d], 100, 220, project)).toBe('pb2') // 下边框
+    expect(hitTestDrawings([d], 50, 224, project)).toBe('pb2') // 下侧 4px 内
+    expect(hitTestDrawings([d], 50, 260, project)).toBeNull() // 距边框 40px
   })
 })
