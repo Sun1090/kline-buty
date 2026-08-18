@@ -2345,7 +2345,17 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   scrollToRealTime() {
-    this.chart.timeScale().scrollToRealTime()
+    // 瞬时跳到最新（保留当前缩放宽度）：不自带平滑动画的 scrollToRealTime()——
+    // 该动画在实时数据持续到达时会被时间轴更新打断，偶发半路停住（点击「回到最新」
+    // 后视图仍停在历史）。setVisibleLogicalRange 瞬时生效、不可被打断。
+    const bars = this.mainSeries.data()
+    const len = bars.length
+    if (len <= 0) return
+    const cur = this.chart.timeScale().getVisibleLogicalRange()
+    const span = cur && isFinite(cur.to - cur.from) && cur.to - cur.from > 0 ? cur.to - cur.from : 50
+    const to = len - 1 + (this.chart.options().timeScale.rightOffset || 0)
+    const from = Math.max(0, to - span)
+    this.chart.timeScale().setVisibleLogicalRange({ from, to })
   }
 
   setMainIndicator(data: MainIndicatorData) {

@@ -3683,3 +3683,32 @@ test.describe('移动端（390×844 触屏视口）', () => {
   })
 })
 
+test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到最新消失', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  const btn = page.getByTestId('back-to-latest')
+  await expect(btn).toHaveCount(0)
+
+  const canvas = page.locator('canvas').first()
+  const box = await canvas.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  // 鼠标按住向右拖 → 视图进入历史（pressedMouseMove 平移）
+  await page.mouse.move(cx, cy)
+  await page.mouse.down()
+  for (let i = 1; i <= 45; i++) {
+    await page.mouse.move(cx + i * 18, cy, { steps: 2 })
+  }
+  await page.mouse.up()
+  await expect(btn).toBeVisible({ timeout: 8000 })
+  await page.waitForTimeout(300) // 等视图停稳再点击，避免惯性滚动与点击竞争
+
+  await btn.click()
+  await expect(btn).toHaveCount(0, { timeout: 8000 })
+  expect(errors).toHaveLength(0)
+})

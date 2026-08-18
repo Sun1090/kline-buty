@@ -14,6 +14,7 @@ export const zh = {
     confirm: '确定',
     retry: '重试',
     more: '更多',
+    backToLatest: '回到最新',
   },
   scale: { linear: '线性', log: '对数', title: '价格坐标轴：线性 / 对数' },
   status: {
@@ -342,6 +343,7 @@ export const en: Messages = {
     confirm: 'OK',
     retry: 'Retry',
     more: 'More',
+    backToLatest: 'Back to latest',
   },
   scale: { linear: 'Linear', log: 'Log', title: 'Price scale: Linear / Log' },
   status: {
@@ -668,6 +670,7 @@ export const ja: Messages = {
     confirm: 'OK',
     retry: '再試行',
     more: 'その他',
+    backToLatest: '最新へ戻る',
   },
   scale: { linear: '線形', log: '対数', title: '価格軸：線形 / 対数' },
   status: {
@@ -995,6 +998,7 @@ export const ko: Messages = {
     confirm: '확인',
     retry: '재시도',
     more: '더보기',
+    backToLatest: '최신으로',
   },
   scale: { linear: '선형', log: '로그', title: '가격 축: 선형 / 로그' },
   status: {
@@ -1334,6 +1338,7 @@ export const es: Messages = {
     confirm: 'Aceptar',
     retry: 'Reintentar',
     more: 'Más',
+    backToLatest: 'Volver al último',
   },
   scale: { linear: 'Lineal', log: 'Log', title: 'Escala de precios: Lineal / Log' },
   status: {
