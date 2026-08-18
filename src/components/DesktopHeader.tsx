@@ -4,7 +4,6 @@ import { useI18n, type MessageKey } from '../i18n'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
 import { ThemePicker } from './ThemePicker'
-import { IndicatorBar } from './IndicatorBar'
 import {
   DRAWING_TOOLS,
   MAIN_OPTIONS,
@@ -231,7 +230,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          flexWrap: 'nowrap',
+          flexWrap: 'wrap',
           gap: 6,
           padding: '6px 10px',
           borderBottom: '1px solid #2a2e39',
@@ -247,24 +246,6 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           }}
         />
         <PeriodBar value={props.period} onChange={props.onPeriod} />
-        <IndicatorBar
-          group={t('group.type')}
-          options={TYPE_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={props.chartType}
-          onChange={(v) => props.onChartType(v as never)}
-        />
-        <IndicatorBar
-          group={t('group.main')}
-          options={MAIN_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={props.mainIndicator}
-          onChange={(v) => props.onMainIndicator(v as never)}
-        />
-        <IndicatorBar
-          group={t('group.sub')}
-          options={SUB_OPTIONS.map((o) => ({ value: o.value, label: optionLabel(o, t) }))}
-          value={props.subIndicator}
-          onChange={(v) => props.onSubIndicator(v as never)}
-        />
         <RowButton
           testId="drawing-toggle"
           onClick={() => toggleMenu('drawing')}
@@ -374,6 +355,87 @@ export function DesktopHeader(props: DesktopHeaderProps) {
       {/* 更多功能折叠面板：按钮自动换行，不出横向滚动条 */}
       {menu === 'more' && (
         <div style={PANEL_STYLE} data-testid="desktop-more-panel">
+          <SectionTitle>{t('group.type')} · {t('group.main')} · {t('group.sub')}</SectionTitle>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('group.type')}</span>
+              {TYPE_OPTIONS.map((o) => {
+                const active = o.value === props.chartType
+                return (
+                  <button
+                    key={o.value}
+                    data-testid={`chart-type-${o.value}`}
+                    onClick={() => props.onChartType(o.value as never)}
+                    style={{
+                      flex: '0 0 auto',
+                      padding: '7px 10px',
+                      fontSize: 12,
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                      color: active ? '#fff' : 'var(--text-dim)',
+                    }}
+                  >
+                    {optionLabel(o, t)}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('group.main')}</span>
+              {MAIN_OPTIONS.map((o) => {
+                const active = o.value === props.mainIndicator
+                return (
+                  <button
+                    key={o.value}
+                    data-testid={`main-indicator-${o.value}`}
+                    onClick={() => props.onMainIndicator(o.value as never)}
+                    style={{
+                      flex: '0 0 auto',
+                      padding: '7px 10px',
+                      fontSize: 12,
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                      color: active ? '#fff' : 'var(--text-dim)',
+                    }}
+                  >
+                    {optionLabel(o, t)}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('group.sub')}</span>
+              {SUB_OPTIONS.map((o) => {
+                const active = o.value === props.subIndicator
+                return (
+                  <button
+                    key={o.value}
+                    data-testid={`sub-indicator-${o.value}`}
+                    onClick={() => props.onSubIndicator(o.value as never)}
+                    style={{
+                      flex: '0 0 auto',
+                      padding: '7px 10px',
+                      fontSize: 12,
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                      color: active ? '#fff' : 'var(--text-dim)',
+                    }}
+                  >
+                    {optionLabel(o, t)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <SectionTitle>{t('layout.switchTitle')} · {t('scale.title')} · {t('theme.switchTitle')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             <PanelButton onClick={props.onCycleLayout} title={t('layout.switchTitle')} active={props.layout !== 'single'} testId="layout-toggle">

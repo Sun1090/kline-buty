@@ -241,6 +241,8 @@ test.describe('K 线应用冒烟', () => {
     // 等蜡烛真正渲染（canvas 涨跌色像素）
     await waitCandlesRendered(page)
     await page.getByRole('button', { name: '1时' }).click()
+    // 主图/副图指标已折叠进「更多」面板（选中不收起，可连续切换）
+    await openMore(page)
     await page.getByRole('button', { name: 'MACD' }).click()
     await page.getByRole('button', { name: 'BOLL' }).click()
     // 打开当前交易对下拉，用搜索过滤后切换
@@ -750,6 +752,8 @@ test.describe('K 线应用冒烟', () => {
   test('键盘快捷键：⌘K 搜索 / 布局 1·2·3 / M 循环指标 / ? 帮助浮层 / F 全屏', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    // 主图/副图按钮已折叠进「更多」面板：提前展开，后续 M/N 循环与布局断言均可见
+    await openMore(page)
     // Ctrl+K → 搜索下拉打开且输入框聚焦
     await page.keyboard.press('Control+k')
     await expect(page.getByPlaceholder('搜索交易对')).toBeVisible({ timeout: 5000 })
@@ -1622,7 +1626,8 @@ test.describe('K 线应用冒烟', () => {
       },
       { timeout: 30_000 },
     )
-    // SAR：切换后不抛错（圆点走 marker 渲染路径）
+    // SAR：切换后不抛错（圆点走 marker 渲染路径；主图按钮在「更多」面板内）
+    await openMore(page)
     await page.getByRole('button', { name: 'SAR', exact: true }).click()
     await page.waitForTimeout(1200)
     expect(errors).toHaveLength(0)
@@ -1683,15 +1688,17 @@ test.describe('K 线应用冒烟', () => {
       },
       { timeout: 30_000 },
     )
-    // 打开 RSI 参数：默认 14 → 改为 7（「参数」按钮在更多折叠面板内）
-    await page.getByRole('button', { name: 'RSI', exact: true }).click()
+    // 打开 RSI 参数：默认 14 → 改为 7（RSI 与「参数」按钮都在更多折叠面板内）
     await openMore(page)
+    await page.getByRole('button', { name: 'RSI', exact: true }).click()
     await page.getByRole('button', { name: '参数', exact: true }).click()
     await expect(page.getByText('RSI 周期', { exact: true })).toBeVisible()
     const rsiInput = page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')
     await expect(rsiInput).toHaveValue('14')
     await rsiInput.fill('7')
     await page.getByRole('button', { name: '✕', exact: true }).click()
+    // 参数浮层在顶栏之外：点 ✕ 时「点击外部收起」会把更多面板一起收起 → 重新展开再切全指标
+    await openMore(page)
     // 全指标切换无异常（含新接线参数的 WR/OBV/ATR/DMI/CCI/PSY/SAR/Ichimoku）
     for (const name of ['WR', 'OBV', 'ATR', 'DMI', 'CCI', 'PSY', 'STOCH', 'ROC', 'MOM']) {
       await page.getByRole('button', { name, exact: true }).click()
