@@ -34,7 +34,9 @@ import {
   hitTestDrawings,
   measureInfo,
   moveAnchor,
+  parallelRaySpec,
   pitchforkRays,
+  widthChannelSpec,
   moveDrawing,
   nearestAnchor,
   normalizePoints,
@@ -1232,6 +1234,79 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.arc(b.x, b.y, 3, 0, Math.PI * 2)
         ctx.fill()
       }
+      return
+    }
+    if (d.type === 'parray') {
+      // 平行射线：A→B 方向参考虚线 + 从 C 沿 (B−A) 方向无限延伸（画到画布外由 canvas 裁剪）
+      const [pa, pb, pc] = d.points
+      if (!pa || !pb || !pc) return
+      const a = this.project(pa.time, pa.price)
+      const b = this.project(pb.time, pb.price)
+      const c = this.project(pc.time, pc.price)
+      if (!a || !b || !c) return
+      const spec = parallelRaySpec(a, b, c)
+      // 方向参考线 A→B（细虚线）
+      ctx.save()
+      ctx.setLineDash([4, 4])
+      ctx.lineWidth = selected ? 1.2 : 0.8
+      ctx.beginPath()
+      ctx.moveTo(spec.helperFrom.x, spec.helperFrom.y)
+      ctx.lineTo(spec.helperTo.x, spec.helperTo.y)
+      ctx.stroke()
+      ctx.restore()
+      // 平行射线：从 C 沿方向无限延伸
+      const rdx = spec.rayDir.x - spec.rayFrom.x
+      const rdy = spec.rayDir.y - spec.rayFrom.y
+      const rlen = Math.hypot(rdx, rdy)
+      if (rlen > 0) {
+        const w = this.overlay.width / (window.devicePixelRatio || 1)
+        const h = this.overlay.height / (window.devicePixelRatio || 1)
+        const s = Math.max(w, h) * 2
+        ctx.beginPath()
+        ctx.moveTo(spec.rayFrom.x, spec.rayFrom.y)
+        ctx.lineTo(spec.rayFrom.x + (rdx / rlen) * s, spec.rayFrom.y + (rdy / rlen) * s)
+        ctx.stroke()
+      }
+      for (const pt of [a, b, c]) this.drawAnchor(ctx, pt.x, pt.y)
+      return
+    }
+
+    if (d.type === 'pchannel') {
+      // 宽度通道：过 A/过 C 两条无限平行线（方向 = B−A）+ B→C 宽度参考虚线
+      const [pa, pb, pc] = d.points
+      if (!pa || !pb || !pc) return
+      const a = this.project(pa.time, pa.price)
+      const b = this.project(pb.time, pb.price)
+      const c = this.project(pc.time, pc.price)
+      if (!a || !b || !c) return
+      const spec = widthChannelSpec(a, b, c)
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      const s = Math.max(w, h) * 2
+      const len = Math.hypot(spec.lineA.dir.x, spec.lineA.dir.y)
+      const drawLine = (p0: Point) => {
+        if (len === 0) return
+        const ux = (spec.lineA.dir.x / len) * s
+        const uy = (spec.lineA.dir.y / len) * s
+        ctx.beginPath()
+        ctx.moveTo(p0.x, p0.y)
+        ctx.lineTo(p0.x + ux, p0.y + uy)
+        ctx.moveTo(p0.x, p0.y)
+        ctx.lineTo(p0.x - ux, p0.y - uy)
+        ctx.stroke()
+      }
+      drawLine(spec.lineA.p0)
+      drawLine(spec.lineC.p0)
+      // 宽度连线 B→C（细虚线）
+      ctx.save()
+      ctx.setLineDash([4, 4])
+      ctx.lineWidth = selected ? 1.2 : 0.8
+      ctx.beginPath()
+      ctx.moveTo(spec.widthFrom.x, spec.widthFrom.y)
+      ctx.lineTo(spec.widthTo.x, spec.widthTo.y)
+      ctx.stroke()
+      ctx.restore()
+      for (const pt of [a, b, c]) this.drawAnchor(ctx, pt.x, pt.y)
       return
     }
 

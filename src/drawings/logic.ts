@@ -30,6 +30,8 @@ export type DrawingTool =
   | 'xabcd'
   | 'elliott'
   | 'pitchfork'
+  | 'parray'
+  | 'pchannel'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -99,7 +101,7 @@ export function fibPrices(from: number, to: number): number[] {
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel') return 3
   return 2
 }
 
@@ -348,6 +350,45 @@ export interface SegmentLine {
   to: { time: number; price: number }
 }
 
+/** 平行射线（Parallel Ray）：A→B 定义方向（屏幕坐标，投影后保持平行），C 为射线起点。
+ * 渲染：A→B 方向参考虚线 + 从 C 沿 (B−A) 方向无限延伸的射线；命中：参考线段 + 射线垂距。 */
+export interface ParallelRaySpec {
+  helperFrom: Point
+  helperTo: Point
+  rayFrom: Point
+  rayDir: Point
+}
+
+export function parallelRaySpec(a: Point, b: Point, c: Point): ParallelRaySpec {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  return {
+    helperFrom: a,
+    helperTo: b,
+    rayFrom: c,
+    rayDir: { x: c.x + dx, y: c.y + dy },
+  }
+}
+
+/** 宽度通道（Width Channel）：A→B 定义基准方向（屏幕坐标），C 定通道宽度。
+ * 渲染：过 A 与过 C 的两条无限平行线 + B→C 宽度参考虚线；命中：两线垂距 + 宽度连线。 */
+export interface WidthChannelSpec {
+  lineA: { p0: Point; dir: Point }
+  lineC: { p0: Point; dir: Point }
+  widthFrom: Point
+  widthTo: Point
+}
+
+export function widthChannelSpec(a: Point, b: Point, c: Point): WidthChannelSpec {
+  const dir = { x: b.x - a.x, y: b.y - a.y }
+  return {
+    lineA: { p0: a, dir },
+    lineC: { p0: c, dir },
+    widthFrom: b,
+    widthTo: c,
+  }
+}
+
 /** 速度线（Speed Lines）：A 为原点，B 处竖直等分 A→B 价差，1/3 与 2/3 分位连线。
  * 返回 [主对角线 A→B, B 处竖直线, A→1/3, A→2/3] 四条线段。 */
 export function speedLines(
@@ -436,7 +477,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -797,6 +838,30 @@ export function hitTestDrawings(
         for (const ray of pitchforkRays(a, b, c)) {
           dist = Math.min(dist, distToRay({ x: px, y: py }, ray.from, ray.dir))
         }
+      }
+    } else if (d.type === 'parray') {
+      // 平行射线：命中 A→B 方向参考线段 + 从 C 沿 (B−A) 方向的射线（垂距）
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
+      const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        const spec = parallelRaySpec(a, b, c)
+        const p = { x: px, y: py }
+        dist = Math.min(distToSegment(p, spec.helperFrom, spec.helperTo), distToRay(p, spec.rayFrom, spec.rayDir))
+      }
+    } else if (d.type === 'pchannel') {
+      // 宽度通道：命中两条无限平行线（过 A/过 C）垂距 + B→C 宽度连线
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
+      const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        const spec = widthChannelSpec(a, b, c)
+        const p = { x: px, y: py }
+        dist = Math.min(
+          distToLine(px, py, spec.lineA.p0, spec.lineA.dir),
+          distToLine(px, py, spec.lineC.p0, spec.lineC.dir),
+          distToSegment(p, spec.widthFrom, spec.widthTo),
+        )
       }
     } else if (d.type === 'xabcd' || d.type === 'elliott') {
       // XABCD 形态 / 艾略特波浪：命中任一相邻连线
