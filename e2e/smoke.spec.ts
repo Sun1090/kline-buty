@@ -2499,4 +2499,198 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(resetGap).toBeLessThan(zoomGap / 2)
     expect(errors).toHaveLength(0)
   })
+
+  test('移动端：触屏整线拖动移动画线（锚点增量一致）→ 无十字光标噪音', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    // 触屏拖拽画一条趋势线（画线模式由 pointer 事件驱动）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '趋势线', exact: true }).tap()
+    await page.waitForTimeout(200)
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const x0 = box.x + box.width * 0.3
+    const y0 = box.y + box.height * 0.5
+    const x1 = box.x + box.width * 0.6
+    const y1 = box.y + box.height * 0.35
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x0 + ((x1 - x0) * i) / 8, y: y0 + ((y1 - y0) * i) / 8 }],
+      })
+      await page.waitForTimeout(25)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.points).toHaveLength(2)
+
+    // 切回鼠标（只读）→ 轻点线中心选中
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '鼠标', exact: true }).tap()
+    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
+    const center = (await findDrawnLineCenter(page))!
+    await page.touchscreen.tap(center.x, center.y)
+    await page.waitForTimeout(300)
+
+    // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
+    cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+    for (let i = 1; i <= 7; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: center.x, y: center.y + i * 10 }],
+      })
+      await page.waitForTimeout(25)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+
+    // 同一 id，各锚点时间/价格增量一致（整线平移）且确实发生了移动
+    await expect
+      .poll(
+        async () => {
+          const after = await readFirst()
+          if (!after || after.points.length !== 2) return false
+          const dT0 = after.points[0].time - before!.points[0].time
+          const dT1 = after.points[1].time - before!.points[1].time
+          const dP0 = after.points[0].price - before!.points[0].price
+          const dP1 = after.points[1].price - before!.points[1].price
+          return (
+            after.id === before!.id &&
+            dT0 === dT1 &&
+            dP0 === dP1 &&
+            (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
+          )
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true)
+    expect(errors).toHaveLength(0)
+  })
+
+  test('移动端：触屏拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    // 触屏拖拽画趋势线（左→右）
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '趋势线', exact: true }).tap()
+    await page.waitForTimeout(200)
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const x0 = box.x + box.width * 0.3
+    const y0 = box.y + box.height * 0.4
+    const x1 = box.x + box.width * 0.6
+    const y1 = box.y + box.height * 0.5
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x0 + ((x1 - x0) * i) / 8, y: y0 + ((y1 - y0) * i) / 8 }],
+      })
+      await page.waitForTimeout(25)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+    const before = await readFirst()
+    expect(before).not.toBeNull()
+    expect(before!.points).toHaveLength(2)
+
+    // 切回鼠标 → 定位尾锚点（最右侧蓝色簇）→ 触屏拖拽仅尾锚点
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '鼠标', exact: true }).tap()
+    await expect.poll(() => findDrawingAnchor(page, 'max'), { timeout: 5000 }).not.toBeNull()
+    let tailMoved = false
+    for (let attempt = 0; attempt < 4 && !tailMoved; attempt++) {
+      const anchor = await findDrawingAnchor(page, 'max')
+      if (!anchor) {
+        const center = await findDrawnLineCenter(page)
+        if (center) {
+          await page.touchscreen.tap(center.x, center.y)
+          await page.waitForTimeout(300)
+        }
+        await page.waitForTimeout(300)
+        continue
+      }
+      cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: anchor.x, y: anchor.y }] })
+      for (let i = 1; i <= 6; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: anchor.x + i * 6, y: anchor.y + i * 8 }],
+        })
+        await page.waitForTimeout(25)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+      // 轮询提交结果
+      for (let i = 0; i < 6; i++) {
+        await page.waitForTimeout(400)
+        const after = await readFirst()
+        if (after && after.points.length === 2) {
+          const headSame =
+            after.points[0].time === before!.points[0].time && after.points[0].price === before!.points[0].price
+          const tailChanged =
+            after.points[1].time !== before!.points[1].time || after.points[1].price !== before!.points[1].price
+          if (after.id === before!.id && headSame && tailChanged) {
+            tailMoved = true
+            break
+          }
+        }
+      }
+    }
+    expect(tailMoved).toBe(true)
+    expect(errors).toHaveLength(0)
+  })
 })
