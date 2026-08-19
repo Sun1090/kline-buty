@@ -645,6 +645,26 @@ export function MobileHeader(props: MobileHeaderProps) {
                 >
                   {t('shortcuts.title')}
                 </button>
+                <a
+                  data-testid="knowledge-link"
+                  href={`${import.meta.env.BASE_URL}knowledge/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t('common.knowledgeTitle')}
+                  style={{
+                    padding: '10px 8px',
+                    fontSize: 12,
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text-dim)',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                  }}
+                >
+                  📚 {t('common.knowledge')}
+                </a>
               </div>
             </>
           )}

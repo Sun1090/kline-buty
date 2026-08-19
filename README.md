@@ -39,9 +39,11 @@ npm run build                # 生产构建
 | [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
 | [docs/05-部署.md](docs/05-部署.md) | Docker/反向代理/GitHub Pages/Vercel 部署指南 |
 | [docs/knowledge/README.md](docs/knowledge/README.md) | 交易知识库（从入门到入土）：27 篇章 191 篇文档约 4.2 万行，现货/期货/股票/加密/外汇/期权/宏观/实战/生态/历史/理财/量化/监管/数据解读/全球市场/系统对接 |
+| [docs-site/](docs-site/) 在线知识库文档站 | VitePress 文档站（对标 docs.soybeanjs.cn 风格）：落地页 + 27 章侧边栏 + 全文搜索 + 角色导航/学习路线图，与应用同仓库双部署——[GitHub Pages](https://sun1090.github.io/kline-buty/knowledge/) / [Vercel](https://kline-buty.vercel.app/knowledge/)，应用内「更多 → 知识库」直达 |
 
 ## 当前进度
 
+- [x] 知识库文档站（VitePress）：把 docs/knowledge 27 篇章 191 篇文档做成独立文档站并随应用双部署——落地页（hero + 4 features + 角色导航 + 学习路线图 + 免责声明）、动态 27 章侧边栏（章节 README → index.html、正文 .html 直链，与 docs.soybeanjs.cn URL 风格一致）、内置全文搜索；脚本同步章节（README.md→index.md）+ 构建合并进 dist/knowledge；Pages 部署于 /kline-buty/knowledge/、Vercel 于 /knowledge/，应用内「更多 → 知识库」新标签直达；顺带修复知识库 59 个文件的目录链接（~155 处 README.md 链接改目录形式 + 修复 2 处死链/畸形链，脚本校验 0 死链）；自研静态服务器替换 serve（目录→index.html、.html 直出，本地行为与线上一致）；E2E +1（落地页/章节目录/正文 .html/侧栏客户端导航），docs:build 全量构建通过
 - [x] 行情列表侧栏：对标 OKX/币安——桌面左侧 264px 可折叠行情列表（67 交易对：61 主流 + 6 热门，24h 全量 ticker 30s 轮询，点行即切交易对），表头支持按交易对/最新价/24h 涨跌排序（升/降循环）；移动端收进「更多」全屏浮层（点行切交易对并自动关闭）；顺带修复真实环境 bug——fapi.binance.com 被黑洞挂死导致页面加载/E2E 失败的根因：REST `binanceGet` 新增 8s AbortController 超时，让既有 dapi 兜底真正生效；实时行情 E2E 增加 `conn-status` 测试锚点并先等 WS「实时」再测价格变动（根治重连窗口期假失败）；单测 +25、E2E +2
 - [x] 回到最新按钮：用户回看历史后右下角出现「回到最新」胶囊按钮，点击瞬时回到最新 K 线（保留当前缩放宽度；实时模式停在最新时自动隐藏、回放不显示）；定位判定抽成纯函数 isAwayFromLatest（容差防浮点抖动），adapter 的 scrollToRealTime 改为 setVisibleLogicalRange 瞬时跳转（自带动画会被实时数据打断偶发半路停住）；单测 +4、E2E +2
 - [x] M0 调研立项（文档全部落地）

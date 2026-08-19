@@ -5,3 +5,9 @@ dist
 test-results
 playwright-report
 *.tsbuildinfo
+# 文档站：篇章目录由 scripts/docs-prepare.mjs 从 docs/knowledge 同步（避免重复入库）
+docs-site/docs/0*
+docs-site/docs/1*
+docs-site/docs/2*
+# 文档站构建产物（已合并进 dist/knowledge）
+docs-site/.vitepress/dist
