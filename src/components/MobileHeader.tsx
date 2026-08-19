@@ -69,6 +69,8 @@ export interface MobileHeaderProps {
   onToggleVp: () => void
   sentimentActive: boolean
   onToggleSentiment: () => void
+  marketListActive?: boolean
+  onToggleMarketList?: () => void
   replayActive: boolean
   replayDisabled: boolean
   onReplay: () => void
@@ -213,6 +215,9 @@ export function MobileHeader(props: MobileHeaderProps) {
     { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: props.onToggleOrderBook, title: t('panel.orderBookTitle') },
     { label: t('panel.vp'), active: props.vpActive, onToggle: props.onToggleVp, title: t('panel.vpTitle') },
     { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: props.onToggleSentiment, title: t('panel.sentimentTitle') },
+    ...(props.onToggleMarketList
+      ? [{ label: t('marketList.title'), active: !!props.marketListActive, onToggle: props.onToggleMarketList, title: t('marketList.title') }]
+      : []),
     { label: t('panel.settings'), active: props.settingsActive, onToggle: props.onToggleSettings },
     {
       label: props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear'),
@@ -267,7 +272,7 @@ export function MobileHeader(props: MobileHeaderProps) {
                 flexShrink: 0,
               }}
             />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span data-testid="conn-status" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {props.statusText}
             </span>
           </span>

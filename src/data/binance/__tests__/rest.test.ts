@@ -6,6 +6,7 @@ import {
   fetchOpenInterest,
   fetchOpenInterestHistory,
   fetchTicker24h,
+  fetchTickers24h,
   mapKline,
   parseOiArray,
   parseRatioArray,
@@ -114,6 +115,102 @@ describe('fetchTicker24h', () => {
     expect(t.changePct).toBe(-1.234)
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
     expect(urls.find((u) => u.includes('/api/v3/ticker/24hr?symbol=BTCUSDT'))).toBeDefined()
+  })
+})
+
+
+describe('fetchTickers24h', () => {
+  it('无参：全量拉取并解析每行', async () => {
+    const raw = [
+      { symbol: 'BTCUSDT', lastPrice: '63000.5', priceChangePercent: '1.23', quoteVolume: '123456789' },
+      { symbol: 'ETHUSDT', lastPrice: '3200.1', priceChangePercent: '-0.45', quoteVolume: '987654321' },
+    ]
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v3/ping')) {
+        return Promise.resolve({ ok: true, headers: { get: () => 'application/json' } })
+      }
+      return Promise.resolve({ ok: true, json: async () => raw })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchTickers24h()
+    expect(out).toHaveLength(2)
+    expect(out[0]).toEqual({ symbol: 'BTCUSDT', price: 63000.5, changePct: 1.23, quoteVolume: 123456789 })
+    expect(out[1].changePct).toBe(-0.45)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => String(c[0]))
+    expect(urls.find((u) => u.includes('/api/v3/ticker/24hr'))).toBeDefined()
+  })
+
+  it('传 symbols：按 20 分块串行拉取（JSON 数组参数）', async () => {
+    const symbols = Array.from({ length: 45 }, (_, i) => `S${i}USDT`)
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const s = String(url)
+      if (s.includes('/api/v3/ping')) {
+        return Promise.resolve({ ok: true, headers: { get: () => 'application/json' } })
+      }
+      const arr = JSON.parse(new URL(s, 'http://x').searchParams.get('symbols')!)
+      return Promise.resolve({
+        ok: true,
+        json: async () => arr.map((sym: string) => ({ symbol: sym, lastPrice: '1.5', priceChangePercent: '0.1', quoteVolume: '9' })),
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchTickers24h(symbols)
+    expect(out).toHaveLength(45)
+    const tickerCalls = vi.mocked(fetch).mock.calls
+      .map((c) => String(c[0]))
+      .filter((u) => u.includes('symbols='))
+    expect(tickerCalls).toHaveLength(3)
+    const first = JSON.parse(new URL(tickerCalls[0], 'http://x').searchParams.get('symbols')!)
+    const last = JSON.parse(new URL(tickerCalls[2], 'http://x').searchParams.get('symbols')!)
+    expect(first).toHaveLength(20)
+    expect(last).toHaveLength(5)
+    expect(first[0]).toBe('S0USDT')
+    expect(last[0]).toBe('S40USDT')
+  })
+
+  it('分块整体 400 → 降级逐交易对请求并跳过失效项', async () => {
+    const symbols = ['BTCUSDT', 'DEADUSDT', 'ETHUSDT']
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const s = String(url)
+      if (s.includes('/api/v3/ping')) {
+        return Promise.resolve({ ok: true, headers: { get: () => 'application/json' } })
+      }
+      if (s.includes('symbols=')) return Promise.reject(new Error('binance http 400'))
+      const sym = new URL(s, 'http://x').searchParams.get('symbol')!
+      if (sym === 'DEADUSDT') return Promise.reject(new Error('binance http 400'))
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ symbol: sym, lastPrice: '10', priceChangePercent: '2', quoteVolume: '5' }),
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchTickers24h(symbols)
+    expect(out.map((r) => r.symbol)).toEqual(['BTCUSDT', 'ETHUSDT'])
+    expect(out[0].price).toBe(10)
+    // 逐交易对降级请求确实发生
+    const urls = vi.mocked(fetch).mock.calls.map((c) => String(c[0]))
+    expect(urls.some((u) => u.includes('symbol=BTCUSDT'))).toBe(true)
+    expect(urls.some((u) => u.includes('symbol=DEADUSDT'))).toBe(true)
+  })
+
+  it('单块成功但含个别失效项 → 仅缺失项被跳过', async () => {
+    const symbols = ['BTCUSDT', 'ETHUSDT']
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const s = String(url)
+      if (s.includes('/api/v3/ping')) {
+        return Promise.resolve({ ok: true, headers: { get: () => 'application/json' } })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => [
+          { symbol: 'BTCUSDT', lastPrice: '1', priceChangePercent: '0', quoteVolume: '1' },
+        ],
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await fetchTickers24h(symbols)
+    expect(out).toHaveLength(1)
+    expect(out[0].symbol).toBe('BTCUSDT')
   })
 })
 
