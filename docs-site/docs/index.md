@@ -11,7 +11,7 @@ hero:
       link: /01-入门基础/
     - theme: alt
       text: 返回行情应用
-      link: ../
+      link: https://kline-buty.vercel.app/
 
 features:
   - icon: 📖

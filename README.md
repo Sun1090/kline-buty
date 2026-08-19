@@ -1,136 +1,140 @@
-# Kline Buty · 实时 K 线图表
+# Kline Buty · Real-time K-line Chart
 
-对标 OKX / Binance / Bybit 的自建 K 线行情应用（Web 一期）。
+**English** | [中文](README.zh-CN.md)
 
-> **免责声明**：本项目仅用于技术学习与研究，不构成任何投资建议。加密货币交易有风险，据此操作风险自负。
+> **Disclaimer**: This project is for educational and research purposes only. It does not constitute any investment advice. Cryptocurrency trading carries significant risk.
 
-## 在线体验
+---
 
-| 平台 | 地址 | 说明 |
+## Features
+
+- **Real-time K-line charts** — Candlestick, line, area with 14 timeframes (1s to 1M)
+- **37+ drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more
+- **13+ indicators** — MA, EMA, BOLL, MACD, KDJ, RSI, SAR, Ichimoku, STOCH, ROC, MOM, WR, ATR, DMI, CCI, PSY, OBV, with customizable parameters
+- **Order book & depth chart** — Real-time order book (8 bids/asks) and depth curve via WebSocket
+- **Multi-chart layout** — 1/2/4 panel layouts with synchronized time axes
+- **Market replay** — Historical tick-by-tick replay with speed control (1x–50x)
+- **Simulated positions** — Long/short orders with TP/SL lines, P&L tracking
+- **Price alerts** — Conditional triggers (≥/≤) with browser notifications
+- **i18n** — 中文 · English · 日本語 · 한국어 · Español
+- **Dark/Light themes** — 4 color presets (classic blue, red-up-green-down, purple, teal)
+- **PWA support** — Installable, offline cache, background notifications
+- **Keyboard shortcuts** — ⌘K symbol search, `1`/`2`/`3` layouts, `[`/`]` periods, `Space` replay, `?` help
+- **CSV export** — OHLCV + indicators
+- **Region screenshot** — Drag-select to export PNG
+- **Mobile touch** — Pinch zoom, crosshair with 2s linger, touch drawing editing
+- **Layer management** — Show/hide, lock/unlock, delete drawings
+
+## Online Preview
+
+| Platform | URL | Note |
 |---|---|---|
-| GitHub Pages | https://sun1090.github.io/kline-buty/ | 自动部署（push main 触发），子路径模式 |
-| Vercel | https://kline-buty.vercel.app/ | 预览版（导入仓库自动部署），根路径模式 |
+| GitHub Pages | <a href="https://sun1090.github.io/kline-buty/" target="_blank">预览地址</a> | Auto-deploy on push main |
+| Vercel | <a href="https://kline-buty.vercel.app/" target="_blank">预览地址</a> | Preview, root path mode |
 
-## 数据与版权合规
+## Knowledge Base
 
-- **数据来源**：币安公开行情 API（REST + WebSocket），无需 API Key。使用时请遵守[币安服务条款](https://www.binance.com/zh-CN/terms)及其数据使用限制，请勿用于商业高频抓取。
-- **图表引擎**：基于 [lightweight-charts](https://github.com/tradingview/lightweight-charts)（TradingView 出品，Apache-2.0）。按协议要求，页面内已包含 TradingView 署名（图表右下角 attribution logo）。
-- **项目许可**：MIT（见 [LICENSE](LICENSE)）。注意：本项目使用的币安数据与 TradingView 引擎均受其各自条款约束。
+27 chapters, 190+ docs covering: spot, futures, stocks, crypto, forex, options, macro, quantitative trading, regulation, data interpretation, and global markets.
 
-## 快速开始
+| Platform | URL |
+|---|---|
+| GitHub Pages | <a href="https://sun1090.github.io/kline-buty/knowledge/" target="_blank">预览地址</a> |
+| Vercel | <a href="https://kline-buty.vercel.app/knowledge/" target="_blank">预览地址</a> |
+
+## Quick Start
 
 ```bash
-npm install && npm run dev   # http://localhost:5173
-npm run typecheck            # 类型检查
-npm run test                 # 单测（需 Node ≥ 22）
-npm run e2e                  # Playwright 端到端
-npm run build                # 生产构建
+npm install && npm run dev   # → http://localhost:5173
+npm run typecheck            # TypeScript type check
+npm run test                 # Unit tests (Node ≥ 22)
+npm run e2e                  # Playwright E2E
+npm run build                # Production build
 ```
 
-数据源为**币安公开 API**（REST 历史 + WebSocket 实时），经 Vite 代理转发，前端不硬编码外部域名。
+Data source: <a href="https://www.binance.com/" target="_blank">Binance</a> public API (REST + WebSocket), proxied via Vite dev server — no API key required.
 
-## 文档
+## Tech Stack
 
-| 文档 | 内容 |
-|---|---|
-| [docs/01-调研报告.md](docs/01-调研报告.md) | 欧易/币安/Bybit 功能盘点、数据源选型与实测 |
-| [docs/02-需求清单.md](docs/02-需求清单.md) | 功能分层 P0 / P1 / P2 及验收标准 |
-| [docs/03-技术方案.md](docs/03-技术方案.md) | 架构、数据流、代理策略、风险 |
-| [docs/04-排期计划.md](docs/04-排期计划.md) | 里程碑与周排期，进度追踪 |
-| [docs/05-部署.md](docs/05-部署.md) | Docker/反向代理/GitHub Pages/Vercel 部署指南 |
-| [docs/knowledge/README.md](docs/knowledge/README.md) | 交易知识库（从入门到入土）：27 篇章 191 篇文档约 4.2 万行，现货/期货/股票/加密/外汇/期权/宏观/实战/生态/历史/理财/量化/监管/数据解读/全球市场/系统对接 |
-| [docs-site/](docs-site/) 在线知识库文档站 | VitePress 文档站（对标 docs.soybeanjs.cn 风格）：落地页 + 27 章侧边栏 + 全文搜索 + 角色导航/学习路线图，与应用同仓库双部署——[GitHub Pages](https://sun1090.github.io/kline-buty/knowledge/) / [Vercel](https://kline-buty.vercel.app/knowledge/)，应用内「更多 → 知识库」直达 |
-
-## 当前进度
-
-- [x] 知识库文档站（VitePress）：把 docs/knowledge 27 篇章 191 篇文档做成独立文档站并随应用双部署——落地页（hero + 4 features + 角色导航 + 学习路线图 + 免责声明）、动态 27 章侧边栏（章节 README → index.html、正文 .html 直链，与 docs.soybeanjs.cn URL 风格一致）、内置全文搜索；脚本同步章节（README.md→index.md）+ 构建合并进 dist/knowledge；Pages 部署于 /kline-buty/knowledge/、Vercel 于 /knowledge/，应用内「更多 → 知识库」新标签直达；顺带修复知识库 59 个文件的目录链接（~155 处 README.md 链接改目录形式 + 修复 2 处死链/畸形链，脚本校验 0 死链）；自研静态服务器替换 serve（目录→index.html、.html 直出，本地行为与线上一致）；E2E +1（落地页/章节目录/正文 .html/侧栏客户端导航），docs:build 全量构建通过
-- [x] 行情列表侧栏：对标 OKX/币安——桌面左侧 264px 可折叠行情列表（67 交易对：61 主流 + 6 热门，24h 全量 ticker 30s 轮询，点行即切交易对），表头支持按交易对/最新价/24h 涨跌排序（升/降循环）；移动端收进「更多」全屏浮层（点行切交易对并自动关闭）；顺带修复真实环境 bug——fapi.binance.com 被黑洞挂死导致页面加载/E2E 失败的根因：REST `binanceGet` 新增 8s AbortController 超时，让既有 dapi 兜底真正生效；实时行情 E2E 增加 `conn-status` 测试锚点并先等 WS「实时」再测价格变动（根治重连窗口期假失败）；单测 +25、E2E +2
-- [x] 回到最新按钮：用户回看历史后右下角出现「回到最新」胶囊按钮，点击瞬时回到最新 K 线（保留当前缩放宽度；实时模式停在最新时自动隐藏、回放不显示）；定位判定抽成纯函数 isAwayFromLatest（容差防浮点抖动），adapter 的 scrollToRealTime 改为 setVisibleLogicalRange 瞬时跳转（自带动画会被实时数据打断偶发半路停住）；单测 +4、E2E +2
-- [x] M0 调研立项（文档全部落地）
-- [x] M1 数据地基：币安 REST/WS 封装、MarketStore 去重合并、断线重连补数、代理链路实测通过
-- [x] M2 图表 MVP：蜡烛图 + 成交量副图 + MA(5/10/20) + 最新价线 + 7 档周期切换 + WS 实时跳动
-- [x] M3 指标与交互：指标引擎（MA/EMA/BOLL/MACD/KDJ/RSI 纯函数 + 单测）、副图切换、十字光标 OHLC+指标值信息窗、历史向左分页
-- [x] M4 体验补全：图表类型切换（蜡烛/折线/面积）、指标参数自定义、全屏、布局持久化（localStorage）、交易对迷你图（sparkline）
-- [x] M5 打磨交付：性能压测（2 万根：指标全刷 <60ms、图表装载 65ms、实时更新 0.4ms）、MACD O(n²) 修复 27 倍提速、真实断线恢复压测、38 项单测
-- [x] P2-3 市场回放：历史逐根回放（播放/暂停/1x-50x 变速/进度条 seek）、回放与实时数据流解耦、退出恢复实时；REST 失败自动重试
-- [x] P2-2 多图表联动：双图同屏（BTC/ETH）、时间轴双向同步 + 防回环、配置共享
-- [x] P2-4 加密数据层：资金费率/未平仓/标记价（fapi 代理）+ 行情信息条（30s 轮询）
-- [x] P2-1 订单叠加：模拟仓位（开多/开空、开仓/止盈/止损线、浮动盈亏、触发判断、价格线拖拽）
-- [x] P2-5 价格提醒：条件触发（≥/≤）、浏览器通知、一次性触发可重置、localStorage 持久化、SW 后台提醒（尽力而为）+ 离线缓存
-- [x] P2-6 移动端基础：PWA manifest + 图标 + 响应式布局（WebView 套壳可直接复用）
-- [x] 移动端手势打磨：触屏点击无灰闪/双击缩放延迟、工具栏窄屏横向滚动不溢出、390×844 触屏 E2E
-- [x] M10 画线编辑：整线拖动平移（锚点增量一致）+ 单锚点拖拽（射线保持方向、其余按时间重排），命中高亮 + 8px 锚点捕获，水平/文本/斐波那契选中显示锚点
-- [x] M11 画线编辑补全：趋势线/射线首尾锚点均可拖拽（锚点渲染圆点可视化、方向点保留、其余按时间重排）+ `Esc` 取消选中画线/退出文本编辑，新增 2 个拖拽编辑 E2E 场景
-- [x] M12 衍生品情绪面板：全账户/大户持仓多空比 + 主动买卖量比 + 未平仓 24h（futures/data 直连、60s 轮询、双色占比条 + 走势图），对标 OKX/币安合约数据
-- [x] M13 自选收藏 + 分享链接：交易对星标收藏（localStorage 持久化、自选区置顶）+ 一键复制分享链接（`?symbol=&period=` URL 参数直达品种/周期、白名单校验），新增 2 个 E2E 场景
-- [x] M14 画线补齐：斐波那契扩展（3 锚点多段点击）/斐波那契扇形/价格标签/箭头，画线工具 7→11 种（M20 再补椭圆/圆至 13 种），新增 E2E 场景
-- [x] M15 主图指标补全：Parabolic SAR（0.02/0.02/0.2 + 反转逻辑）+ Ichimoku 云图（转换/基准/先行带 A/B/迟行 + 未来位移 26 + 涨绿跌红云带），新增 E2E 场景
-- [x] M16 指标参数全量可调：16 种指标参数面板完整覆盖（SAR 加速三参 / Ichimoku 四周期 / WR·ATR·DMI·CCI·PSY 周期 / OBV 平滑 / KDJ 三参中文化），修改即时生效 + localStorage 持久化，新增 E2E 场景
-- [x] M17 副图指标补强：新增 STOCH（%K/%D，14/3/3）+ ROC（变动率）+ MOM（动量），参数面板同步支持，副图指标 10→13 种
-- [x] M18 CSV 数据导出：一键下载当前品种/周期 K 线 CSV（time(ISO)+OHLCV+当前主/副图指标列），BOM 兼容 Excel，文件名 `SYMBOL_PERIOD_YYYYMMDD.csv`
-- [x] M19 主题色自定义：4 套预设（经典蓝/红涨绿跌/紫调/青调）一键切换，强调+涨跌色联动图表与 CSS 变量，localStorage 持久化
-- [x] M20 画线补齐：椭圆（两对角外接框，半透明填充）+ 圆（圆心+半径点），画线工具 11→13 种（M21 再补三角形/圆弧至 15 种），新增 E2E 场景
-- [x] M21 画线补齐：三角形（3 锚点多段点击，区域命中）+ 圆弧（两点定弦半圆），画线工具 13→15 种，新增 E2E 场景
-- [x] M23 多语言扩充：新增日语/韩语完整字典（196 键 ×2），语言按钮 4 语循环切换（中文/EN/日本語/한국어），页面标题随语言联动，新增单测 + i18n E2E 场景扩展
-- [x] M24 盘口快速下单：盘口档位 hover 快捷「买/卖」按钮 → 快速下单浮动面板（档位价预填、数量/名义金额/手续费实时估算）→ 确认后写入模拟仓位（买=多/卖=空）并打开仓位面板，新增 7 个下单估算/仓位构建单测 + 2 个 E2E 场景
-- [x] M25 区域截图：工具栏「框选」进入截图模式（按钮高亮 + 顶部提示）→ 主图拖拽矩形（半透明遮罩 + 虚线框 + W×H 尺寸标签）→ 松开自动裁剪导出 PNG（`SYMBOL_PERIOD_region.png`，dpr 缩放 / 边界 clamp），截图后自动退出模式；新增 4 个区域归一化单测 + 1 个 E2E 场景
-- [x] M26 键盘快捷键：⌘K / 打开交易对搜索（自动聚焦，输入态不误触）、`1/2/3` 单/双/四图布局、`M/N` 循环主/副图指标、`F` 全屏、`?` 快捷键帮助浮层（Esc 关闭）、保留 `[ ]` 周期 / Space 回放 / Delete 删画线；快捷键映射抽成纯函数模块 + 15 个单测 + 1 个 E2E 场景
-- [x] M27 斐波那契时间线：A→B 两点拖拽定时间区间 → 区间内按黄金分割分位画 7 条竖线（0/1 实线、中间虚线，顶部标签；锚点 x 线性插值规避 timeToCoordinate 只认整根蜡烛），命中检测按竖线水平距离；新增 13 个单测 + 1 个 E2E 场景
-- [x] M29 江恩角度线：A 为原点、B 定方向，9 条角度线（1×8/1×4/1×3/1×2/1×1/2×1/3×1/4×1/8×1）双向延伸发散（1×1 主对角加粗、逐线标签），命中检测按正反双向射线；新增 4 个单测 + 1 个 E2E 场景
-- [x] M30 画线补齐：多段线（多次点击逐点连接 + 双击收尾提交，顶点圆点，命中任一相邻线段）+ 量度（拖 A→B → Δ价格 / Δ% / 根数标签，保留 A→B 方向符号），画线工具 15→17 种，adapter 新增 setPeriodSeconds 周期秒数联动；新增 11 个单测 + 2 个 E2E 场景
-- [x] 画线补齐（周期线/斐波那契通道）：周期线以 A→B 时间间隔为周期向右等比延伸 12 根竖线（k=0 实线 + 后续虚线带 +N 标签，越界按屏幕等比外推）；斐波那契通道以 A→B 摆动为基准 + 8 条黄金分割平行分位线横贯全宽（方向敏感、锚点投影垂距命中）；画线工具 → 29 种；单测 +14、E2E +2（拖 A→B → 落库两点保序 → 像素校验 → 删除）
-- [x] 画线补齐（楔形）：三点点击 A/B/C 定两条收敛边（下边 A→C + 上边 B→C），C 之后虚线延伸投影收敛方向，方向敏感保序 + 线段命中；画线工具 → 30 种；单测 +6、E2E +1（三点点击 → 落库 3 锚点保序 → 像素校验蓝色楔形边 → 删除）
-- [x] 画线补齐（平行射线/宽度通道）：平行射线 A→B 定义方向 + C 起点沿平行方向无限延伸（方向参考虚线）；宽度通道 A→B 基准 + C 定宽 → 过 A/过 C 两条无限平行线 + B→C 宽度虚线（区别于平行通道的自动宽度，宽度由 C 任意指定）；画线工具 → 32 种；单测 +6、E2E +2（三点点击 → 落库 3 锚点保序 → 像素校验蓝色射线/平行线 → 删除）
-- [x] 画线补齐（趋势角度/时间区间）：趋势角度拖 A→B → 线段中点标注相对水平夹角（屏幕空间、向上为正 −90°~+90°，A 端小圆弧示意）；时间区间拖 A→B → 主图区半透明竖带（左右边框 + 顶部日期区间标签，带内区域命中）；均两点按时间排序、整线拖移/锚点拖拽；画线工具 → 34 种；单测 +7、E2E +3（桌面两工具落库两点保序 + 像素校验、移动端触屏拖拽创建时间区间）
-- [x] 画线补齐（价格带）：时间区间的横向孪生——拖 A→B（纵向跨度）画主图区半透明**水平带**（上下边框 + 左侧价格标签，横贯全宽，带内区域命中，外部按竖直距离）；两点按价格排序（低价在前）；画线工具 → 35 种；单测 +5、E2E +1（拖 A→B → 落库两点按价保序 → 像素校验蓝色水平带双边框 → 删除）
-- [x] 画线图层管理：隐藏（不渲染、不参与命中）、锁定（仍渲染但不可选中/拖拽）、单行删除、全部清空——桌面/移动端图层面板（含数量、状态图标、行选中态）；i18n 5 语新增 layers 组；单测 +13、E2E +1（画水平线+趋势线 → 开图层 2 行 → 隐藏像素减少+落库 → 锁定点击不选中 → 解锁选中 → 行内删除 → 全清空）
-- [x] 画线补齐（斐波那契时间区间）：周期线的斐波那契版——拖 A→B 定基期（A 为原点、A→B 间隔为基期）向右按斐波那契倍数（1,2,3,5,8,13,21,34,55）延伸分界线（n=1 实线其余虚线 + 顶部倍数标签）+ 相邻分界交替半透明竖带；方向敏感保序（同周期线）；带内区域命中、带外按最近分界线水平距离；画线工具 → 36 种；单测 +10、E2E +1（拖 A→B → 落库两点保序 → 像素校验蓝色分界线 ≥3 列 → 删除）
-- [x] 移动端 OHLC 浮层防溢出：十字光标浮层横向贴容器右缘、纵向贴近底部时**翻转到手指上方**——长按/拖动到图表下沿读 OHLC 不再被视口截断；定位逻辑抽成纯函数 clampTooltipPos（估算行高 + 上下翻转判定），单测 +5、E2E +1（长按底部/中部 → 浮层始终完整落在视口内），真机 390×844 实测底部翻转 379→569 完整可见
-- [x] 移动端十字光标「松手保留 2s」：拖动/长按钉线后抬起，十字光标保留 2 秒便于从容读 OHLC（轻点一下立即消除，2s 超时自动清；捏合结束/画线编辑拖拽仍即时清除，不残留不干扰）；移动端 E2E 改写为「抬起 500ms 仍在 → 2.7s 自动清 → 保留期轻点立即清」，真机可信 CDP 触摸实测 371px 保留/0 清除
-- [x] 移动端触屏画线编辑：触屏拖拽绘制（pointer 驱动）、轻点选中、整线拖动（锚点增量一致）/锚点拖拽（仅该锚点移动）；触碰已选画线或锚点不启动长按钉线、触屏编辑拖拽不显示十字光标噪音（长按钉线仅空白区生效）；移动端 E2E +2（触屏整线拖动无十字光标噪音 + 触屏拖尾锚点仅该锚点移动），全量 62 E2E 全过
-- [x] 移动端画线完成自动切回「鼠标」：移动端提交画线（含文本确认）后工具自动回到只读模式——避免空白轻点误建新画线、选中态保持可直接触屏拖拽编辑（桌面端保持工具不切、连续画线）；移动端 E2E +1（文本确认后直接触屏拖拽本体 + 空白轻点不误建），顺带修正双指捏合/双击复位 E2E 为「工具已自动切回、捏合真实生效」的参数（此前捏合被工具态抑制、靠实时行情漂移凑位移）
-- [x] 文本标注快捷编辑：桌面**双击**文本本体 / 移动端**长按**文本本体（250ms）→ 直接打开编辑器（内容/字号/颜色回填，改完即落库），不再需要「选中 → 开画线面板 → 点改字」三步；修复触屏事件序问题（pointerdown 先于 touchstart 开启拖拽导致长按被阻断——命中文本时以长按优先，拖拽/钉线互不干扰）；E2E +2（桌面双击改字落库 + 移动端长按改字落库）
-- [x] 画线补齐（风险回报 R:R）：三点点击 A 入场 / B 止损 / C 止盈 → 三条横贯全宽水平线（入场实线、止损/止盈虚线，选中变蓝）+ 左侧价格标签 + 右侧盈亏比标签（risk=|A−B|、reward=|A−C|、ratio=reward/risk，risk=0 不崩溃）；方向敏感保序（按点击顺序）；命中按三条水平线竖直距离；画线工具 → 37 种；单测 +6（ratio 多/空/零风险 + 落库保序 + 三线命中）、E2E +1（三点点击 → 落库 3 锚点 → 像素校验三条蓝色水平线 → 删除）
-- [x] 顶栏紧凑化 + 窄屏防横向滚动条：桌面端「画线/更多」等低频功能折叠进「更多」面板、顶栏保持重要一行；移动端周期条**换行展示全部周期**（flexWrap wrap + compact 紧凑按钮，绝不出现横向滚动条，scrollW===clientW 全部直接可见），SymbolPicker 可收缩省略、状态文字 maxWidth 42% 省略——320/390px 实测 header 136→129px、document.scrollWidth===innerWidth 无横向滚动条；单测 +3（PeriodBar 换行无滚动/compact 紧凑/点击回调）、E2E +1（周期条换行不横滚 + 14 周期全部可见 + 页面无横向滚动条 + 末尾「月」tap 选中）
-- [x] M22 移动端双指缩放：触屏双指捏合同步缩放时间轴（库原生）+ 价格轴（手写纵向缩放、捏合中心价锚定），双击重置自适应；显式开启 pinch/触屏拖拽，新增 E2E 场景
-- [x] P1-2 画线工具：水平线/趋势线/平行通道/斐波那契/矩形/射线/文本标注（overlay 图层、创建/选中/删除/改字、持久化），支持整线拖动与锚点拖拽编辑（水平/文本/斐波那契选中显示锚点）
-- [x] P1-3 盘口深度图：WS depth20@100ms 实时聚合曲线 + 最优价标记
-- [x] 盘口订单簿：买卖各 8 档实时档位（价格/数量/累计 + 占比比例条）+ 价差行，与深度图同源 WS 数据
-- [x] 盘口联动：hover 档位 → 主图 accent 虚线参考价（移出清除）
-- [x] 深度图 hover 明细：十字线 + 价格/买卖累计工具提示（曲线语义一致，含越界钳制）
-- [x] 盘口点击联动：点击档位 → 主图 accent 实线限价标记（同档再点清除，区别于 hover 虚线）
-- [x] 移动端手势打磨：K 线区 touch-action none（触摸平移/缩放归图表，垂直拖动不滚页）+ 禁回弹/下拉刷新 + 移动端 E2E
-- [x] i18n 第五语（Español）：全量西语翻译 + 5 语循环切换（中/EN/日/韩/西）+ 单测/E2E 更新
-- [x] P1-6 周期补全：1s/3m/30m/2h/12h/3d/1M（共 14 档）
-- [x] P1-7 图表截图：主图+画线图层合成 PNG 下载
-- [x] 生产部署：Dockerfile + nginx 代理（/api /ws /fapi）+ 部署文档，Docker 实测通过
-- [x] 健壮性：ErrorBoundary、离线提示 banner、空状态、REST 部分失败容错
-- [x] 键盘快捷键：`[` `]` 切周期、`Space` 回放播放/暂停、`Delete` 删除选中画线、`Esc` 取消选中/退出文本编辑
-- [x] 浅色/深色主题：CSS 变量化 + 图表主题联动 + 持久化
-- [x] 筹码分布（VPVR）：成交量按价格分桶、买卖量分色、密集区标记
-- [x] 四图联动：单图/双图/四图布局切换，时间轴全联动 + 防回环
-- [x] i18n 多语言：中/EN/日本語/한국어 四语循环切换（字典驱动 + localStorage 持久化 + `<html lang>` 同步），画线/仓位线标签随语言联动
-- [x] 工程规范：ESLint（0 error）、GitHub Actions CI（typecheck/lint/test/build）、Playwright E2E 25 场景
-
-## 技术栈与结构
-
-React 18 + TypeScript + Vite + lightweight-charts v5（TradingView 开源，Apache-2.0）
+<a href="https://react.dev/" target="_blank">React 18</a> + <a href="https://www.typescriptlang.org/" target="_blank">TypeScript</a> + <a href="https://vite.dev/" target="_blank">Vite</a> + <a href="https://github.com/tradingview/lightweight-charts" target="_blank">lightweight-charts v5</a> (TradingView, Apache-2.0)
 
 ```
 src/
-├── chart/           # 领域类型 + 渲染隔离层 adapter（可替换渲染引擎）
-├── components/      # ChartView / PeriodBar / SymbolPicker
+├── chart/           # Domain types + rendering adapter (swappable engine)
+├── components/      # ChartView / PeriodBar / SymbolPicker / MarketList
 ├── data/
-│   ├── binance/     # REST 分页、WS 客户端（心跳/退避重连/补数）
-│   └── market.ts    # K 线仓库：有序缓存 + 幂等合并
-├── hooks/           # useKlineData：历史+实时编排
-├── i18n/            # 中/英文文案字典 + I18nProvider
-└── indicators/      # 指标引擎（纯函数，M3 扩展）
+│   ├── binance/     # REST pagination, WS client (heartbeat, reconnect, backfill)
+│   └── market.ts    # K-line store: ordered cache, idempotent merge
+├── hooks/           # useKlineData, useTickerList, etc.
+├── i18n/            # Dictionary-driven i18n (5 languages)
+├── indicators/      # Indicator engine (pure functions)
+└── drawings/        # Drawing tools (37+) and layer management
 ```
 
-## 设计要点
+## Data Compliance
 
-- **数据层与渲染层解耦**：`ChartApi` 接口隔离 lightweight-charts，将来可自研引擎/迁移 klinecharts 零改数据层
-- **增量渲染**：WS 实时帧走 `update` 增量路径，不打断用户缩放/平移；周期切换/补数走全量路径
-- **前端相对路径规范**：所有请求走 `/api` `/ws`，生产环境换代理零改动
-- **断线自愈**：指数退避重连 + 重连后 REST 补齐缺口，仓库层幂等去重
+- **Data source**: <a href="https://www.binance.com/" target="_blank">Binance public API</a> (REST + WebSocket), no API key needed. Please comply with <a href="https://www.binance.com/en/terms" target="_blank">Binance Terms of Service</a> and data usage restrictions.
+- **Chart engine**: <a href="https://github.com/tradingview/lightweight-charts" target="_blank">lightweight-charts</a> by TradingView (Apache-2.0). Attribution logo is displayed per license requirements.
+- **License**: MIT — see [LICENSE](LICENSE). Note: Binance data and TradingView engine are governed by their respective terms.
+
+## Ecosystem
+
+| Project | Description |
+|---|---|
+| [Kline Buty](https://github.com/sun1090/kline-buty) | The core charting application |
+| [Knowledge Base](https://kline-buty.vercel.app/knowledge/) | Trading knowledge base (27 chapters) |
+| [Documentation](docs/) | Project docs: research, requirements, architecture, timeline, deployment |
+
+## Progress
+
+<img src="https://img.shields.io/badge/drawing_tools-37-blueviolet" alt="37 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-77-blue" alt="77 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-539-yellow" alt="539 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+
+- ✅ M0 Research & Planning — docs complete
+- ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
+- ✅ M2 Chart MVP — Candlestick, volume, MA, crosshair, 7 timeframes
+- ✅ M3 Indicators & interaction — 13 indicators, subchart switching, pagination
+- ✅ M4 UX polish — Chart types, custom params, fullscreen, layout persistence
+- ✅ M5 Performance — 20k bars: all indicators < 60ms, render < 65ms, update < 0.4ms
+- ✅ P2-3 Market replay — Tick-by-tick, speed control, seek
+- ✅ P2-2 Multi-chart — Dual/quad panels, synced time axis
+- ✅ P2-4 Derivatives data — Funding rate, open interest, mark price
+- ✅ P2-1 Order overlay — Simulated positions, TP/SL, P&L
+- ✅ P2-5 Price alerts — Conditional triggers, browser notifications, SW background
+- ✅ P2-6 Mobile base — PWA manifest, responsive layout
+- ✅ M10–M21 Drawing tools — 37 tools, full editing, layer management
+- ✅ M22 Mobile pinch zoom — Touch zoom for time & price axes
+- ✅ M23 i18n — Japanese, Korean, Spanish
+- ✅ M24 Order book quick trade — Hover → quick order panel
+- ✅ M25 Region screenshot — Drag-select → PNG export
+- ✅ M26 Keyboard shortcuts — Comprehensive shortcut map
+- ✅ M27–M30 Drawing completion — Fib time zones, Gann, polyline, measure, wedge, cycle, channel, etc.
+- ✅ Mobile — OHLC tooltip overflow prevention, 2s linger, touch drawing, auto-return to read mode
+- ✅ P1-2–P1-6 Drawing tools, depth chart, order book, period completion, chart screenshot
+- ✅ Production — Docker, nginx proxy, deployment docs
+- ✅ Robustness — ErrorBoundary, offline banner, empty state, partial failure tolerance
+- ✅ VPVR — Volume profile visible range
+- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 77 E2E tests
+
+## Changelog
+
+See <a href="https://github.com/sun1090/kline-buty/releases" target="_blank">GitHub Releases</a> for a full changelog.
+
+## Design Highlights
+
+- **Decoupled data & rendering** — `ChartApi` interface abstracts the rendering engine, swappable without touching data layer
+- **Incremental rendering** — WS real-time frames go through `update` path, never interrupting user zoom/pan
+- **Consistent proxy routing** — All requests use `/api` `/ws` prefixes, zero config change when switching environments
+- **Self-healing connection** — Exponential backoff reconnect + REST gap-fill, idempotent merge at store layer
+
+## How to Contribute
+
+1. Fork the repo
+2. Create your branch: `git checkout -b feat/your-feature`
+3. Commit your changes: `git commit -am 'feat(scope): description'`
+4. Push: `git push origin feat/your-feature`
+5. Submit a Pull Request
+
+Commit convention follows [Angular Convention](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular).
+
+## License
+
+[MIT](LICENSE) © sun1090
