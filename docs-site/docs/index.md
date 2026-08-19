@@ -5,6 +5,9 @@ hero:
   name: 交易知识库
   text: 从入门到入土 · 系统化交易学习
   tagline: 现货 / 期货 / 股票 / 加密 / 外汇 / 期权 / 宏观 / 量化 / 监管 / 数据解读 / 全球市场 —— 27 篇章、190+ 篇文档、4 万+ 行深度内容
+  image:
+    src: /hero-chart.svg
+    alt: K 线与盘口配图
   actions:
     - theme: brand
       text: 开始阅读

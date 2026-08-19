@@ -45,7 +45,7 @@ function sidebarKnowledge() {
   return chapters().map((folder) => {
     const dir = join(DOCS, folder)
     const files = readdirSync(dir)
-      .filter((f) => f.endsWith('.md') && f !== 'README.md')
+      .filter((f) => f.endsWith('.md') && f !== 'README.md' && f !== 'index.md')
       .sort()
     const items = [
       { text: '章节概览', link: `/${folder}/` },

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="400" fill="url(#bgk)" rx="16"/>
+  <text x="380" y="40" fill="#eef2ff" font-size="21" font-weight="700" text-anchor="middle">单根 K 线解剖 —— 开 / 高 / 低 / 收 与 影线 / 实体</text>
+
+  <!-- Yang (bullish) candle, left -->
+  <text x="190" y="80" fill="#7ce0d0" font-size="15" font-weight="700" text-anchor="middle">阳线（收盘 &gt; 开盘）</text>
+  <line x1="190" y1="360" x2="190" y2="120" stroke="#26a69a" stroke-width="3"/>
+  <line x1="180" y1="120" x2="200" y2="120" stroke="#26a69a" stroke-width="3"/>
+  <line x1="180" y1="360" x2="200" y2="360" stroke="#26a69a" stroke-width="3"/>
+  <rect x="165" y="200" width="50" height="120" fill="#1e392f" stroke="#26a69a" stroke-width="2.5"/>
+  <text x="150" y="127" fill="#7ce0d0" font-size="13" text-anchor="end">最高价 High</text>
+  <line x1="152" y1="132" x2="190" y2="336" stroke="#3d4a6b" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="150" y="340" fill="#7ce0d0" font-size="13" text-anchor="end">收盘价 Close（实体上沿，阳线收于上方）</text>
+  <text x="150" y="215" fill="#a7efe5" font-size="13" text-anchor="end">开盘价 Open（实体下沿）</text>
+  <line x1="152" y1="219" x2="190" y2="365" stroke="#3d4a6b" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="150" y="368" fill="#ef7a7a" font-size="13" text-anchor="end">最低价 Low</text>
+  <text x="190" y="385" fill="#8fa3c8" font-size="12" text-anchor="middle">上影线 = High − Close ｜ 下影线 = Open − Low</text>
+
+  <!-- Yin (bearish) candle, right -->
+  <text x="530" y="80" fill="#ef7a7a" font-size="15" font-weight="700" text-anchor="middle">阴线（收盘 &lt; 开盘）</text>
+  <line x1="530" y1="360" x2="530" y2="120" stroke="#ef5350" stroke-width="3"/>
+  <line x1="520" y1="120" x2="540" y2="120" stroke="#ef5350" stroke-width="3"/>
+  <line x1="520" y1="360" x2="540" y2="360" stroke="#ef5350" stroke-width="3"/>
+  <rect x="505" y="120" width="50" height="120" fill="#3d2020" stroke="#ef5350" stroke-width="2.5"/>
+  <text x="560" y="127" fill="#ef7a7a" font-size="13">最高价 High = 开盘价（实体上沿）</text>
+  <text x="560" y="205" fill="#ffd3d3" font-size="13">开盘价 Open（实体上沿）</text>
+  <text x="560" y="255" fill="#ffc9c9" font-size="13">收盘价 Close（实体下沿）</text>
+  <line x1="528" y1="255" x2="560" y2="255" stroke="#3d3d3d" stroke-width="0"/>
+  <text x="560" y="368" fill="#ef7a7a" font-size="13">最低价 Low</text>
+  <text x="530" y="385" fill="#8fa3c8" font-size="12" text-anchor="middle">实体越长 → 该周期多/空越强势 ｜ 影线越长 → 该方向攻防越激烈</text>
+</svg>
