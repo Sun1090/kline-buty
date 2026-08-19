@@ -9,7 +9,7 @@ function slugify(str) {
     .replace(/[「」『』【】]/g, '')  // 移除中文引号/括号
     .replace(/[·]/g, '-')             // 中点 → 连字符
     .replace(/\s+/g, '-')             // 空白 → 连字符
-    .replace(/[^a-zA-Z0-9一-鿿㐀-䶿_\-]/g, '') // 只留字母数字中文下划线连字符
+    .replace(/[^a-zA-Z0-9一-鿿㐀-䶿_-]/g, '') // 只留字母数字中文下划线连字符
     .replace(/-+/g, '-')              // 合并连续连字符
     .replace(/^-|-$/g, '')            // 去掉首尾连字符
     .toLowerCase()
