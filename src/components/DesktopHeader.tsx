@@ -603,6 +603,27 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             <PanelButton onClick={props.onExport} title={t('share.exportTitle')} active={props.exported}>
               {props.exported ? t('share.exported') : t('share.export')}
             </PanelButton>
+            <a
+              data-testid="knowledge-link"
+              href={`${import.meta.env.BASE_URL}knowledge/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t('common.knowledgeTitle')}
+              style={{
+                flex: '0 0 auto',
+                padding: '7px 10px',
+                fontSize: 12,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-dim)',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              📚 {t('common.knowledge')}
+            </a>
           </div>
         </div>
       )}

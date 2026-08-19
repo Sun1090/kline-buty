@@ -10,8 +10,9 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
   },
   webServer: {
-    // 生产构建 + 静态服务器（直连币安，与线上部署同构；避免 vite dev 代理长跑劣化）
-    command: 'npm run build && npx serve dist -l 5173 -s',
+    // 生产构建 + 极简静态服务器（直连币安，与线上 Pages/Vercel 同构；serve 内置 cleanUrls 会 301 .html 到无后缀，
+    // 导致 /knowledge/ 子站本地行为与线上不一致，故用自研静态服务器：目录→index.html、真实文件直出、其余 SPA 回退）
+    command: 'npm run build && node scripts/serve-static.mjs 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: false,
     timeout: 120_000,

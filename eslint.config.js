@@ -4,11 +4,11 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public/sw.js'] },
+  { ignores: ['dist', 'node_modules', 'public/sw.js', '.vitepress', 'docs-site/.vitepress/dist', 'docs-site/docs/knowledge'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'docs-site/**/*.mjs'],
     languageOptions: {
       globals: { URL: 'readonly', console: 'readonly', process: 'readonly' },
     },
