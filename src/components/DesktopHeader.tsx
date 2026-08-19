@@ -423,7 +423,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               display: 'inline-block',
             }}
           />
-          <span style={{ whiteSpace: 'nowrap' }}>{props.statusText}</span>
+          <span data-testid="conn-status" style={{ whiteSpace: 'nowrap' }}>{props.statusText}</span>
         </span>
         <RowButton testId="header-more" onClick={() => toggleMenu('more')} open={menu === 'more'} title={t('common.more')}>
           {t('common.more')} ▾

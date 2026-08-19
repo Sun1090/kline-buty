@@ -704,3 +704,36 @@ test('移动端：回看历史 → 「回到最新」按钮出现 → 点击回�
   await expect(btn).toHaveCount(0, { timeout: 8000 })
   expect(errs).toHaveLength(0)
 })
+
+test('移动端：更多 → 行情全屏浮层 → 点行切交易对并自动关闭 → ✕ 关闭', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('canvas').first()).toBeVisible({ timeout: 15_000 })
+
+  // 更多面板 → 「行情」
+  await page.getByTestId('mobile-more').tap()
+  await page.waitForTimeout(600)
+  await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
+
+  // 全屏浮层出现，行数据已加载
+  await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
+  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
+  expect(rowCount).toBeGreaterThan(50)
+
+  // 点 SOL 行 → 主图切为 SOL/USDT + 浮层自动关闭
+  await page.getByTestId('market-row-SOLUSDT').tap()
+  await expect(page.getByText('SOL/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
+
+  // 再开 → ✕ 手动关闭
+  await page.getByTestId('mobile-more').tap()
+  await page.waitForTimeout(600)
+  await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
+  await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 10_000 })
+  await page.getByTestId('market-list-collapse').tap()
+  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
+  expect(errors).toHaveLength(0)
+})

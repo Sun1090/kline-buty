@@ -39,6 +39,7 @@ import {
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { MobileHeader } from './components/MobileHeader'
 import { DesktopHeader } from './components/DesktopHeader'
+import { MarketList } from './components/MarketList'
 import { MAIN_OPTIONS, SUB_OPTIONS } from './components/headerOptions'
 import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
@@ -85,6 +86,8 @@ export function App() {
   const [orderBookOpen, setOrderBookOpen] = useState(false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
   const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
+  const [marketListOpen, setMarketListOpen] = usePersistedState('marketListOpen', true)
+  const [marketListMobileOpen, setMarketListMobileOpen] = useState(false)
   const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
   const [sentimentOpen, setSentimentOpen] = useState(false)
@@ -427,6 +430,8 @@ export function App() {
           onToggleVp={() => setVolumeProfileOpen((v) => !v)}
           sentimentActive={sentimentOpen}
           onToggleSentiment={() => setSentimentOpen((v) => !v)}
+          marketListActive={marketListMobileOpen}
+          onToggleMarketList={() => setMarketListMobileOpen((v) => !v)}
           replayActive={replay !== null}
           replayDisabled={candles.length < 30}
           onReplay={() => setReplay((r) => r ?? createReplay(candles.length, Math.max(0, candles.length - 300)))}
@@ -523,7 +528,44 @@ export function App() {
           }}
         />
       )}
-      <StatsBar stats={stats} live={state.live} />
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {!isMobile && (
+          <MarketList
+            symbol={symbol}
+            onSelectSymbol={setSymbol}
+            open={marketListOpen}
+            onToggle={() => setMarketListOpen((v) => !v)}
+          />
+        )}
+        {isMobile && marketListMobileOpen && (
+          <div
+            data-testid="market-list-overlay"
+            style={{
+              position: 'fixed',
+              top: 'var(--header-h)',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 88,
+              background: 'var(--panel)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <MarketList
+              symbol={symbol}
+              onSelectSymbol={(sel) => {
+                setSymbol(sel)
+                setMarketListMobileOpen(false)
+              }}
+              open
+              overlay
+              onToggle={() => setMarketListMobileOpen(false)}
+            />
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <StatsBar stats={stats} live={state.live} />
       <OfflineBanner />
       {quickOrder && (
         <QuickOrder
@@ -623,7 +665,9 @@ export function App() {
             onEditText={startEditingText}
           />
         )}
-      </main>
+        </main>
+        </div>
+      </div>
       {sidePanelOpen && (
         <div
           data-testid="side-panels"

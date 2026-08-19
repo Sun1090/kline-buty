@@ -23,10 +23,14 @@ export interface Ticker24h {
   quoteVolume: number
 }
 
+/** 单次请求超时：fapi 等域名被网络阻断时，让兜底（dapi）能及时接管，而不是无限挂起 */
+const FETCH_TIMEOUT_MS = 8000
+
 /**
  * 请求封装：自动探测代理/直连模式。
  * direct 模式支持候选 URL 兜底（fapi 被网络阻断时回退 COIN-M dapi），
  * 依次尝试直到首个成功；全部失败抛最后错误。
+ * 每次尝试带 8s 超时（AbortController），黑盒网络下快速失败并切到兜底域名。
  */
 async function binanceGet(path: string, fallback?: string): Promise<Response> {
   const mode = await detectMode()
@@ -34,12 +38,16 @@ async function binanceGet(path: string, fallback?: string): Promise<Response> {
     mode === 'proxy' ? [path] : [buildApiUrl(mode, path), ...(fallback ? [fallback] : [])]
   let lastErr: unknown
   for (const url of candidates) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { signal: ctrl.signal })
       if (!res.ok) throw new Error(`binance http ${res.status}`)
       return res
     } catch (e) {
       lastErr = e
+    } finally {
+      clearTimeout(timer)
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('binance request failed')
@@ -92,6 +100,68 @@ export async function fetchTicker24h(symbol: string): Promise<Ticker24h> {
     low: Number(d.lowPrice),
     quoteVolume: Number(d.quoteVolume),
   }
+}
+
+
+/** 行情列表行：批量 24h 摘要（交易对/最新价/涨跌幅/成交额） */
+export interface TickerRow {
+  symbol: string
+  price: number
+  changePct: number
+  quoteVolume: number
+}
+
+interface RawTicker24h {
+  symbol: string
+  lastPrice: string
+  priceChangePercent: string
+  quoteVolume: string
+}
+
+function parseTickerOne(d: RawTicker24h): TickerRow {
+  return {
+    symbol: d.symbol,
+    price: Number(d.lastPrice),
+    changePct: Number(d.priceChangePercent),
+    quoteVolume: Number(d.quoteVolume),
+  }
+}
+
+const TICKER_BATCH = 20
+
+/**
+ * 批量 24 小时行情：`GET /api/v3/ticker/24hr`。
+ * 传入 symbols 时分 20 个一组并行拉取（JSON 数组参数，单次 ≤100 且避免 URL 过长）；
+ * 某组因含失效交易对整体 400 时，降级为逐交易对请求并跳过失效项——保证个别下架币不拖垮整表。
+ */
+export async function fetchTickers24h(symbols?: string[]): Promise<TickerRow[]> {
+  if (!symbols || symbols.length === 0) {
+    const res = await binanceGet('/api/v3/ticker/24hr')
+    return ((await res.json()) as RawTicker24h[]).map(parseTickerOne)
+  }
+  const chunks: string[][] = []
+  for (let i = 0; i < symbols.length; i += TICKER_BATCH) chunks.push(symbols.slice(i, i + TICKER_BATCH))
+  const rows: TickerRow[] = []
+  for (const chunk of chunks) {
+    try {
+      const params = new URLSearchParams({ symbols: JSON.stringify(chunk) })
+      const res = await binanceGet(`/api/v3/ticker/24hr?${params.toString()}`)
+      rows.push(...(((await res.json()) as RawTicker24h[]).map(parseTickerOne)))
+    } catch {
+      // 组内含下架交易对 → 逐个请求，失效项跳过（个别下架币不拖垮整表）
+      await Promise.all(
+        chunk.map(async (sym) => {
+          try {
+            const res = await binanceGet(`/api/v3/ticker/24hr?symbol=${encodeURIComponent(sym)}`)
+            rows.push(parseTickerOne((await res.json()) as RawTicker24h))
+          } catch {
+            /* 跳过失效交易对 */
+          }
+        }),
+      )
+    }
+  }
+  return rows
 }
 
 export interface FundingRate {

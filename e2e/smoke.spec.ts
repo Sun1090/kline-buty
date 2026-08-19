@@ -246,6 +246,8 @@ test.describe('K 线应用冒烟', () => {
     await expect(livePrice).toBeVisible({ timeout: 20_000 })
     await expect(livePrice).toContainText(/[\d.,]+/)
     await page.getByRole('button', { name: '1秒' }).click()
+    // 先确保 WS 处于「实时」连接状态（避免重连窗口期无帧导致的假失败），再测价格变动
+    await expect(page.getByTestId('conn-status')).toContainText('实时', { timeout: 30_000 })
     const p1 = (await livePrice.textContent()) ?? ''
     await expect.poll(() => livePrice.textContent(), { timeout: 30_000 }).not.toBe(p1)
   })
@@ -4082,5 +4084,36 @@ test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到�
 
   await btn.click()
   await expect(btn).toHaveCount(0, { timeout: 8000 })
+  expect(errors).toHaveLength(0)
+})
+
+test('桌面：行情列表侧栏——点行切交易对 + 排序升降 + 折叠/展开', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+
+  // 行情列表可见且行数据已加载（内置 60+ 交易对）
+  await expect(page.getByTestId('market-list')).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
+  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
+  expect(rowCount).toBeGreaterThan(50)
+
+  // 点击 ETH 行 → 主图交易对切换为 ETH/USDT + 行高亮
+  await page.getByTestId('market-row-ETHUSDT').click()
+  await expect(page.getByText('ETH/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
+  // 排序：点价格列 → ▲（升序）；再点 → ▼（降序）
+  const priceSort = page.getByTestId('market-sort-price')
+  await priceSort.click()
+  await expect(priceSort).toContainText('▲')
+  await priceSort.click()
+  await expect(priceSort).toContainText('▼')
+
+  // 折叠 → 窄竖条；展开 → 面板恢复
+  await page.getByTestId('market-list-collapse').click()
+  await expect(page.getByTestId('market-list-rail')).toBeVisible()
+  await page.getByTestId('market-list-expand').click()
+  await expect(page.getByTestId('market-list')).toBeVisible()
   expect(errors).toHaveLength(0)
 })
