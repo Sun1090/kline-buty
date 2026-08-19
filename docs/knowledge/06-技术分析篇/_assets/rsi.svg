@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgr2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#bgr2)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">RSI —— 0~100 的「冷热表」：超买（≥70） / 超卖（≤30）</text>
+
+  <!-- overbought band -->
+  <rect x="60" y="70" width="680" height="60" fill="rgba(239,83,80,0.10)" stroke="rgba(239,83,80,0.4)" stroke-width="1"/>
+  <text x="70" y="92" fill="#ef7a7a" font-size="13" font-weight="700">超买区 RSI ≥ 70</text>
+  <text x="70" y="112" fill="#8fa3c8" font-size="12">买盘过热，随时可能回调（但不必然立即跌）</text>
+  <line x1="60" y1="130" x2="740" y2="130" stroke="#ef5350" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- neutral zone -->
+  <rect x="60" y="130" width="680" height="140" fill="rgba(128,128,128,0.04)"/>
+  <text x="380" y="205" fill="#5f6f95" font-size="13" text-anchor="middle">50 强弱分界：&gt;50 多头占优 ｜ &lt;50 空头占优</text>
+
+  <!-- oversold band -->
+  <rect x="60" y="270" width="680" height="60" fill="rgba(38,166,154,0.10)" stroke="rgba(38,166,154,0.4)" stroke-width="1"/>
+  <line x1="60" y1="270" x2="740" y2="270" stroke="#26a69a" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="70" y="295" fill="#7ce0d0" font-size="13" font-weight="700">超卖区 RSI ≤ 30</text>
+  <text x="70" y="315" fill="#8fa3c8" font-size="12">卖压衰竭，随时可能反弹</text>
+
+  <!-- RSI line -->
+  <path d="M 60 120 C 140 200 200 220 260 250 S 420 110 500 90 S 640 300 700 280 S 730 220 740 210" fill="none" stroke="#4e9cf5" stroke-width="2.8"/>
+
+  <!-- annotations -->
+  <text x="250" y="268" fill="#4e9cf5" font-size="12">震荡区：45~60 之间横着走（动力不足）</text>
+  <text x="470" y="80" fill="#4e9cf5" font-size="12">冲上 70 → 超买</text>
+  <text x="500" y="330" fill="#4e9cf5" font-size="12">跌破 30 → 超卖</text>
+
+  <text x="400" y="386" fill="#8fa3c8" font-size="12.5" text-anchor="middle">⚠ 强趋势里 RSI 可以长期趴在超买/超卖区（钝化），顺势别只看它反手；背离（顶/底背离）比超买超卖更可靠。</text>
+</svg>

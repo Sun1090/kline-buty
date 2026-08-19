@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#161a2e"/><stop offset="1" stop-color="#0e1122"/>
+    </linearGradient>
+    <linearGradient id="lineGlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2962ff"/><stop offset="0.5" stop-color="#4e9cf5"/><stop offset="1" stop-color="#26a69a"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="300" rx="20" fill="url(#bgh)" stroke="#2a3550" stroke-width="1.5"/>
+
+  <!-- grid -->
+  <g stroke="#243046" stroke-width="1">
+    <line x1="30" y1="50" x2="450" y2="50"/><line x1="30" y1="100" x2="450" y2="100"/>
+    <line x1="30" y1="150" x2="450" y2="150"/><line x1="30" y1="200" x2="450" y2="200"/>
+    <line x1="30" y1="250" x2="450" y2="250"/>
+    <line x1="90" y1="40" x2="90" y2="260"/><line x1="180" y1="40" x2="180" y2="260"/>
+    <line x1="270" y1="40" x2="270" y2="260"/><line x1="360" y1="40" x2="360" y2="260"/>
+  </g>
+
+  <!-- candles -->
+  <g>
+    <!-- bearish then bullish trend -->
+    <line x1="60" y1="120" x2="60" y2="60" stroke="#ef5350" stroke-width="2"/><rect x="48" y="80" width="24" height="40" fill="#3d2020" stroke="#ef5350" stroke-width="1.5"/>
+    <line x1="120" y1="140" x2="120" y2="70" stroke="#ef5350" stroke-width="2"/><rect x="108" y="95" width="24" height="45" fill="#3d2020" stroke="#ef5350" stroke-width="1.5"/>
+    <line x1="180" y1="150" x2="180" y2="90" stroke="#26a69a" stroke-width="2"/><rect x="168" y="105" width="24" height="45" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+    <line x1="240" y1="180" x2="240" y2="110" stroke="#26a69a" stroke-width="2"/><rect x="228" y="120" width="24" height="60" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+    <line x1="300" y1="200" x2="300" y2="140" stroke="#26a69a" stroke-width="2"/><rect x="288" y="148" width="24" height="50" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+    <line x1="360" y1="230" x2="360" y2="175" stroke="#26a69a" stroke-width="2"/><rect x="348" y="180" width="24" height="50" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+    <line x1="420" y1="245" x2="420" y2="205" stroke="#26a69a" stroke-width="2"/><rect x="408" y="210" width="24" height="35" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+  </g>
+
+  <!-- MA line -->
+  <polyline points="60,105 120,115 180,112 240,120 300,140 360,175 420,205" fill="none" stroke="url(#lineGlow)" stroke-width="3"/>
+
+  <!-- order book mini-panel -->
+  <rect x="330" y="40" width="110" height="150" rx="10" fill="#0f1528" stroke="#2a3550" stroke-width="1.5"/>
+  <text x="345" y="62" fill="#ef7a7a" font-size="12">卖一 100.02</text>
+  <text x="345" y="84" fill="#ef7a7a" font-size="12">卖二 100.03</text>
+  <line x1="340" y1="98" x2="430" y2="98" stroke="#3d4a6b" stroke-width="1"/>
+  <text x="345" y="116" fill="#7ce0d0" font-size="12">买一 100.01</text>
+  <text x="345" y="138" fill="#7ce0d0" font-size="12">买二 100.00</text>
+  <text x="345" y="160" fill="#7ce0d0" font-size="12">买三 99.99</text>
+  <text x="345" y="182" fill="#5f6f95" font-size="11">价差 0.01</text>
+
+  <!-- axis labels -->
+  <text x="30" y="278" fill="#5f6f95" font-size="11">K 线 · 盘口 · 27 篇 · 190+ 文档</text>
+</svg>

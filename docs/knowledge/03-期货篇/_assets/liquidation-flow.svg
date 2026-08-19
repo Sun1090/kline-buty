@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgq" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="arrQ" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8fa3c8"/></marker>
+  </defs>
+  <rect width="760" height="400" fill="url(#bgq)" rx="16"/>
+  <text x="380" y="36" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">强平（爆仓）流程 —— 价格反向时发生了什么</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="70" width="210" height="86" rx="12" fill="#12203a" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="145" y="96" fill="#aab8d6" font-size="14" font-weight="700" text-anchor="middle">① 开仓</text>
+  <text x="145" y="118" fill="#c8d3ea" font-size="12.5" text-anchor="middle">缴初始保证金</text>
+  <text x="145" y="138" fill="#8fa3c8" font-size="12" text-anchor="middle">例：10 万仓位 × 10% = 1 万</text>
+
+  <!-- Arrow -->
+  <line x1="250" y1="113" x2="290" y2="113" stroke="#8fa3c8" stroke-width="2.5" marker-end="url(#arrQ)"/>
+
+  <!-- Step 2 -->
+  <rect x="296" y="70" width="190" height="86" rx="12" fill="#1e392f" stroke="#26a69a" stroke-width="1.5"/>
+  <text x="391" y="96" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">② 持仓中</text>
+  <text x="391" y="118" fill="#c8d3ea" font-size="12.5" text-anchor="middle">价格反向 → 浮动亏损</text>
+  <text x="391" y="138" fill="#8fa3c8" font-size="12" text-anchor="middle">权益 = 保证金 − 浮亏</text>
+
+  <!-- Arrow -->
+  <line x1="486" y1="113" x2="526" y2="113" stroke="#8fa3c8" stroke-width="2.5" marker-end="url(#arrQ)"/>
+
+  <!-- Step 3 -->
+  <rect x="532" y="70" width="190" height="86" rx="12" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="627" y="96" fill="#ff9d9d" font-size="14" font-weight="700" text-anchor="middle">③ 触发强平</text>
+  <text x="627" y="118" fill="#ffd3d3" font-size="12.5" text-anchor="middle">权益跌破维持保证金</text>
+  <text x="627" y="138" fill="#8fa3c8" font-size="12" text-anchor="middle">系统强制市价平仓</text>
+
+  <!-- Bottom explain -->
+  <rect x="40" y="190" width="682" height="120" rx="12" fill="#0d1526" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="380" y="220" fill="#c8d3ea" font-size="14" font-weight="700" text-anchor="middle">强平价大致可以提前算出来</text>
+  <text x="60" y="248" fill="#aab8d6" font-size="13">做多：强平价 ≈ 入场价 ×（1 − 初始保证金率 + 维持保证金率）÷ 1</text>
+  <text x="60" y="272" fill="#aab8d6" font-size="13">10 倍杠杆、维持保证金率 5%：强平价 ≈ 入场价 ×（1 − 10% + 5%）= 入场价 × 0.95</text>
+  <text x="60" y="296" fill="#ef7a7a" font-size="13" font-weight="700">⚠ 即：10 倍杠杆做多，价格反向跌 5% 就会触发强平——不是等到亏光本金才平！</text>
+
+  <text x="380" y="352" fill="#8fa3c8" font-size="12.5" text-anchor="middle">插针（瞬间大幅波动）时成交可能比强平价更差，甚至穿仓倒欠（负余额）。</text>
+  <text x="380" y="376" fill="#5f6f95" font-size="12" text-anchor="middle">控制办法：低杠杆 + 提前设止损 + 留足保证金余量（别满仓梭哈）。</text>
+</svg>

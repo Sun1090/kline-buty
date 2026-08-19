@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="560" viewBox="0 0 720 560" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <linearGradient id="bidBar" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#26a69a"/><stop offset="0.8" stop-color="rgba(38,166,154,0.35)"/><stop offset="1" stop-color="rgba(38,166,154,0.08)"/>
+    </linearGradient>
+    <linearGradient id="askBar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ef5350"/><stop offset="0.2" stop-color="rgba(239,83,80,0.35)"/><stop offset="1" stop-color="rgba(239,83,80,0.08)"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="560" fill="url(#bg)" rx="16"/>
+
+  <!-- Title -->
+  <text x="360" y="42" fill="#eef2ff" font-size="22" font-weight="700" text-anchor="middle">订单簿（Order Book / 盘口）—— 一档 / 二档 / 五档</text>
+  <text x="360" y="66" fill="#7c8db5" font-size="13" text-anchor="middle">卖盘 Ask（挂单卖出的人），买盘 Bid（挂单买入的人）</text>
+
+  <!-- Midline -->
+  <line x1="30" y1="300" x2="690" y2="300" stroke="#3d4a6b" stroke-width="2"/>
+  <text x="360" y="288" fill="#8fa3c8" font-size="12" text-anchor="middle">当前价 Last Price ≈ 100.00（最后一个成交价）</text>
+
+  <!-- Ask rows (top, red) -->
+  <g font-size="15">
+    <rect x="40" y="90" width="640" height="34" fill="url(#askBar)" opacity="0.9"/>
+    <text x="70" y="112" fill="#ef7a7a" font-weight="700">卖三 Ask³</text>
+    <text x="230" y="112" fill="#c8d3ea">100.03</text>
+    <text x="400" y="112" fill="#c8d3ea">1,250</text>
+    <text x="600" y="112" fill="#7c8db5" font-size="12">≈ 125,037 USDT</text>
+    <rect x="40" y="128" width="640" height="34" fill="url(#askBar)"/>
+    <text x="70" y="150" fill="#ef7a7a" font-weight="700">卖二 Ask²</text>
+    <text x="230" y="150" fill="#c8d3ea">100.02</text>
+    <text x="400" y="150" fill="#c8d3ea">850</text>
+    <text x="600" y="150" fill="#7c8db5" font-size="12">≈ 85,017 USDT</text>
+    <rect x="40" y="166" width="640" height="34" fill="url(#askBar)" stroke="#ef5350" stroke-width="1.5"/>
+    <text x="70" y="188" fill="#ff9d9d" font-weight="700">卖一 Ask¹ ⭐最优卖价</text>
+    <text x="230" y="188" fill="#ffd3d3">100.01</text>
+    <text x="400" y="188" fill="#ffd3d3">200</text>
+    <text x="600" y="188" fill="#7c8db5" font-size="12">≈ 20,002 USDT</text>
+  </g>
+
+  <text x="360" y="250" fill="#aab8d6" font-size="13" text-anchor="middle">↕ 价差 Spread = 卖一 − 买一 = 100.01 − 100.00 = 0.01</text>
+
+  <!-- Bid rows (bottom, green) -->
+  <g font-size="15">
+    <rect x="40" y="318" width="640" height="34" fill="url(#bidBar)" stroke="#26a69a" stroke-width="1.5"/>
+    <text x="70" y="340" fill="#7ce0d0" font-weight="700">买一 Bid¹ ⭐最优买价</text>
+    <text x="230" y="340" fill="#a7efe5">100.00</text>
+    <text x="400" y="340" fill="#a7efe5">300</text>
+    <text x="600" y="340" fill="#7c8db5" font-size="12">≈ 30,000 USDT</text>
+    <rect x="40" y="356" width="640" height="34" fill="url(#bidBar)"/>
+    <text x="70" y="378" fill="#6fc5b8" font-weight="700">买二 Bid²</text>
+    <text x="230" y="378" fill="#c8d3ea">99.99</text>
+    <text x="400" y="378" fill="#c8d3ea">1,500</text>
+    <text x="600" y="378" fill="#7c8db5" font-size="12">≈ 149,985 USDT</text>
+    <rect x="40" y="394" width="640" height="34" fill="url(#bidBar)"/>
+    <text x="70" y="416" fill="#6fc5b8" font-weight="700">买三 Bid³</text>
+    <text x="230" y="416" fill="#c8d3ea">99.98</text>
+    <text x="400" y="416" fill="#c8d3ea">2,000</text>
+    <text x="600" y="416" fill="#7c8db5" font-size="12">≈ 199,960 USDT</text>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="12.5" fill="#8fa3c8">
+    <text x="60" y="468">💡 你想立刻买入 → 按市价吃「卖一」100.01；</text>
+    <text x="60" y="488">💡 你想立刻卖出 → 按市价砸「买一」100.00；</text>
+    <text x="60" y="508">💡 想挂单等成交 → 挂在比现价更优的位置（买挂 99.95，卖挂 100.05）；</text>
+    <text x="60" y="528">💡 「一档 / 五档 / 十档」= 显示卖 1–N 与买 1–N 多少层；档位越多，盘口信息越厚。</text>
+  </g>
+</svg>
