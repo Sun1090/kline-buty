@@ -6,7 +6,7 @@ import { PeriodBar } from '../PeriodBar'
 afterEach(cleanup)
 
 describe('PeriodBar', () => {
-  it('默认渲染全部周期按钮（桌面 flexWrap 换行，不产生横向滚动条）', () => {
+  it('默认渲染全部周期按钮（flexWrap 换行，不产生横向滚动条）', () => {
     const onChange = vi.fn()
     const { container } = render(<PeriodBar value="15m" onChange={onChange} />)
     const bar = container.firstChild as HTMLElement
@@ -14,24 +14,25 @@ describe('PeriodBar', () => {
     expect(bar.querySelectorAll('button').length).toBe(14)
     expect(screen.getByText('1秒')).toBeDefined()
     expect(screen.getByText('月')).toBeDefined()
-    // 桌面模式：换行布局（非 nowrap）
+    // 换行布局：flexWrap=wrap、无 overflow 滚动（绝不产生横向滚动条）
     expect(getComputedStyle(bar).flexWrap).toBe('wrap')
-    expect(bar.className).not.toContain('scroll-toolbar')
+    expect(getComputedStyle(bar).overflowX).toBe('visible')
     // 当前周期高亮
     expect(screen.getByText('15分').getAttribute('style')).toContain('var(--accent)')
   })
 
-  it('scrollable 模式：单行 nowrap + 横向滚动（移动端不换行占两行）', () => {
+  it('compact 模式（移动端）：仍换行、按钮更紧凑、无横向滚动条', () => {
     const onChange = vi.fn()
-    const { container } = render(<PeriodBar value="1h" onChange={onChange} scrollable />)
+    const { container } = render(<PeriodBar value="1h" onChange={onChange} compact />)
     const bar = container.firstChild as HTMLElement
-    expect(bar.className).toContain('scroll-toolbar')
-    expect(getComputedStyle(bar).flexWrap).toBe('nowrap')
-    expect(getComputedStyle(bar).overflowX).toBe('auto')
-    // 按钮不收缩，可横向滚动查看全部
-    for (const btn of bar.querySelectorAll('button')) {
-      expect(getComputedStyle(btn).flexShrink).toBe('0')
-    }
+    expect(getComputedStyle(bar).flexWrap).toBe('wrap')
+    expect(getComputedStyle(bar).overflowX).toBe('visible')
+    // 14 个周期全部可见（不滚动）
+    expect(bar.querySelectorAll('button').length).toBe(14)
+    // 紧凑按钮：padding 更小
+    const btn = bar.querySelector('button') as HTMLElement
+    const pad = getComputedStyle(btn).padding
+    expect(pad).toContain('3px')
   })
 
   it('点击周期回调 onChange', () => {
