@@ -4,24 +4,22 @@ import { useI18n, type MessageKey } from '../i18n'
 interface PeriodBarProps {
   value: Period
   onChange: (p: Period) => void
-  /** 移动端：单行横向滚动（不换行占两行）；桌面默认 flexWrap 换行 */
-  scrollable?: boolean
+  /** 移动端：更紧凑的换行（按钮略小、行距更密）；桌面默认换行布局 */
+  compact?: boolean
 }
 
-/** 周期工具栏：桌面 flexWrap 换行布局；移动端单行横滚，绝不产生横向滚动条 */
-export function PeriodBar({ value, onChange, scrollable }: PeriodBarProps) {
+/** 周期工具栏：始终 flexWrap 换行——绝不产生横向滚动条，全部周期直接可见 */
+export function PeriodBar({ value, onChange, compact }: PeriodBarProps) {
   const { t } = useI18n()
   return (
     <div
-      className={scrollable ? 'scroll-toolbar' : undefined}
       data-testid="period-bar"
       style={{
         display: 'flex',
-        flexWrap: scrollable ? 'nowrap' : 'wrap',
-        gap: 2,
+        flexWrap: 'wrap',
+        gap: compact ? 1 : 2,
         flexShrink: 1,
         minWidth: 0,
-        ...(scrollable ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' } : {}),
       }}
     >
       {PERIODS.map((p) => (
@@ -30,8 +28,8 @@ export function PeriodBar({ value, onChange, scrollable }: PeriodBarProps) {
           data-testid={`period-${p.value}`}
           onClick={() => onChange(p.value)}
           style={{
-            padding: '4px 8px',
-            fontSize: 12,
+            padding: compact ? '3px 6px' : '4px 8px',
+            fontSize: compact ? 11 : 12,
             border: 'none',
             borderRadius: 4,
             cursor: 'pointer',

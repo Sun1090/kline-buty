@@ -308,8 +308,8 @@ export function MobileHeader(props: MobileHeaderProps) {
           </span>
         </div>
 
-        {/* 第 2 行：周期单行横滚（高频操作保留，窄屏不换行占两行） */}
-        <PeriodBar value={props.period} onChange={props.onPeriod} scrollable />
+        {/* 第 2 行：周期换行展示（全部周期直接可见，绝不出现横向滚动条） */}
+        <PeriodBar value={props.period} onChange={props.onPeriod} compact />
 
         {/* 第 3 行：类型/主图/副图/画线弹层 + 布局/回放/全屏 */}
         <div style={{ display: 'flex', gap: 4 }}>

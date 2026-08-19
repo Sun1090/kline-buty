@@ -44,9 +44,6 @@
       /* 桌面顶栏单行：内部工具栏可横滚但隐藏滚动条，避免出现横向滚动条 */
       header[data-testid="desktop-header"] .scroll-toolbar { scrollbar-width: none; -ms-overflow-style: none; }
       header[data-testid="desktop-header"] .scroll-toolbar::-webkit-scrollbar { display: none; }
-      /* 移动端周期条：单行横滚但隐藏滚动条，不挤占高度 */
-      header[data-testid="mobile-header"] .scroll-toolbar { scrollbar-width: none; -ms-overflow-style: none; }
-      header[data-testid="mobile-header"] .scroll-toolbar::-webkit-scrollbar { display: none; }
       /* 工具栏横向滚动条细且不挤占空间 */
       .scroll-toolbar { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
       .scroll-toolbar::-webkit-scrollbar { height: 4px; }
