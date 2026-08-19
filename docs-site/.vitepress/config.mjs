@@ -3,6 +3,18 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+/** 自定义 slugify：移除「」、空格→连字符、小写，保持中文不变 */
+function slugify(str) {
+  return str
+    .replace(/[「」『』【】]/g, '')  // 移除中文引号/括号
+    .replace(/[·]/g, '-')             // 中点 → 连字符
+    .replace(/\s+/g, '-')             // 空白 → 连字符
+    .replace(/[^a-zA-Z0-9一-鿿㐀-䶿_\-]/g, '') // 只留字母数字中文下划线连字符
+    .replace(/-+/g, '-')              // 合并连续连字符
+    .replace(/^-|-$/g, '')            // 去掉首尾连字符
+    .toLowerCase()
+}
+
 const SITE_ROOT = fileURLToPath(new URL('..', import.meta.url)) // docs-site/
 // 篇章目录直接位于 srcDir（docs-site/docs/）根，由 scripts/docs-prepare.mjs 同步
 const DOCS = join(SITE_ROOT, 'docs')
@@ -28,7 +40,7 @@ function chapters() {
     .sort()
 }
 
-/** 动态生成侧边栏：每章 = 折叠组（篇内导航 + 各正文文档） */
+/** 动态生成侧边栏：每章 = 章节概览 + 各正文文档，避免重复入口 */
 function sidebarKnowledge() {
   return chapters().map((folder) => {
     const dir = join(DOCS, folder)
@@ -36,7 +48,7 @@ function sidebarKnowledge() {
       .filter((f) => f.endsWith('.md') && f !== 'README.md')
       .sort()
     const items = [
-      { text: '篇内导航', link: `/${folder}/` },
+      { text: '章节概览', link: `/${folder}/` },
       ...files.map((f) => ({
         text: firstHeading(join(dir, f)) ?? f.replace(/\.md$/, ''),
         link: `/${folder}/${f.replace(/\.md$/, '')}`,
@@ -57,12 +69,14 @@ export default defineConfig({
   description: 'Kline Buty 交易知识库：现货/期货/股票/加密/外汇/期权/宏观/量化/监管——从入门到入土',
   base: BASE,
   lastUpdated: true,
-  // 与参考站（docs.soybeanjs.cn/zh/guide/router/intro.html）一致：保留 .html 干净直链，
-  // 任何静态托管（GitHub Pages / Vercel / serve）都可直接命中，无需 URL 重写。
   cleanUrls: false,
-  // 知识库大量「章节目录/」链接指向 README.md 目录索引（GitHub 与本站均正确解析），
-  // VitePress 死链检查只认 index.md 会误报，此处关闭该检查（链接在运行时均有效）。
   ignoreDeadLinks: true,
+  // 自定义锚点生成，移除非 ASCII 符号确保 URL 片段兼容
+  markdown: {
+    anchor: {
+      slugify,
+    },
+  },
   head: [
     ['meta', { name: 'theme-color', content: '#2962ff' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}icon.svg` }],
@@ -71,7 +85,7 @@ export default defineConfig({
     logo: `${BASE}icon.svg`,
     nav: [
       { text: '知识库首页', link: '/' },
-      { text: '行情应用', link: '../' },
+      { text: '行情应用', link: 'https://kline-buty.vercel.app/' },
     ],
     sidebar: {
       '/': [
