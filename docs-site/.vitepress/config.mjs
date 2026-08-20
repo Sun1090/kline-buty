@@ -32,6 +32,47 @@ function firstHeading(file) {
   }
 }
 
+/** 读取正文首个 > 引用行作为简介；无则返回 null */
+function firstQuote(file) {
+  try {
+    const m = readFileSync(file, 'utf8').match(/^>\s*(.+)$/m)
+    if (!m) return null
+    const t = m[1].trim()
+    return t === '**免责声明**' || t.startsWith('**免责声明**') ? null : t
+  } catch {
+    return null
+  }
+}
+
+/** 从标题提取序号（"03 · K 线与图表入门" → "03"） */
+function docNo(title) {
+  const m = String(title).match(/^(\d{2})\s*[·.．]\s*/)
+  return m ? m[1] : null
+}
+
+/**
+ * 章节文档索引（供 DocCards 组件渲染卡片导航）：
+ * { [chapterDir]: [{ no, title, desc, link }] }
+ */
+function docIndex() {
+  return chapters().reduce((acc, folder) => {
+    const dir = join(DOCS, folder)
+    acc[folder] = readdirSync(dir)
+      .filter((f) => f.endsWith('.md') && f !== 'README.md' && f !== 'index.md')
+      .sort()
+      .map((f) => {
+        const title = firstHeading(join(dir, f)) ?? f.replace(/\.md$/, '')
+        return {
+          no: docNo(title),
+          title,
+          desc: firstQuote(join(dir, f)),
+          link: `/${folder}/${f.replace(/\.md$/, '')}`,
+        }
+      })
+    return acc
+  }, {})
+}
+
 /** 按数字前缀排序的篇章目录（27 章） */
 function chapters() {
   if (!existsSync(DOCS)) return []
@@ -120,5 +161,16 @@ export default defineConfig({
       message: '仅供学习与研究，不构成任何投资建议。市场有风险，投资需谨慎。',
       copyright: 'Kline Buty · 交易知识库',
     },
+  },
+  // 每页注入章节文档索引，供 DocCards 组件渲染章节卡片导航
+  transformHead() {
+    const idx = JSON.stringify(docIndex()).replace(/</g, '\\u003c') // 防注入
+    return [
+      [
+        'script',
+        { id: 'kb-doc-index-data', type: 'application/json' },
+        idx,
+      ],
+    ]
   },
 })

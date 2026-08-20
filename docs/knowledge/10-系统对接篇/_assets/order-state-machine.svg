@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="430" viewBox="0 0 780 430" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgosm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="arrOSM" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#8fa3c8"/></marker>
+  </defs>
+  <rect width="780" height="430" fill="url(#bgosm)" rx="16"/>
+  <text x="390" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">订单状态机 —— 状态只能前进，不能回退</text>
+
+  <!-- NEW -->
+  <rect x="290" y="70" width="200" height="72" rx="12" fill="#12203a" stroke="#4e9cf5" stroke-width="2.2"/>
+  <text x="390" y="98" fill="#a7c8ff" font-size="15" font-weight="700" text-anchor="middle">NEW（已报/未成交）</text>
+  <text x="390" y="122" fill="#8fa3c8" font-size="12" text-anchor="middle">已受理，等待撮合</text>
+
+  <!-- REJECTED side branch -->
+  <rect x="40" y="70" width="180" height="72" rx="12" fill="#3d2020" stroke="#ef5350" stroke-width="2.2"/>
+  <text x="130" y="98" fill="#ff9d9d" font-size="14" font-weight="700" text-anchor="middle">REJECTED 拒单</text>
+  <text x="130" y="120" fill="#8fa3c8" font-size="11.5" text-anchor="middle">资金不足/价格超限/风控</text>
+  <line x1="290" y1="104" x2="224" y2="104" stroke="#ef5350" stroke-width="2" marker-end="url(#arrOSM)"/>
+  <text x="257" y="94" fill="#ef7a7a" font-size="11" text-anchor="middle">被拒 ⚠ 不是撤单</text>
+
+  <!-- PARTIALLY -->
+  <rect x="290" y="186" width="200" height="72" rx="12" fill="#1e392f" stroke="#26a69a" stroke-width="2.2"/>
+  <text x="390" y="214" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">PARTIALLY_FILLED</text>
+  <text x="390" y="238" fill="#8fa3c8" font-size="12" text-anchor="middle">部分成交，剩余继续挂</text>
+  <text x="272" y="210" fill="#8fa3c8" font-size="11">部分成交</text>
+  <line x1="390" y1="142" x2="390" y2="182" stroke="#8fa3c8" stroke-width="2" marker-end="url(#arrOSM)"/>
+
+  <!-- FILLED -->
+  <rect x="40" y="290" width="200" height="72" rx="12" fill="#11352c" stroke="#26a69a" stroke-width="2.4"/>
+  <text x="140" y="318" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">FILLED 全部成交 ✅</text>
+  <text x="140" y="340" fill="#8fa3c8" font-size="12" text-anchor="middle">订单生命周期正常终点</text>
+  <text x="255" y="240" fill="#7ce0d0" font-size="11">全部成交</text>
+  <line x1="300" y1="240" x2="180" y2="288" stroke="#7ce0d0" stroke-width="2" marker-end="url(#arrOSM)"/>
+
+  <!-- CANCELED -->
+  <rect x="540" y="290" width="200" height="72" rx="12" fill="#3d2c1a" stroke="#f5a623" stroke-width="2.2"/>
+  <text x="640" y="318" fill="#ffd9a0" font-size="14" font-weight="700" text-anchor="middle">CANCELED 已撤单</text>
+  <text x="640" y="340" fill="#8fa3c8" font-size="12" text-anchor="middle">主动撤/超时/剩余撤销</text>
+  <text x="470" y="252" fill="#ffd9a0" font-size="11">剩余撤单/超时</text>
+  <line x1="490" y1="245" x2="608" y2="288" stroke="#f5a623" stroke-width="2" marker-end="url(#arrOSM)"/>
+
+  <!-- bottom rules -->
+  <rect x="40" y="382" width="700" height="34" rx="8" fill="#0d1526" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="390" y="404" fill="#c8d3ea" font-size="12.5" text-anchor="middle">铁律：① 状态只前进不回退（FILLED 后不能再变）② REJECTED 不需也不可再撤 ③ 撤单请求自己也可能失败</text>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="470" viewBox="0 0 800 470" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgcl2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="470" fill="url(#bgcl2)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">币圈版图：赛道分层 —— 绝大多数币长期边缘化</text>
+  <text x="400" y="58" fill="#8fa3c8" font-size="13" text-anchor="middle">稳定币 + BTC + ETH 通常占市值大半；塔尖是少数「确定性」，塔基是长期边缘化的数千小币</text>
+
+  <!-- 塔：分层 -->
+  <rect x="290" y="92"  width="220" height="44" rx="9" fill="#11352c" stroke="#26a69a" stroke-width="2"/>
+  <text x="400" y="111" fill="#7ce0d0" font-size="13" font-weight="700" text-anchor="middle">稳定币 + BTC + ETH</text>
+  <text x="400" y="129" fill="#8fa3c8" font-size="11" text-anchor="middle">占市值大半 · 基础设施确定性</text>
+
+  <rect x="250" y="150" width="300" height="40" rx="9" fill="#12203a" stroke="#4e9cf5" stroke-width="2"/>
+  <text x="400" y="167" fill="#a7c8ff" font-size="13" font-weight="700" text-anchor="middle">L1 底层公链</text>
+  <text x="400" y="182" fill="#8fa3c8" font-size="11" text-anchor="middle">BTC · ETH · SOL · ADA —— 竞争激烈，叙事易变</text>
+
+  <rect x="210" y="204" width="380" height="40" rx="9" fill="#12203a" stroke="#4e9cf5" stroke-width="1.6"/>
+  <text x="400" y="221" fill="#a7c8ff" font-size="13" font-weight="700" text-anchor="middle">L2 二层扩容</text>
+  <text x="400" y="236" fill="#8fa3c8" font-size="11" text-anchor="middle">Arbitrum · Optimism · Base —— 依赖以太坊生态</text>
+
+  <!-- DeFi + GameFi side by side -->
+  <rect x="80"  y="258" width="300" height="46" rx="9" fill="#1e392f" stroke="#26a69a" stroke-width="1.6"/>
+  <text x="230" y="276" fill="#7ce0d0" font-size="13" font-weight="700" text-anchor="middle">DeFi 去中心化金融</text>
+  <text x="230" y="293" fill="#8fa3c8" font-size="11" text-anchor="middle">Uniswap · Aave · Lido —— 合约漏洞风险</text>
+  <rect x="420" y="258" width="300" height="46" rx="9" fill="#3d2c1a" stroke="#f5a623" stroke-width="1.6"/>
+  <text x="570" y="276" fill="#ffd9a0" font-size="13" font-weight="700" text-anchor="middle">GameFi 链游</text>
+  <text x="570" y="293" fill="#8fa3c8" font-size="11" text-anchor="middle">Axie Infinity 等 —— 生命周期极短</text>
+
+  <!-- Meme bottom -->
+  <rect x="210" y="318" width="380" height="46" rx="9" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="400" y="336" fill="#ff9d9d" font-size="13" font-weight="700" text-anchor="middle">Meme 梗文化币</text>
+  <text x="400" y="353" fill="#8fa3c8" font-size="11" text-anchor="middle">DOGE · SHIB · PEPE —— 纯情绪，归零率最高</text>
+
+  <!-- tail: 数千小币 -->
+  <path d="M 350 364 L 350 390 L 250 396 L 350 402 L 350 428 Z" fill="rgba(128,140,180,0.15)"/>
+  <path d="M 450 364 L 450 390 L 550 396 L 450 402 L 450 428 Z" fill="rgba(128,140,180,0.15)"/>
+  <text x="400" y="446" fill="#8fa3c8" font-size="12" text-anchor="middle">…… 其余数千种币分享剩下的份额：绝大多数长期边缘化（归零/僵尸/套牢）</text>
+
+  <text x="655" y="92" fill="#c8d3ea" font-size="12">判断新叙事的三个问题：</text>
+  <text x="655" y="112" fill="#8fa3c8" font-size="11.5">① 有没有真实用户？</text>
+  <text x="655" y="132" fill="#8fa3c8" font-size="11.5">② 有没有真实收入？</text>
+  <text x="655" y="152" fill="#8fa3c8" font-size="11.5">③ 代码是否开源可审计？</text>
+  <text x="655" y="182" fill="#ef7a7a" font-size="11.5" font-weight="700">三个「否」＝ 纯投机</text>
+</svg>
