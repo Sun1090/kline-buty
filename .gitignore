@@ -11,3 +11,5 @@ docs-site/docs/1*
 docs-site/docs/2*
 # 文档站构建产物（已合并进 dist/knowledge）
 docs-site/.vitepress/dist
+# 根目录 VitePress 构建缓存（误生成，勿入库）
+/.vitepress/
