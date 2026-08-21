@@ -27,6 +27,7 @@ Kline Buty 是对标 OKX / Binance / Bybit 的实时 K 线 Web 终端，同时�
 - VitePress 锚点链接必须让页面内容真实滚动到目标标题，不能只改地址栏。
 - 部署不是“push 成功”就算完成，必须等到 CI / Pages / Vercel 结果并做线上抽查。
 - 构建命令一律在仓库根目录执行：`cd` 进子目录后相对路径会全部失锚，`docs:build` / `git` 会误报路径不存在。
+- 开发、测试、验收需要启动主应用时，在仓库根目录执行 `npm run dev`，固定访问 `http://localhost:5173/`；不要改端口或另起随机服务。
 - commit 不加 `Co-Authored-By` 等任何 AI 署名；署名只留 `sun1090`。
 
 ## 任务分派原则
