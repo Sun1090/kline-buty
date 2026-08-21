@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgsl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="asl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4e9cf5"/>
+    </marker>
+  </defs>
+  <rect width="800" height="440" fill="url(#bgsl)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">交易系统闭环 —— 计划 → 风控 → 执行 → 复盘 → 修正</text>
+
+  <!-- 中心 -->
+  <circle cx="400" cy="235" r="58" fill="#182238" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="400" y="228" fill="#eef2ff" font-size="14" font-weight="700" text-anchor="middle">正期望</text>
+  <text x="400" y="250" fill="#8fa3c8" font-size="12" text-anchor="middle">胜率×盈亏比</text>
+  <text x="400" y="268" fill="#8fa3c8" font-size="12" text-anchor="middle">靠大数定律累积</text>
+
+  <!-- 上: 计划 -->
+  <rect x="310" y="66" width="180" height="70" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.8"/>
+  <text x="400" y="94" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">① 交易计划（八要素）</text>
+  <text x="400" y="116" fill="#8fa3c8" font-size="11.5" text-anchor="middle">入场/止损/止盈/仓位 进场前定死</text>
+
+  <!-- 右: 风控 -->
+  <rect x="590" y="200" width="170" height="70" rx="10" fill="#182238" stroke="#26a69a" stroke-width="1.8"/>
+  <text x="675" y="228" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">② 风险控制</text>
+  <text x="675" y="250" fill="#8fa3c8" font-size="11.5" text-anchor="middle">单笔 1%-2% · 先亏得起</text>
+
+  <!-- 下: 复盘 -->
+  <rect x="310" y="336" width="180" height="70" rx="10" fill="#182238" stroke="#e8b56e" stroke-width="1.8"/>
+  <text x="400" y="364" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">④ 复盘与统计</text>
+  <text x="400" y="386" fill="#8fa3c8" font-size="11.5" text-anchor="middle">日志 · 月度胜率与盈亏比</text>
+
+  <!-- 左: 执行 -->
+  <rect x="40" y="200" width="170" height="70" rx="10" fill="#182238" stroke="#ef5350" stroke-width="1.8"/>
+  <text x="125" y="228" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">③ 纪律执行</text>
+  <text x="125" y="250" fill="#8fa3c8" font-size="11.5" text-anchor="middle">触价无条件 · 不临场改单</text>
+
+  <!-- 环形箭头 -->
+  <path d="M 470 130 C 560 140 640 160 668 196" fill="none" stroke="#4e9cf5" stroke-width="2.5" marker-end="url(#asl)"/>
+  <path d="M 672 272 C 640 330 540 350 496 352" fill="none" stroke="#4e9cf5" stroke-width="2.5" marker-end="url(#asl)"/>
+  <path d="M 308 360 C 210 340 130 320 108 274" fill="none" stroke="#4e9cf5" stroke-width="2.5" marker-end="url(#asl)"/>
+  <path d="M 104 198 C 140 130 240 108 304 106" fill="none" stroke="#4e9cf5" stroke-width="2.5" marker-end="url(#asl)"/>
+
+  <!-- 注解 -->
+  <text x="580" y="150" fill="#8fa3c8" font-size="11.5">进场前</text>
+  <text x="586" y="330" fill="#8fa3c8" font-size="11.5">下单时</text>
+  <text x="196" y="332" fill="#8fa3c8" font-size="11.5">离场后</text>
+  <text x="176" y="148" fill="#8fa3c8" font-size="11.5">次日开盘</text>
+
+  <text x="400" y="424" fill="#8fa3c8" font-size="12.5" text-anchor="middle">闭环断在哪一环，钱就漏在哪一环：无计划靠感觉、无风控赌运气、无执行计划白写、无复盘错误重犯</text>
+</svg>
