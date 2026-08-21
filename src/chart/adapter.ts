@@ -16,6 +16,7 @@ import {
   type IRange,
 } from 'lightweight-charts'
 import { zoomRangeAround } from './pinchZoom'
+import { TouchTapTracker } from './touchGestures'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
@@ -296,6 +297,8 @@ export class LightweightChartAdapter implements ChartApi {
   private pinchStepVibrated = 0
   /** 触屏双击重置计时 */
   private lastTapAt = 0
+  /** 触屏双击复位有效轻点会话（排除捏合残留、拖拽与长按） */
+  private touchTaps = new TouchTapTracker()
   /** 本次单指触摸是否已移动（拖动≠轻点：避免两次快速拖动误触发复位） */
   private touchMoved = false
   /** 单指触摸起点（判移动阈值用） */
@@ -2046,8 +2049,11 @@ export class LightweightChartAdapter implements ChartApi {
     this.pinch = null
     this.touchMoved = false
     this.touchStartPos = null
+    // 新单指触摸才计入双击；保留期轻点只负责清除十字线，捏合残留指不计入复位
+    this.touchTaps.begin({ touchCount: e.touches.length, lingering: this.touchLingering })
     if (this.drawingTool !== 'none') return
     if (e.touches.length === 2) {
+      this.touchTaps.invalidate()
       if (this.dragEdit) return
       this.clearTouchHold()
       this.setTouchCrosshair(false)
@@ -2087,8 +2093,11 @@ export class LightweightChartAdapter implements ChartApi {
         }, LightweightChartAdapter.TOUCH_HOLD_MS)
         return
       }
-      // 画线/锚点拖拽手势（pointer 已接管）不参与触屏长按钉线
-      if (this.dragEdit) return
+      // 画线/锚点拖拽手势（pointer 已接管）不参与长按钉线和双击复位
+      if (this.dragEdit) {
+        this.touchTaps.invalidate()
+        return
+      }
       const selected = this.selectedDrawingId
         ? this.drawings.find((d) => d.id === this.selectedDrawingId)
         : null
@@ -2172,7 +2181,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.pinch = null
     this.pinchStepVibrated = 0
     if (wasPinch || e.touches.length > 0) {
-      // 双指捏合结束：不保留十字光标
+      // 双指捏合结束：不保留十字光标；残留指抬起也不得累积成双击复位
+      this.touchTaps.invalidate()
       this.clearTouchLinger()
       if (this.touchCrosshair) this.setTouchCrosshair(false)
       return
@@ -2181,6 +2191,7 @@ export class LightweightChartAdapter implements ChartApi {
     // 画线/锚点拖拽手势不参与双击复位计数（触屏绘制由 pointer 事件驱动）
     if (this.drawingTool !== 'none' || this.dragEdit) {
       this.touchMoved = false
+      this.touchTaps.invalidate()
       this.clearTouchLinger()
       if (this.touchCrosshair) this.setTouchCrosshair(false)
       return
@@ -2188,6 +2199,7 @@ export class LightweightChartAdapter implements ChartApi {
     // 单指拖动（平移/十字光标跟随）不算轻点，避免两次快速拖动误触发复位；松手后十字光标保留片刻
     if (this.touchMoved) {
       this.touchMoved = false
+      this.touchTaps.invalidate()
       this.lastTapAt = 0
       this.startTouchLinger()
       return
@@ -2195,12 +2207,14 @@ export class LightweightChartAdapter implements ChartApi {
     // 长按钉线后抬起：同样保留片刻（不再是「抬起即消失」）
     if (this.touchHoldFired) {
       this.touchHoldFired = false
+      this.touchTaps.invalidate()
       this.lastTapAt = 0
       this.startTouchLinger()
       return
     }
     const now = Date.now()
-    if (now - this.lastTapAt < LightweightChartAdapter.DOUBLE_TAP_MS) {
+    if (this.touchTaps.shouldReset(now, this.lastTapAt, LightweightChartAdapter.DOUBLE_TAP_MS)) {
+      this.touchTaps.invalidate()
       this.lastTapAt = 0
       this.chart.priceScale('right').setAutoScale(true)
       this.chart.timeScale().resetTimeScale()
