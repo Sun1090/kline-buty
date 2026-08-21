@@ -210,6 +210,33 @@ describe('hitTestDrawings（通道/文本）', () => {
   })
 })
 
+describe('normalizePoints（水平射线）', () => {
+  it('保持「锚点在前」的原始顺序（方向敏感）', () => {
+    const pts = normalizePoints('hray', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts[0].time).toBe(100)
+    expect(pts[1].time).toBe(0)
+  })
+  it('需要两个锚点', () => {
+    expect(requiredPoints('hray')).toBe(2)
+  })
+})
+
+describe('hitTestDrawings（水平射线）', () => {
+  // 锚点 (0,150) → 方向点 (100,150)，投影后 y=150；只向 x >= 锚点方向命中
+  const hray: Drawing = createDrawing('hray', [{ time: 0, price: 150 }, { time: 100, price: 150 }], 'h-ray')
+
+  it('右侧同价命中', () => {
+    expect(hitTestDrawings([hray], 50, 150, project)).toBe('h-ray')
+    expect(hitTestDrawings([hray], 200, 152, project)).toBe('h-ray')
+  })
+  it('锚点后方不命中（方向敏感）', () => {
+    expect(hitTestDrawings([hray], -20, 150, project)).toBeNull()
+  })
+  it('远离价格不命中', () => {
+    expect(hitTestDrawings([hray], 50, 180, project)).toBeNull()
+  })
+})
+
 describe('normalizePoints（矩形/射线）', () => {
   it('矩形按时间排序（渲染与锚点顺序无关）', () => {
     const pts = normalizePoints('rect', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
