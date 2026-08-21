@@ -34,7 +34,7 @@
 
 ## 知识库
 
-27 篇章、173 篇文档、4.2 万+ 行深度内容：现货 / 期货 / 股票 / 加密 / 外汇 / 期权 / 宏观 / 量化 / 监管 / 数据解读 / 全球市场。
+27 篇章、201 篇文档、4.2 万+ 行深度内容：现货 / 期货 / 股票 / 加密 / 外汇 / 期权 / 宏观 / 量化 / 监管 / 数据解读 / 全球市场。
 
 | 平台 | 地址 |
 |---|---|
@@ -86,7 +86,7 @@ src/
 
 ## 进度
 
-<img src="https://img.shields.io/badge/画线工具-37-blueviolet" alt="37 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-77-blue" alt="77 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-539-yellow" alt="539 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/画线工具-37-blueviolet" alt="37 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-82-blue" alt="82 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-581-yellow" alt="581 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 调研立项
 - ✅ M1 数据地基：币安 REST/WS 封装、MarketStore、断线重连
@@ -112,7 +112,7 @@ src/
 - ✅ 生产部署：Docker、nginx 代理、部署文档
 - ✅ 健壮性：ErrorBoundary、离线提示、空状态、部分失败容错
 - ✅ 筹码分布 VPVR
-- ✅ 工程规范：ESLint 0 error、CI、77 E2E
+- ✅ 工程规范：ESLint 0 error、CI、82 E2E
 
 ## 设计要点
 

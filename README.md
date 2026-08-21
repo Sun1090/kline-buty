@@ -34,7 +34,7 @@
 
 ## Knowledge Base
 
-27 chapters, 173 docs covering: spot, futures, stocks, crypto, forex, options, macro, quantitative trading, regulation, data interpretation, and global markets.
+27 chapters, 201 docs covering: spot, futures, stocks, crypto, forex, options, macro, quantitative trading, regulation, data interpretation, and global markets.
 
 | Platform | URL |
 |---|---|
@@ -86,7 +86,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-37-blueviolet" alt="37 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-77-blue" alt="77 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-539-yellow" alt="539 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/drawing_tools-37-blueviolet" alt="37 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-82-blue" alt="82 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-581-yellow" alt="581 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 Research & Planning — docs complete
 - ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
@@ -112,7 +112,7 @@ src/
 - ✅ Production — Docker, nginx proxy, deployment docs
 - ✅ Robustness — ErrorBoundary, offline banner, empty state, partial failure tolerance
 - ✅ VPVR — Volume profile visible range
-- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 77 E2E tests
+- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 82 E2E tests
 
 ## Changelog
 
