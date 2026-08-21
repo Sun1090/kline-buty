@@ -9,7 +9,7 @@
 ## Features
 
 - **Real-time K-line charts** — Candlestick, line, area with 14 timeframes (1s to 1M)
-- **37+ drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more
+- **38+ drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more
 - **13+ indicators** — MA, EMA, BOLL, MACD, KDJ, RSI, SAR, Ichimoku, STOCH, ROC, MOM, WR, ATR, DMI, CCI, PSY, OBV, with customizable parameters
 - **Order book & depth chart** — Real-time order book (8 bids/asks) and depth curve via WebSocket
 - **Multi-chart layout** — 1/2/4 panel layouts with synchronized time axes
@@ -67,7 +67,7 @@ src/
 ├── hooks/           # useKlineData, useTickerList, etc.
 ├── i18n/            # Dictionary-driven i18n (5 languages)
 ├── indicators/      # Indicator engine (pure functions)
-└── drawings/        # Drawing tools (37+) and layer management
+└── drawings/        # Drawing tools (38+) and layer management
 ```
 
 ## Data Compliance
@@ -86,7 +86,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-37-blueviolet" alt="37 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-82-blue" alt="82 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-581-yellow" alt="581 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/drawing_tools-38-blueviolet" alt="38 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-86-blue" alt="86 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-593-yellow" alt="593 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 Research & Planning — docs complete
 - ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
@@ -100,7 +100,7 @@ src/
 - ✅ P2-1 Order overlay — Simulated positions, TP/SL, P&L
 - ✅ P2-5 Price alerts — Conditional triggers, browser notifications, SW background
 - ✅ P2-6 Mobile base — PWA manifest, responsive layout
-- ✅ M10–M21 Drawing tools — 37 tools, full editing, layer management
+- ✅ M10–M21 Drawing tools — 38 tools, full editing, layer management
 - ✅ M22 Mobile pinch zoom — Touch zoom for time & price axes
 - ✅ M23 i18n — Japanese, Korean, Spanish
 - ✅ M24 Order book quick trade — Hover → quick order panel
@@ -112,7 +112,7 @@ src/
 - ✅ Production — Docker, nginx proxy, deployment docs
 - ✅ Robustness — ErrorBoundary, offline banner, empty state, partial failure tolerance
 - ✅ VPVR — Volume profile visible range
-- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 82 E2E tests
+- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 86 E2E tests
 
 ## Changelog
 

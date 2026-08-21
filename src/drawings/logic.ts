@@ -3,6 +3,7 @@ export type DrawingTool =
   | 'horizontal'
   | 'vertical'
   | 'trend'
+  | 'extended'
   | 'fib'
   | 'channel'
   | 'text'
@@ -110,7 +111,7 @@ export function fibPrices(from: number, to: number): number[] {
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return 1
-  if (type === 'ray' || type === 'hray') return 2
+  if (type === 'ray' || type === 'hray' || type === 'extended') return 2
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
   if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return 3
   return 2
@@ -531,7 +532,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'hray' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
+  if (type === 'ray' || type === 'hray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
   if (type === 'hchannel' || type === 'pband') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -749,6 +750,10 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       const b = project(d.points[1].time, d.points[1].price)
       if (a && b) dist = distToRay({ x: px, y: py }, a, b)
+    } else if (d.type === 'extended') {
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) dist = distToLine(px, py, a, { x: b.x - a.x, y: b.y - a.y })
     } else if (d.type === 'hray') {
       const a = project(d.points[0].time, d.points[0].price)
       if (a && Math.abs(py - a.y) <= HIT_THRESHOLD_PX && px >= a.x - HIT_THRESHOLD_PX) {

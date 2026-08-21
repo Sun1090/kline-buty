@@ -237,6 +237,23 @@ describe('hitTestDrawings（水平射线）', () => {
   })
 })
 
+describe('无限延长线（extended）', () => {
+  it('保持两点方向顺序且需要两个锚点', () => {
+    const pts = normalizePoints('extended', [{ time: 100, price: 100 }, { time: 0, price: 50 }])
+    expect(pts[0]).toEqual({ time: 100, price: 100 })
+    expect(pts[1]).toEqual({ time: 0, price: 50 })
+    expect(requiredPoints('extended')).toBe(2)
+  })
+
+  it('线体两侧延伸均可命中，远离直线不命中', () => {
+    const d = createDrawing('extended', [{ time: 0, price: 150 }, { time: 100, price: 50 }], 'ext')
+    // 投影后 A=(0,150)、B=(100,250)，直线 y=x+150；x=-20/y=130、x=120/y=270 命中
+    expect(hitTestDrawings([d], -20, 130, project)).toBe('ext')
+    expect(hitTestDrawings([d], 120, 270, project)).toBe('ext')
+    expect(hitTestDrawings([d], 120, 130, project)).toBeNull()
+  })
+})
+
 describe('normalizePoints（矩形/射线）', () => {
   it('矩形按时间排序（渲染与锚点顺序无关）', () => {
     const pts = normalizePoints('rect', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
