@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 // 注意：不用 isMobile（会锁定文档滚动，无法验证「拖动图表不滚动页面」）；hasTouch 已提供触摸事件
 test.use({
@@ -667,6 +668,58 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
     }
   })
   expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
+
+test('移动端：触屏拖拽区域截图 → 导出选区 PNG + 手势结束自动退出框选', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+
+  // 进入桌面/移动共用的区域截图模式；提示条出现说明 adapter 已接管手势
+  await page.getByRole('button', { name: '框选' }).tap()
+  const hint = page.getByText('拖拽', { exact: false })
+  await expect(hint).toBeVisible()
+
+  // CDP 触摸更贴近真机：touchstart/move/end 应驱动区域选择，而不是图表平移
+  const chart = page.locator('.chart-container').first()
+  const box = await chart.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const x0 = box.x + box.width * 0.25
+  const y0 = box.y + box.height * 0.3
+  const x1 = box.x + box.width * 0.65
+  const y1 = box.y + box.height * 0.55
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    (async () => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+      for (let i = 1; i <= 6; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: x0 + ((x1 - x0) * i) / 6, y: y0 + ((y1 - y0) * i) / 6 }],
+        })
+        await page.waitForTimeout(30)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    })(),
+  ])
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+
+  // 选区导出与桌面同构：文件名含周期，PNG 头有效且不是全图空导出
+  expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m_region\.png$/)
+  const path = await download.path()
+  expect(path).toBeTruthy()
+  const buf = readFileSync(path!)
+  expect(buf.subarray(0, 4).toString('latin1')).toBe('\x89PNG')
+  expect(buf.length).toBeGreaterThan(1024)
+
+  // 抬起最后一指后自动退出，后续单指拖动恢复常规图表手势
+  await expect(hint).toHaveCount(0)
   expect(errors).toHaveLength(0)
 })
 
