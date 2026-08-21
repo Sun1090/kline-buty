@@ -510,6 +510,9 @@ export class LightweightChartAdapter implements ChartApi {
   startRegionSelect() {
     this.regionSelect = true
     this.container.style.cursor = 'crosshair'
+    // 移动端框选：单指手势归区域选择，禁用图表平移与双指缩放，避免抢事件
+    this.setPanEnabled(false)
+    this.chart.applyOptions({ handleScale: { pinch: false } })
     this.draw()
   }
 
@@ -517,6 +520,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.regionSelect = false
     this.regionDown = null
     this.regionCurrent = null
+    this.setPanEnabled(true)
+    this.chart.applyOptions({ handleScale: { pinch: true } })
     this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
     this.draw()
   }
@@ -2060,6 +2065,11 @@ export class LightweightChartAdapter implements ChartApi {
   /** 触屏按下：单指（非画线）长按文本打开编辑器 / 长按钉十字光标 / 拖拽编辑；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.clearTouchHold()
+    if (this.regionSelect) {
+      this.clearTouchLinger()
+      this.touchTaps.invalidate()
+      return
+    }
     // 新手势开始：若上一手势的十字光标正保留中 → 立即消除（轻点/再拖/捏合均先消失，随后按需重显）
     if (this.touchLingering) {
       this.clearTouchLinger()
@@ -2159,6 +2169,12 @@ export class LightweightChartAdapter implements ChartApi {
   private onTouchMove = (e: TouchEvent) => {
     if (e.touches.length === 1) {
       const t = e.touches[0]
+      if (this.regionSelect && this.regionDown) {
+        const rect = this.container.getBoundingClientRect()
+        this.regionCurrent = { x: t.clientX - rect.left, y: t.clientY - rect.top }
+        this.draw()
+        return
+      }
       const s0 = this.touchStartPos
       const moved = !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
       if (moved) {
@@ -2206,6 +2222,24 @@ export class LightweightChartAdapter implements ChartApi {
   /** 触屏抬起/取消：结束十字光标与捏合；轻点两次 300ms 内恢复自适应 + 时间轴 */
   private onTouchEnd = (e: TouchEvent) => {
     this.clearTouchHold()
+    if (this.regionSelect) {
+      const touchCount = e.touches.length + e.changedTouches.length
+      // 多指误触后先抬起一指：等最后一指离开才结束框选
+      if (touchCount > 1 || e.touches.length > 0) return
+      if (this.regionDown && this.regionCurrent) {
+        const regionRect = normalizeRegionRect(this.regionDown, this.regionCurrent)
+        this.regionSelect = false
+        this.regionDown = null
+        this.regionCurrent = null
+        this.setPanEnabled(true)
+        this.chart.applyOptions({ handleScale: { pinch: true } })
+        this.draw()
+        this.regionCallback?.(regionRect)
+      } else {
+        this.cancelRegionSelect()
+      }
+      return
+    }
     const wasPinch = !!this.pinch
     this.pinch = null
     this.pinchStepVibrated = 0
