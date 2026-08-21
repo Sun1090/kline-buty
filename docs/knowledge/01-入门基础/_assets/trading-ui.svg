@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" font-family="-apple-system, sans-serif">
+  <rect width="760" height="440" fill="#1a1a2e"/>
+  <text x="380" y="24" text-anchor="middle" fill="#e0e0e0" font-size="15" font-weight="bold">典型交易界面布局</text>
+
+  <!-- K-line chart area -->
+  <rect x="16" y="40" width="480" height="280" rx="6" fill="#16213e" stroke="#2a2a4a"/>
+  <polyline points="30,260 80,220 130,240 180,170 230,190 280,120 330,140 380,80 430,100 480,70"
+    fill="none" stroke="#64ffda" stroke-width="2" stroke-linejoin="round"/>
+  <!-- candles -->
+  <line x1="60" y1="230" x2="60" y2="270" stroke="#ef4565"/><rect x="55" y="235" width="10" height="25" fill="#ef4565"/>
+  <line x1="110" y1="200" x2="110" y2="245" stroke="#4caf87"/><rect x="105" y="210" width="10" height="28" fill="#4caf87"/>
+  <line x1="160" y1="225" x2="160" y2="265" stroke="#ef4565"/><rect x="155" y="230" width="10" height="22" fill="#ef4565"/>
+  <line x1="210" y1="150" x2="210" y2="195" stroke="#4caf87"/><rect x="205" y="158" width="10" height="30" fill="#4caf87"/>
+  <line x1="260" y1="175" x2="260" y2="215" stroke="#ef4565"/><rect x="255" y="182" width="10" height="20" fill="#ef4565"/>
+  <line x1="310" y1="100" x2="310" y2="145" stroke="#4caf87"/><rect x="305" y="108" width="10" height="28" fill="#4caf87"/>
+  <line x1="360" y1="125" x2="360" y2="165" stroke="#ef4565"/><rect x="355" y="132" width="10" height="18" fill="#ef4565"/>
+  <line x1="410" y1="65" x2="410" y2="110" stroke="#4caf87"/><rect x="405" y="72" width="10" height="30" fill="#4caf87"/>
+  <text x="256" y="310" text-anchor="middle" fill="#8892b0" font-size="12">K 线图 + 成交量 + 指标副图</text>
+
+  <!-- Order book -->
+  <rect x="512" y="40" width="232" height="160" rx="6" fill="#16213e" stroke="#2a2a4a"/>
+  <text x="628" y="62" text-anchor="middle" fill="#e0e0e0" font-size="12" font-weight="bold">订单簿</text>
+  <rect x="528" y="74" width="150" height="8" fill="#ef456533"/><text x="686" y="82" text-anchor="end" fill="#ef4565" font-size="10">卖三</text>
+  <rect x="520" y="88" width="170" height="8" fill="#ef456544"/><text x="698" y="96" text-anchor="end" fill="#ef4565" font-size="10">卖二</text>
+  <rect x="514" y="102" width="190" height="8" fill="#ef456555"/><text x="712" y="110" text-anchor="end" fill="#ef4565" font-size="10">卖一</text>
+  <line x1="520" y1="116" x2="736" y2="116" stroke="#64ffda" stroke-width="1"/>
+  <text x="628" y="126" text-anchor="middle" fill="#64ffda" font-size="11" font-weight="bold">100,000</text>
+  <rect x="514" y="132" width="185" height="8" fill="#4caf8755"/><text x="707" y="140" text-anchor="end" fill="#4caf87" font-size="10">买一</text>
+  <rect x="522" y="146" width="168" height="8" fill="#4caf8744"/><text x="698" y="154" text-anchor="end" fill="#4caf87" font-size="10">买二</text>
+  <rect x="530" y="160" width="148" height="8" fill="#4caf8733"/><text x="686" y="168" text-anchor="end" fill="#4caf87" font-size="10">买三</text>
+  <text x="628" y="192" text-anchor="middle" fill="#8892b0" font-size="11">买卖挂单 + 深度分布</text>
+
+  <!-- Order panel -->
+  <rect x="512" y="212" width="232" height="108" rx="6" fill="#16213e" stroke="#2a2a4a"/>
+  <text x="628" y="234" text-anchor="middle" fill="#e0e0e0" font-size="12" font-weight="bold">下单面板</text>
+  <rect x="528" y="244" width="100" height="26" rx="3" fill="#4caf8733" stroke="#4caf87"/><text x="578" y="261" text-anchor="middle" fill="#4caf87" font-size="12">买入</text>
+  <rect x="636" y="244" width="100" height="26" rx="3" fill="#ef456533" stroke="#ef4565"/><text x="686" y="261" text-anchor="middle" fill="#ef4565" font-size="12">卖出</text>
+  <rect x="528" y="278" width="208" height="24" rx="3" fill="#0d1117" stroke="#333"/>
+  <text x="536" y="294" fill="#666" font-size="11">价格 / 数量 / 百分比</text>
+
+  <!-- Positions table -->
+  <rect x="16" y="332" width="728" height="92" rx="6" fill="#16213e" stroke="#2a2a4a"/>
+  <text x="32" y="354" fill="#e0e0e0" font-size="12" font-weight="bold">当前持仓 / 委托 / 成交历史</text>
+  <line x1="32" y1="362" x2="728" y2="362" stroke="#2a2a4a"/>
+  <text x="48" y="382" fill="#8892b0" font-size="11">交易对</text>
+  <text x="168" y="382" fill="#8892b0" font-size="11">方向</text>
+  <text x="288" y="382" fill="#8892b0" font-size="11">数量</text>
+  <text x="408" y="382" fill="#8892b0" font-size="11">入场价</text>
+  <text x="528" y="382" fill="#8892b0" font-size="11">标记价</text>
+  <text x="648" y="382" fill="#8892b0" font-size="11">未实现盈亏</text>
+  <line x1="32" y1="392" x2="728" y2="392" stroke="#1a1a3a"/>
+  <text x="48" y="412" fill="#ccc" font-size="11">BTC/USDT</text>
+  <text x="168" y="412" fill="#4caf87" font-size="11">做多</text>
+  <text x="288" y="412" fill="#ccc" font-size="11">0.05 BTC</text>
+  <text x="408" y="412" fill="#ccc" font-size="11">99,800</text>
+  <text x="528" y="412" fill="#ccc" font-size="11">100,200</text>
+  <text x="648" y="412" fill="#4caf87" font-size="11">+20.00 USDT</text>
+</svg>
