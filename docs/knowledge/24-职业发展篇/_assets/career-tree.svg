@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgct" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="act" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8fa3c8"/>
+    </marker>
+  </defs>
+  <rect width="800" height="440" fill="url(#bgct)" rx="16"/>
+  <text x="400" y="32" fill="#eef2ff" font-size="19" font-weight="700" text-anchor="middle">能不能走职业交易这条路 —— 四道门决策树</text>
+
+  <!-- 门1 -->
+  <rect x="300" y="52" width="200" height="46" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.6"/>
+  <text x="400" y="80" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">① 有正期望的系统？</text>
+  <line x1="400" y1="98" x2="400" y2="120" stroke="#8fa3c8" stroke-width="1.5" marker-end="url(#act)"/>
+  <line x1="200" y1="98" x2="200" y2="120" stroke="#ef5350" stroke-width="1.5" marker-end="url(#act)"/>
+  <text x="404" y="116" fill="#26a69a" font-size="11.5">是</text>
+  <text x="150" y="116" fill="#ef5350" font-size="11.5">否</text>
+  <rect x="80" y="124" width="240" height="42" rx="8" fill="#2a1620" stroke="#ef5350" stroke-width="1.2"/>
+  <text x="200" y="143" fill="#c8d3ea" font-size="12" text-anchor="middle">留在学习/模拟盘阶段</text>
+  <text x="200" y="159" fill="#8fa3c8" font-size="11" text-anchor="middle">连期望值都没证明，谈不上职业</text>
+
+  <!-- 门2 -->
+  <rect x="300" y="124" width="200" height="46" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.6"/>
+  <text x="400" y="146" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">② 有 12-24 个月</text>
+  <text x="400" y="163" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">生活备用金？</text>
+  <line x1="400" y1="170" x2="400" y2="192" stroke="#8fa3c8" stroke-width="1.5" marker-end="url(#act)"/>
+  <line x1="580" y1="170" x2="580" y2="192" stroke="#e8b56e" stroke-width="1.5" marker-end="url(#act)"/>
+  <text x="404" y="188" fill="#26a69a" font-size="11.5">是</text>
+  <text x="586" y="188" fill="#e8b56e" font-size="11.5">否</text>
+  <rect x="470" y="196" width="250" height="42" rx="8" fill="#241f12" stroke="#e8b56e" stroke-width="1.2"/>
+  <text x="595" y="215" fill="#c8d3ea" font-size="12" text-anchor="middle">兼职过渡：工资养生活，小仓位养系统</text>
+  <text x="595" y="231" fill="#8fa3c8" font-size="11" text-anchor="middle">别辞职去赌——大多数死在这一步</text>
+
+  <!-- 门3 -->
+  <rect x="300" y="196" width="200" height="46" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.6"/>
+  <text x="400" y="218" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">③ 实盘 12 个月+</text>
+  <text x="400" y="235" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">真金白银盈利？</text>
+  <line x1="400" y1="242" x2="400" y2="264" stroke="#8fa3c8" stroke-width="1.5" marker-end="url(#act)"/>
+  <line x1="210" y1="242" x2="210" y2="264" stroke="#ef5350" stroke-width="1.5" marker-end="url(#act)"/>
+  <text x="404" y="260" fill="#26a69a" font-size="11.5">是</text>
+  <text x="160" y="260" fill="#ef5350" font-size="11.5">否</text>
+  <rect x="80" y="268" width="240" height="42" rx="8" fill="#2a1620" stroke="#ef5350" stroke-width="1.2"/>
+  <text x="200" y="287" fill="#c8d3ea" font-size="12" text-anchor="middle">继续兼职，复盘找问题</text>
+  <text x="200" y="303" fill="#8fa3c8" font-size="11" text-anchor="middle">模拟盘盈利不算数（无滑点无心态）</text>
+
+  <!-- 门4 -->
+  <rect x="300" y="268" width="200" height="46" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.6"/>
+  <text x="400" y="290" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">④ 家庭是否支持 +</text>
+  <text x="400" y="307" fill="#eef2ff" font-size="13.5" font-weight="700" text-anchor="middle">最坏预案已写好？</text>
+  <line x1="400" y1="314" x2="400" y2="336" stroke="#26a69a" stroke-width="1.8" marker-end="url(#act)"/>
+  <line x1="590" y1="314" x2="590" y2="336" stroke="#ef5350" stroke-width="1.5" marker-end="url(#act)"/>
+  <text x="404" y="332" fill="#26a69a" font-size="11.5">是</text>
+  <text x="596" y="332" fill="#ef5350" font-size="11.5">否</text>
+
+  <!-- 出口 -->
+  <rect x="290" y="340" width="220" height="46" rx="10" fill="#0f2a22" stroke="#26a69a" stroke-width="2"/>
+  <text x="400" y="360" fill="#26a69a" font-size="14" font-weight="700" text-anchor="middle">✅ 全职交易（小仓位起步）</text>
+  <text x="400" y="378" fill="#8fa3c8" font-size="11" text-anchor="middle">提款线：月固定提取，利润滚存设上限</text>
+  <rect x="480" y="340" width="240" height="46" rx="8" fill="#2a1620" stroke="#ef5350" stroke-width="1.2"/>
+  <text x="600" y="359" fill="#c8d3ea" font-size="12" text-anchor="middle">回到上一道门：先补齐再谈</text>
+  <text x="600" y="377" fill="#8fa3c8" font-size="11" text-anchor="middle">四道门缺一道，职业化就是赌博</text>
+
+  <text x="400" y="416" fill="#8fa3c8" font-size="12" text-anchor="middle">四道门全部「是」才走全职；任何一道「否」，兼职都是更优解——兼职亏的是时间，全职亏的是本金+职业空窗</text>
+</svg>

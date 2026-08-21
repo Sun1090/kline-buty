@@ -5,6 +5,7 @@ import LeverageCalc from './LeverageCalc.vue'
 import MarginCalc from './MarginCalc.vue'
 import ExpectancyCalc from './ExpectancyCalc.vue'
 import LearnPath from './LearnPath.vue'
+import OptionCalc from './OptionCalc.vue'
 import './custom.css'
 
 export default {
@@ -16,5 +17,6 @@ export default {
     app.component('MarginCalc', MarginCalc)
     app.component('ExpectancyCalc', ExpectancyCalc)
     app.component('LearnPath', LearnPath)
+    app.component('OptionCalc', OptionCalc)
   },
 }
