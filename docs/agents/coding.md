@@ -42,10 +42,7 @@ npm run audit:i18n
 
 ## 文档站与知识库
 
-- 只修改 `docs/knowledge/` 的源 Markdown；不要手改同步出的篇章目录。
-- VitePress 配置、首页、主题样式在 `docs-site/.vitepress/`。
-- 新增图片放章节资源目录，使用相对引用；SVG 要兼顾深色模式。
-- 页内目录、跨章链接、锚点 slug 必须与生成 HTML 实际 ID 匹配。
+改 `docs/knowledge/` 或 `docs-site/` 前，先读 [`docs/agents/knowledge.md`](knowledge.md)。
 
 ## 自查命令
 

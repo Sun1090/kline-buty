@@ -50,7 +50,7 @@ npm run build && npm run e2e
 3. Push 后观察：
    - `CI` workflow
    - `Deploy to GitHub Pages` workflow
-4. Pages 成功后访问应用和知识库 URL。
+4. Pages 成功后抽查四条链接（GitHub Pages + Vercel 各两条：应用首页 `/` 与知识库 `/knowledge/`），用 `curl` 验证新内容真的上线——不只看 200，要 grep 本次改动的特征（如新容器类名、frontmatter title、图引用）。CI 绿 ≠ 内容已部署，Pages 部署比 Vercel 慢数分钟，要等够再抽查。
 5. 如 Vercel 已接入，也等待部署完成并抽查。
 6. 部署失败时不要口头说“稍后重试”，要给出失败日志定位和下一步修复。
 
