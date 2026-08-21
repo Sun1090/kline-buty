@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { TOUCH_PIN_VIBRATE_MS, vibrateIfSupported } from '../adapter'
+import { TOUCH_PIN_VIBRATE_MS, TOUCH_RESET_VIBRATE_MS, vibrateIfSupported } from '../adapter'
 
 describe('vibrateIfSupported（移动端触觉反馈守护）', () => {
   it('无 vibrate（桌面/不支持环境）→ false 不抛错', () => {
@@ -22,5 +22,12 @@ describe('vibrateIfSupported（移动端触觉反馈守护）', () => {
   it('长按钉线震动常量为正且适中的 10ms', () => {
     expect(TOUCH_PIN_VIBRATE_MS).toBeGreaterThan(0)
     expect(TOUCH_PIN_VIBRATE_MS).toBe(10)
+  })
+})
+
+describe('TOUCH_RESET_VIBRATE_MS（双击复位反馈）', () => {
+  it('复位震动常量为明确但短促的 12ms', () => {
+    expect(TOUCH_RESET_VIBRATE_MS).toBe(12)
+    expect(TOUCH_RESET_VIBRATE_MS).toBeGreaterThan(TOUCH_PIN_VIBRATE_MS)
   })
 })
