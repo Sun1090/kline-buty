@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgse" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="440" fill="url(#bgse)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">全球市场 24 小时接力 —— 北京时间轴（夏令时口径）</text>
+
+  <!-- 美股深夜时段底色带 22:30-05:00 -->
+  <rect x="60" y="70" width="635" height="200" fill="rgba(78,156,245,0.06)"/>
+  <rect x="60" y="70" width="142" height="200" fill="rgba(78,156,245,0.06)"/>
+
+  <!-- 行条: x(h)=60+h*28.33 -->
+  <!-- 日本 08-11:30 / 12:30-14:00 / 15:30-18:00 -->
+  <text x="52" y="104" fill="#c8d3ea" font-size="12.5" text-anchor="end">日本</text>
+  <rect x="287" y="90" width="99" height="20" rx="4" fill="#26a69a" opacity="0.9"/>
+  <rect x="414" y="90" width="43" height="20" rx="4" fill="#26a69a" opacity="0.55"/>
+  <rect x="499" y="90" width="71" height="20" rx="4" fill="#26a69a" opacity="0.35"/>
+  <!-- 韩国 09-15:30 -->
+  <text x="52" y="136" fill="#c8d3ea" font-size="12.5" text-anchor="end">韩国</text>
+  <rect x="315" y="122" width="184" height="20" rx="4" fill="#26a69a" opacity="0.75"/>
+  <!-- A股 09:30-11:30 / 13-15 -->
+  <text x="52" y="168" fill="#eef2ff" font-size="12.5" font-weight="700" text-anchor="end">A 股</text>
+  <rect x="329" y="154" width="57" height="20" rx="4" fill="#ef5350" opacity="0.85"/>
+  <rect x="428" y="154" width="57" height="20" rx="4" fill="#ef5350" opacity="0.85"/>
+  <!-- 港股 09:30-12 / 13-16 -->
+  <text x="52" y="200" fill="#c8d3ea" font-size="12.5" text-anchor="end">港股</text>
+  <rect x="329" y="186" width="71" height="20" rx="4" fill="#4e9cf5" opacity="0.8"/>
+  <rect x="428" y="186" width="85" height="20" rx="4" fill="#4e9cf5" opacity="0.8"/>
+  <!-- 欧洲 15-23:30 -->
+  <text x="52" y="232" fill="#c8d3ea" font-size="12.5" text-anchor="end">欧洲</text>
+  <rect x="485" y="218" width="241" height="20" rx="4" fill="#e8b56e" opacity="0.8"/>
+  <!-- 美股 22:30-05:00(+1) 跨午夜 -->
+  <text x="52" y="264" fill="#eef2ff" font-size="12.5" font-weight="700" text-anchor="end">美股</text>
+  <rect x="695" y="250" width="45" height="20" rx="4" fill="#4e9cf5"/>
+  <rect x="60" y="250" width="142" height="20" rx="4" fill="#4e9cf5"/>
+  <text x="131" y="264" fill="#0d1220" font-size="11" font-weight="700" text-anchor="middle">次日 00-05</text>
+
+  <!-- 时间轴 -->
+  <line x1="60" y1="292" x2="740" y2="292" stroke="#3d4a6b" stroke-width="1.5"/>
+  <g fill="#8fa3c8" font-size="11" text-anchor="middle">
+    <text x="60" y="310">0</text><text x="203" y="310">5</text><text x="347" y="310">10</text>
+    <text x="490" y="310">15</text><text x="633" y="310">20</text><text x="740" y="310">24</text>
+  </g>
+  <g stroke="#3d4a6b" stroke-width="1">
+    <line x1="60" y1="288" x2="60" y2="296"/><line x1="203" y1="288" x2="203" y2="296"/>
+    <line x1="347" y1="288" x2="347" y2="296"/><line x1="490" y1="288" x2="490" y2="296"/>
+    <line x1="633" y1="288" x2="633" y2="296"/><line x1="740" y1="288" x2="740" y2="296"/>
+  </g>
+  <text x="400" y="330" fill="#8fa3c8" font-size="12" text-anchor="middle">北京时间（小时）· 冬令时欧美各推迟 1 小时</text>
+
+  <!-- 要点 -->
+  <line x1="60" y1="348" x2="740" y2="348" stroke="#3d4a6b" stroke-width="1"/>
+  <text x="400" y="374" fill="#c8d3ea" font-size="13.5" text-anchor="middle">A 股玩家的一天：早看日韩开盘（印证隔夜美股）→ 白天 A 股 → 15:00 后接欧洲 → 深夜看美股</text>
+  <text x="400" y="398" fill="#8fa3c8" font-size="12.5" text-anchor="middle">港股与 A 股同盘联动最强；美股收盘（北京清晨 4-5 点）决定次日 A 股开盘情绪</text>
+</svg>
