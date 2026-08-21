@@ -2800,6 +2800,56 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect.poll(readFirst).toBeNull()
   })
 
+  test('画线：十字线 → 横纵线命中 + 远离不命中 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 单击创建十字线，锚点同时确定时间与价格
+    const ax = box!.x + box!.width * 0.45
+    const ay = box!.y + box!.height * 0.4
+    await openDrawing(page)
+    await page.getByRole('button', { name: '十字线' }).click()
+    await page.mouse.click(ax, ay)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
+          return arr.find((x) => x.type === 'cross') ?? null
+        } catch {
+          return null
+        }
+      })
+    const created = await readFirst()
+    expect(created).not.toBeNull()
+    expect(created!.points).toHaveLength(1)
+
+    // 切回鼠标后分别验证横线与纵线命中
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(ax + 160, ay)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 点击空白取消选择；再点击远离横线的纵线上仍应命中
+    await page.mouse.click(box!.x + box!.width * 0.8, box!.y + box!.height * 0.82)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.7)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 回到横线命中并删除
+    await page.mouse.click(box!.x + box!.width * 0.8, ay)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(readFirst).toBeNull()
+  })
+
   test('画线：多段线（多次点击 + 双击收尾）→ 选中 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
