@@ -4321,3 +4321,42 @@ test('桌面：行情列表侧栏——点行切交易对 + 排序升降 + 折�
   await expect(page.getByTestId('market-list')).toBeVisible()
   expect(errors).toHaveLength(0)
 })
+
+test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  const chart = page.locator('main div').first()
+  const box = await chart.boundingBox()
+  expect(box).not.toBeNull()
+
+  // 进入趋势线画线模式后，拖拽只创建画线，不应平移图表
+  await openDrawing(page)
+  await page.getByRole('button', { name: '趋势线' }).click()
+  const startX = box!.x + box!.width * 0.35
+  const startY = box!.y + box!.height * 0.4
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX + box!.width * 0.18, startY + box!.height * 0.08, { steps: 5 })
+  await page.mouse.up()
+  await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+  const beforeCenter = await findDrawnLineCenter(page)
+  expect(beforeCenter).not.toBeNull()
+
+  // 切回鼠标模式后，同样幅度的拖拽应平移图表：画线像素中心随之移动
+  await openDrawing(page)
+  await page.getByRole('button', { name: '鼠标', exact: true }).click()
+  // 切回鼠标不会自动取消选中，先点空白处退出选中态
+  await page.mouse.click(box!.x + box!.width * 0.72, box!.y + box!.height * 0.74)
+  await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+  const panStartX = box!.x + box!.width * 0.5
+  const panStartY = box!.y + box!.height * 0.78
+  await page.mouse.move(panStartX, panStartY)
+  await page.mouse.down()
+  await page.mouse.move(panStartX + box!.width * 0.18, panStartY, { steps: 8 })
+  await page.mouse.up()
+  await page.waitForTimeout(300)
+  const afterCenter = await findDrawnLineCenter(page)
+  expect(afterCenter).not.toBeNull()
+  expect(Math.abs(afterCenter!.x - beforeCenter!.x)).toBeGreaterThan(10)
+})

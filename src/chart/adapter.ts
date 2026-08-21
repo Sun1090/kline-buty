@@ -16,7 +16,7 @@ import {
   type IRange,
 } from 'lightweight-charts'
 import { zoomRangeAround } from './pinchZoom'
-import { PinchLingeringTracker, TouchTapTracker } from './touchGestures'
+import { PinchLingeringTracker, TouchDrawingGestureLock, TouchTapTracker } from './touchGestures'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
@@ -301,6 +301,8 @@ export class LightweightChartAdapter implements ChartApi {
   private lastTapAt = 0
   /** 触屏双击复位有效轻点会话（排除捏合残留、拖拽与长按） */
   private touchTaps = new TouchTapTracker()
+  /** 画线模式下的触屏平移/捏合锁定 */
+  private touchDrawingGestures = new TouchDrawingGestureLock()
   /** 捏合结束后残留单指的短防护期 */
   private pinchLinger = new PinchLingeringTracker()
   /** 本次单指触摸是否已移动（拖动≠轻点：避免两次快速拖动误触发复位） */
@@ -416,6 +418,16 @@ export class LightweightChartAdapter implements ChartApi {
   setDrawingTool(tool: DrawingTool) {
     this.drawingTool = tool
     if (tool !== 'none') this.selectedDrawingId = null
+    // 移动端画线模式禁用触屏平移/捏合：轻扫只用于创建画线预览，避免误触发图表手势；
+    // 桌面 pressedMouseMove 不受影响，保持连续画线体验。提交/切回鼠标后恢复。
+    this.touchDrawingGestures.setTool(tool)
+    this.chart.applyOptions({
+      handleScroll: {
+        horzTouchDrag: !this.touchDrawingGestures.locked,
+        vertTouchDrag: !this.touchDrawingGestures.locked,
+      },
+      handleScale: { pinch: !this.touchDrawingGestures.locked },
+    })
     this.container.style.cursor = tool === 'none' ? '' : 'crosshair'
     this.draw()
   }

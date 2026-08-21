@@ -86,7 +86,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-40-blueviolet" alt="40 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-88-blue" alt="88 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-597-yellow" alt="597 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/drawing_tools-40-blueviolet" alt="40 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-89-blue" alt="89 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-599-yellow" alt="599 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 Research & Planning — docs complete
 - ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
@@ -112,7 +112,7 @@ src/
 - ✅ Production — Docker, nginx proxy, deployment docs
 - ✅ Robustness — ErrorBoundary, offline banner, empty state, partial failure tolerance
 - ✅ VPVR — Volume profile visible range
-- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 88 E2E tests
+- ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 89 E2E tests
 
 ## Changelog
 

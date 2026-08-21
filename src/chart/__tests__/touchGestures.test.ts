@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PinchLingeringTracker, TouchTapTracker } from '../touchGestures'
+import { PinchLingeringTracker, TouchDrawingGestureLock, TouchTapTracker } from '../touchGestures'
 describe('TouchTapTracker（触屏双击复位会话）', () => {
   it('两次单指轻点且间隔足够近 → 复位', () => {
     const taps = new TouchTapTracker()
@@ -63,5 +63,24 @@ describe('PinchLingeringTracker（捏合残留单指防护）', () => {
     expect(residue.active).toBe(false)
     clock += 1
     expect(residue.active).toBe(false)
+  })
+})
+
+describe('TouchDrawingGestureLock（画线模式手势隔离）', () => {
+  it('鼠标模式不锁定触屏平移/捏合', () => {
+    const lock = new TouchDrawingGestureLock()
+    expect(lock.locked).toBe(false)
+    lock.setTool('none')
+    expect(lock.locked).toBe(false)
+  })
+
+  it('任意非鼠标画线工具锁定；切回鼠标后恢复', () => {
+    const lock = new TouchDrawingGestureLock()
+    for (const tool of ['trend', 'hray', 'vray'] as const) {
+      lock.setTool(tool)
+      expect(lock.locked).toBe(true)
+    }
+    lock.setTool('none')
+    expect(lock.locked).toBe(false)
   })
 })
