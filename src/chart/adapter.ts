@@ -1455,6 +1455,21 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'vray') {
+      // 垂直射线：从锚点向下无限延伸；第二点提供向上/向下创建方向
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      const down = b.y >= a.y
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(a.x, down ? h + 2 : -2)
+      ctx.stroke()
+      this.drawLabel(ctx, a.x, a.y, new Date(d.points[0].time * 1000).toLocaleDateString(), 'left')
+      for (const pt of [a, b]) this.drawAnchor(ctx, pt.x, pt.y)
+      return
+    }
+
     if (d.type === 'extended') {
       // 无限延长线：A→B 定方向，两端画到画布外（由 canvas 裁剪）
       const dx = b.x - a.x

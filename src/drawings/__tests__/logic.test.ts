@@ -221,6 +221,23 @@ describe('normalizePoints（水平射线）', () => {
   })
 })
 
+describe('垂直射线（vray）', () => {
+  it('保持「锚点在前」的原始顺序且需要两个锚点', () => {
+    const pts = normalizePoints('vray', [{ time: 100, price: 50 }, { time: 0, price: 100 }])
+    expect(pts.map((p) => p.time)).toEqual([100, 0])
+    expect(requiredPoints('vray')).toBe(2)
+  })
+
+  it('向下延伸侧命中；锚点上方与远离时间不命中', () => {
+    // project: x=time, y=300-price；锚点 (100,250)，第二点在下方 (150,200)
+    const vray = createDrawing('vray', [{ time: 100, price: 50 }, { time: 150, price: 100 }], 'v-ray')
+    expect(hitTestDrawings([vray], 101, 260, project)).toBe('v-ray')
+    expect(hitTestDrawings([vray], 103, 290, project)).toBe('v-ray')
+    expect(hitTestDrawings([vray], 99, 240, project)).toBeNull()
+    expect(hitTestDrawings([vray], 120, 250, project)).toBeNull()
+  })
+})
+
 describe('hitTestDrawings（水平射线）', () => {
   // 锚点 (0,150) → 方向点 (100,150)，投影后 y=150；只向 x >= 锚点方向命中
   const hray: Drawing = createDrawing('hray', [{ time: 0, price: 150 }, { time: 100, price: 150 }], 'h-ray')

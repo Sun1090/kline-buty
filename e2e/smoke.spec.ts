@@ -2699,6 +2699,59 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
+  test('画线：垂直射线 → 向下延伸命中 + 锚点上方不命中 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 创建垂直射线：A 在上，B 在下方同横坐标（方向向下）
+    const ax = box!.x + box!.width * 0.35
+    const ay = box!.y + box!.height * 0.35
+    await openDrawing(page)
+    await page.getByRole('button', { name: '垂直射线' }).click()
+    await page.mouse.move(ax, ay)
+    await page.mouse.down()
+    await page.mouse.move(ax, box!.y + box!.height * 0.65, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
+          return arr.find((x) => x.type === 'vray') ?? null
+        } catch {
+          return null
+        }
+      })
+    const created = await readFirst()
+    expect(created).not.toBeNull()
+    expect(created!.points).toHaveLength(2)
+
+    // 切回鼠标后：下方射线命中；锚点上方同时间不命中
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(ax, box!.y + box!.height * 0.8)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 点击右侧空白处取消选择，再点锚点上方确认不会重新选中
+    await page.mouse.click(box!.x + box!.width * 0.65, box!.y + box!.height * 0.5)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await page.mouse.click(ax, box!.y + box!.height * 0.2)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 通过下方命中删除
+    await page.mouse.click(ax, box!.y + box!.height * 0.8)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(readFirst).toBeNull()
+  })
+
   test('画线：水平射线 → 向右延伸命中 + 锚点后方不命中 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
