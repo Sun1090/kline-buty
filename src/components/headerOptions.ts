@@ -46,6 +46,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'horizontal', labelKey: 'drawing.horizontal' },
   { value: 'vertical', labelKey: 'drawing.vertical' },
   { value: 'trend', labelKey: 'drawing.trend' },
+  { value: 'extended', labelKey: 'drawing.extended' },
   { value: 'angle', labelKey: 'drawing.angle' },
   { value: 'channel', labelKey: 'drawing.channel' },
   { value: 'fib', labelKey: 'drawing.fib' },

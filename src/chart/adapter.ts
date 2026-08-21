@@ -1438,6 +1438,24 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'extended') {
+      // 无限延长线：A→B 定方向，两端画到画布外（由 canvas 裁剪）
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const len = Math.hypot(dx, dy)
+      if (len > 0) {
+        const w = this.overlay.width / (window.devicePixelRatio || 1)
+        const h = this.overlay.height / (window.devicePixelRatio || 1)
+        const s = Math.max(w, h) * 2
+        ctx.beginPath()
+        ctx.moveTo(a.x - (dx / len) * s, a.y - (dy / len) * s)
+        ctx.lineTo(a.x + (dx / len) * s, a.y + (dy / len) * s)
+        ctx.stroke()
+      }
+      for (const pt of [a, b]) this.drawAnchor(ctx, pt.x, pt.y)
+      return
+    }
+
     if (d.type === 'ray') {
       // 射线：锚点 → 经第二点方向无限延伸（画到画布外由 canvas 裁剪）
       const dx = b.x - a.x

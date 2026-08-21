@@ -2751,6 +2751,55 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect.poll(readFirst).toBeNull()
   })
 
+  test('画线：延长线 → 两端延伸命中 + 远离直线不命中 → 删除', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+
+    // 创建延长线：A→B 定方向，渲染和命中都应向两端无限延伸
+    const ay = box!.y + box!.height * 0.35
+    await openDrawing(page)
+    await page.getByRole('button', { name: '延长线' }).click()
+    await page.mouse.move(box!.x + box!.width * 0.4, ay)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.6, ay + box!.height * 0.15, { steps: 4 })
+    await page.mouse.up()
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
+          return arr.find((x) => x.type === 'extended') ?? null
+        } catch {
+          return null
+        }
+      })
+    const created = await readFirst()
+    expect(created).not.toBeNull()
+    expect(created!.points).toHaveLength(2)
+
+    // 切回鼠标后：A/B 中点命中；远离直线处不选中
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await page.mouse.click(box!.x + box!.width * 0.5, ay + box!.height * 0.075)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    await page.mouse.click(box!.x + box!.width * 0.78, box!.y + box!.height * 0.78)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+
+    // 通过线体重新选中并删除，确认持久化同步清理
+    await page.mouse.click(box!.x + box!.width * 0.5, ay + box!.height * 0.075)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect.poll(readFirst).toBeNull()
+  })
+
   test('画线：多段线（多次点击 + 双击收尾）→ 选中 → 删除', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })

@@ -9,7 +9,7 @@
 ## 功能特性
 
 - **实时 K 线图表** — 蜡烛图 / 折线图 / 面积图，14 档周期（1s 至 1M）
-- **37 种画线工具** — 趋势线、通道、斐波那契、R:R、江恩、楔形、文本标注、圆弧、椭圆、多段线、量度、周期线、平行射线、宽度通道、趋势角度、时间区间、价格带、斐波那契时间区间等
+- **38 种画线工具** — 趋势线、通道、斐波那契、R:R、江恩、楔形、文本标注、圆弧、椭圆、多段线、量度、周期线、平行射线、宽度通道、趋势角度、时间区间、价格带、斐波那契时间区间等
 - **13 种指标** — MA、EMA、BOLL、MACD、KDJ、RSI、SAR、Ichimoku、STOCH、ROC、MOM、WR、ATR、DMI、CCI、PSY、OBV，参数全量可调
 - **盘口深度图** — 实时 8 档买卖盘口 + 深度曲线，WebSocket 驱动
 - **多图同屏** — 1/2/4 图布局，时间轴联动
@@ -67,7 +67,7 @@ src/
 ├── hooks/           # useKlineData、useTickerList 等
 ├── i18n/            # 字典驱动多语言（5 语）
 ├── indicators/      # 指标引擎（纯函数）
-└── drawings/        # 画线工具（37 种）与图层面板
+└── drawings/        # 画线工具（38 种）与图层面板
 ```
 
 ## 数据与版权合规
@@ -86,7 +86,7 @@ src/
 
 ## 进度
 
-<img src="https://img.shields.io/badge/画线工具-37-blueviolet" alt="37 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-82-blue" alt="82 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-581-yellow" alt="581 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/画线工具-38-blueviolet" alt="38 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-86-blue" alt="86 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-593-yellow" alt="593 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 调研立项
 - ✅ M1 数据地基：币安 REST/WS 封装、MarketStore、断线重连
@@ -100,7 +100,7 @@ src/
 - ✅ P2-1 订单叠加：模拟仓位、止盈止损、浮动盈亏
 - ✅ P2-5 价格提醒：条件触发、浏览器通知、SW 后台
 - ✅ P2-6 移动端基础：PWA manifest、响应式布局
-- ✅ M10–M21 画线工具：37 种、完整编辑、图层面板
+- ✅ M10–M21 画线工具：38 种、完整编辑、图层面板
 - ✅ M22 移动端双指缩放
 - ✅ M23 多语言：日/韩/西语
 - ✅ M24 盘口快速下单
@@ -112,7 +112,7 @@ src/
 - ✅ 生产部署：Docker、nginx 代理、部署文档
 - ✅ 健壮性：ErrorBoundary、离线提示、空状态、部分失败容错
 - ✅ 筹码分布 VPVR
-- ✅ 工程规范：ESLint 0 error、CI、82 E2E
+- ✅ 工程规范：ESLint 0 error、CI、86 E2E
 
 ## 设计要点
 
