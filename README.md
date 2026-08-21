@@ -34,7 +34,7 @@
 
 ## Knowledge Base
 
-27 chapters, 190+ docs covering: spot, futures, stocks, crypto, forex, options, macro, quantitative trading, regulation, data interpretation, and global markets.
+27 chapters, 173 docs covering: spot, futures, stocks, crypto, forex, options, macro, quantitative trading, regulation, data interpretation, and global markets.
 
 | Platform | URL |
 |---|---|
