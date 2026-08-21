@@ -1,3 +1,5 @@
+import type { DrawingTool } from '../drawings/logic'
+
 /**
  * 触屏双击复位的轻点会话状态。
  *
@@ -46,5 +48,25 @@ export class PinchLingeringTracker {
 
   get active() {
     return Boolean(this.until) && this.now() < this.until
+  }
+}
+
+/**
+ * 画线模式下的触屏手势开关状态。
+ *
+ * 进入非鼠标工具时禁用图表原生触屏平移与捏合，让单指轻扫专用于创建画线；
+ * 切回鼠标/提交画线后恢复原生手势。桌面鼠标拖拽不受影响。
+ */
+export class TouchDrawingGestureLock {
+  private activeTool: DrawingTool = 'none'
+
+  /** 当前是否禁用触屏平移与捏合 */
+  get locked() {
+    return this.activeTool !== 'none'
+  }
+
+  /** 工具切换后同步锁定状态 */
+  setTool(tool: DrawingTool) {
+    this.activeTool = tool
   }
 }
