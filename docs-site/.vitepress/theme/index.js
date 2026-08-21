@@ -4,6 +4,7 @@ import KbBadge from './KbBadge.vue'
 import LeverageCalc from './LeverageCalc.vue'
 import MarginCalc from './MarginCalc.vue'
 import ExpectancyCalc from './ExpectancyCalc.vue'
+import LearnPath from './LearnPath.vue'
 import './custom.css'
 
 export default {
@@ -14,5 +15,6 @@ export default {
     app.component('LeverageCalc', LeverageCalc)
     app.component('MarginCalc', MarginCalc)
     app.component('ExpectancyCalc', ExpectancyCalc)
+    app.component('LearnPath', LearnPath)
   },
 }
