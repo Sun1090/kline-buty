@@ -19,6 +19,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Validate knowledge base
+        run: python3 docs/knowledge/scripts/validate-knowledge.py
       - name: Unit tests
         run: npm test
       - name: Build
