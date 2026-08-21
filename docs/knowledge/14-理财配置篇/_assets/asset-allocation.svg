@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bga1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="440" fill="url(#bga1)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">一个可执行的分散配置示例 —— 资产类别与角色分工</text>
+
+  <!-- pie: center 250,240 r=130, from 12 点方向顺时针：股票40% 债券30% 黄金10% 现金10% 海外10% -->
+  <path d="M 250 240 L 250 110 A 130 130 0 0 1 326.4 345.2 Z" fill="#4e9cf5"/>
+  <path d="M 250 240 L 326.4 345.2 A 130 130 0 0 1 126.4 280.2 Z" fill="#26a69a"/>
+  <path d="M 250 240 L 126.4 280.2 A 130 130 0 0 1 126.4 199.8 Z" fill="#e8b56e"/>
+  <path d="M 250 240 L 126.4 199.8 A 130 130 0 0 1 173.6 134.8 Z" fill="#8fa3c8"/>
+  <path d="M 250 240 L 173.6 134.8 A 130 130 0 0 1 250 110 Z" fill="#c792ea"/>
+
+  <!-- pie labels -->
+  <text x="330" y="216" fill="#0d1220" font-size="15" font-weight="700" text-anchor="middle">股票 40%</text>
+  <text x="222" y="334" fill="#0d1220" font-size="15" font-weight="700" text-anchor="middle">债券 30%</text>
+  <text x="150" y="236" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">黄金</text>
+  <text x="150" y="250" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">10%</text>
+  <text x="172" y="180" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">现金</text>
+  <text x="172" y="194" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">10%</text>
+  <text x="222" y="142" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">海外</text>
+  <text x="222" y="156" fill="#0d1220" font-size="11.5" font-weight="700" text-anchor="middle">10%</text>
+
+  <!-- legend / roles -->
+  <rect x="450" y="70" width="320" height="292" rx="12" fill="#182238" stroke="#3d4a6b" stroke-width="1"/>
+  <text x="470" y="102" fill="#eef2ff" font-size="15" font-weight="700">每块饼的角色（见正文表格）</text>
+
+  <rect x="470" y="122" width="14" height="14" rx="3" fill="#4e9cf5"/>
+  <text x="494" y="134" fill="#c8d3ea" font-size="13">股票 · 收益发动机（长期 7%-10%，回撤 40%-60%）</text>
+  <rect x="470" y="158" width="14" height="14" rx="3" fill="#26a69a"/>
+  <text x="494" y="170" fill="#c8d3ea" font-size="13">债券 · 压舱石（与股票低相关，危机时对冲）</text>
+  <rect x="470" y="194" width="14" height="14" rx="3" fill="#e8b56e"/>
+  <text x="494" y="206" fill="#c8d3ea" font-size="13">黄金 · 极端风险对冲（不生息，占比不宜高）</text>
+  <rect x="470" y="230" width="14" height="14" rx="3" fill="#8fa3c8"/>
+  <text x="494" y="242" fill="#c8d3ea" font-size="13">现金 · 流动性与「期权」（熊市保命+抄底弹药）</text>
+  <rect x="470" y="266" width="14" height="14" rx="3" fill="#c792ea"/>
+  <text x="494" y="278" fill="#c8d3ea" font-size="13">海外 · 分散单一市场风险（比例可并入股/债）</text>
+
+  <text x="470" y="316" fill="#8fa3c8" font-size="12">比例只是示例，不是建议；关键是每类资产</text>
+  <text x="470" y="336" fill="#8fa3c8" font-size="12">承担明确角色，并定期再平衡回到目标比例。</text>
+
+  <!-- bottom note -->
+  <text x="400" y="404" fill="#8fa3c8" font-size="13" text-anchor="middle">配置的本质不是「选哪只」，而是「每类钱各司其职」——比例因人而异，纪律重于精确</text>
+</svg>
