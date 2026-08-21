@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="-apple-system, sans-serif">
+  <rect width="720" height="260" fill="#1a1a2e"/>
+  <text x="360" y="24" text-anchor="middle" fill="#e0e0e0" font-size="14" font-weight="bold">案例二：逆势扛单从浮亏到爆仓</text>
+
+  <!-- Price line -->
+  <polyline points="40,60 120,80 200,100 280,130 360,150 440,175 520,195 600,210"
+    fill="none" stroke="#ef4565" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Entry -->
+  <circle cx="40" cy="60" r="5" fill="#ffd166"/>
+  <text x="52" y="56" fill="#ffd166" font-size="12">Day 1 · 入场 80,000</text>
+
+  <!-- Day 3 -->
+  <circle cx="200" cy="100" r="4" fill="#ff9f43"/>
+  <text x="212" y="98" fill="#ff9f43" font-size="11">Day 3 · 浮亏 -50%</text>
+
+  <!-- Day 5 -->
+  <circle cx="360" cy="150" r="4" fill="#ef4565"/>
+  <text x="372" y="148" fill="#ef4565" font-size="11">Day 5 · 浮亏 -87.5%</text>
+
+  <!-- Liquidation -->
+  <line x1="40" y1="215" x2="680" y2="215" stroke="#ef4565" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="52" y="230" fill="#ef4565" font-size="12">爆仓价 72,400</text>
+  <circle cx="600" cy="210" r="6" fill="#ef4565"/>
+  <text x="612" y="208" fill="#ef4565" font-size="12" font-weight="bold">Day 6 · 强平</text>
+
+  <!-- Bounce (after liquidation) -->
+  <polyline points="600,210 640,190 680,170"
+    fill="none" stroke="#4caf87" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="620" y="160" fill="#4caf87" font-size="11">Day 9 反弹</text>
+  <text x="620" y="174" fill="#666" font-size="10">（与你无关）</text>
+
+  <!-- What-if line -->
+  <text x="40" y="250" fill="#8892b0" font-size="11">如果 Day 3 止损（-3%）：亏 2,400 → 保住 75% 本金</text>
+</svg>
