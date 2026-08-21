@@ -11,6 +11,7 @@ export type DrawingTool =
   | 'rect'
   | 'ray'
   | 'hray'
+  | 'vray'
   | 'fibext'
   | 'fibchannel'
   | 'fibfan'
@@ -112,7 +113,7 @@ export function fibPrices(from: number, to: number): number[] {
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return 1
-  if (type === 'ray' || type === 'hray' || type === 'extended') return 2
+  if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended') return 2
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
   if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return 3
   return 2
@@ -533,7 +534,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'hray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
+  if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
   if (type === 'hchannel' || type === 'pband') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -763,6 +764,12 @@ export function hitTestDrawings(
       const a = project(d.points[0].time, d.points[0].price)
       if (a && Math.abs(py - a.y) <= HIT_THRESHOLD_PX && px >= a.x - HIT_THRESHOLD_PX) {
         dist = Math.abs(py - a.y)
+      }
+    } else if (d.type === 'vray') {
+      // 垂直射线：锚点定时间，第二点定向上/向下方向；仅延伸侧可命中
+      const a = project(d.points[0].time, d.points[0].price)
+      if (a && Math.abs(px - a.x) <= HIT_THRESHOLD_PX && py >= a.y - HIT_THRESHOLD_PX) {
+        dist = Math.abs(px - a.x)
       }
     } else if (d.type === 'pricelabel') {
       const a = project(d.points[0].time, d.points[0].price)

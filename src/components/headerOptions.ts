@@ -59,6 +59,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'arc', labelKey: 'drawing.arc' },
   { value: 'ray', labelKey: 'drawing.ray' },
   { value: 'hray', labelKey: 'drawing.hray' },
+  { value: 'vray', labelKey: 'drawing.vray' },
   { value: 'parray', labelKey: 'drawing.parray' },
   { value: 'pchannel', labelKey: 'drawing.pchannel' },
   { value: 'text', labelKey: 'drawing.text' },
