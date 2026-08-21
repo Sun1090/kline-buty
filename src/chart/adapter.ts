@@ -16,7 +16,7 @@ import {
   type IRange,
 } from 'lightweight-charts'
 import { zoomRangeAround } from './pinchZoom'
-import { TouchTapTracker } from './touchGestures'
+import { PinchLingeringTracker, TouchTapTracker } from './touchGestures'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
@@ -244,6 +244,8 @@ const SUB_PANE_HEIGHT = 90
 
 /** 长按钉住十字光标的触觉反馈时长（ms，Android vibrate） */
 export const TOUCH_PIN_VIBRATE_MS = 10
+/** 双击复位的触觉反馈时长（ms，Android vibrate） */
+export const TOUCH_RESET_VIBRATE_MS = 12
 
 /**
  * 触觉反馈：兼容不支持/navigator 缺失的环境。
@@ -299,6 +301,8 @@ export class LightweightChartAdapter implements ChartApi {
   private lastTapAt = 0
   /** 触屏双击复位有效轻点会话（排除捏合残留、拖拽与长按） */
   private touchTaps = new TouchTapTracker()
+  /** 捏合结束后残留单指的短防护期 */
+  private pinchLinger = new PinchLingeringTracker()
   /** 本次单指触摸是否已移动（拖动≠轻点：避免两次快速拖动误触发复位） */
   private touchMoved = false
   /** 单指触摸起点（判移动阈值用） */
@@ -323,6 +327,8 @@ export class LightweightChartAdapter implements ChartApi {
   private static readonly TOUCH_MOVE_PX = 10
   /** 双击复位间隔（ms） */
   private static readonly DOUBLE_TAP_MS = 300
+  /** 捏合结束后残留单指的最短防护时长（ms） */
+  private static readonly PINCH_RESIDUE_MS = 120
   /** 框选截图模式 */
   private regionSelect = false
   private regionDown: { x: number; y: number } | null = null
@@ -2045,12 +2051,20 @@ export class LightweightChartAdapter implements ChartApi {
       this.clearTouchLinger()
       this.setTouchCrosshair(false)
     }
+    // 捏合后仍留在图上的单指是残留手势：标记为拖动并使轻点会话失效，
+    // 防止其后续移动/抬起产生十字线或误触发双击复位。
+    const pinchResidue = this.pinchLinger.active && e.touches.length === 1
     this.touchHoldFired = false
     this.pinch = null
-    this.touchMoved = false
+    this.touchMoved = pinchResidue
     this.touchStartPos = null
     // 新单指触摸才计入双击；保留期轻点只负责清除十字线，捏合残留指不计入复位
     this.touchTaps.begin({ touchCount: e.touches.length, lingering: this.touchLingering })
+    if (pinchResidue) {
+      this.touchTaps.invalidate()
+      this.setTouchCrosshair(false)
+      return
+    }
     if (this.drawingTool !== 'none') return
     if (e.touches.length === 2) {
       this.touchTaps.invalidate()
@@ -2065,6 +2079,7 @@ export class LightweightChartAdapter implements ChartApi {
         dist: Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
         range,
       }
+      this.pinchLinger.clear()
       return
     }
     if (e.touches.length === 1) {
@@ -2181,8 +2196,15 @@ export class LightweightChartAdapter implements ChartApi {
     this.pinch = null
     this.pinchStepVibrated = 0
     if (wasPinch || e.touches.length > 0) {
-      // 双指捏合结束：不保留十字光标；残留指抬起也不得累积成双击复位
+      // 双指捏合结束：不保留十字光标；残留指抬起也不得累积成双击复位。
+      // 若仍剩一指，开启短防护：该指移动不显示十字线，后续按下/抬起也不计入双击。
       this.touchTaps.invalidate()
+      if (wasPinch && e.touches.length === 1) {
+        this.pinchLinger.start(LightweightChartAdapter.PINCH_RESIDUE_MS)
+        this.touchMoved = true
+      } else {
+        this.pinchLinger.clear()
+      }
       this.clearTouchLinger()
       if (this.touchCrosshair) this.setTouchCrosshair(false)
       return
@@ -2219,7 +2241,7 @@ export class LightweightChartAdapter implements ChartApi {
       this.chart.priceScale('right').setAutoScale(true)
       this.chart.timeScale().resetTimeScale()
       // 复位触觉反馈（Android）
-      vibrateIfSupported(navigator.vibrate?.bind(navigator), 12)
+      vibrateIfSupported(navigator.vibrate?.bind(navigator), TOUCH_RESET_VIBRATE_MS)
     } else {
       this.lastTapAt = now
     }

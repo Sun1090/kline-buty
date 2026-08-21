@@ -23,3 +23,28 @@ export class TouchTapTracker {
     return this.count >= 2 && now - lastTapAt < doubleTapMs
   }
 }
+
+/**
+ * 捏合结束后的残留单指会话。
+ *
+ * 双指中先抬起一指时进入防护期，期间既不显示十字光标也不累计双击；
+ * 所有手指抬起后防护立即结束，后续新触摸是全新手势。
+ */
+export class PinchLingeringTracker {
+  private until = 0
+
+  /** 当前时间可注入，避免测试环境 fake timers 与 Date clock 不同步 */
+  constructor(private now: () => number = Date.now) {}
+
+  start(durationMs: number) {
+    this.until = Math.max(this.until, this.now() + durationMs)
+  }
+
+  clear() {
+    this.until = 0
+  }
+
+  get active() {
+    return Boolean(this.until) && this.now() < this.until
+  }
+}

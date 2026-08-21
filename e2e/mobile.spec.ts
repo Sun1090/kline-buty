@@ -240,6 +240,81 @@ test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻
   expect(errs).toHaveLength(0)
 })
 
+test('移动端：捏合残留单指不产生十字线、不误触发双击复位', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  const chart = page.locator('main div').first()
+  const box = await chart.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const cx = box.x + box.width * 0.5
+  const cy = box.y + box.height * 0.5
+
+  const countCrosshair = () =>
+    page.evaluate(() => {
+      let best: HTMLCanvasElement | null = null
+      let bestArea = 0
+      for (const c of document.querySelectorAll('canvas')) {
+        const st = getComputedStyle(c)
+        if (st.position !== 'absolute' || st.zIndex !== '2') continue
+        const area = c.getBoundingClientRect().width * c.getBoundingClientRect().height
+        if (area > bestArea) {
+          bestArea = area
+          best = c
+        }
+      }
+      if (!best) return 0
+      const d = best.getContext('2d')!.getImageData(0, 0, best.width, best.height).data
+      let n = 0
+      for (let i = 0; i < d.length; i += 4) {
+        if (Math.abs(d[i] - 149) < 12 && Math.abs(d[i + 1] - 152) < 12 && Math.abs(d[i + 2] - 161) < 12) n++
+      }
+      return n
+    })
+
+  // 双指张开；先抬起一指，保留另一根短触后抬起
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      { x: cx - 40, y: cy },
+      { x: cx + 40, y: cy },
+    ],
+  })
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [
+      { x: cx - 70, y: cy },
+      { x: cx + 70, y: cy },
+    ],
+  })
+  await page.waitForTimeout(80)
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [{ x: cx - 70, y: cy }],
+  })
+  await page.waitForTimeout(30)
+  expect(await countCrosshair()).toBeLessThan(50)
+
+  // 残留指快速抬起 + 立即第二次轻点：不得被误判成双击复位（用图表平移位置稳定性近似验证）
+  const scrollBefore = await page.evaluate(() => {
+    const pane = document.querySelector('.tv-lightweight-charts') as HTMLElement | null
+    return pane ? pane.getBoundingClientRect().left : null
+  })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await page.waitForTimeout(350)
+  expect(await countCrosshair()).toBeLessThan(50)
+  expect(errors).toHaveLength(0)
+  expect(scrollBefore).not.toBeNull()
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+})
+
 test('移动端：五语 UI 完整（html lang 同步 + MobileHeader 弹层无 i18n 键泄漏）', async ({ page }) => {
   // 语言代码 → 期望 html lang / 更多按钮文案
   const LANGS: [string, string, string][] = [
