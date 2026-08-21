@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { orderBookRows, type OrderBookRow } from '../depth/orderbook'
 import { fmtCompact } from '../depth/format'
@@ -38,27 +38,22 @@ function Row({
   onQuickOrder?: (price: number, side: OrderSide) => void
 }) {
   const { t } = useI18n()
-  const [hover, setHover] = useState(false)
   const color = side === 'bid' ? BID : ASK
   const tradeSide: OrderSide = side === 'bid' ? 'buy' : 'sell'
   return (
     <div
       data-testid={`ob-${side}`}
       data-price={row.price}
-      onMouseEnter={() => {
-        setHover(true)
-        onHoverPrice?.(row.price)
-      }}
-      onMouseLeave={() => {
-        setHover(false)
-        onHoverPrice?.(null)
-      }}
+      onMouseEnter={() => onHoverPrice?.(row.price)}
+      onMouseLeave={() => onHoverPrice?.(null)}
       onClick={() => onMarkPrice?.(row.price)}
       title={t('orderBook.markHint')}
       style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: '44px minmax(0, 1fr) 52px minmax(0, 1fr)',
+        alignItems: 'center',
+        gap: 4,
         padding: '1px 8px',
         fontSize: 11,
         fontVariantNumeric: 'tabular-nums',
@@ -75,34 +70,35 @@ function Row({
           pointerEvents: 'none',
         }}
       />
-      <span style={{ color }}>{fmtPrice(row.price)}</span>
-      <span style={{ color: 'var(--text-dim)', textAlign: 'right' }}>{fmtCompact(row.quantity)}</span>
-      <span style={{ color: 'var(--text-faint)', textAlign: 'right' }}>{fmtCompact(row.cumulative)}</span>
-      {hover && onQuickOrder && (
+      {onQuickOrder ? (
         <button
           data-testid={`qo-${tradeSide}`}
+          aria-label={`${t('quickOrder.title')} ${fmtPrice(row.price)}`}
           onClick={(e) => {
             e.stopPropagation()
             onQuickOrder(row.price, tradeSide)
           }}
           style={{
-            position: 'absolute',
-            left: 2,
-            top: 1,
-            bottom: 1,
-            padding: '0 8px',
+            minWidth: 36,
+            padding: '2px 5px',
             border: 'none',
             borderRadius: 3,
             fontSize: 10,
+            lineHeight: 1.3,
             fontWeight: 600,
             cursor: 'pointer',
-            background: tradeSide === 'buy' ? 'rgba(38,166,154,0.85)' : 'rgba(239,83,80,0.85)',
+            background: tradeSide === 'buy' ? 'rgba(38,166,154,0.9)' : 'rgba(239,83,80,0.9)',
             color: '#fff',
           }}
         >
           {tradeSide === 'buy' ? t('trade.buy') : t('trade.sell')}
         </button>
+      ) : (
+        <span />
       )}
+      <span style={{ color }}>{fmtPrice(row.price)}</span>
+      <span style={{ color: 'var(--text-dim)', textAlign: 'right', minWidth: 0 }}>{fmtCompact(row.quantity)}</span>
+      <span style={{ color: 'var(--text-faint)', textAlign: 'right', minWidth: 0 }}>{fmtCompact(row.cumulative)}</span>
     </div>
   )
 }
@@ -130,12 +126,15 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
+          gridTemplateColumns: '44px minmax(0, 1fr) 52px minmax(0, 1fr)',
+          alignItems: 'center',
+          gap: 4,
           padding: '2px 8px',
           fontSize: 10,
           color: 'var(--text-faint)',
         }}
       >
+        <span />
         <span>{t('common.price')}</span>
         <span style={{ textAlign: 'right' }}>{t('orderBook.qty')}</span>
         <span style={{ textAlign: 'right' }}>{t('orderBook.cum')}</span>
@@ -153,7 +152,7 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
             data-testid="ob-spread"
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
+              gridTemplateColumns: '44px minmax(0, 1fr) 52px minmax(0, 1fr)',
               padding: '3px 8px',
               fontSize: 10,
               borderTop: '1px dashed #2a2e39',

@@ -312,7 +312,7 @@ export const zh = {
     qty: '数量',
     cum: '累计',
     spread: '价差',
-    markHint: '点击标记到主图（再点清除）；右侧快捷下单',
+    markHint: '点击标记到主图（再点清除）；左侧按钮快捷下单',
   },
   trade: {
     buy: "买入",
@@ -672,7 +672,7 @@ export const en: Messages = {
     qty: 'Qty',
     cum: 'Total',
     spread: 'Spread',
-    markHint: 'Click to mark on main chart (click again to clear); quick order on the right',
+    markHint: 'Click to mark on main chart (click again to clear); quick-order button on the left',
   },
   trade: {
     buy: "Buy",
@@ -1030,7 +1030,7 @@ export const ja: Messages = {
     qty: '数量',
     cum: '累計',
     spread: 'スプレッド',
-    markHint: 'クリックでメインにマーク（再クリックで解除）；右側でクイック注文',
+    markHint: 'クリックでメインにマーク（再クリックで解除）；左ボタンでクイック注文',
   },
   trade: {
     buy: "買い",
@@ -1389,7 +1389,7 @@ export const ko: Messages = {
     qty: '수량',
     cum: '누적',
     spread: '스프레드',
-    markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제); 오른쪽 빠른 주문',
+    markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제); 왼쪽 버튼으로 빠른 주문',
   },
   trade: {
     buy: "매수",
@@ -1759,7 +1759,7 @@ export const es: Messages = {
     qty: 'Cant.',
     cum: 'Total',
     spread: 'Diferencial',
-    markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar); orden rápida a la derecha',
+    markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar); botón de orden rápida a la izquierda',
   },
   trade: {
     buy: "Comprar",
