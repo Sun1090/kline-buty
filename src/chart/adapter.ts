@@ -673,6 +673,23 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'cross') {
+      // 十字线：锚点确定时间与价格，横纵两线全画布延伸
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      ctx.beginPath()
+      ctx.moveTo(0, a.y)
+      ctx.lineTo(w, a.y)
+      ctx.moveTo(a.x, 0)
+      ctx.lineTo(a.x, h)
+      ctx.stroke()
+      this.drawLabel(ctx, a.x, a.y, `${d.points[0].price.toFixed(2)} · ${new Date(d.points[0].time * 1000).toLocaleDateString()}`, 'left')
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
+      return
+    }
+
     if (d.type === 'text') {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return

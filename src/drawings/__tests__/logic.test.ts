@@ -237,6 +237,22 @@ describe('hitTestDrawings（水平射线）', () => {
   })
 })
 
+describe('十字线（cross）', () => {
+  it('单锚点保留时间与价格', () => {
+    const pts = normalizePoints('cross', [{ time: 80, price: 120 }, { time: 20, price: 90 }])
+    expect(pts).toEqual([{ time: 80, price: 120 }])
+    expect(requiredPoints('cross')).toBe(1)
+  })
+
+  it('横线或纵线附近均可命中，远离两线不命中', () => {
+    const d = createDrawing('cross', [{ time: 60, price: 100 }], 'cross')
+    // 投影：交点 (60,200)；(66,180) 命中纵线，(40,194) 命中横线
+    expect(hitTestDrawings([d], 66, 180, project)).toBe('cross')
+    expect(hitTestDrawings([d], 40, 194, project)).toBe('cross')
+    expect(hitTestDrawings([d], 100, 130, project)).toBeNull()
+  })
+})
+
 describe('无限延长线（extended）', () => {
   it('保持两点方向顺序且需要两个锚点', () => {
     const pts = normalizePoints('extended', [{ time: 100, price: 100 }, { time: 0, price: 50 }])
