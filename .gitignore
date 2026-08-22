@@ -5,10 +5,12 @@ dist
 test-results
 playwright-report
 *.tsbuildinfo
-# 文档站：篇章目录由 scripts/docs-prepare.mjs 从 docs/knowledge 同步（避免重复入库）
-docs-site/docs/0*
-docs-site/docs/1*
-docs-site/docs/2*
+# 文档站：章节目录由 scripts/docs-prepare.mjs 从 docs/knowledge 双语源同步（避免重复入库；落地页 index.md 为手写源保留入库）
+docs-site/docs/*
+!docs-site/docs/index.md
+!docs-site/docs/zh
+docs-site/docs/zh/*
+!docs-site/docs/zh/index.md
 # 文档站构建产物（已合并进 dist/knowledge）
 docs-site/.vitepress/dist
 # 根目录 VitePress 构建缓存（误生成，勿入库）

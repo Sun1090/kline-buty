@@ -384,3 +384,50 @@ aside .VPDocAsideOutline a.outline-link.active {
   border-radius: 10px;
   background: linear-gradient(135deg, rgba(41, 98, 255, 0.16), rgba(139, 92, 246, 0.12));
 }
+/* ================================================================
+   v3 —— vuejs.org 风格增强（双语版）：渐变 hero、特性卡、容器色条
+   ================================================================ */
+
+/* 首页 hero 标题渐变字（Vue 官网式） */
+.VPHero .name {
+  background: linear-gradient(120deg, var(--kb-brand) 0%, var(--kb-brand-2) 45%, var(--kb-teal) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.VPHero .text {
+  background: linear-gradient(120deg, var(--vp-c-text-1) 30%, var(--kb-brand-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 特性卡：悬浮上浮 + 品牌色描边（Vue 官网 feature 卡交互） */
+.VPFeatures .VPFeature {
+  border: 1px solid var(--kb-card-border);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.VPFeatures .VPFeature:hover {
+  transform: translateY(-4px);
+  border-color: var(--kb-brand-2);
+  box-shadow: 0 12px 32px -16px rgba(41, 98, 255, 0.35);
+}
+
+/* 自定义容器：左侧品牌色条（Vue 文档容器语言） */
+.vp-doc div.custom-block {
+  border-left: 3px solid var(--vp-c-border);
+  border-radius: 8px;
+}
+.vp-doc div.custom-block.tip { border-left-color: var(--kb-brand-2); }
+.vp-doc div.custom-block.info { border-left-color: var(--kb-purple); }
+.vp-doc div.custom-block.warning { border-left-color: var(--kb-amber); }
+.vp-doc div.custom-block.danger { border-left-color: var(--kb-red); }
+
+/* 语言切换器与导航微调 */
+.VPNavBarMenuLink,
+.VPNavBarTitle { transition: color 0.2s ease; }
+
+/* 表格行悬浮高亮（长表格扫读友好） */
+.vp-doc table tbody tr:hover td {
+  background: rgba(78, 156, 245, 0.06);
+}

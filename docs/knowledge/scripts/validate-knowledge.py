@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""校验交易知识库的硬性内容约定。
+"""校验交易知识库的硬性内容约定（双语树）。
 
 检查项：
-- 正文必须有含 title / description 的 frontmatter；
-- 正文必须有标准「::: warning ⚠️ 风险提示」容器；
+- zh/ 与 en/ 正文必须有含 title / description 的 frontmatter；
+- zh/ 正文必须有标准「::: warning ⚠️ 风险提示」容器；en/ 正文必须有
+  「::: warning ⚠️ Risk Warning」容器；
 - Markdown 相对链接与图片引用目标必须存在；
-- docs/knowledge/README.md 必须由 sync-index.py 生成且未过期。
+- docs/knowledge/README.md 必须由 sync-index.py 生成且未过期（基于 zh/ 树）。
 
 用法：
     python3 docs/knowledge/scripts/validate-knowledge.py
@@ -16,17 +17,28 @@ import re
 import subprocess
 import sys
 import urllib.parse
+from os import sep as SEP
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO = ROOT.parent.parent
 SCRIPT = ROOT / "scripts" / "sync-index.py"
 README = ROOT / "README.md"
-STANDARD_RISK = "::: warning ⚠️ 风险提示"
+RISK_BY_LOCALE = {
+    "zh": "::: warning ⚠️ 风险提示",
+    "en": "::: warning ⚠️ Risk Warning",
+}
 
 
 def fail(message: str) -> None:
     raise SystemExit(f"ERROR: {message}")
+
+
+def locale_of(path: Path) -> str | None:
+    for locale in RISK_BY_LOCALE:
+        if locale in path.parts:
+            return locale
+    return None
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
@@ -52,9 +64,10 @@ def check_frontmatter(path: Path, text: str) -> None:
             fail(f"{path}: frontmatter 缺少 {key}")
 
 
-def check_risk(path: Path, text: str) -> None:
-    if STANDARD_RISK not in text:
-        fail(f"{path}: 缺少标准「{STANDARD_RISK}」容器")
+def check_risk(path: Path, text: str, locale: str) -> None:
+    standard = RISK_BY_LOCALE[locale]
+    if standard not in text:
+        fail(f"{path}: 缺少标准「{standard}」容器")
 
 
 def check_links(path: Path, text: str) -> None:
@@ -68,8 +81,14 @@ def check_links(path: Path, text: str) -> None:
         if not file_part:
             continue
         resolved = path.parent / file_part
-        if not resolved.exists():
-            fail(f"{path}: 引用不存在 -> {raw_target}")
+        if resolved.exists():
+            continue
+        # 英文版渐进翻译回退：en 树中目标未翻译时，允许指向 zh 树的同名文件
+        if "en" in path.parts:
+            fallback = Path(str(resolved).replace(f"{ROOT}{SEP}en{SEP}", f"{ROOT}{SEP}zh{SEP}", 1))
+            if fallback.exists():
+                continue
+        fail(f"{path}: 引用不存在 -> {raw_target}")
 
 
 def check_index() -> None:
@@ -89,14 +108,22 @@ def check_index() -> None:
 
 
 def main() -> None:
-    docs = sorted(path for path in ROOT.rglob("*.md") if path.name != "README.md")
+    docs = sorted(
+        path
+        for locale in RISK_BY_LOCALE
+        for path in (ROOT / locale).rglob("*.md")
+        if path.name != "README.md"
+    )
     if not docs:
         fail("docs/knowledge 下没有找到正文")
 
     for path in docs:
         text = path.read_text(encoding="utf-8")
+        locale = locale_of(path)
+        if locale is None:
+            fail(f"{path}: 不在 zh/ 或 en/ 语言树下")
         check_frontmatter(path, text)
-        check_risk(path, text)
+        check_risk(path, text, locale)
         check_links(path, text)
 
     check_index()

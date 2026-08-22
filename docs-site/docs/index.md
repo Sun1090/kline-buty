@@ -2,89 +2,65 @@
 layout: home
 
 hero:
-  name: 交易知识库
-  text: 从入门到入土 · 系统化交易学习
-  tagline: 现货 / 期货 / 股票 / 加密 / 外汇 / 期权 / 宏观 / 量化 / 监管 · 27 篇章 · 173 篇深度正文
+  name: Trading Knowledge Base
+  text: From first candle to full-time desk · systematic trading learning
+  tagline: Spot / Futures / Stocks / Crypto Perpetuals / Forex / Options / Macro / Quant / Regulation · 27 chapters · 173 in-depth articles (English edition in progress)
   image:
     src: /hero-chart.svg
-    alt: K 线与盘口配图
+    alt: Candlestick chart and order book
   actions:
     - theme: brand
-      text: 开始阅读
-      link: /01-入门基础/
+      text: Start Reading
+      link: /getting-started/
     - theme: alt
-      text: 返回行情应用
+      text: 中文版
+      link: /zh/
+    - theme: alt
+      text: Live Charts
       link: https://kline-buty.vercel.app/
 
 features:
   - icon: 📖
-    title: 零基础起步
-    details: 从四大市场全景与交易核心概念讲起，先看懂行情软件 80% 的信息，再逐步深入杠杆、保证金、爆仓等硬规则。
+    title: Zero-to-hero basics
+    details: "Market panoramas and core concepts first — read 80% of what a terminal shows you, then earn leverage, margin and liquidation the safe way: before you use them."
   - icon: 🗂️
-    title: 全市场覆盖
-    details: 现货、股票、期货、加密合约、外汇、债券、期权策略，配合行为金融、监管合规、金融历史与全球市场地图。
+    title: Every major market
+    details: "Spot, stocks, futures, crypto perpetuals, forex, bonds, options strategies — plus behavioral finance, regulation, financial history and a global market map."
   - icon: 🧮
-    title: 实战与量化
-    details: 技术分析、交易系统、画线实战、量化回测、数据解读，把知识落到可执行的操作与代码。
+    title: Practice & quant
+    details: "Technical analysis, trading systems, drawing tools, backtesting, data interpretation — knowledge that compiles into executable checklists and code."
   - icon: 🔍
-    title: 全站搜索
-    details: 内置全文检索，按角色快速导航 + 学习路线图，随时定位到需要的篇章与知识点。
+    title: Full-text search
+    details: "Built-in site search, role-based quick paths and an interactive learning roadmap to jump straight to the chapter you need."
 ---
 
-> **免责声明**：本站全部内容仅用于学习与研究，不构成任何投资建议。市场有风险，投资需谨慎。
+> **Disclaimer**: Everything here is for study and research only — it is not investment advice. Trading carries significant risk.
 
-## 🧭 按读者角色快速导航
-
-| 你是谁 | 学习路径 |
-|---|---|
-| 🐣 **零基础新手** | [01-入门基础](01-入门基础/) <KbBadge t="必读" c="c-red" /> → [02-现货篇](02-现货篇/) → [14-理财配置篇](14-理财配置篇/) |
-| 📈 **股民 / A 股玩家** | [04-股票篇](04-股票篇/) → [18-财务深读篇](18-财务深读篇/) → [19-行业研究篇](19-行业研究篇/) → [11-交易实战篇](11-交易实战篇/) |
-| 🔩 **期货 / 商品玩家** | [03-期货篇](03-期货篇/) <KbBadge t="高风险必读" c="c-amber" /> → [09-市场与品种专题篇](09-市场与品种专题篇/) → [26-数据解读实战篇](26-数据解读实战篇/) |
-| 🪙 **加密玩家** | [05-加密合约篇](05-加密合约篇/) <KbBadge t="爆仓重灾区" c="c-red" /> → [09-市场与品种专题篇](09-市场与品种专题篇/) → [11-交易实战篇](11-交易实战篇/) → [16-监管与合规篇](16-监管与合规篇/) |
-| 💻 **量化 / 程序员** | [15-量化实战篇](15-量化实战篇/) → [10-系统对接篇](10-系统对接篇/) → [17-工具与平台篇](17-工具与平台篇/) → [24-职业发展篇](24-职业发展篇/) |
-| 🎯 **系统性期权学习** | [09-市场与品种专题篇](09-市场与品种专题篇/) <KbBadge t="期权基础" c="c-teal" /> → [27-期权策略进阶篇](27-期权策略进阶篇/) |
-| 🛡️ **只求避坑保命** | [08-入土篇](08-入土篇/) → [21-行为金融篇](21-行为金融篇/) → [16-监管与合规篇](16-监管与合规篇/) |
-| 📜 **历史与大师** | [13-金融历史篇](13-金融历史篇/) → [20-经典书单篇](20-经典书单篇/) → [21-行为金融篇](21-行为金融篇/) |
-
-## 🗺️ 学习路线图
-
-::: tip 💡 三个阶段，从「看懂」到「能战」再到「深潜」
-- **第一阶段（新手必读）**：先建立市场地图与风控意识
-- **第二阶段（实战进阶）**：把知识变成可执行的操作与系统
-- **第三阶段（深度专题）**：按兴趣与职业方向深潜
-
-完整 27 章对应关系见下表，点击篇章名直达。
+::: info 🌍 Bilingual edition — English first
+This site is now English-first with a complete Simplified Chinese edition one click away (top-right language switch, or [中文版](/zh/)). The 173-article Chinese library is complete today; English chapters are being translated progressively — [Getting Started](/getting-started/) is fully available.
 :::
+
+## 🧭 Role-Based Paths
+
+| Who you are | Your path |
+|---|---|
+| 🐣 **Complete beginner** | [Getting Started](getting-started/) → [Spot](zh/spot/) → [Wealth Allocation](zh/wealth-allocation/) |
+| 📈 **Stock investor** | [Stocks](zh/stocks/) → [Financial Statements](zh/financial-statements/) → [Industry Research](zh/industry-research/) → [Trading Practice](zh/trading-practice/) |
+| 🔩 **Futures / commodities** | [Futures](zh/futures/) → [Markets & Instruments](zh/markets-instruments/) → [Data Interpretation](zh/data-interpretation/) |
+| 🪙 **Crypto trader** | [Crypto Perpetuals](zh/crypto-perpetuals/) → [Markets & Instruments](zh/markets-instruments/) → [Trading Practice](zh/trading-practice/) → [Regulation](zh/regulation-compliance/) |
+| 💻 **Quant / developer** | [Quant Practice](zh/quant-practice/) → [System Integration](zh/system-integration/) → [Tools & Platforms](zh/tools-platforms/) → [Career](zh/career/) |
+| 🎯 **Options learner** | [Markets & Instruments](zh/markets-instruments/) → [Options Strategies](zh/options-strategies/) |
+| 🛡️ **Just don't blow up** | [Pitfalls](zh/pitfalls/) → [Behavioral Finance](zh/behavioral-finance/) → [Regulation](zh/regulation-compliance/) |
+| 📜 **History & masters** | [Financial History](zh/financial-history/) → [Reading List](zh/reading-list/) → [Behavioral Finance](zh/behavioral-finance/) |
 
 <LearnPath />
 
-| 阶段 | 篇章 | 学完后能干什么 |
-|---|---|---|
-| **1 · 地基** | [01-入门基础](01-入门基础/) | 看懂术语、看懂行情软件、懂交易时间 |
-| | [02-现货篇](02-现货篇/) | 理解现货买卖、执行低风险策略 |
-| | [04-股票篇](04-股票篇/) | 理解股市规则与分析方法 |
-| **2 · 进阶** | [03-期货篇](03-期货篇/) | 理解杠杆、保证金、交割，**识别风险** |
-| | [05-加密合约篇](05-加密合约篇/) | 理解永续合约、资金费率、爆仓机制 |
-| | [09-市场与品种专题篇](09-市场与品种专题篇/) | 外汇/债券/基金/期权/商品/宏观的品种视野 |
-| | [06-技术分析篇](06-技术分析篇/) | 看懂 K 线形态、指标与量价 |
-| | [07-交易系统篇](07-交易系统篇/) | 建立自己的交易系统与风控 |
-| **3 · 实战** | [08-入土篇](08-入土篇/) | 避开骗局与常见亏损陷阱，学会退出 |
-| | [11-交易实战篇](11-交易实战篇/) | 日内/波段/网格/事件驱动/A 股特色/套利实操 |
-| | [12-市场生态篇](12-市场生态篇/) | 看懂对手盘、操纵手法与信息生态 |
-| | [13-金融历史篇](13-金融历史篇/) | 泡沫与崩盘的人性教训、大师方法与流派哲学 |
-| | [14-理财配置篇](14-理财配置篇/) | 资产配置、复利认知、家庭财务与保险保障 |
-| | [15-量化实战篇](15-量化实战篇/) | 个人量化：数据→回测→策略→自动化 |
-| | [26-数据解读实战篇](26-数据解读实战篇/) | 宏观数据/央行语言/财报电话会/行业数据解读 |
-| **4 · 深潜** | [25-全球市场地图篇](25-全球市场地图篇/) | 日韩/欧洲/新兴市场全景与跨境投资实操 |
-| | [16-监管与合规篇](16-监管与合规篇/) | 监管体系、牌照、加密监管、程序化交易合规 |
-| | [17-工具与平台篇](17-工具与平台篇/) | 行情软件、数据平台、券商选择、运行环境 |
-| | [18-财务深读篇](18-财务深读篇/) | 三张报表、指标实战、造假识别、现金流 |
-| | [19-行业研究篇](19-行业研究篇/) | 行业研究方法论、产业链、护城河、景气周期 |
-| | [20-经典书单篇](20-经典书单篇/) | 入门/技术/价值/量化心理五层书单与精读法 |
-| | [21-行为金融篇](21-行为金融篇/) | 前景理论、认知偏差、市场异象、行为实战 |
-| | [22-债券与利率深潜篇](22-债券与利率深潜篇/) | 美债/中国债市实操/信用债/利率衍生品 |
-| | [23-外汇交易实战篇](23-外汇交易实战篇/) | 外汇市场结构、杠杆与风险管理、实战策略 |
-| | [24-职业发展篇](24-职业发展篇/) | 交易员/量化研究员/投资顾问职业路径 |
-| | [27-期权策略进阶篇](27-期权策略进阶篇/) | 期权组合策略、波动率交易与风险管理 |
+> Complete 27-chapter catalog with per-chapter descriptions lives in the [中文版 index](/zh/) and the sidebar. English chapters are translated in reading order; untranslated links open the Chinese edition.
 
-> 完整的逐篇文档清单见左侧侧边栏；支持全站全文检索（右上角 🔍）。各篇章内均有「篇目一览」卡片导航，直接点击跳转。
+---
+
+## ⚠️ Risk Warning
+
+::: warning ⚠️ Risk Warning
+All content in this knowledge base is for learning and research only and does not constitute any investment advice. Leverage, derivatives and crypto trading can lead to total loss of capital. Trade only with money you can afford to lose.
+:::

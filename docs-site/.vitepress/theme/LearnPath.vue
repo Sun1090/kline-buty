@@ -1,75 +1,110 @@
 <script setup>
-import { ref } from 'vue'
-import { withBase } from 'vitepress'
+import { ref, computed } from 'vue'
+import { useData, withBase } from 'vitepress'
 
-const roles = [
-  { id: 'all', icon: '🌐', label: '全部章节', chapters: [] },
-  { id: 'newbie', icon: '🐣', label: '零基础新手', chapters: ['01', '02', '14'] },
-  { id: 'stock', icon: '📈', label: '股民 / A 股', chapters: ['04', '18', '19', '11'] },
-  { id: 'futures', icon: '🔩', label: '期货 / 商品', chapters: ['03', '09', '26'] },
-  { id: 'crypto', icon: '🪙', label: '加密玩家', chapters: ['05', '09', '11', '16'] },
-  { id: 'quant', icon: '💻', label: '量化 / 程序员', chapters: ['15', '10', '17', '24'] },
-  { id: 'option', icon: '🎯', label: '期权学习', chapters: ['09', '27'] },
-  { id: 'safe', icon: '🛡️', label: '只求避坑', chapters: ['08', '21', '16'] },
-]
+const { lang } = useData()
+const isZH = computed(() => String(lang.value || '').startsWith('zh'))
+
+const roles = computed(() => {
+  const prefix = isZH.value ? '' : 'zh/'
+  const label = (zh, en) => (isZH.value ? zh : en)
+  return [
+    { id: 'all', icon: '🌐', label: label('全部章节', 'All chapters'), chapters: [] },
+    { id: 'newbie', icon: '🐣', label: label('零基础新手', 'Beginner'), chapters: ['getting-started', 'spot', 'wealth-allocation'] },
+    { id: 'stock', icon: '📈', label: label('股民 / A 股', 'Stock investor'), chapters: ['stocks', 'financial-statements', 'industry-research', 'trading-practice'] },
+    { id: 'futures', icon: '🔩', label: label('期货 / 商品', 'Futures'), chapters: ['futures', 'markets-instruments', 'data-interpretation'] },
+    { id: 'crypto', icon: '🪙', label: label('加密玩家', 'Crypto'), chapters: ['crypto-perpetuals', 'markets-instruments', 'trading-practice', 'regulation-compliance'] },
+    { id: 'quant', icon: '💻', label: label('量化 / 程序员', 'Quant'), chapters: ['quant-practice', 'system-integration', 'tools-platforms', 'career'] },
+    { id: 'option', icon: '🎯', label: label('期权学习', 'Options'), chapters: ['markets-instruments', 'options-strategies'] },
+    { id: 'safe', icon: '🛡️', label: label('只求避坑', 'Risk-averse'), chapters: ['pitfalls', 'behavioral-finance', 'regulation-compliance'] },
+  ].map((r) => ({ ...r, prefix }))
+})
+
 const active = ref('all')
 
-const stages = [
-  {
-    name: '1 · 地基',
-    hint: '看懂',
-    items: [
-      { id: '01', dir: '01-入门基础/', label: '入门基础', desc: '术语 · 行情软件' },
-      { id: '02', dir: '02-现货篇/', label: '现货篇', desc: '现货买卖' },
-      { id: '04', dir: '04-股票篇/', label: '股票篇', desc: '股市规则' },
-    ],
-  },
-  {
-    name: '2 · 进阶',
-    hint: '能战',
-    items: [
-      { id: '03', dir: '03-期货篇/', label: '期货篇', desc: '杠杆 · 保证金' },
-      { id: '05', dir: '05-加密合约篇/', label: '加密合约', desc: '永续 · 爆仓' },
-      { id: '09', dir: '09-市场与品种专题篇/', label: '市场与品种', desc: '品种视野' },
-      { id: '06', dir: '06-技术分析篇/', label: '技术分析', desc: 'K 线 · 指标' },
-      { id: '07', dir: '07-交易系统篇/', label: '交易系统', desc: '系统 · 风控' },
-    ],
-  },
-  {
-    name: '3 · 实战',
-    hint: '实操',
-    items: [
-      { id: '08', dir: '08-入土篇/', label: '入土篇', desc: '避坑 · 骗局' },
-      { id: '11', dir: '11-交易实战篇/', label: '交易实战', desc: '策略实操' },
-      { id: '12', dir: '12-市场生态篇/', label: '市场生态', desc: '对手盘' },
-      { id: '13', dir: '13-金融历史篇/', label: '金融历史', desc: '泡沫教训' },
-      { id: '14', dir: '14-理财配置篇/', label: '理财配置', desc: '资产配置' },
-      { id: '15', dir: '15-量化实战篇/', label: '量化实战', desc: '回测 · 自动化' },
-      { id: '26', dir: '26-数据解读实战篇/', label: '数据解读', desc: '宏观 · 财报' },
-    ],
-  },
-  {
-    name: '4 · 深潜',
-    hint: '专精',
-    items: [
-      { id: '25', dir: '25-全球市场地图篇/', label: '全球市场', desc: '跨境投资' },
-      { id: '16', dir: '16-监管与合规篇/', label: '监管合规', desc: '牌照 · 边界' },
-      { id: '17', dir: '17-工具与平台篇/', label: '工具平台', desc: '软件 · 券商' },
-      { id: '18', dir: '18-财务深读篇/', label: '财务深读', desc: '报表 · 造假' },
-      { id: '19', dir: '19-行业研究篇/', label: '行业研究', desc: '产业链 · 护城河' },
-      { id: '20', dir: '20-经典书单篇/', label: '经典书单', desc: '五层书单' },
-      { id: '21', dir: '21-行为金融篇/', label: '行为金融', desc: '认知偏差' },
-      { id: '22', dir: '22-债券与利率深潜篇/', label: '债券利率', desc: '收益率曲线' },
-      { id: '23', dir: '23-外汇交易实战篇/', label: '外汇实战', desc: '利差 · 央行' },
-      { id: '24', dir: '24-职业发展篇/', label: '职业发展', desc: '职业路径' },
-      { id: '27', dir: '27-期权策略进阶篇/', label: '期权策略', desc: '组合 · 波动率' },
-    ],
-  },
-]
+const stages = computed(() => {
+  const zh = [
+    { name: '1 · 地基', hint: '新手必读', items: [
+      ['getting-started', '入门基础', '术语 · 行情软件'],
+      ['spot', '现货篇', '现货买卖'],
+      ['stocks', '股票篇', '股市规则'],
+    ] },
+    { name: '2 · 进阶', hint: '理解机制', items: [
+      ['futures', '期货篇', '杠杆 · 保证金'],
+      ['crypto-perpetuals', '加密合约', '永续 · 爆仓'],
+      ['markets-instruments', '市场与品种', '品种视野'],
+      ['technical-analysis', '技术分析', 'K 线 · 指标'],
+      ['trading-system', '交易系统', '系统 · 风控'],
+    ] },
+    { name: '3 · 实战', hint: '把知识变操作', items: [
+      ['pitfalls', '入土篇', '避坑 · 骗局'],
+      ['trading-practice', '交易实战', '策略实操'],
+      ['market-ecosystem', '市场生态', '对手盘'],
+      ['financial-history', '金融历史', '泡沫教训'],
+      ['wealth-allocation', '理财配置', '资产配置'],
+      ['quant-practice', '量化实战', '回测 · 自动化'],
+      ['data-interpretation', '数据解读', '宏观 · 财报'],
+    ] },
+    { name: '4 · 深潜', hint: '按方向专精', items: [
+      ['global-markets', '全球市场', '跨境投资'],
+      ['regulation-compliance', '监管合规', '牌照 · 边界'],
+      ['tools-platforms', '工具平台', '软件 · 券商'],
+      ['financial-statements', '财务深读', '报表 · 造假'],
+      ['industry-research', '行业研究', '产业链 · 护城河'],
+      ['reading-list', '经典书单', '五层书单'],
+      ['behavioral-finance', '行为金融', '认知偏差'],
+      ['bonds-rates', '债券利率', '收益率曲线'],
+      ['forex-trading', '外汇实战', '利差 · 央行'],
+      ['career', '职业发展', '职业路径'],
+      ['options-strategies', '期权策略', '组合 · 波动率'],
+    ] },
+  ]
+  const en = [
+    { name: '1 · Foundation', hint: 'Must-read', items: [
+      ['getting-started', 'Getting Started', 'Terms · Terminals'],
+      ['spot', 'Spot', 'Spot trading'],
+      ['stocks', 'Stocks', 'Market rules'],
+    ] },
+    { name: '2 · Mechanics', hint: 'How it works', items: [
+      ['futures', 'Futures', 'Leverage · Margin'],
+      ['crypto-perpetuals', 'Perpetuals', 'Funding · Liquidation'],
+      ['markets-instruments', 'Markets', 'Instrument map'],
+      ['technical-analysis', 'Tech Analysis', 'Candles · Indicators'],
+      ['trading-system', 'System', 'Rules · Risk'],
+    ] },
+    { name: '3 · Practice', hint: 'Make it actionable', items: [
+      ['pitfalls', 'Pitfalls', 'Scams · Losses'],
+      ['trading-practice', 'Practice', 'Playbooks'],
+      ['market-ecosystem', 'Ecosystem', 'Counterparties'],
+      ['financial-history', 'History', 'Bubbles'],
+      ['wealth-allocation', 'Allocation', 'Portfolios'],
+      ['quant-practice', 'Quant', 'Backtests · Bots'],
+      ['data-interpretation', 'Data', 'Macro · Earnings'],
+    ] },
+    { name: '4 · Deep Dives', hint: 'Specialize', items: [
+      ['global-markets', 'Global', 'Cross-border'],
+      ['regulation-compliance', 'Regulation', 'Licenses'],
+      ['tools-platforms', 'Tools', 'Platforms'],
+      ['financial-statements', 'Statements', 'Fraud · FCF'],
+      ['industry-research', 'Industry', 'Moats'],
+      ['reading-list', 'Books', 'Five layers'],
+      ['behavioral-finance', 'Behavior', 'Biases'],
+      ['bonds-rates', 'Bonds', 'Yield curve'],
+      ['forex-trading', 'Forex', 'Carry · CBs'],
+      ['career', 'Career', 'Paths'],
+      ['options-strategies', 'Options', 'Structures'],
+    ] },
+  ]
+  const src = isZH.value ? zh : en
+  const prefix = isZH.value ? '' : 'zh/'
+  return src.map((s) => ({
+    ...s,
+    items: s.items.map(([id, label, desc]) => ({ id, label, desc, dir: `${prefix}${id}/` })),
+  }))
+})
 
-const roleHint = { 地基: '新手必读', 进阶: '理解机制', 实战: '把知识变操作', 深潜: '按方向专精' }
 function isActive(id) {
-  const r = roles.find((r) => r.id === active.value)
+  const r = roles.value.find((x) => x.id === active.value)
   return active.value === 'all' || (r && r.chapters.includes(id))
 }
 function stageActive(stage) {
@@ -94,7 +129,7 @@ function stageActive(stage) {
       <div v-for="s in stages" :key="s.name" class="lp-stage" :class="{ dim: !stageActive(s) }">
         <div class="lp-stage-head">
           <span class="lp-stage-name">{{ s.name }}</span>
-          <span class="lp-stage-hint">{{ roleHint[s.name.slice(3)] || '' }}</span>
+          <span class="lp-stage-hint">{{ s.hint }}</span>
         </div>
         <a
           v-for="i in s.items"
@@ -107,10 +142,13 @@ function stageActive(stage) {
           <span class="lp-chip-desc">{{ i.desc }}</span>
         </a>
       </div>
-      <div class="lp-arrow" aria-hidden="true">→</div>
     </div>
 
-    <p class="lp-note">点击章节卡片直达；选择上方角色，只保留你的路径，其余变暗。</p>
+    <p class="lp-note">
+      {{ isZH
+        ? '点击章节卡片直达；选择上方角色，只保留你的路径，其余变暗。'
+        : 'Click a chapter card to jump; pick a role above to keep only your path.' }}
+    </p>
   </div>
 </template>
 
@@ -188,11 +226,6 @@ function stageActive(stage) {
 }
 .lp-chip-label { font-size: 13.5px; font-weight: 600; color: var(--vp-c-text-1); }
 .lp-chip-desc { font-size: 11.5px; color: var(--vp-c-text-3); margin-top: 2px; }
-.lp-arrow {
-  align-self: center;
-  font-size: 20px;
-  color: var(--vp-c-text-3);
-}
 .lp-note {
   margin: 12px 0 0;
   font-size: 12px;
@@ -201,6 +234,5 @@ function stageActive(stage) {
 }
 @media (max-width: 640px) {
   .lp-stage { flex: 1 1 100%; }
-  .lp-arrow { display: none; }
 }
 </style>

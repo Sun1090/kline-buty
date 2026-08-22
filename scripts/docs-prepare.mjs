@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
- * 文档站准备：把 docs/knowledge 交易知识库（唯一数据源）的 27 个篇章目录同步到
- * docs-site/docs/（VitePress srcDir 根，路由 /01-入门基础/ 等；.gitignore 忽略拷贝，避免重复入库）。
- * - 篇章 README.md 在拷贝中改名为 index.md → 静态托管下 /01-入门基础/ 直接命中 index.html；
- * - 知识库根 README.md（全库索引）由 docs-site/docs/index.md 落地页承接其快速导航/路线图内容。
- * docs:dev / docs:build 都会先执行本脚本，保证拷贝始终最新。
+ * 文档站准备：同步双语知识库源到 VitePress srcDir。
+ * 源（docs/knowledge/，唯一数据源）：
+ * - en/<chapter-slug>/…  → docs-site/docs/<chapter-slug>/…（根 locale = English）
+ * - zh/<chapter-slug>/…  → docs-site/docs/zh/<chapter-slug>/…（/zh/ locale = 简体中文）
+ * 章节 README.md 拷贝中改名为 index.md，静态托管下 /<chapter>/ 直接命中。
+ * 落地页 docs-site/docs/index.md（en）与 docs-site/docs/zh/index.md（zh）为手写源，不入同步清理范围。
+ * docs:dev / docs:build 都会先执行本脚本。
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -20,26 +22,38 @@ if (!existsSync(SRC)) {
 }
 
 mkdirSync(DEST, { recursive: true })
+mkdirSync(join(DEST, 'zh'), { recursive: true })
 
-// 清理旧拷贝（篇章目录 + 早期版本的 knowledge/ 挂载点），避免残留污染构建
+// 手写落地页与静态资源，不做同步清理
+const PRESERVE = new Set(['index.md', 'zh', 'public', '.vitepress'])
+
+// 清理旧拷贝：顶层（en 产物 + 历史数字目录）与 zh/ 下的章节目录
 for (const entry of readdirSync(DEST)) {
-  if (/^\d{2}-/.test(entry) || entry === 'knowledge') {
-    rmSync(join(DEST, entry), { recursive: true, force: true })
+  if (PRESERVE.has(entry)) continue
+  rmSync(join(DEST, entry), { recursive: true, force: true })
+}
+for (const entry of readdirSync(join(DEST, 'zh'))) {
+  if (entry === 'index.md') continue
+  rmSync(join(DEST, 'zh', entry), { recursive: true, force: true })
+}
+
+/** 同步一个语言树：src 子目录（en/zh）→ dest 前缀，返回章节数 */
+function syncLocale(sub) {
+  const srcLocale = join(SRC, sub)
+  if (!existsSync(srcLocale)) return 0
+  const destLocale = sub === 'en' ? DEST : join(DEST, sub)
+  const chapters = readdirSync(srcLocale).filter(
+    (d) => statSync(join(srcLocale, d)).isDirectory() && !d.startsWith('_') && d !== 'scripts',
+  )
+  for (const ch of chapters) {
+    const dest = join(destLocale, ch)
+    cpSync(join(srcLocale, ch), dest, { recursive: true })
+    const readme = join(dest, 'README.md')
+    if (existsSync(readme)) renameSync(readme, join(dest, 'index.md'))
   }
+  return chapters.length
 }
 
-// 仅同步篇章目录（01-… ~ 27-…），跳过根 README.md 与 scripts/
-const chapters = readdirSync(SRC)
-  .filter((d) => /^\d{2}-/.test(d) && statSync(join(SRC, d)).isDirectory())
-  .sort()
-
-let copied = 0
-for (const ch of chapters) {
-  const dest = join(DEST, ch)
-  cpSync(join(SRC, ch), dest, { recursive: true })
-  // 篇章 README.md → index.md：保证 /章节/ 路由在任意静态托管可直接命中
-  const readme = join(dest, 'README.md')
-  if (existsSync(readme)) renameSync(readme, join(dest, 'index.md'))
-  copied++
-}
-console.log(`[docs] 已同步 ${copied} 个篇章 -> ${DEST}`)
+const en = syncLocale('en')
+const zh = syncLocale('zh')
+console.log(`[docs] 已同步 en/${en} 章 + zh/${zh} 章 -> ${DEST}`)

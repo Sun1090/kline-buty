@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="360" fill="url(#bgm)" rx="16"/>
+  <text x="380" y="38" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">做多 vs 做空 —— 一笔交易的完整回路</text>
+
+  <!-- Long path -->
+  <text x="120" y="80" fill="#7ce0d0" font-size="15" font-weight="700" text-anchor="middle">做多（Buy Long）</text>
+  <rect x="30" y="100" width="180" height="52" rx="10" fill="#11352c" stroke="#26a69a" stroke-width="2"/>
+  <text x="120" y="124" fill="#a7efe5" font-size="14" text-anchor="middle">① 100 元买入 BTC</text>
+  <text x="120" y="142" fill="#8fa3c8" font-size="12" text-anchor="middle">(1 枚)</text>
+  <path d="M 210 126 L 285 126" stroke="#26a69a" stroke-width="2.5" fill="none" marker-end="url(#arrG)"/>
+  <rect x="290" y="100" width="180" height="52" rx="10" fill="#11352c" stroke="#26a69a" stroke-width="2"/>
+  <text x="380" y="124" fill="#a7efe5" font-size="14" text-anchor="middle">② 涨到 110 元卖出</text>
+  <text x="380" y="142" fill="#8fa3c8" font-size="12" text-anchor="middle">盈利 (110−100)×1 = 10 元</text>
+  <text x="120" y="185" fill="#6fc5b8" font-size="13" text-anchor="middle">看涨：先买后卖，赚上涨的钱</text>
+
+  <!-- Short path -->
+  <text x="590" y="80" fill="#ef7a7a" font-size="15" font-weight="700" text-anchor="middle">做空（Short）</text>
+  <rect x="500" y="195" width="230" height="52" rx="10" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="615" y="219" fill="#ffd3d3" font-size="14" text-anchor="middle">① 借入 1 枚 BTC 按 100 元卖出</text>
+  <text x="615" y="237" fill="#8fa3c8" font-size="12" text-anchor="middle">先卖，手头收到 100 元现金</text>
+  <path d="M 615 195 L 615 152" stroke="#ef5350" stroke-width="2.5" fill="none" marker-end="url(#arrR)"/>
+  <rect x="500" y="100" width="230" height="52" rx="10" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="615" y="124" fill="#ffd3d3" font-size="14" text-anchor="middle">② 跌到 90 元买回归还</text>
+  <text x="615" y="142" fill="#8fa3c8" font-size="12" text-anchor="middle">盈利 (100−90)×1 = 10 元</text>
+
+  <!-- Bottom note -->
+  <text x="380" y="300" fill="#8fa3c8" font-size="13" text-anchor="middle">多空是纯博弈：有人赚就有人亏。只有期货/合约/融券支持做空，A 股普通现货做空受限。</text>
+  <text x="380" y="326" fill="#5f6f95" font-size="12" text-anchor="middle">※ 做空需借入资产（存在借券费率），且无限上涨时亏损无上限——做多的最大损失只是本金。</text>
+
+  <defs>
+    <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#26a69a"/></marker>
+    <marker id="arrR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ef5350"/></marker>
+  </defs>
+</svg>

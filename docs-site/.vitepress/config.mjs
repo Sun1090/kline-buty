@@ -6,23 +6,53 @@ import { fileURLToPath } from 'node:url'
 /** 自定义 slugify：移除「」、空格→连字符、小写，保持中文不变 */
 function slugify(str) {
   return str
-    .replace(/[「」『』【】]/g, '')  // 移除中文引号/括号
-    .replace(/[·]/g, '-')             // 中点 → 连字符
-    .replace(/\s+/g, '-')             // 空白 → 连字符
-    .replace(/[^a-zA-Z0-9一-鿿㐀-䶿_-]/g, '') // 只留字母数字中文下划线连字符
-    .replace(/-+/g, '-')              // 合并连续连字符
-    .replace(/^-|-$/g, '')            // 去掉首尾连字符
+    .replace(/[「」『』【】]/g, '')
+    .replace(/[·]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9一-鿿㐀-䶿_-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
     .toLowerCase()
 }
 
 const SITE_ROOT = fileURLToPath(new URL('..', import.meta.url)) // docs-site/
-// 篇章目录直接位于 srcDir（docs-site/docs/）根，由 scripts/docs-prepare.mjs 同步
 const DOCS = join(SITE_ROOT, 'docs')
+const DOCS_ZH = join(DOCS, 'zh')
 
 // Pages 部署在 /kline-buty/knowledge/，Vercel / Docker / 本地默认 /knowledge/
 const BASE = process.env.DOCS_BASE_PATH || '/knowledge/'
 
-/** 读取 md 首个 # 标题作为文档名；读不到则退回文件名 */
+/** 章节顺序的唯一定义（无数字前缀，顺序由本数组决定） */
+const CHAPTER_ORDER = [
+  'getting-started',
+  'spot',
+  'futures',
+  'stocks',
+  'crypto-perpetuals',
+  'technical-analysis',
+  'trading-system',
+  'pitfalls',
+  'markets-instruments',
+  'system-integration',
+  'trading-practice',
+  'market-ecosystem',
+  'financial-history',
+  'wealth-allocation',
+  'quant-practice',
+  'regulation-compliance',
+  'tools-platforms',
+  'financial-statements',
+  'industry-research',
+  'reading-list',
+  'behavioral-finance',
+  'bonds-rates',
+  'forex-trading',
+  'career',
+  'global-markets',
+  'data-interpretation',
+  'options-strategies',
+]
+
 function firstHeading(file) {
   try {
     const m = readFileSync(file, 'utf8').match(/^#\s+(.+)$/m)
@@ -32,7 +62,6 @@ function firstHeading(file) {
   }
 }
 
-/** 读取正文首个 > 引用行作为简介；无则返回 null */
 function firstQuote(file) {
   try {
     const m = readFileSync(file, 'utf8').match(/^>\s*(.+)$/m)
@@ -50,127 +79,160 @@ function docNo(title) {
   return m ? m[1] : null
 }
 
+/** 按固定顺序列出某语言树下实际存在的章节目录 */
+function chaptersUnder(dir) {
+  if (!existsSync(dir)) return []
+  const present = new Set(
+    readdirSync(dir).filter((d) => statSync(join(dir, d)).isDirectory()),
+  )
+  return CHAPTER_ORDER.filter((c) => present.has(c))
+}
+
 /**
  * 章节文档索引（供 DocCards 组件渲染卡片导航）：
- * { [chapterDir]: [{ no, title, desc, link }] }
+ * en: { [chapter]: [{no,title,desc,link}] }（link 前缀 /）
+ * zh: 键为 `zh/<chapter>`（link 前缀 /zh/）
  */
 function docIndex() {
-  return chapters().reduce((acc, folder) => {
-    const dir = join(DOCS, folder)
-    acc[folder] = readdirSync(dir)
-      .filter((f) => f.endsWith('.md') && f !== 'README.md' && f !== 'index.md')
-      .sort()
-      .map((f) => {
-        const title = firstHeading(join(dir, f)) ?? f.replace(/\.md$/, '')
-        return {
-          no: docNo(title),
-          title,
-          desc: firstQuote(join(dir, f)),
-          link: `/${folder}/${f.replace(/\.md$/, '')}`,
-        }
-      })
-    return acc
-  }, {})
+  const build = (dir, prefix, keyPrefix = '') =>
+    chaptersUnder(dir).reduce((acc, folder) => {
+      const chDir = join(dir, folder)
+      acc[`${keyPrefix}${folder}`] = readdirSync(chDir)
+        .filter((f) => f.endsWith('.md') && f !== 'index.md')
+        .sort()
+        .map((f) => {
+          const title = firstHeading(join(chDir, f)) ?? f.replace(/\.md$/, '')
+          return {
+            no: docNo(title),
+            title,
+            desc: firstQuote(join(chDir, f)),
+            link: `${prefix}/${folder}/${f.replace(/\.md$/, '')}`,
+          }
+        })
+      return acc
+    }, {})
+  return { ...build(DOCS, ''), ...build(DOCS_ZH, '/zh', 'zh/') }
 }
 
-/** 按数字前缀排序的篇章目录（27 章） */
-function chapters() {
-  if (!existsSync(DOCS)) return []
-  return readdirSync(DOCS)
-    .filter((d) => /^\d{2}-/.test(d) && statSync(join(DOCS, d)).isDirectory())
-    .sort()
-}
-
-/** 动态生成侧边栏：每章 = 章节概览 + 各正文文档，避免重复入口 */
-function sidebarKnowledge() {
-  return chapters().map((folder) => {
-    const dir = join(DOCS, folder)
-    const files = readdirSync(dir)
-      .filter((f) => f.endsWith('.md') && f !== 'README.md' && f !== 'index.md')
+/** 动态生成侧边栏：每章 = 章节概览 + 各正文文档 */
+function sidebarFor(dir, prefix, overviewText) {
+  return chaptersUnder(dir).map((folder) => {
+    const chDir = join(dir, folder)
+    const files = readdirSync(chDir)
+      .filter((f) => f.endsWith('.md') && f !== 'index.md')
       .sort()
     const items = [
-      { text: '章节概览', link: `/${folder}/` },
+      { text: overviewText, link: `${prefix}/${folder}/` },
       ...files.map((f) => ({
-        text: firstHeading(join(dir, f)) ?? f.replace(/\.md$/, ''),
-        link: `/${folder}/${f.replace(/\.md$/, '')}`,
+        text: firstHeading(join(chDir, f)) ?? f.replace(/\.md$/, ''),
+        link: `${prefix}/${folder}/${f.replace(/\.md$/, '')}`,
       })),
     ]
     return {
-      text: firstHeading(join(dir, 'README.md')) ?? folder,
+      text: firstHeading(join(chDir, 'index.md')) ?? folder,
       collapsed: false,
       items,
     }
   })
 }
 
+const enSidebar = [
+  {
+    text: 'Trading Knowledge Base',
+    items: [
+      { text: '🏠 Home', link: '/' },
+      { text: '🧭 Role-based Paths', link: '/#role-based-paths' },
+      { text: '🗺️ Learning Roadmap', link: '/#learning-roadmap' },
+    ],
+  },
+  ...sidebarFor(DOCS, '', 'Chapter Overview'),
+]
+
+const zhSidebar = [
+  {
+    text: '交易知识库 · 从入门到入土',
+    items: [
+      { text: '🏠 知识库首页', link: '/zh/' },
+      { text: '🧭 快速导航', link: '/zh/#按读者角色快速导航' },
+      { text: '🗺️ 学习路线图', link: '/zh/#学习路线图' },
+    ],
+  },
+  ...sidebarFor(DOCS_ZH, '/zh', '章节概览'),
+]
+
 export default defineConfig({
-  srcDir: 'docs', // 源码目录：docs-site/docs/（含落地页 index.md 与同步来的篇章目录）
-  lang: 'zh-CN',
-  title: '交易知识库',
-  description: 'Kline Buty 交易知识库：现货/期货/股票/加密/外汇/期权/宏观/量化/监管——从入门到入土',
+  srcDir: 'docs',
+  title: 'Trading Knowledge Base',
+  description:
+    'Spot, futures, stocks, crypto perpetuals, options, forex, macro, quant and regulation — a systematic trading knowledge base by Kline Buty.',
   base: BASE,
   lastUpdated: true,
   cleanUrls: false,
   ignoreDeadLinks: true,
-  // 自定义锚点生成，移除非 ASCII 符号确保 URL 片段兼容
   markdown: {
-    anchor: {
-      slugify,
-    },
+    anchor: { slugify },
   },
   head: [
     ['meta', { name: 'theme-color', content: '#2962ff' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}icon.svg` }],
   ],
+  locales: {
+    root: { label: 'English', lang: 'en-US' },
+    zh: {
+      label: '简体中文',
+      lang: 'zh-CN',
+      title: '交易知识库',
+      description:
+        'Kline Buty 交易知识库：现货/期货/股票/加密/外汇/期权/宏观/量化/监管——从入门到入土',
+      themeConfig: {
+        nav: [
+          { text: '知识库首页', link: '/zh/' },
+          { text: '行情应用', link: 'https://kline-buty.vercel.app/' },
+        ],
+        outline: { level: [2, 3], label: '本页目录' },
+        docFooter: { prev: '上一篇', next: '下一篇' },
+        lastUpdated: { text: '最后更新', formatOptions: { dateStyle: 'short', timeStyle: 'short' } },
+        footer: {
+          message: '仅供学习与研究，不构成任何投资建议。市场有风险，投资需谨慎。',
+          copyright: 'Kline Buty · 交易知识库',
+        },
+      },
+    },
+  },
   themeConfig: {
     logo: `${BASE}icon.svg`,
     nav: [
-      { text: '知识库首页', link: '/' },
-      { text: '行情应用', link: 'https://kline-buty.vercel.app/' },
+      { text: 'Home', link: '/' },
+      { text: 'Live Charts', link: 'https://kline-buty.vercel.app/' },
     ],
     sidebar: {
-      '/': [
-        {
-          text: '交易知识库 · 从入门到入土',
-          items: [
-            { text: '🏠 知识库首页', link: '/' },
-            { text: '🧭 快速导航', link: '/#按读者角色快速导航' },
-            { text: '🗺️ 学习路线图', link: '/#学习路线图' },
-          ],
-        },
-        ...sidebarKnowledge(),
-      ],
+      '/': enSidebar,
+      '/zh/': zhSidebar,
     },
-    outline: { level: [2, 3], label: '本页目录' },
-    docFooter: { prev: '上一篇', next: '下一篇' },
-    lastUpdated: { text: '最后更新', formatOptions: { dateStyle: 'short', timeStyle: 'short' } },
+    outline: { level: [2, 3], label: 'On this page' },
+    docFooter: { prev: 'Previous', next: 'Next' },
+    lastUpdated: { text: 'Last updated', formatOptions: { dateStyle: 'short', timeStyle: 'short' } },
     search: {
       provider: 'local',
       options: {
         translations: {
-          button: { buttonText: '搜索文档', buttonAriaLabel: '搜索文档' },
+          button: { buttonText: 'Search', buttonAriaLabel: 'Search' },
           modal: {
-            noResultsText: '未找到相关结果',
-            resetButtonTitle: '清除查询',
-            footer: { selectText: '选择', navigateText: '切换', closeText: '关闭' },
+            noResultsText: 'No results',
+            resetButtonTitle: 'Reset query',
+            footer: { selectText: 'Select', navigateText: 'Switch', closeText: 'Close' },
           },
         },
       },
     },
     footer: {
-      message: '仅供学习与研究，不构成任何投资建议。市场有风险，投资需谨慎。',
-      copyright: 'Kline Buty · 交易知识库',
+      message: 'For study and research only — not investment advice. Markets are risky.',
+      copyright: 'Kline Buty · Trading Knowledge Base',
     },
   },
   // 每页注入章节文档索引，供 DocCards 组件渲染章节卡片导航
   transformHead() {
-    const idx = JSON.stringify(docIndex()).replace(/</g, '\\u003c') // 防注入
-    return [
-      [
-        'script',
-        { id: 'kb-doc-index-data', type: 'application/json' },
-        idx,
-      ],
-    ]
+    const idx = JSON.stringify(docIndex()).replace(/</g, '\\u003c')
+    return [['script', { id: 'kb-doc-index-data', type: 'application/json' }, idx]]
   },
 })
