@@ -108,7 +108,7 @@ description: "Swing and trend trading in practice — from trend confirmation an
 - **Tool**: use ATR as an aid — stop distance = latest HL low − 0.5~1 × ATR, balancing noise against protection.
 - **Discipline**: don't pick an arbitrary fixed percentage for the trailing stop; anchor it to structure levels so normal pullbacks don't shake you out.
 
-### 4.2 Scaled **<mark>take-profit</mark>**
+### 4.2 Scaled take-profit
 
 | Batch | Location | Action |
 |---|---|---|

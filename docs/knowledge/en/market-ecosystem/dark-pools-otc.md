@@ -109,7 +109,7 @@ Retail A-share traders see auction matching all day; but **after the close (15:0
   - Premiums are rare — appearing only in desperate accumulation (e.g., control contests).
 - The discount is "the seller's liquidity tax" — identical to retail undercutting to sell fast, scaled up ten-thousandfold.
 
-### The Block-Buyer Unlock **Arbitrage** Ecosystem
+### The Block-Buyer Unlock Arbitrage Ecosystem
 
 ```text
 Major shareholder/institution (wants to reduce)

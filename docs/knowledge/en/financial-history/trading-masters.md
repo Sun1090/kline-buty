@@ -48,7 +48,7 @@ Turn "sitting tight" into discipline rather than talent: **protect trend trades 
 
 ---
 
-## II. Buffett and Munger: Believers in **Compounding**
+## II. Buffett and Munger: Believers in Compounding
 
 ### 2.1 Background
 

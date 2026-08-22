@@ -18,7 +18,7 @@ description: "A dictionary of trading terms — leverage, margin, liquidation, o
 - **Plain explanation**: You expect prices to rise. Buy first, sell later, and pocket the difference.
 - **One-line example**: You buy BTC at 100 and sell at 110, earning 10 — that is going long.
 
-### Short / Going Short <KbBadge t="Needs **<mark>leverage</mark>** / margin lending" c="c-amber" />
+### Short / Going Short <KbBadge t="Needs leverage / margin lending" c="c-amber" />
 
 - **Plain explanation**: You expect prices to fall. Borrow the asset and sell first, buy it back cheaper later to return it, and keep the difference.
 - **One-line example**: You borrow BTC and sell at 100, buy it back at 90 to return it, earning 10 — that is going short.
@@ -31,7 +31,7 @@ Only futures, perpetuals, margin lending and similar markets support shorting; p
 
 ---
 
-## 2. Money Terms: Leverage, **<mark>Margin</mark>**, **<mark>Liquidation</mark>**
+## 2. Money Terms: Leverage, Margin, Liquidation
 
 ### Leverage
 
@@ -40,12 +40,12 @@ Only futures, perpetuals, margin lending and similar markets support shorting; p
 - **Plain explanation**: Borrowed money multiplies your capital, letting a small stake control a much larger **<mark>position</mark>**. 10x leverage means you put up only 1/10 of the contract value.
 - **One-line example**: With 1,000 of capital and 10x leverage you control a 10,000 position; a 1% price rise earns 10% on your capital.
 
-### **<mark>Margin</mark>**
+### Margin
 
 - **Plain explanation**: The "deposit" collateral you post to the exchange when opening a leveraged position, used to absorb losses.
 - **One-line example**: A 10,000 contract at 10x leverage requires 1,000 of margin to open.
 
-### Liquidation / **<mark>Forced Liquidation</mark>**
+### Liquidation / Forced Liquidation
 
 - **Plain explanation**: The price moves against you, losses eat most of your margin, and the exchange **force-closes your position** to stop losses from growing.
 - **One-line example**: Long at 10x leverage; a 10% drop wipes your margin to **<mark>zero</mark>** and the system liquidates the position — **your capital is gone**.
@@ -61,7 +61,7 @@ Only futures, perpetuals, margin lending and similar markets support shorting; p
 
 ---
 
-## 3. Market Structure: **<mark>Liquidity</mark>**, **<mark>Spread</mark>**, **<mark>Slippage</mark>**
+## 3. Market Structure: Liquidity, Spread, Slippage
 
 ### Liquidity
 
@@ -108,7 +108,7 @@ That block of "bid 1 / ask 1, bid 2 / ask 2…" numbers on the side or bottom of
 
 ---
 
-## 4. Orders: Market Orders, **<mark>Limit Orders</mark>**, **<mark>Stop-Loss</mark>** and Take-Profit
+## 4. Orders: Market Orders, Limit Orders, Stop-Loss and Take-Profit
 
 ### Market Order
 
@@ -120,7 +120,7 @@ That block of "bid 1 / ask 1, bid 2 / ask 2…" numbers on the side or bottom of
 - **Plain explanation**: Rest an order at a chosen price; it fills only if the price reaches it. **Guarantees price, not execution.**
 - **One-line example**: You rest a buy at 95 for BTC; if price never drops to 95 it never fills — the order can just hang there.
 
-### Stop-Loss and **<mark>Take-Profit</mark>** Orders
+### Stop-Loss and Take-Profit Orders
 
 - **Plain explanation**: Pre-set exit prices; when triggered the position closes automatically. The stop-loss caps your maximum loss; the take-profit locks in gains.
 - **One-line example**: Long at 100 with a stop at 95 and a target at 115 — worst case -5%, best case +15%, and the system handles the rest.

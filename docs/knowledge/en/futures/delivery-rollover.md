@@ -118,7 +118,7 @@ When the new contract's volume exceeds the old one **for several consecutive day
 
 ---
 
-## 4. **<mark>Basis</mark>** and Gaps at the Roll
+## 4. Basis and Gaps at the Roll
 
 ### 4.1 Basis
 

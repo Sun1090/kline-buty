@@ -76,7 +76,7 @@ The spread is the market maker's gross margin
 
 ---
 
-## Market Makers' Effect on Price: **Volatility** Absorber vs Amplifier
+## Market Makers' Effect on Price: Volatility Absorber vs Amplifier
 
 ### Normal Markets: Volatility Absorber
 

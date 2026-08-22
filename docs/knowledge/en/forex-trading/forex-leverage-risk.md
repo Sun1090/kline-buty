@@ -9,7 +9,7 @@ description: "The core of forex margin trading is a lever: it lets $1,000 contro
 
 ---
 
-## 1. The Math of Leverage: **Margin** and Equity Volatility
+## 1. The Math of Leverage: Margin and Equity Volatility
 
 ### Margin Formula
 
