@@ -1,7 +1,7 @@
 name: app-android-apk
 
 # main 分支：同一棵树内先构建 Web（根目录 dist/），再经 app-shell 打 Android debug APK。
-# 不依赖任何外部仓库；产物为可侧载 debug APK，上架签名包后续配置。
+# 使用固定 debug 签名，保证升级安装不因 CI 临时签名冲突而失败；secret 未配置时首次生成并在 Summary 输出迁移值。
 on:
   workflow_dispatch:
   push:
@@ -58,11 +58,50 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Build debug APK
-        working-directory: app-shell/android
+      - name: Prepare pinned debug keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEYSTORE_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_KEY_PASSWORD }}
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          set -euo pipefail
+          mkdir -p app-shell/android/keystore
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > app-shell/android/keystore/debug.keystore
+            echo "Using pinned debug keystore from repository secret."
+            exit 0
+          fi
+
+          # 首次迁移：生成固定 keystore，后续把 Base64 存入 ANDROID_DEBUG_KEYSTORE_BASE64。
+          if command -v keytool >/dev/null 2>&1; then
+            keytool -genkeypair -v \
+              -keystore app-shell/android/keystore/debug.keystore \
+              -storetype PKCS12 \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10950 \
+              -storepass android -keypass android \
+              -dname 'CN=Android Debug,O=Android,C=US'
+          else
+            openssl req -x509 -newkey rsa:2048 -sha256 -days 10950 -nodes \
+              -subj '/C=US/O=Android/CN=Android Debug' \
+              -keyout /tmp/debug.key -out /tmp/debug.crt >/dev/null 2>&1
+            openssl pkcs12 -export \
+              -in /tmp/debug.crt -inkey /tmp/debug.key \
+              -out app-shell/android/keystore/debug.keystore \
+              -name androiddebugkey -passout pass:android
+          fi
+
+          base64 -w 0 app-shell/android/keystore/debug.keystore > /tmp/debug.keystore.base64
+          {
+            echo '首次迁移成功。请把以下内容完整保存到仓库 secret ANDROID_DEBUG_KEYSTORE_BASE64：'
+            cat /tmp/debug.keystore.base64
+            echo ''
+            echo '其他 secret：ANDROID_DEBUG_KEYSTORE_PASSWORD=android'
+            echo 'ANDROID_DEBUG_KEYSTORE_ALIAS=androiddebugkey'
+            echo 'ANDROID_DEBUG_KEYSTORE_KEY_PASSWORD=android'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Generated pinned debug keystore; saved Base64 to step summary."
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

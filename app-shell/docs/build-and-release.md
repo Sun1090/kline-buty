@@ -13,20 +13,31 @@ This machine has **no** Android SDK / Xcode — all native builds run on GitHub 
 | app-android-apk | `.github/workflows/android-app.yml` | push to `main` (paths-limited: `app-shell/**`, `src/**`, `package*.json`, the workflow itself) / manual | `kline-buty-debug-apk` (sideloadable debug APK) | 14 days |
 | app-ios-simulator-build | `.github/workflows/ios-app.yml` | push to `main` (paths-limited) / manual | `kline-buty-ios-simulator` (unsigned simulator .app.zip) | 14 days |
 
-Both run the same chain: checkout `app` → root `npm ci` → `typecheck + lint + test + build` (dist/) → `app-shell`: `npm ci + web:sync + cap sync` → native build. **Every run is a full rebuild — stale-web-in-APK cannot happen in CI** (local packaging lacks that guarantee; see the trio in operations.md).
+Both run the same chain: checkout `main` → root `npm ci` → `typecheck + lint + test + build` (dist/) → `app-shell`: `npm ci + web:sync + cap sync` → native build. **Every run is a full rebuild — stale-web-in-APK cannot happen in CI** (local packaging lacks that guarantee; see the trio in operations.md).
 
 ## 2. Fetching & installing the APK (Android)
 
 1. GitHub repo → Actions → latest `app-android-apk` → Artifacts → download `kline-buty-debug-apk` (zip; extract `app-debug.apk`);
 2. Transfer to the phone (file transfer app / cloud drive / USB);
-3. **Uninstall the previous version before installing** (see below);
-4. First install requires allowing "install unknown apps".
+3. First install requires allowing "install unknown apps".
+4. After the one-time migration below, future APKs use the same pinned debug signature and can upgrade-install directly.
 
-### Why uninstall first: the debug-signature issue (pitfall 4)
+### Pinned debug signature (pitfall 4, fixed in M1)
 
-`build.gradle` has no signingConfigs, so debug builds sign with the build machine's ephemeral `~/.android/debug.keystore` — **every CI run produces a different signature**, and Android refuses upgrade-installs across signatures. Uninstalling wipes localStorage (watchlist, drawings, alerts, language preferences).
+`build.gradle` now wires the debug build to `app-shell/android/keystore/debug.keystore`. CI injects that file from repository secrets, so every run signs with the same key and upgrade installs retain localStorage (watchlist, drawings, alerts, language preferences).
 
-**M1 fix** (on the todo): generate a keystore once in CI via keytool → GitHub Secrets (`KEYSTORE_BASE64` + passwords) → decode in the workflow → signingConfig in `build.gradle`. Upgrade installs and data retention return to normal.
+Required repository secrets:
+
+| Secret | Value |
+|---|---|
+| `ANDROID_DEBUG_KEYSTORE_BASE64` | Base64 of the fixed PKCS12 keystore |
+| `ANDROID_DEBUG_KEYSTORE_PASSWORD` | `android` |
+| `ANDROID_DEBUG_KEYSTORE_ALIAS` | `androiddebugkey` |
+| `ANDROID_DEBUG_KEYSTORE_KEY_PASSWORD` | `android` |
+
+If the secret is absent, the Android workflow generates a new pinned key once and prints the complete Base64 value in that job's **step summary**. Save it to `ANDROID_DEBUG_KEYSTORE_BASE64` before the next run; from then on every APK is upgrade-compatible.
+
+> Migration from an old ephemeral-CI APK still needs one uninstall first: Android cannot replace an app whose signature differs. That uninstall is one-time; later pinned builds can upgrade in place.
 
 ## 3. iOS simulator build (current verification path)
 
@@ -40,9 +51,9 @@ iOS currently produces an **unsigned, simulator-only** .app:
 
 ## 4. Release roadmap
 
-### M1: pinned signing
+### M1: release signing
 
-- Android: generate keystore (one-time keytool in CI) → Secrets → decode into the workflow → `signingConfig`; wire both debug and release.
+- Android debug signing is now pinned; release/store signing remains a separate M3 task.
 - iOS: Apple Developer ($99/yr) → certs + provisioning into Secrets → switch the workflow to `xcodebuild archive + export`, ship to TestFlight.
 
 ### M3: store launch checklist (overseas)
