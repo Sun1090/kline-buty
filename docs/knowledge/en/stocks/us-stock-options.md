@@ -201,7 +201,7 @@ US brokers approve options in **tiers**; the naming varies slightly by broker (s
   - Spending over 183 days in the US / becoming a US tax resident triggers entirely different rules
 - ⚠️ **Cross-border tax is extremely complex; this is rule-of-thumb only — defer entirely to professional tax advice and the latest IRS rules**
 
-### **Leverage** and **Blow-Ups**: A Naked Short Force-Liquidated
+### Leverage and Blow-Ups: A Naked Short Force-Liquidated
 
 ```text
 Account: USD 20,000

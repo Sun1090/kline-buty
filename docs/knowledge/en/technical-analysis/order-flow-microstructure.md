@@ -51,7 +51,7 @@ Every trade has an aggressive side and a passive side:
 
 Kline Buty's "Depth" panel shows Level 2-type data: **bid bars on the left, ask bars on the right; the longer the bar, the thicker the posting at that price**.
 
-### 2.2 Book Thickness, Depth, and the **Spread**
+### 2.2 Book Thickness, Depth, and the Spread
 
 - **<mark>Book thickness</mark>**: total posted volume near the best bid/ask. Thick → hard to punch through in a short time; price "stands firm";
 - **Depth**: cumulative posted volume away from the current price (e.g., ±1%–3%). Steep segments of the depth chart often correspond to high-volume nodes;

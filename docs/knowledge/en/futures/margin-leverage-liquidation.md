@@ -11,16 +11,16 @@ description: "Margin, leverage, and forced liquidation in futures explained — 
 
 ---
 
-## 1. The **<mark>Margin</mark>** System: The Foundation of Futures
+## 1. The Margin System: The Foundation of Futures
 
 Margin is the **collateral frozen in your account** to guarantee performance in futures trading. It is not "a down payment"; it is a **performance bond** — you do not pay the full value, you only prove you can perform.
 
-### 1.1 **<mark>Initial Margin</mark>**
+### 1.1 Initial Margin
 
 - The minimum funds posted at opening, typically **5%–15%** of contract value (varies by product; see the product encyclopedia).
 - The **exchange** sets the baseline rate; the **futures firm** adds a buffer on top (usually another 2–5 percentage points); the firm's published rate prevails in practice.
 
-### 1.2 **<mark>Maintenance Margin</mark>**
+### 1.2 Maintenance Margin
 
 - The minimum equity level that must be maintained while holding, typically **75%–85%** of initial margin (for many domestic products, maintenance margin ≈ the exchange baseline).
 - As long as equity stays **above** maintenance margin you can keep the position; once it **falls below**, the margin-call or forced-liquidation process begins.
@@ -36,7 +36,7 @@ Posted at opening     Must be kept while holding
 
 ---
 
-## 2. **<mark>Leverage</mark>** Multiple: 10% Margin = 10x Leverage
+## 2. Leverage Multiple: 10% Margin = 10x Leverage
 
 <LeverageCalc />
 
@@ -63,7 +63,7 @@ Leverage multiple = Contract value ÷ Margin = 1 ÷ Margin rate
 
 ---
 
-## 3. **<mark>Mark-to-Market</mark>** and Floating P&L
+## 3. Mark-to-Market and Floating P&L
 
 Futures use the **mark-to-market (MTM)** system: after each trading day's close, the exchange settles P&L on all positions at the **daily settlement price** (not the close), and gains/losses are credited or debited to the account directly.
 
@@ -218,7 +218,7 @@ Try a more extreme case — **full margin + consecutive gaps**:
 
 ---
 
-## 6. **<mark>Margin Call</mark>** Calculation Examples
+## 6. Margin Call Calculation Examples
 
 ### Example 1: Falling Below Maintenance Margin
 
@@ -258,7 +258,7 @@ Top-up required = Current margin requirement − Account equity = 68000 − 6000
 
 ---
 
-## 7. **<mark>Position</mark>** Size and Margin
+## 7. Position Size and Margin
 
 ### 7.1 The Key Formula
 

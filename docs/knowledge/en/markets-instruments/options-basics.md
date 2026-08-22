@@ -85,7 +85,7 @@ Example: SSE 50 ETF spot 2.800 yuan:
 
 ---
 
-## 6. **<mark>Intrinsic value</mark>** and Time Value
+## 6. Intrinsic value and Time Value
 
 ```text
 Option price = Intrinsic value + Time value
@@ -106,7 +106,7 @@ Example: Call strike 2.800, ETF spot 2.850, option quoted at 0.0800:
 
 ---
 
-## 7. **<mark>Implied volatility</mark>** IV: The Option's "Sentiment Gauge"
+## 7. Implied volatility IV: The Option's "Sentiment Gauge"
 
 **Implied volatility (IV)** is the market's expectation of future underlying volatility, backed out from option prices. It is not historical volatility — it is **the thermometer of market sentiment**.
 

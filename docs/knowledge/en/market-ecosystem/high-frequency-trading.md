@@ -44,13 +44,13 @@ HFT trader:      feed tick → FPGA hardware parsing (μs) → decision (μs) �
 
 ## HFT Profit Models: Four Main Plays
 
-### ① Market Making for the **Spread**
+### ① Market Making for the Spread
 
 - Principle: simultaneously posting buy and sell orders to earn the bid-ask spread — identical to the market makers of [02-Market Makers & Liquidity](market-makers-liquidity.md); HFT simply replaces "human-monitored quoting" with "machine repricing in microseconds."
 - Core skill: **dynamic inventory management** — lower quotes when inventory grows long, raise them when short, always steering back to neutral; cancel instantly at microsecond speed when conditions shift.
 - Compliance: **fully legal** — exchanges even pay rebates to encourage it. It is liquidity's primary provider; controversy only concerns instant cancellations during extreme markets.
 
-### ② **Arbitrage**: Cross-Venue Price Gaps
+### ② Arbitrage: Cross-Venue Price Gaps
 
 - Principle: when the same asset trades at different prices across venues/instruments, **buy the cheap side, sell the expensive side**, capturing near-riskless spread while pushing prices back together.
 - Classic battlegrounds:
@@ -193,7 +193,7 @@ Why so little: matching rules (price limits, T+1), no exchange-colocation-style 
 
 ## Friend or Foe: HFT's Effect on Ordinary Investors
 
-### The Good: Tighter **Spreads**, Better Execution
+### The Good: Tighter Spreads, Better Execution
 
 - HFT market makers squeezed major-instrument spreads from "cents" to "fractions of cents" or less — **<mark>every retail fill got cheaper because of it</mark>**.
 - Slicing algorithms break up big orders so they're harder to detect; institutional impact costs fell; the whole market grew more efficient.

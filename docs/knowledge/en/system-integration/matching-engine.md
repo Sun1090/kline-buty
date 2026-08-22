@@ -56,7 +56,7 @@ A concrete example (current order book):
 - Buy limit order **4100 × 50**: price below ask 1 (4101), cannot fill immediately → joins the bid queue at level 4100, waiting for the price to come down.
 - Buy market order × 100: eats ask 1 directly, 4101 × 100, at price 4101 — **a market order = no price limit, fills immediately against the counterparty's best price**.
 
-### 2.2 Where Limit and **<mark>Market Orders</mark>** Sit in the Matching Queue
+### 2.2 Where Limit and Market Orders Sit in the Matching Queue
 
 | Order type | Enters queue? | Position in the queue |
 |---|---|---|
@@ -182,7 +182,7 @@ Continuous trading matches order by order; the call auction is "**one batch matc
 
 ## 5. Advanced Topics
 
-### 5.1 **Market Makers** and Tick Size
+### 5.1 Market Makers and Tick Size
 
 - **Tick Size**: prices must fall on a minimum-step grid (e.g., rebar at CNY 1/ton, BTC crypto at 0.1 or 0.01); the engine validates and organizes queues along the grid.
 - **Market makers**: liquidity providers quoting both sides to earn the spread; engines may give maker orders dedicated queues (designated market maker priority) and incentives, but the fundamentals remain price/time priority (special rules per exchange).

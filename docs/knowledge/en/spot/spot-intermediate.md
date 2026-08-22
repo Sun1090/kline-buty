@@ -74,7 +74,7 @@ Step 4: only after everything checks out, transfer the large amount
 
 ## 2. Order Placement Techniques
 
-### 1. Advanced use of **<mark>limit orders</mark>**: rest them near support/resistance for passive fills
+### 1. Advanced use of limit orders: rest them near support/resistance for passive fills
 
 A limit order does not chase an "immediate fill"; it uses price pullbacks/bounces to collect inventory:
 
@@ -110,7 +110,7 @@ One huge order sweeping the book instantly eats through it and pushes the price 
 - **Manual splitting**: the same idea of breaking a big order into small ones, optionally with time spacing (e.g. one order per hour) to avoid concentrating at one price level.
 - Rules follow each platform's latest fee schedule; impact costs are small for deep major coins, while altcoins routinely see 1%+ slippage — splitting matters even more there.
 
-### 4. Where to Place Stop-Loss and **<mark>Take-Profit</mark>** Orders
+### 4. Where to Place Stop-Loss and Take-Profit Orders
 
 | Wrong practice | Problem | Right practice |
 |---|---|---|

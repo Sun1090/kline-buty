@@ -253,7 +253,7 @@ Take-profit discipline: partially trim when dividend yield falls below 3% (price
 
 ---
 
-## 7. Low-Risk **Arbitrage** Beyond IPO Subscriptions
+## 7. Low-Risk Arbitrage Beyond IPO Subscriptions
 
 ### 7.1 The logic
 

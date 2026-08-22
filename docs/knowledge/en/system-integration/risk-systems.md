@@ -43,7 +43,7 @@ Three reasons you must build your own risk controls:
 - **Freezing**: freeze estimated margin at order submission; release on fill/cancel — freeze logic must stay consistent with OMS settlement (how **hedging** and locked positions are treated differs per OMS; per OMS rules).
 - **Spendable quota**: account/strategy-level loss budgets (e.g., "this strategy may lose at most 50k today"); once exhausted, stop.
 
-### 2.2 **Position** risk controls
+### 2.2 Position risk controls
 
 - **Max lots**: three-level caps per order, per strategy, and account-wide.
 - **Per-instrument cap**: position cap per contract/product (long and short counted separately).

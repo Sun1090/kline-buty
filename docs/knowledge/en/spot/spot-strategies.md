@@ -207,7 +207,7 @@ Risk-reward ≈ 2.4 : 1
 | Barrier | Funds + coins on both platforms |
 | Risks | Spread snapping shut, withdrawal network congestion (Gas spikes), platform freezes |
 
-### 2. Cash-and-Carry Arbitrage (spot + futures **<mark>hedge</mark>**)
+### 2. Cash-and-Carry Arbitrage (spot + futures hedge)
 
 **Core logic**: buy spot while selling an equal amount of futures/perpetuals, locking the **<mark>basis</mark>** (the gap between spot and contract prices). When the contract expires or **<mark>funding rate</mark>** payments settle, the spread converging means profit.
 

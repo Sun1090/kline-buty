@@ -88,7 +88,7 @@ Buying final-week options is essentially buying "an overnight lottery ticket" â€
 
 ---
 
-## 4. The Seller's Playbook: Premium Income vs **Margin** Occupied
+## 4. The Seller's Playbook: Premium Income vs Margin Occupied
 
 Selling options looks beautiful: you collect premium upon entry. But **what you collect is <mark>premium</mark>, and what you post is margin** â€” this trade-off must be calculated clearly.
 

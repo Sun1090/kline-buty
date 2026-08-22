@@ -94,7 +94,7 @@ The core rule of continuous trading: **price priority (higher bids / lower asks 
 - **Continuous trading** (during the session): tick-by-tick matching, price moves in real time.
 - Why it matters for integration: **some interfaces behave differently during the call auction** (e.g., domestic futures call auctions reject market-type orders; crypto has no call auction concept) — code must branch per exchange rules.
 
-### 4.3 **Market makers** and order book matching differences
+### 4.3 Market makers and order book matching differences
 
 - Futures/stock markets: order book matching; whether you have a counterparty depends on book depth.
 - Crypto exchanges: also order book matching, but some venues offer market-maker incentives on specific pairs, and "take-profit/stop-loss" conditional triggers are implemented exchange-side — **whether the trigger lives at the exchange or in the client directly decides whether your order can move while you are disconnected**.
