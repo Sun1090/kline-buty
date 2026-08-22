@@ -308,6 +308,114 @@ async function findHorizontalBandAnchor(page: Page, which: 'min' | 'max') {
   }, which)
 }
 
+/** 扫描时间区间选中态锚点：先由竖贯边框定位两条 x，再在边框附近找圆形锚点；which=max 取右边框 */
+async function findVerticalBandAnchor(page: Page, which: 'min' | 'max') {
+  return page.evaluate((w) => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return null
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return null
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    // overlay 已按 dpr setTransform，设备像素坐标就是 adapter 的容器 CSS 坐标。
+    const pts: { x: number; y: number }[] = []
+    const colCount = new Map<number, number>()
+    for (let pixel = 0; pixel < width * height; pixel++) {
+      const i = pixel * 4
+      if (img[i + 3] > 80 && img[i] < 130 && img[i + 1] > 110 && img[i + 1] < 200 && img[i + 2] > 190) {
+        const x = pixel % width
+        const y = Math.floor(pixel / width)
+        pts.push({ x, y })
+        colCount.set(x, (colCount.get(x) ?? 0) + 1)
+      }
+    }
+    if (!pts.length) {
+      return null
+    }
+
+    // 竖贯边框：单列蓝色像素覆盖大部分高度；相邻列聚成左右两条边。
+    const borderCols = [...colCount.entries()]
+      .filter(([, n]) => n > height * 0.35)
+      .map(([x]) => x)
+      .sort((a, b) => a - b)
+    const groups: number[][] = []
+    for (const x of borderCols) {
+      const g = groups[groups.length - 1]
+      if (!g || x - g[g.length - 1] > 4) groups.push([x])
+      else g.push(x)
+    }
+    if (groups.length < 2) return null
+
+    // 锚点不是边框端点：它画在该锚点时间的价格投影处，且是边框附近的局部圆点。
+    // 按行统计边框附近像素，找显著高于竖线的局部 blob；不能取最上端（那里只是边框）。
+    const centers = groups.map((g) => {
+      const cx = g.reduce((sum, x) => sum + x, 0) / g.length
+      const near = pts.filter((p) => Math.abs(p.x - cx) <= 8)
+      if (!near.length) return null
+      const rows = new Map<number, number>()
+      for (const p of near) rows.set(p.y, (rows.get(p.y) ?? 0) + 1)
+      const candidates = [...rows.entries()]
+        .filter(([, n]) => n >= 3)
+        .map(([y, n]) => ({ y, n, score: n * (1 + y / height) }))
+      if (!candidates.length) return null
+      // 底部优先，避免顶部日期标签干扰；阈值只排除普通 1-2px 边框线。
+      candidates.sort((a, b) => b.score - a.score)
+      const target = candidates[0]
+      const blob = near.filter((p) => Math.abs(p.y - target.y) <= 4)
+      return {
+        x: blob.reduce((sum, p) => sum + p.x, 0) / blob.length,
+        y: blob.reduce((sum, p) => sum + p.y, 0) / blob.length,
+      }
+    }).filter((v): v is { x: number; y: number } => v !== null)
+    if (centers.length < 2) return null
+    centers.sort((a, b) => a.x - b.x)
+    return w === 'max' ? centers[centers.length - 1] : centers[0]
+  }, which)
+}
+
+/** 在图表容器上派发鼠标 PointerEvent 手势；坐标使用容器本地坐标，避免窗口坐标二次换算。 */
+async function dragContainerPointer(page: Page, x: number, y: number, dx: number, dy: number) {
+  await page.evaluate(({ x, y, dx, dy }) => {
+    const chart = document.querySelector('main .chart-container') as HTMLElement | null
+    if (!chart) return
+    const rect = chart.getBoundingClientRect()
+    const fire = (type: string, tx: number, ty: number) =>
+      chart.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          pointerId: 1,
+          pointerType: 'mouse',
+          isPrimary: true,
+          clientX: rect.left + tx,
+          clientY: rect.top + ty,
+          button: type === 'pointermove' ? -1 : 0,
+          buttons: type === 'pointerup' ? 0 : 1,
+        }),
+      )
+    fire('pointermove', x, y)
+    const down = new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+      clientX: rect.left + x,
+      clientY: rect.top + y,
+      button: 0,
+      buttons: 1,
+    })
+    chart.dispatchEvent(down)
+    fire('pointermove', x + Math.max(1, dx), y + Math.max(1, dy))
+    fire('pointerup', x + Math.max(1, dx), y + Math.max(1, dy))
+  }, { x, y, dx, dy })
+}
+
 /** 扫描横贯水平线上的圆形锚点：先定位横线，再在横线附近找局部蓝色圆点 */
 async function findHorizontalLineAnchor(page: Page, which: 'min' | 'max') {
   return page.evaluate((w) => {
@@ -1274,17 +1382,19 @@ test.describe('K 线应用冒烟', () => {
         { timeout: 10_000 },
       )
       .toBe(1)
-    const saved = await page.evaluate(() => {
-      try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
-        const arr = Object.values(d)
-          .flat()
-          .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
-        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
-      } catch {
-        return null
-      }
-    })
+    const readTimerange = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)
+            .flat()
+            .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
+          return (arr[0] as { id: string; points: { time: number; price: number }[] }) ?? null
+        } catch {
+          return null
+        }
+      })
+    const saved = await readTimerange()
     expect(saved).not.toBeNull()
     expect(saved!.points).toHaveLength(2)
     expect(saved!.points[0].time).toBeLessThan(saved!.points[1].time)
@@ -1320,6 +1430,33 @@ test.describe('K 线应用冒烟', () => {
       })
     await expect.poll(() => blueBandStats().then((s) => s.n), { timeout: 10_000 }).toBeGreaterThan(300)
     await expect.poll(() => blueBandStats().then((s) => s.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+
+    // 切回鼠标后，右侧窗口锚点必须可拖：拖尾锚点后时间区间仍保持两点且时间升序。
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await expect.poll(() => findVerticalBandAnchor(page, 'max'), { timeout: 5_000 }).not.toBeNull()
+    const beforeTimerange = await readTimerange()
+    expect(beforeTimerange).toEqual(saved)
+    let timerangeAnchorDragged = false
+    for (let attempt = 0; attempt < 4 && !timerangeAnchorDragged; attempt++) {
+      const anchor = await findVerticalBandAnchor(page, 'max')
+      if (!anchor) {
+        await page.waitForTimeout(200)
+        continue
+      }
+      await dragContainerPointer(page, anchor.x, anchor.y, box!.width * 0.05, box!.height * 0.04)
+      for (let poll = 0; poll < 6 && !timerangeAnchorDragged; poll++) {
+        await page.waitForTimeout(500)
+        const after = await readTimerange()
+        timerangeAnchorDragged =
+          !!after &&
+          after.id === saved!.id &&
+          after.points.length === 2 &&
+          after.points[0].time < after.points[1].time &&
+          JSON.stringify(after) !== JSON.stringify(beforeTimerange)
+      }
+    }
+    expect(timerangeAnchorDragged).toBe(true)
 
     // 删除
     await page.getByRole('button', { name: '删除' }).click()

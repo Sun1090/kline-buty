@@ -1135,6 +1135,8 @@ export class LightweightChartAdapter implements ChartApi {
       }
       this.drawLabel(ctx, left, top + 7, `${fmt(pa.time)} ~ ${fmt(pb.time)}`, 'left')
       if (selected) {
+        // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
+        ctx.fillStyle = '#4e9cf5'
         this.drawAnchor(ctx, a.x, a.y)
         this.drawAnchor(ctx, b.x, b.y)
       }
