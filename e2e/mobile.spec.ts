@@ -241,6 +241,103 @@ test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻
   expect(errs).toHaveLength(0)
 })
 
+test('移动端：两次快速拖动不误判双击复位（pointer capture 提前释放防护）', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  const box = await page.locator('main div').first().boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const cx = box.x + box.width * 0.5
+  const cy = box.y + box.height * 0.5
+
+  // 捏合后进入手动比例；若快速拖动被误判双击，价格轴会回自适应并造成明显位移
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      { x: cx - 40, y: cy },
+      { x: cx + 40, y: cy },
+    ],
+  })
+  for (let i = 1; i <= 5; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        { x: cx - 40 - i * 8, y: cy },
+        { x: cx + 40 + i * 8, y: cy },
+      ],
+    })
+    await page.waitForTimeout(25)
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await page.waitForTimeout(300)
+
+  // 记录两次拖动后的画线位置：水平线锚定固定价格，是比例被复位的敏感信号。
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '水平线', exact: true }).tap()
+  await page.waitForTimeout(200)
+  await page.mouse.click(cx, cy - box.height * 0.08)
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '鼠标', exact: true }).tap()
+  await page.waitForTimeout(300)
+
+  const lineY = () =>
+    page.evaluate(() => {
+      const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+        const st = getComputedStyle(c)
+        return st.position === 'absolute' && st.zIndex === '5'
+      })
+      if (!overlay) return null
+      const ctx = overlay.getContext('2d')
+      if (!ctx) return null
+      const { width, height } = overlay
+      const data = ctx.getImageData(0, 0, width, height).data
+      const rect = overlay.getBoundingClientRect()
+      let sum = 0
+      let count = 0
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4
+          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]
+          // 水平线主题黄 #f5c02f；只统计画线像素，避免把图表底色计入中点
+          if (a > 100 && r > 190 && g > 130 && g < 235 && b < 110) {
+            sum += y / (window.devicePixelRatio || 1)
+            count++
+          }
+        }
+      }
+      return count ? rect.top + sum / count : null
+    })
+  await expect.poll(lineY, { timeout: 5000 }).not.toBeNull()
+  const before = (await lineY())!
+
+  // 关键回归场景：触摸 pointer capture 在 touchend 前释放，两次拖动间隔仅 30ms。
+  for (let k = 0; k < 2; k++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+    for (let i = 1; i <= 4; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: cx - i * 14, y: cy }],
+      })
+      await page.waitForTimeout(20)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(30)
+  }
+  await page.waitForTimeout(400)
+
+  const after = await lineY()
+  expect(after).not.toBeNull()
+  expect(Math.abs(after! - before)).toBeLessThan(12)
+  expect(errors).toHaveLength(0)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+})
+
 test('移动端：捏合残留单指不产生十字线、不误触发双击复位', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -778,7 +875,8 @@ test('移动端：OHLC 十字光标浮层防溢出——长按底部区域翻转
   const probe = async (y: number) => {
     const x = box.x + box.width / 2
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
-    await page.waitForTimeout(400)
+    // 长按钉线阈值 250ms；等 500ms 覆盖 CI 中触摸事件调度抖动
+    await page.waitForTimeout(500)
     const tip = await findTooltip()
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
     await page.waitForTimeout(2400) // 等松手保留期过期，避免串扰

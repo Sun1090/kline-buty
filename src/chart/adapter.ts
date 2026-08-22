@@ -2147,9 +2147,11 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   /** 捕获丢失是系统取消的兜底信号：只清理当前按下点，不重复回滚已完成状态 */
-  private onLostPointerCapture = () => {
+  private onLostPointerCapture = (e: PointerEvent) => {
     this.drawingDown = null
-    this.touchMoved = false
+    // 触摸拖动会先释放 pointer 捕获、再派发 touchend；这里若清掉拖动标记，
+    // touchend 会把两次快速拖动误判成双击复位，因此只在鼠标手势时重置。
+    if (e.pointerType === 'mouse') this.touchMoved = false
   }
 
   /** 取消长按定时器并清空起点 */
@@ -2296,18 +2298,19 @@ export class LightweightChartAdapter implements ChartApi {
         return
       }
       const s0 = this.touchStartPos
-      const moved = !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
-      if (moved) {
-        // 移动超过阈值视为拖动（平移/十字光标跟随），取消长按
-        this.touchMoved = true
-        // 画线整线/锚点拖拽由 pointer 事件驱动，触屏事件不再显示十字光标（避免编辑时跟随手指的视觉噪音）
-        if (this.dragEdit) return
-        this.clearTouchHold()
-        this.showCrosshairAt(t.clientX, t.clientY)
-      } else if (this.touchCrosshair) {
+      const moved =
+        !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
+      if (!moved) {
         // 长按已显示十字线，轻微移动跟随手指
-        this.showCrosshairAt(t.clientX, t.clientY)
+        if (this.touchCrosshair) this.showCrosshairAt(t.clientX, t.clientY)
+        return
       }
+      // 移动超过阈值视为拖动（平移/十字光标跟随）：取消长按并立即失效双击复位会话
+      this.touchMoved = true
+      // 画线整线/锚点拖拽由 pointer 事件驱动，触屏事件不再显示十字光标（避免编辑时跟随手指的视觉噪音）
+      if (this.dragEdit) return
+      this.clearTouchHold()
+      this.showCrosshairAt(t.clientX, t.clientY)
       return
     }
     if (!this.pinch || this.drawingTool !== 'none' || this.dragEdit) return
