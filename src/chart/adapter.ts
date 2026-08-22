@@ -585,15 +585,17 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.dragPreview) this.drawOne(ctx, this.dragPreview, true)
 
     // 画线预览
-    if (this.drawingDown && this.drawingPreview) {
+    // 手势间隙也要保留多锚点进度：否则三角形等工具前两针之间没有任何视觉反馈。
+    if (this.drawingPreview && (this.drawingDown || this.drawingPoints.length > 0)) {
       const tool = this.drawingTool as Drawing['type']
       const need = requiredPoints(tool)
+      const current = this.drawingDown ?? this.drawingPreview
       let pts: { time: number; price: number }[]
       if (need === 2 && this.drawingPoints.length === 0) {
-        pts = normalizePoints(tool, [this.drawingDown, this.drawingPreview])
+        pts = normalizePoints(tool, [current, this.drawingPreview])
       } else {
-        // 多锚点工具：已确认锚点 + 当前预览
-        pts = [...this.drawingPoints, this.drawingPreview].slice(0, need)
+        // 多锚点工具：已确认锚点 + 当前手势点/最近确认点
+        pts = [...this.drawingPoints, current].slice(0, need)
       }
       this.drawOne(ctx, { id: '__preview', type: tool, points: pts }, true)
     }
@@ -2379,7 +2381,9 @@ export class LightweightChartAdapter implements ChartApi {
   private onPointerLeave = () => {
     this.dragKey = null
     this.hoverKey = null
-    if (!this.drawingDown && !this.dragEdit) {
+    // 多锚点工具手势间隙保留进度预览；触屏 pointerup 后常伴随 pointerleave，
+    // 若在这里清空，下一次实时重绘会把已确认锚点从 overlay 上擦掉。
+    if (!this.drawingDown && !this.dragEdit && this.drawingPoints.length === 0) {
       this.drawingPreview = null
       this.dragPreview = null
     }

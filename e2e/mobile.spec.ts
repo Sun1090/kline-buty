@@ -865,3 +865,126 @@ test('移动端：更多 → 行情全屏浮层 → 点行切交易对并自动�
   await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
   expect(errors).toHaveLength(0)
 })
+
+test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → 落库 3 锚点 → 自动切回鼠标 → 删除', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
+
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '三角形', exact: true }).tap()
+  await page.waitForTimeout(300)
+
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+
+  const overlayPixels = () =>
+    page.evaluate(() => {
+      const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+        const st = getComputedStyle(c)
+        return st.position === 'absolute' && st.zIndex === '5'
+      })
+      if (!overlay) return 0
+      const ctx = overlay.getContext('2d')
+      if (!ctx) return 0
+      const d = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+      let n = 0
+      for (let i = 0; i < d.length; i += 4) {
+        const a = d[i + 3]
+        if (a > 20) n++
+      }
+      return n
+    })
+
+  // 前两针只收集锚点；抬起后的手势间隙必须保留蓝色选中态预览，
+  // 否则实时重绘会擦掉进度，用户看不到任何已点反馈。
+  const taps = [
+    [0.3, 0.55],
+    [0.55, 0.55],
+    [0.4, 0.4],
+  ]
+  for (const [fx, fy] of taps) {
+    const x = box.x + box.width * fx
+    const y = box.y + box.height * fy
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(500)
+    if (fx !== 0.4) expect(await overlayPixels()).toBeGreaterThan(20)
+  }
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+
+  // 第三针集满提交：3 锚点保序落库
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          try {
+            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+            return Object.values(d)
+              .flat()
+              .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
+          } catch {
+            return 0
+          }
+        }),
+      { timeout: 10_000 },
+    )
+    .toBe(1)
+  const saved = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)
+        .flat()
+        .find((x: unknown) => (x as { type?: string }).type === 'triangle') as
+          | { points: { time: number; price: number }[] }
+          | undefined
+    } catch {
+      return undefined
+    }
+  })
+  expect(saved?.points).toHaveLength(3)
+  expect(saved?.points[0].time).toBeLessThan(saved?.points[1].time ?? 0)
+  expect(saved?.points[2].time).toBeLessThan(saved?.points[1].time ?? 0)
+
+  // 提交后移动端自动切回只读；再次轻点不得误建第二条三角形
+  await expect(page.locator('canvas').first()).toBeVisible()
+  const cx = box.x + box.width * 0.5
+  const cy = box.y + box.height * 0.5
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(500)
+  const count = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)
+        .flat()
+        .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
+    } catch {
+      return -1
+    }
+  })
+  expect(count).toBe(1)
+
+  // 删除并确认清空
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.waitForTimeout(400)
+  const after = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
+    } catch {
+      return -2
+    }
+  })
+  expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
