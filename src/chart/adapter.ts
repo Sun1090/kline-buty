@@ -402,6 +402,10 @@ export class LightweightChartAdapter implements ChartApi {
     container.addEventListener('pointermove', this.onPointerMove)
     container.addEventListener('pointerdown', this.onPointerDown)
     container.addEventListener('pointerup', this.onPointerUp)
+    // 系统手势/浏览器接管触摸时会发出 pointercancel；必须回滚进行中的交互，
+    // 否则画线/编辑/框选可能卡在预览态，图表平移与捏合也会保持禁用。
+    container.addEventListener('pointercancel', this.onPointerCancel)
+    container.addEventListener('lostpointercapture', this.onLostPointerCapture)
     container.addEventListener('pointerleave', this.onPointerLeave)
     container.addEventListener('dblclick', this.onDblClick)
     // 双指捏合（纵向缩放）与双击重置：passive 不拦截，横向捏合仍由图表库原生处理
@@ -2115,6 +2119,39 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
+  /**
+   * 指针手势被系统取消：不提交任何创建/编辑，只回滚到工具当前模式。
+   * - 两点工具：丢弃本次按下与预览；
+   * - 多锚点工具：保留已确认锚点，让用户可继续补点；
+   * - 拖拽编辑：丢弃预览，保留原画线；
+   * - 框选截图：整段取消。
+   */
+  private onPointerCancel = () => {
+    this.drawingDown = null
+    this.dragPreview = null
+    this.dragEdit = null
+    this.dragKey = null
+    this.hoverKey = null
+    this.touchMoved = false
+    this.touchHoldFired = false
+    this.clearTouchHold()
+    this.clearTouchLinger()
+    if (this.touchCrosshair) this.setTouchCrosshair(false)
+    if (this.regionSelect) {
+      this.cancelRegionSelect()
+    } else {
+      this.setPanEnabled(true)
+      this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
+      this.draw()
+    }
+  }
+
+  /** 捕获丢失是系统取消的兜底信号：只清理当前按下点，不重复回滚已完成状态 */
+  private onLostPointerCapture = () => {
+    this.drawingDown = null
+    this.touchMoved = false
+  }
+
   /** 取消长按定时器并清空起点 */
   private clearTouchHold() {
     if (this.touchHoldTimer !== null) {
@@ -2810,6 +2847,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.container.removeEventListener('pointermove', this.onPointerMove)
     this.container.removeEventListener('pointerdown', this.onPointerDown)
     this.container.removeEventListener('pointerup', this.onPointerUp)
+    this.container.removeEventListener('pointercancel', this.onPointerCancel)
+    this.container.removeEventListener('lostpointercapture', this.onLostPointerCapture)
     this.container.removeEventListener('pointerleave', this.onPointerLeave)
     this.container.removeEventListener('dblclick', this.onDblClick)
     this.resizeObserver?.disconnect()
