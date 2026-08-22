@@ -1,9 +1,9 @@
 ---
-title: "Commodity Indices and Cycles: Reading the Rhythm of an Era of Rising Prices"
+title: "14 · Commodity Indices and Cycles: Reading the Rhythm of an Era of Rising Prices"
 description: "Commodity indices and cycles — CRB, S&P GSCI and the Nanhua index, commodities as a leading inflation indicator, supercycles and macro linkages"
 ---
 
-# Commodity Indices and Cycles: Reading the Rhythm of an Era of Rising Prices
+# 14 · Commodity Indices and Cycles: Reading the Rhythm of an Era of Rising Prices
 
 > "Is the commodity bull here?" — the 2020-2022 energy crisis and the 2024 record highs in cocoa/copper pulled commodities back into public view. But commodity moves are not random noise: **they are the stack of three rhythms — decadal "supercycles", 3-5 year "macro cycles", and multi-month "inventory cycles"**.
 >

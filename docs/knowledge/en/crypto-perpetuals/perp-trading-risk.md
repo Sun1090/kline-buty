@@ -1,9 +1,9 @@
 ---
-title: "Perpetual Trading in Practice & Risk Control"
+title: "04 · Perpetual Trading in Practice & Risk Control"
 description: "Practical risk control for crypto perpetuals — how to choose leverage, position sizing, take-profit and stop-loss placement, spotting liquidation walls, and how to exit after consecutive blow-ups"
 ---
 
-# Perpetual Trading in Practice & Risk Control
+# 04 · Perpetual Trading in Practice & Risk Control
 
 > [01-Perpetual Swaps](perpetuals.md) explained "what the contract is"; this article explains "how to survive":
 > how to pick **<mark>leverage</mark>**, how big a position to open, where to put the **<mark>stop-loss</mark>**, where the liquidation walls are, and how to exit after consecutive **<mark>liquidations</mark>**.

@@ -1,9 +1,9 @@
 ---
-title: "Advanced Candlesticks"
+title: "04 · Advanced Candlesticks"
 description: "Advanced candlesticks — quantifying wick language, confirming and falsifying combination patterns, multi-timeframe confluence, volume endorsement, and differentiated reading across markets"
 ---
 
-# Advanced Candlesticks
+# 04 · Advanced Candlesticks
 
 > Building on [01 · Candlestick Patterns](chart-patterns.md), this article pushes candlesticks from "recognizing shapes" to "reading the language": how to quantify wick ratios, how to confirm and falsify combination patterns, how timeframes resonate, how volume endorses the candles, and how to read them differently across markets.
 

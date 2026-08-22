@@ -1,9 +1,9 @@
 ---
-title: "Compliance and Taxes"
+title: "03 · Compliance and Taxes"
 description: "Trading compliance and taxes — platform regulation, deposit and withdrawal channels, bank account freeze risk, tax filing, and asset classification: a summary of regulatory and legal essentials"
 ---
 
-# Compliance and Taxes
+# 03 · Compliance and Taxes
 
 > The final gate of trading is neither technique nor psychology, but **law and taxes**. Once the money is made, it still has to be made legally, moved out cleanly, and kept safe — that is what decides whether your gains are "profit" or a "liability".
 

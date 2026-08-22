@@ -1,9 +1,9 @@
 ---
-title: "Licensing and Market Access"
+title: "04 · Licensing and Market Access"
 description: "Maps China's financial license landscape and overseas licensing regimes, teaching you to verify an institution's compliance on official websites in three minutes."
 ---
 
-# Licensing and Market Access
+# 04 · Licensing and Market Access
 
 > "Is this platform trustworthy?" "Is this firm a real, licensed player?" — the answer isn't in the advertising; it's in the licenses. Financial licenses are the moat of financial companies and the only hard yardstick traders have for telling "who is legit". This article explains China's financial license landscape, broker/futures/fund sub-qualifications, and overseas licensing systems (Hong Kong Type 1–13, US FINRA/SEC), then teaches you to verify any institution on official websites in three minutes.
 

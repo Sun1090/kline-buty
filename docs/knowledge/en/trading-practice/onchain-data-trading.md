@@ -1,9 +1,9 @@
 ---
-title: "On-chain Data Trading"
+title: "08 · On-chain Data Trading"
 description: "On-chain analytics in practice — six core indicators, tooling, and smart-money copy-trading strategies."
 ---
 
-# On-chain Data Trading
+# 08 · On-chain Data Trading
 
 > Traditional markets have "insiders" — earnings, block trades, institutional flows; retail always arrives one beat late. Crypto is different: **every transfer sits on a public ledger, and every address's inflows and outflows are queryable**. Whether whales are accumulating or distributing, whether exchange reserves are healthy, whether new money is entering — in theory all of it is on the table.
 >

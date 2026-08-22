@@ -1,5 +1,5 @@
 ---
-title: "Financial Market Overview"
+title: "01 · Financial Market Overview"
 description: "A panoramic overview of the four major financial markets — stocks, spot commodities, futures, and crypto — their roles, participants, rule differences, and cross-market linkages"
 ---
 

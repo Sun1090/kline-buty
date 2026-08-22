@@ -1,4 +1,4 @@
-# Advanced Options Strategies
+# 27 · Advanced Options Strategies
 
 > Options are the **king of derivatives**: non-linear payoffs, precise risk tailoring, unlimited strategy combinations — the "smartest" of all financial instruments, and the one that best showcases professional edge.
 >

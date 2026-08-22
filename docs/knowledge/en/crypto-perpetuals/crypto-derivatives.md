@@ -1,9 +1,9 @@
 ---
-title: "Crypto Derivatives"
+title: "03 · Crypto Derivatives"
 description: "The crypto derivatives zoo — how crypto options, leveraged tokens, dual investment, tokenized synthetic assets, on-chain contracts, and other products work, how to play them, and where the risks are"
 ---
 
-# Crypto Derivatives
+# 03 · Crypto Derivatives
 
 > Beyond perpetual swaps, the crypto market runs an entire "derivatives zoo": options, **<mark>leveraged</mark>** tokens, dual investment, tokenized synthetic assets, on-chain contracts...
 > Some of these products hedge risk; others are harvesting tools that "look beautiful". This article dissects them one by one: **what they are, how they are played, and where the risks lie.**

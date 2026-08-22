@@ -1,9 +1,9 @@
 ---
-title: "Alternative Asset Investing: Collectibles and 'Hobby Investing'"
+title: "12 · Alternative Asset Investing: Collectibles and 'Hobby Investing'"
 description: "Alternative asset investing — liquidity, pricing and authenticity risks of collectibles such as Moutai, Rolex, whisky casks and digital collectibles, plus the correct position discipline"
 ---
 
-# Alternative Asset Investing: Collectibles and "Hobby Investing"
+# 12 · Alternative Asset Investing: Collectibles and "Hobby Investing"
 
 > Moutai, Rolex, whisky casks, designer figures and art toys, digital collectibles... "monetize your hobby" has been one of the most seductive narratives of recent years: enjoy the collecting and count on appreciation too. But the reality is — **for the vast majority of "hobby investments", the primary attribute is consumption, and only the secondary attribute is investment**.
 >

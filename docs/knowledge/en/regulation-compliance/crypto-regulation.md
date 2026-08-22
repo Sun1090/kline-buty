@@ -1,9 +1,9 @@
 ---
-title: "Crypto Regulation"
+title: "03 · Crypto Regulation"
 description: "A region-by-region map of crypto regulation, covering institutional differences across China, the US, Hong Kong, and the EU, plus a compliance survival guide for ordinary users."
 ---
 
-# Crypto Regulation
+# 03 · Crypto Regulation
 
 > Crypto assets are the fastest-changing area of global regulation, bar none. In China they are treated as a vehicle of illegal financial activity; in the US they are split between "securities" and "commodity" camps; in Hong Kong they have a formal licensing regime; in the EU they got a unified regulation in MiCA. This article maps crypto regulation region by region and closes with a compliance survival guide for ordinary users.
 

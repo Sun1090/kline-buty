@@ -1,9 +1,9 @@
 ---
-title: "Quant Career Path"
+title: "01 · Quant Career Path"
 description: "For STEM/finance backgrounds who want to break into quant. This article is about how to get a job at a quant firm, not how to trade systematically — for that, see [Quant Practice](../quant-practice/)"
 ---
 
-# Quant Career Path
+# 01 · Quant Career Path
 
 > Written for **people with STEM/finance backgrounds who want to enter the quant industry**. This article covers how to land a job at a quant institution, not how to trade with a systematic strategy — for the latter, see [Quant Practice](../quant-practice/).
 >

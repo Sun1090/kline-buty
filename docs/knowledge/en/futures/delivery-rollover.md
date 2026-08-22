@@ -1,9 +1,9 @@
 ---
-title: "Delivery and Rollover: Which Side Is Time On"
+title: "03 · Delivery and Rollover: Which Side Is Time On"
 description: "Futures delivery and rollover — physical vs. cash delivery, delivery-month risks, how the dominant contract forms and positions roll, basis gaps at rollover, and how to choose contract months"
 ---
 
-# Delivery and **<mark>Rollover</mark>**: Which Side Is Time On
+# 03 · Delivery and **<mark>Rollover</mark>**: Which Side Is Time On
 
 > Futures are "contracts with an expiry date". Stocks can be held for ten years; futures cannot — every contract has a delivery month and must be settled by then. This article explains the delivery system, the risks of the delivery month, how the dominant contract forms and how positions roll, and how retail traders should choose contract months.
 

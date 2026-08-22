@@ -1,9 +1,9 @@
 ---
-title: "Crypto History"
+title: "06 · Crypto History"
 description: "Eight key milestones of cryptocurrency history, distilling the operating law of four overlapping cycles: halving, leverage, regulation, and technology."
 ---
 
-# Crypto History
+# 06 · Crypto History
 
 > From a nine-page white paper in 2008 to Bitcoin breaking $100,000 in 2025 and becoming a national strategic reserve asset, crypto completed the full cycle of "birth → darknet → bubble → collapse → rebirth" in under twenty years. This article breaks down eight key milestones chronologically, each reviewed from three angles — **event, impact, lesson** — before closing with the market's operating law of **four overlapping cycles: <mark>halving</mark>, <mark>leverage</mark>, regulation, and technology** — the underlying framework behind every crypto boom and bust.
 >

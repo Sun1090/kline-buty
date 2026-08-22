@@ -1,9 +1,9 @@
 ---
-title: "Options Tools and Review: Master the Tools, Turn Experience into an Asset"
+title: "05 · Options Tools and Review: Master the Tools, Turn Experience into an Asset"
 description: "Options trading is a contest of not just knowledge but information access and accumulated experience. Reading the same option chain, a veteran extracts IV percentile, changes in OI, and strike concentration — while a novice sees only a wall of prices"
 ---
 
-# Options Tools and Review: Master the Tools, Turn Experience into an Asset
+# 05 · Options Tools and Review: Master the Tools, Turn Experience into an Asset
 
 > Options trading is a contest of not just knowledge, but **information access and accumulated experience**. Reading the same option chain, a veteran extracts IV percentile, changes in OI, and the distribution of **<mark>strike prices</mark>** favored by big money — while a novice sees only a wall of prices.
 >

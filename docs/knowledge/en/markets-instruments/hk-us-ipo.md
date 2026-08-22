@@ -1,9 +1,9 @@
 ---
-title: "HK and US IPO Subscription: From Prospectus to First-Day Trading"
+title: "10 · HK and US IPO Subscription: From Prospectus to First-Day Trading"
 description: "HK and US IPO subscription — new-issue mechanism comparison, the full HK subscription workflow, the reality of retail participation in US IPOs, and SPAC backdoor listings"
 ---
 
-# HK and US IPO Subscription: From Prospectus to First-Day Trading
+# 10 · HK and US IPO Subscription: From Prospectus to First-Day Trading
 
 > A-share IPO subscription was once seen as a "free lottery": win an allotment and you feasted, and first-day gains were nearly guaranteed. But that was the myth of the approval-system era. **Under the registration system and in the HK/US markets, IPO subscription is a business that takes real skill** — breaking below the offer price is the norm, first-day halvings are not rare, and the allocation you scramble for may simply be someone else's exit channel.
 >

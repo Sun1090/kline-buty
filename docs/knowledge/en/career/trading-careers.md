@@ -1,9 +1,9 @@
 ---
-title: "Trading Careers Overview"
+title: "02 · Trading Careers Overview"
 description: "The previous article covered how to get into quant; this one zooms out: trading-related careers go far beyond quant. Buy-side traders, sell-side market makers, research analysts, risk, middle office, quant developers, systems engineers, algo execution, operations and settlement — each line differs in work content, skill barriers…"
 ---
 
-# Trading Careers Overview
+# 02 · Trading Careers Overview
 
 > The previous article covered how to break into quant; this one zooms out: **<mark>trading-related careers go far beyond quant</mark>**. Buy-side traders, sell-side market makers, research analysts, risk, middle office, quant developers, systems engineers, algo execution, operations and settlement — each line differs in day-to-day work, skill barriers, salary norms, and personality fit.
 >

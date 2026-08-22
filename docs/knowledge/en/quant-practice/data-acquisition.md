@@ -1,9 +1,9 @@
 ---
-title: "Data Acquisition in Practice"
+title: "02 · Data Acquisition in Practice"
 description: "Hands-on data fetching across China A-shares, futures, and crypto — cleaning and incremental storage that turns data from 'fetchable' to 'trustworthy'."
 ---
 
-# Data Acquisition in Practice
+# 02 · Data Acquisition in Practice
 
 > The foundation of quant research. This article covers hands-on data fetching for three markets — China A-shares, futures, crypto: every snippet runs as-is, and the subsequent cleaning, incremental storage, and quality checks turn data from "can fetch" into "can trust".
 >

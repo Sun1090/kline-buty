@@ -1,9 +1,9 @@
 ---
-title: "Risk Management"
+title: "02 · Risk Management"
 description: "Trading risk management — the accelerating cost of recovering losses, per-trade risk fractions, position calculation, maximum drawdown control, and the logic of always having a next hand to play"
 ---
 
-# Risk Management
+# 02 · Risk Management
 
 > An old saying in trading: "Live long enough and the money comes; die too fast and no strategy saves you." This article covers exactly one thing: **how to make sure you always have a next hand to play.** Decide how much you can lose first, and only then consider how much you can make — that order is the line between life and death in trading.
 

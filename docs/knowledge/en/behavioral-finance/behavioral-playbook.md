@@ -1,9 +1,9 @@
 ---
-title: "Applying Behavioral Finance"
+title: "05 · Applying Behavioral Finance"
 description: "The previous four articles answered why people are irrational. This one answers the last question: knowing all this — what is it good for? Three paths: exploit your own biases (ex-ante rules), exploit others' biases (sentiment signals), exploit the market's collective biases (contrarian and sentiment indicators)…"
 ---
 
-# Applying Behavioral Finance
+# 05 · Applying Behavioral Finance
 
 > The first four articles answered "why aren't people rational?" This one answers the final question: **knowing all this, what can you do with it?** Three paths: exploit your own biases (ex-ante rules), exploit others' biases (sentiment signals), and exploit the market's collective biases (contrarian and sentiment indicators). But keep one sentence in mind: **behavioral finance gives you the wisdom to survive and a probabilistic edge to profit — not a guaranteed money-making code.**
 

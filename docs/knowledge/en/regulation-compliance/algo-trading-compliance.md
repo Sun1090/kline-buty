@@ -1,9 +1,9 @@
 ---
-title: "Algorithmic Trading and Compliance"
+title: "05 · Algorithmic Trading and Compliance"
 description: "Breaks down the unified algorithmic trading rule framework, covering the reporting regime, high-frequency trading supervision, and a compliance checklist for individual developers."
 ---
 
-# Algorithmic Trading and Compliance
+# 05 · Algorithmic Trading and Compliance
 
 > Before 2023, algorithmic trading rules in China were "piecemeal": each exchange had its own abnormal-trade monitoring, each broker its own risk-control interpretations. In 2023–2024, new rules from the Shanghai/Shenzhen/Beijing exchanges plus the CSRC's administrative provisions on program trading in securities markets landed in succession — for the first time, algorithmic trading had a nationally unified framework. This article starts from definitions, unpacks the reporting regime, HFT supervision, and foreign experience, then lands on a compliance checklist for individual quant developers.
 

@@ -1,9 +1,9 @@
 ---
-title: "Margin, Leverage & Forced Liquidation: A Trader's Lifeline"
+title: "02 · Margin, Leverage & Forced Liquidation: A Trader's Lifeline"
 description: "Margin, leverage, and forced liquidation in futures explained — the margin system, leverage multiples, mark-to-market, liquidation mechanics, margin calls, negative-balance blow-throughs, and a beginner risk-control checklist"
 ---
 
-# **<mark>Margin</mark>**, **<mark>Leverage</mark>**, and **<mark>Forced Liquidation</mark>**: A Trader's Lifeline
+# 02 · **<mark>Margin</mark>**, **<mark>Leverage</mark>**, and **<mark>Forced Liquidation</mark>**: A Trader's Lifeline
 
 > This is the **most important article** of the entire futures chapter. The margin system is the engine of futures — and the meat grinder that devours accounts. Forced liquidation / blow-up is the first paid lesson for most futures beginners — except the tuition is usually your entire principal.
 >

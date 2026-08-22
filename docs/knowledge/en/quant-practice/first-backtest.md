@@ -1,9 +1,9 @@
 ---
-title: "Your First Backtest"
+title: "03 · Your First Backtest"
 description: "A complete runnable Python script covering the minimal backtest loop — data, signals, fill simulation, performance — plus your first real understanding of overfitting."
 ---
 
-# Your First Backtest
+# 03 · Your First Backtest
 
 > The step from "having data" to "having conclusions". This article walks you through the minimal backtest loop — load data → generate signals → simulate fills → compute performance — with one complete runnable Python script, teaches you to read backtest results, and gives you your first real grasp of overfitting.
 >

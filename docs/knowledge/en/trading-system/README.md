@@ -1,4 +1,4 @@
-# Trading Systems
+# 07 · Trading Systems
 
 > Every earlier chapter taught you to "read the market"; this one teaches you to "manage yourself". Technical analysis answers what to buy and when to buy; a trading system answers how much to buy, when to cut the loss, what to do after a loss, and whether you will give the profits back. **Trading without a system is gambling; trading with a system is a business.**
 

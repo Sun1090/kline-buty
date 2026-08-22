@@ -1,9 +1,9 @@
 ---
-title: "How to Read a Book Closely"
+title: "06 · How to Read a Book Closely"
 description: "The previous four chapters recommended 20+ books. But buying without reading and reading without retaining is the trader's most common self-deception — between 'having read many books' and 'having a framework' stands an engineering project called close reading"
 ---
 
-# How to Read a Book Closely
+# 06 · How to Read a Book Closely
 
 > The previous four chapters recommended 20+ books. But **buying books without reading them, and reading them without absorbing them, is the trader's most common self-deception** — between "having read a lot" and "having built a system" stands an engineering discipline called "**<mark>close reading</mark>**".
 >

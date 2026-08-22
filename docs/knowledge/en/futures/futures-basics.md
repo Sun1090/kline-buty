@@ -1,9 +1,9 @@
 ---
-title: "Futures Basics: What a Contract Is"
+title: "01 · Futures Basics: What a Contract Is"
 description: "An introduction to futures contracts — what futures are, their historical origins, the eight contract elements, the trading process, domestic futures exchanges, and a full futures vs. stocks comparison"
 ---
 
-# Futures Basics: What a Contract Is
+# 01 · Futures Basics: What a Contract Is
 
 > Futures are among the "cleverest" and most "dangerous" instruments in the trading world. They were born from the need to hedge spot price risk, yet over a century of evolution they grew into a giant market where speculation and **<mark>hedging</mark>** coexist. This article starts from zero: what futures are, where they came from, what a contract contains, how trading works, and which exchanges you trade on in the domestic market.
 

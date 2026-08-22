@@ -1,9 +1,9 @@
 ---
-title: "Event-Driven Trading"
+title: "04 · Event-Driven Trading"
 description: "A practical guide to event-driven trading — position around known events like earnings and NFP, buy the expectation, sell the fact."
 ---
 
-# Event-Driven Trading
+# 04 · Event-Driven Trading
 
 > Event-driven trading (Event-Driven Trading): positioning around **high-impact events at known times** (earnings, NFP, CPI, central bank decisions, elections, geopolitical conflicts). Its biggest difference from other styles: **you don't need to predict direction — you prepare before the event happens and execute your plan after** — "buy the expectation, sell the fact" is the core of this logic.
 >

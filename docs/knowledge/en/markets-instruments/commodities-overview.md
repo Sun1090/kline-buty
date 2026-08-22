@@ -1,9 +1,9 @@
 ---
-title: "Commodity Panorama: Understanding Commodities Through Their Global Pricing Centers"
+title: "06 · Commodity Panorama: Understanding Commodities Through Their Global Pricing Centers"
 description: "Commodity panorama — the global pricing centers, participation tools, and daily-life links of precious metals, energy, industrial metals, ferrous products, and agricultural products"
 ---
 
-# Commodity Panorama: Understanding Commodities Through Their Global Pricing Centers
+# 06 · Commodity Panorama: Understanding Commodities Through Their Global Pricing Centers
 
 > The previous article, [03 - Futures / 04 - Futures Products](../futures/futures-products.md), covered **domestic contract specifications** (codes, units, **<mark>margin</mark>**). This one switches perspective: for each commodity, **where is its global pricing center, what tools can you use to participate, who sets its price, and how does it relate to your daily food, fuel, and housing**.
 >

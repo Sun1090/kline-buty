@@ -1,9 +1,9 @@
 ---
-title: "Cross-Border Investing in Practice (Pragmatic Guide)"
+title: "05 · Cross-Border Investing in Practice (Pragmatic Guide)"
 description: "The first four articles answered 'what is out there'; this one answers the most practical question: 'how do I participate compliantly'. It teaches no regulatory loopholes — it lays out goal setting, legal paths for moving funds offshore, choosing an offshore broker, tax filing obligations, and a risk checklist…"
 ---
 
-# Cross-Border Investing in Practice (Pragmatic Guide)
+# 05 · Cross-Border Investing in Practice (Pragmatic Guide)
 
 > The first four articles answered "what is out there"; this one answers the most practical question: "how do I participate compliantly". This article teaches no side doors around regulation — it lays out goal setting, legal paths for moving funds offshore, how to choose an offshore broker, tax filing obligations, and a risk checklist — the core conclusion in one sentence: **<mark>for most people QDII + Stock Connect are enough; only a minority need to consider a regulated offshore broker, provided every step of moving funds offshore is compliant.</mark>**
 

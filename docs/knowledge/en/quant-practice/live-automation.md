@@ -1,9 +1,9 @@
 ---
-title: "Live Automation"
+title: "04 · Live Automation"
 description: "The compliance boundaries of personal automation, a complete crypto spot playbook, and the semi-automatic 'signal alert + manual execution' route for China A-shares."
 ---
 
-# Live Automation
+# 04 · Live Automation
 
 > The biggest hurdle after backtesting is going live. This article first maps the compliance boundaries, then gives a complete crypto spot automation playbook (API keys, order placement, WebSocket, reconnection, VPS deployment), and closes with the reality of China A-shares and the "signal alert + manual execution" semi-automatic route. **<mark>Read compliance first, talk code second</mark>**.
 >

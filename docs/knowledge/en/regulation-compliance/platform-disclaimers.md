@@ -1,9 +1,9 @@
 ---
-title: "Platform Disclaimers and Investor Suitability"
+title: "06 · Platform Disclaimers and Investor Suitability"
 description: "Clarifies the legal role of disclaimers and the underlying logic of investor suitability, teaching you to read platforms' fine print and its compliance boundaries."
 ---
 
-# Platform Disclaimers and Investor Suitability
+# 06 · Platform Disclaimers and Investor Suitability
 
 > Nearly every market data app, trading platform, and strategy tool carries a line of fine print: "Data is for reference only and does not constitute investment advice." That line isn't casual — it is the compliance boundary platforms draw between "information services" and "investment advice". This article explains the legal role and limits of disclaimers, the underlying logic of investor suitability (risk-tier matching), and how ordinary users should read this "fine print".
 

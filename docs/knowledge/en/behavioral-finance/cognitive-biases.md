@@ -1,9 +1,9 @@
 ---
-title: "A Field Guide to Cognitive Biases in Trading"
+title: "02 · A Field Guide to Cognitive Biases in Trading"
 description: "Article 01 covered the theory: why people aren't rational. This one holds up the mirror — the 12 most common cognitive biases in trading, each with a definition, a trading example, and countermeasures. You don't have weak willpower; you've been ambushed by these biases. And the scariest thing about…"
 ---
 
-# A Field Guide to Cognitive Biases in Trading
+# 02 · A Field Guide to Cognitive Biases in Trading
 
 > Article 01 covered the theory: why people aren't rational. This one holds up the mirror — **the 12 most common cognitive biases in trading, each with a definition, a trading example, and countermeasures.** You don't lack willpower; you've been hit by these biases. And the scariest part of a bias is this: **when you're making the mistake, you always feel certain you're right.**
 

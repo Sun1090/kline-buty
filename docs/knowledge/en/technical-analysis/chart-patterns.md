@@ -1,9 +1,9 @@
 ---
-title: "Candlestick Patterns"
+title: "01 · Candlestick Patterns"
 description: "Candlestick patterns in depth — single-candle, reversal and continuation combinations, and gap patterns, each with diagrams plus confirmation and failure conditions"
 ---
 
-# Candlestick Patterns
+# 01 · Candlestick Patterns
 
 > Candlestick patterns are the most "visual" language of technical analysis: how long a candle is, where its wicks point, and what shape a few candles form together have all been assigned meaning. This article walks through the common patterns across four levels — "single candle → reversal combinations → continuation combinations → gaps" — with diagrams and confirmation/failure conditions for each.
 

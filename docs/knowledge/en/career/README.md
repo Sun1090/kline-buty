@@ -1,4 +1,4 @@
-# Career Development
+# 24 · Career Development
 
 > The previous 23 chapters answered "**how to understand markets and how to trade**"; this chapter answers the final question: **after learning all this, how do you turn it into a career (quant job hunting), a business (indie development / content creation), and a lifestyle (professional trading)**.
 >

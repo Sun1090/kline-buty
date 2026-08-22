@@ -1,9 +1,9 @@
 ---
-title: "OTC Derivatives: The Dark Side of Custom Contracts"
+title: "06 · OTC Derivatives: The Dark Side of Custom Contracts"
 description: "OTC derivatives explained — forwards, swaps, exotic OTC options, structured products and snowballs; see the real risks behind tailor-made contracts"
 ---
 
-# OTC Derivatives: The Dark Side of Custom Contracts
+# 06 · OTC Derivatives: The Dark Side of Custom Contracts
 
 > What trades on an exchange is "standardized"; contracts in the over-the-counter (OTC) world can take any shape: terms, prices, and maturities privately agreed between two sides, with no central clearing and no exchange backstop. This article walks you through forwards, swaps, OTC options, and structured products (including snowballs), so you can see what "tailor-made" really costs.
 

@@ -1,9 +1,9 @@
 ---
-title: "The Greeks in Practice: Your Position Is a Risk Balance Sheet"
+title: "02 · The Greeks in Practice: Your Position Is a Risk Balance Sheet"
 description: "Option prices are sensitive to five factors: underlying price, time, volatility, interest rates (plus a second-order acceleration term). The Greeks are the dashboard that isolates and quantifies each sensitivity"
 ---
 
-# The Greeks in Practice: Your Position Is a Risk Balance Sheet
+# 02 · The Greeks in Practice: Your Position Is a Risk Balance Sheet
 
 > Option prices respond to five factors: underlying price, time, **volatility**, interest rates (plus a second-order acceleration). **<mark>Greeks</mark>** are the dashboard that **isolates and quantifies each of these sensitivities** one by one.
 >

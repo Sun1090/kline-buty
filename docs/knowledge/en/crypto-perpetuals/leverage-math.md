@@ -1,9 +1,9 @@
 ---
-title: "The Math of Leverage: Why 10x Is Not '10x Profit'"
+title: "05 · The Math of Leverage: Why 10x Is Not '10x Profit'"
 description: "The mathematical reality of leverage — margin occupation, liquidation price calculation, maintenance margin, isolated vs cross differences, how fees amplify costs, and your true effective leverage"
 ---
 
-# The Math of Leverage: Why 10x Is Not "10x Profit"
+# 05 · The Math of Leverage: Why 10x Is Not "10x Profit"
 
 > Most people assume "10x leverage = 10x profit". In reality, once fees, funding rates, slippage, and liquidation mechanics are counted, the **effective return of 10x leverage is far below 10x**, while losses run at nearly full speed. This article exposes leverage for what it really is, with numbers.
 >

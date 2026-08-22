@@ -1,9 +1,9 @@
 ---
-title: "A Panorama of Market Data Software"
+title: "01 · A Panorama of Market Data Software"
 description: "Classifies market data software by market and purpose, explains the strengths of free tools and professional terminals, and gives a multi-software workflow."
 ---
 
-# A Panorama of Market Data Software
+# 01 · A Panorama of Market Data Software
 
 > Market data software is a trader's "eyes." Yet there are hundreds of such products on the market — free, paid, professional, and knock-offs all mixed together. Most people use one or two from start to finish without ever asking "why would I need another one?"
 >

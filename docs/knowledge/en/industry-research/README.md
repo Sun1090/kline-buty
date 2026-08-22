@@ -1,4 +1,4 @@
-# Industry Research
+# 19 · Industry Research
 
 > Before you understand a company, first understand the industry it operates in.
 > Industry size, competitive landscape, position in the industry chain, and prosperity cycle together determine the ceiling of any individual stock —

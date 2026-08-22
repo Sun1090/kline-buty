@@ -1,9 +1,9 @@
 ---
-title: "Global Markets Comparison Overview"
+title: "04 · Global Markets Comparison Overview"
 description: "The previous three articles looked at Japan/Korea, Europe, and emerging markets respectively; this one puts them on the same table for comparison: each index's 'personality', its correlation with A-shares, how time zones line up, and which channels you can use to actually get exposure. It ends by answering a practical question: what use are these 'global markets'…"
 ---
 
-# Global Markets Comparison Overview
+# 04 · Global Markets Comparison Overview
 
 > The previous three articles looked at Japan/Korea, Europe, and emerging markets respectively; this one puts them on the same table for comparison: each index's "personality", its correlation with A-shares, how time zones line up, and which channels you can use to actually get exposure. It ends by answering a practical question: for a pure A-share or crypto player, what is the real value of understanding these "global markets".
 

@@ -1,9 +1,9 @@
 ---
-title: "Trading Psychology"
+title: "03 · Trading Psychology"
 description: "Trading psychology — the neural mechanics of FOMO and panic, System 1 vs System 2, and the cognitive biases behind loss aversion, sunk costs, and failing to follow your own plan"
 ---
 
-# Trading Psychology
+# 03 · Trading Psychology
 
 > The first two articles of this chapter solved "how to act" and "how much to lose"; this one tackles the ultimate problem — **why do you keep failing to execute the very plan you wrote yourself?** Techniques can be learned and rules can be written, but when your heart races staring at a rising candle, the brain runs on a completely different system from "rational calculation". Understand that system and you get a chance to control it.
 

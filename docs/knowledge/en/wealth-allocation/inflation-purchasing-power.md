@@ -1,9 +1,9 @@
 ---
-title: "Inflation and Purchasing Power"
+title: "04 · Inflation and Purchasing Power"
 description: "How CPI is constructed, how inflation treats each asset class, and how to separate genuine anti-inflation tools from marketing talk."
 ---
 
-# Inflation and Purchasing Power
+# 04 · Inflation and Purchasing Power
 
 > Inflation is the easiest thing for ordinary people to ignore — and it happens every day: your money isn't shrinking in number, but what it buys is. This chapter explains how inflation figures are produced, whether inflation is friend or foe for each asset class, and which parts of "beating inflation" are real and which are marketing.
 

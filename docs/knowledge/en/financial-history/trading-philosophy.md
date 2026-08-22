@@ -1,9 +1,9 @@
 ---
-title: "Trading Schools and Philosophy"
+title: "04 · Trading Schools and Philosophy"
 description: "A panoramic scan of four trading schools, five deep philosophical questions — market efficiency, probabilistic thinking, circle of competence — and a template for writing your own trading philosophy."
 ---
 
-# Trading Schools and Philosophy
+# 04 · Trading Schools and Philosophy
 
 > The previous article covered "who made money and how"; this one answers "**what should I believe, and how should I think**". First a panoramic scan of the four mainstream schools (technical, fundamental, quantitative, event/macro), then five unavoidable philosophical questions (is the market efficient? predict or respond? **<mark>probabilistic thinking</mark>**? profit and loss from the same source? **<mark>circle of competence</mark>?), closing with a template for writing "**your own trading philosophy**". The first twelve articles of this knowledge base taught you "how to do it"; this one teaches you "why".
 >

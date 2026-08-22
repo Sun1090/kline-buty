@@ -1,9 +1,9 @@
 ---
-title: "REITs and Real Estate Investing: From Buying a Home to Buying the Property Business"
+title: "11 · REITs and Real Estate Investing: From Buying a Home to Buying the Property Business"
 description: "REITs and real estate investing — four ways to invest in property, the REITs securitization mechanism, onshore public REITs and overseas comparison, and a framework for whether to buy a home"
 ---
 
-# REITs and Real Estate Investing: From Buying a Home to Buying the Property Business
+# 11 · REITs and Real Estate Investing: From Buying a Home to Buying the Property Business
 
 > "Buying a home" is the asset allocation most Chinese are obsessed with — but **the house itself is not the asset; the house that produces rental cash flow is**. When a home in a tier-1 city costs millions and the rental yield is as low as 1.5%, the "buy and collect rent" math often doesn't work.
 >

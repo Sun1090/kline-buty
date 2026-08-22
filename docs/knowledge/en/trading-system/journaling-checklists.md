@@ -1,9 +1,9 @@
 ---
-title: "Trading Journal and Checklists"
+title: "06 · Trading Journal and Checklists"
 description: "Trading journal and checklists — daily, weekly, and monthly logging and review templates; using checklists to enforce discipline and close the trading-system loop"
 ---
 
-# Trading Journal and Checklists
+# 06 · Trading Journal and Checklists
 
 > The Trading Plan article gave you the "before entry" rules; Advanced Trade Review gave you the "after exit" statistics. This article fills in the middle stretch that is easiest to skip yet does the most for stable execution: **what to write daily, what to check weekly, what to audit monthly**. The journal records "what happened"; the checklists ensure "everything that should be done was done" — together they close the loop of an iterable trading system.
 

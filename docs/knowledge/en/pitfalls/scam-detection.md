@@ -1,9 +1,9 @@
 ---
-title: "Scam Detection"
+title: "02 · Scam Detection"
 description: "Detecting financial scams — the shared skeleton of pig-butchering scams, high-yield schemes, fake platforms, and insider-tip tricks, with an anti-fraud education guide"
 ---
 
-# Scam Detection
+# 02 · Scam Detection
 
 > In the trading world, the biggest risk is often not the market but **people**. You think you are betting against the market; in reality you are betting against a gang of fraudsters who study human nature professionally — they have scripts, a division of labor, and patience, while all you have is a heart that wants to make money.
 

@@ -1,9 +1,9 @@
 ---
-title: "Strategy Coding in Practice"
+title: "05 · Strategy Coding in Practice"
 description: "Five complete strategy examples from simple to advanced: dual moving average, Bollinger Bands, RSI, grid trading, and a statistical arbitrage prototype."
 ---
 
-# Strategy Coding in Practice
+# 05 · Strategy Coding in Practice
 
 > Five complete strategy examples, simple to advanced: dual MA trend, Bollinger Band mean reversion, RSI overbought/oversold, crypto grid trading, and a statistical <mark>arbitrage</mark> prototype. Each one explains core logic, gives a code skeleton, and marks applicable markets and risks — closing with parameter boundaries, portfolio thinking, and a personal roadmap.
 >

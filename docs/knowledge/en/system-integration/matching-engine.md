@@ -1,9 +1,9 @@
 ---
-title: "Matching Engine Principles: How Orders Become Fills"
+title: "11 · Matching Engine Principles: How Orders Become Fills"
 description: "Core matching engine principles, covering matching rules, order book data structures, algorithms, and the exchange vs AMM comparison."
 ---
 
-# Matching Engine Principles: How Orders Become Fills
+# 11 · Matching Engine Principles: How Orders Become Fills
 
 > The most critical, least-forgivable component of a trading system is neither ordering nor market data — it's matching: how buyers and sellers pair up, in what order they queue, who gets filled first. Ordinary traders only need eight words: "price priority, time priority". Engineers building systems have to expand those eight words into data structures, algorithms, and engineering constraints.
 >

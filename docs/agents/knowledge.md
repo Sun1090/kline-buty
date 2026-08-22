@@ -19,7 +19,7 @@
 - 章节目录与文档文件一律**英文 kebab-case slug，无序号**：`futures/margin-leverage-liquidation.md`。
 - 阅读顺序由两处定义且必须保持一致：`docs-site/.vitepress/config.mjs` 的 `CHAPTER_ORDER` 与 `docs/knowledge/scripts/sync-index.py` 的 `CHAPTER_ORDER`。
 - 新增文档需同步：sync-index（根索引）、config 侧边栏（自动按目录生成）、如新增章节则更新两处 CHAPTER_ORDER。
-- 中文正文内 H1 标题保留「NN ·」编号供阅读序；英文正文 H1 不带编号。
+- 中文与英文正文的 H1 标题及 frontmatter `title` 均保留「NN ·」编号供阅读序（en 与 zh 同篇同号）；章节 README 的 H1 同样带章节号（如 `# 12 · 市场生态篇`）。
 - slug 映射的历史对照见 git 历史（重构提交前为 `NN-中文名/NN-中文篇名.md`）。
 
 ## 新增 / 修改文档的硬性要求

@@ -1,9 +1,9 @@
 ---
-title: "Indexes and Sectors: The Market's Ruler and Map"
+title: "05 · Indexes and Sectors: The Market's Ruler and Map"
 description: "Indexes and sectors — index construction, the styles of major A-share, HK, US, and global indexes, industry classification, sector rotation, and the Merrill Lynch Investment Clock"
 ---
 
-# Indexes and Sectors: The Market's Ruler and Map
+# 05 · Indexes and Sectors: The Market's Ruler and Map
 
 > You often hear "the market rose 2% today" or "the CSI 300 fell". That "market" is not a single stock but an **index**. An index weight-averages the moves of hundreds of stocks into one line — the "ruler" for observing the market; industry sectors are the "map" that groups stocks by business.
 >

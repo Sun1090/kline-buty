@@ -1,4 +1,4 @@
-# Markets and Instruments
+# 09 · Markets and Instruments
 
 > The previous eight chapters run vertically by "asset class": spot, stocks, futures, crypto contracts, technical analysis, trading systems, and pitfall survival.
 >

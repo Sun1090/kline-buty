@@ -1,9 +1,9 @@
 ---
-title: "Data and Infrastructure"
+title: "07 · Data and Infrastructure"
 description: "A full view of trading system data architecture, covering storage selection, message middleware, monitoring and alerting, and deployment architecture."
 ---
 
-# Data and Infrastructure
+# 07 · Data and Infrastructure
 
 > A trading system is a data-driven system: market data must be ingested with low latency, order data must never be lost, funds data must be accurate to the cent, and historical data must support backtesting and research. This article covers the trading system's data architecture from an engineer's perspective: storage selection, message middleware, task scheduling, monitoring and alerting, deployment architecture, and security/compliance.
 >

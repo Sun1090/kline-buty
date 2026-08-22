@@ -1,4 +1,4 @@
-# Getting Started
+# 01 · Getting Started
 
 > This chapter is the first stop of the entire knowledge base: first learn what markets look like, then the vocabulary, then how to read charts. Once you finish it, you should be able to open any market terminal and understand 80% of what is on screen — and know **how to place orders, manage positions, and complete your first trade**.
 

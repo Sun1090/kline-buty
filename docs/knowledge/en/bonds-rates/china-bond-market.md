@@ -1,9 +1,9 @@
 ---
-title: "China Bond Market in Practice"
+title: "02 · China Bond Market in Practice"
 description: "China's bond market is the world's second largest, yet over 90% of trading happens in the interbank market — the institutional playground. Retail investors' real arena is the exchange market, and there's plenty to play with: government bond reverse repos, savings bonds, bond funds, convertible bonds"
 ---
 
-# China Bond Market in Practice
+# 02 · China Bond Market in Practice
 
 > China's bond market is the world's second largest, yet **<mark>over 90% of trading happens in the interbank market</mark>** — the institutional playground. Retail investors' real arena is the exchange market, and there's plenty to play with: government bond reverse repos, savings bonds, bond funds, convertible bonds.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Content Creation & Knowledge Sharing"
+title: "04 · Content Creation & Knowledge Sharing"
 description: "For those who want to create content in finance/trading: articles, videos, podcasts, courses, communities. The temptation is that 'trading skills can be reused endlessly'; the trap is that financial content is one of the most compliance-sensitive content verticals"
 ---
 
-# Content Creation & Knowledge Sharing
+# 04 · Content Creation & Knowledge Sharing
 
 > For **those who want to create content in finance/trading**: writing articles, shooting videos, recording podcasts, launching courses, running communities. The temptation is that "trading skills can be reused endlessly"; the trap is that **<mark>financial content is one of the most compliance-sensitive content verticals</mark>**.
 >

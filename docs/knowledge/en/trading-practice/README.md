@@ -1,4 +1,4 @@
-# Trading Practice
+# 11 · Trading Practice
 
 > The earlier chapters covered "knowledge": what markets are, how to read candlesticks, how to use indicators, how to measure risk. This chapter covers "how to turn knowledge into daily practice" — not another new theory, but **stringing together what you have already learned into the few steps you will actually execute from morning to night**.
 >

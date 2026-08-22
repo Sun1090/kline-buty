@@ -1,9 +1,9 @@
 ---
-title: "US and Global Regulation"
+title: "02 · US and Global Regulation"
 description: "A regulatory map of major global markets, covering the US two-tier system, the licensing logic of Hong Kong, Singapore, and the EU, and the choice of offshore domiciles."
 ---
 
-# US and Global Regulation
+# 02 · US and Global Regulation
 
 > If you trade US stocks, offshore futures, HK/US equities, or forex, you face an entirely different rulebook. US regulation is "two-tier": federal agencies set the floor while self-regulatory organizations manage day-to-day conduct — and Hong Kong, Singapore, and the EU each have their own licensing logic. This article lays out a regulatory map of major markets, then answers one soul-searching question: **why do crypto exchanges and forex platforms all love to register on offshore islands?**
 

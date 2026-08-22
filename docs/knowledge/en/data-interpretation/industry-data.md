@@ -1,9 +1,9 @@
 ---
-title: "Industry Data: Supply-Demand Analysis and Inventory-Cycle Reading"
+title: "04 · Industry Data: Supply-Demand Analysis and Inventory-Cycle Reading"
 description: "Macro data tells you 'how the economy is doing'; industry data tells you 'how your instrument is doing'. Crude oil, copper, hogs, real estate, new energy — every industry has a 'data map': inventories, output, prices, orders. This article teaches you to translate that pile of data into supply-dem…"
 ---
 
-# Industry Data: Supply-Demand Analysis and Inventory-Cycle Reading
+# 04 · Industry Data: Supply-Demand Analysis and Inventory-Cycle Reading
 
 > Macro data tells you "how the economy is doing"; industry data tells you "how your instrument is doing". Crude oil, copper, hogs, real estate, new energy — every industry has a "data map": inventories, output, prices, orders. This article teaches you to translate that data into supply-demand judgments and price signals, using two core methods: the **<mark>inventory cycle</mark>**'s four stages and **<mark>volume-price divergence</mark>**.
 

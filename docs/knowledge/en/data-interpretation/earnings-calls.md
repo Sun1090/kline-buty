@@ -1,9 +1,9 @@
 ---
-title: "Earnings Calls: Guidance, Management Tone, and Corporate-Speak Translation"
+title: "03 · Earnings Calls: Guidance, Management Tone, and Corporate-Speak Translation"
 description: "Earnings numbers are the 'past'; the words on the call are the 'future'. A company beats EPS expectations by 5% yet its stock plunges 8% — the answer usually sits in the call: management cut next quarter's guidance. This article teaches what to listen for on a call and how to translat…"
 ---
 
-# Earnings Calls: Guidance, Management Tone, and Corporate-Speak Translation
+# 03 · Earnings Calls: Guidance, Management Tone, and Corporate-Speak Translation
 
 > Earnings numbers are the "past"; the words on the call are the "future". A company beats EPS expectations by 5%, yet the stock plunges 8% — the answer usually sits in the call: management lowered next quarter's guidance. This article teaches you what to listen for on earnings calls, how to translate corporate-speak, and the **<mark>position</mark>**-management logic of earnings season.
 

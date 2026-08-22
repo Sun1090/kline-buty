@@ -1,4 +1,4 @@
-# Behavioral Finance
+# 21 · Behavioral Finance
 
 > Every previous chapter answered "what is the market?" This one answers a more fundamental question — **why is the market the way it is?** The answer is somewhat counterintuitive: because the market is not made of rational machines, but of people. People panic, get greedy, follow the crowd, and deceive themselves — and none of this is random noise; it follows recognizable patterns. **Behavioral finance is the discipline that turns "human weaknesses" into "studiable regularities."**
 

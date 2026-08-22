@@ -1,9 +1,9 @@
 ---
-title: "Technical Analysis Classics"
+title: "02 · Technical Analysis Classics"
 description: "Knowledge base chapter [06-Technical Analysis](../technical-analysis/) has turned candlestick patterns, technical indicators, and volume-price analysis into a searchable checklist. This chapter's mission: put those methods back into the books where they were born, and see each author's original framework…"
 ---
 
-# Technical Analysis Classics
+# 02 · Technical Analysis Classics
 
 > Knowledge base chapter [06-Technical Analysis](../technical-analysis/) has already turned candlestick patterns, technical indicators, and volume-price analysis into a searchable checklist. This chapter's mission is to **put those methods back into the books where they were born — seeing each author's full framework, argumentation, and limits of applicability**. One extra layer of "why" from books means one less layer of "superstition" on your charts.
 >

@@ -1,9 +1,9 @@
 ---
-title: "ADR and Cross-Border Listing"
+title: "05 · ADR and Cross-Border Listing"
 description: "ADRs and cross-border listings — depositary receipts, the full history of US-listed Chinese companies, the hidden risks of the VIE structure, cross-border listing routes, and risks unique to Chinese ADRs"
 ---
 
-# ADR and Cross-Border Listing
+# 05 · ADR and Cross-Border Listing
 
 > US-listed Chinese companies ("Chinese ADRs") are both familiar and strange to many Chinese investors: you see the tickers BABA, PDD, JD every day, but in what form exactly do they list in the US? Why does the same company price differently in the US and Hong Kong? And why could a single regulatory document halve the entire sector in 2021?
 > This article starts from the ADR, lays out the past and present of Chinese ADRs and the routes of cross-border listing, dissects the hidden mines of the VIE structure, and closes with the ways investors can participate and the sector's unique risks. **Before buying Chinese ADRs, get clear on "what it actually is, on whose exchange it hangs, and by what structure it lives".**

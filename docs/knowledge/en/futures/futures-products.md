@@ -1,9 +1,9 @@
 ---
-title: "Futures Products Encyclopedia: Your Battlefield Map"
+title: "04 · Futures Products Encyclopedia: Your Battlefield Map"
 description: "A futures product encyclopedia — 25+ mainstream products across eight sectors with contract codes, exchanges, trading units, margin rates, price drivers, and suitable audiences"
 ---
 
-# Futures Products Encyclopedia: Your Battlefield Map
+# 04 · Futures Products Encyclopedia: Your Battlefield Map
 
 > The futures market is not one market but dozens of interdependent yet separate markets. Every product has its own temperament: copper watches global manufacturing, soybean meal watches American weather, rebar watches Chinese property, crude oil watches geopolitics.
 >

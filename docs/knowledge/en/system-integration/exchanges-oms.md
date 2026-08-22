@@ -1,9 +1,9 @@
 ---
-title: "Exchanges and OMSs: Which Layer Your System Actually Connects To"
+title: "02 · Exchanges and OMSs: Which Layer Your System Actually Connects To"
 description: "The engineering shapes and selection trade-offs of four integration paths: direct exchange access, futures OMSs, crypto APIs, and overseas markets."
 ---
 
-# Exchanges and OMSs: Which Layer Your System Actually Connects To
+# 02 · Exchanges and OMSs: Which Layer Your System Actually Connects To
 
 > Once an integration project kicks off, the engineer's first question is usually not "how do I write this" but "what am I connecting to" — direct exchange access? Through a futures firm's OMS? A crypto exchange's official API? These three paths differ completely in engineering shape, authentication, and test environments; pick the wrong one and everything after it is wasted work.
 >

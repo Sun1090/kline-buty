@@ -1,9 +1,9 @@
 ---
-title: "Insurance and Protection"
+title: "05 · Insurance and Protection"
 description: "Insurance's defensive role in personal finance: what to buy, how much coverage you need, and which 'insurance' is actually a trap."
 ---
 
-# Insurance and Protection
+# 05 · Insurance and Protection
 
 > Insurance holds exactly one place in personal finance: **defense**. It generates no returns, but it is the family's "risk stop-loss order" — when extreme events like death, serious illness, or household collapse strike, insurance is the only tool that keeps family finances from being breached. This chapter covers what to buy, how much, and which "insurance" is really a trap.
 

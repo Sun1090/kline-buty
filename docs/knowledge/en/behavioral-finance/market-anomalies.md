@@ -1,9 +1,9 @@
 ---
-title: "Market Anomalies: Evidence That Markets Are Less Efficient"
+title: "03 · Market Anomalies: Evidence That Markets Are Less Efficient"
 description: "If markets truly worked as the efficient market hypothesis describes, there would be no 'regular' windows of excess return. Yet academia has spent decades unearthing a set of repeatedly observed phenomena — calendar effects, momentum, the small-firm effect, the index effect… Some later decayed, some…"
 ---
 
-# Market Anomalies: Evidence That Markets Are Less Efficient
+# 03 · Market Anomalies: Evidence That Markets Are Less Efficient
 
 > If markets truly worked as the efficient market hypothesis describes, there would be no "regular" windows of excess return. Yet over decades, academia has dug up a batch of persistently observed phenomena — **calendar effects, momentum, the small-firm effect, the index effect…** Some later decayed; some survived in a new shape. But together they prove one thing: **prices contain more than information — they contain human nature.**
 

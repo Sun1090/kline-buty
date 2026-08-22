@@ -1,9 +1,9 @@
 ---
-title: "Professional Trader Path"
+title: "05 · Professional Trader Path"
 description: "The previous four articles covered selling skills to institutions or building products; this one covers the last lifestyle: no employer, no startup — living full-time off your own trading system. It is also the road with the heaviest survivorship bias, the most sentimental narrative, and the harshest reality"
 ---
 
-# Professional Trader Path
+# 05 · Professional Trader Path
 
 > The previous four articles covered "selling skills to institutions / turning them into products"; this one covers the last lifestyle: **<mark>no employer, no startup — living full-time off your own trading system</mark>**. It is also the road with the heaviest survivorship bias, the most emotionally charged narrative, and the cruelest reality.
 >

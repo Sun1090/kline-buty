@@ -1,9 +1,9 @@
 ---
-title: "Elliott Waves · Gann · Chan Theory"
+title: "05 · Elliott Waves · Gann · Chan Theory"
 description: "Elliott Wave, Gann, and Chan Theory — the principles, rules, and controversies of all three, their real merit, and how to use them as a language for describing market structure rather than prediction tools"
 ---
 
-# Elliott Waves · Gann · Chan Theory
+# 05 · Elliott Waves · Gann · Chan Theory
 
 > Elliott Wave, Gann theory, and Chan Theory are the three tallest peaks of "mysticism density" in the technical analysis world: logically self-consistent, complete systems with huge followings, yet almost never positively verified by academic research and almost never adopted by professional institutions. This article hypes nothing and trashes nothing — it lays out the **principles, rules, and controversies** of all three, then delivers their **real merit and correct usage**.
 

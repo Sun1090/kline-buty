@@ -1,9 +1,9 @@
 ---
-title: "Quant & Trading Psychology"
+title: "05 · Quant & Trading Psychology"
 description: "The first two tiers taught you to read the market; this tier teaches you to read yourself and read patterns along two tracks — trading psychology and quantitative methods"
 ---
 
-# Quant & Trading Psychology
+# 05 · Quant & Trading Psychology
 
 > The first two tiers taught you to "read the market"; this tier teaches you to "read yourself" and "read regularities" along two tracks:
 >

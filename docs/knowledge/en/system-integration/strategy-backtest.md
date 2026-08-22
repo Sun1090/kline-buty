@@ -1,9 +1,9 @@
 ---
-title: "Quantitative Strategies and Backtesting"
+title: "06 · Quantitative Strategies and Backtesting"
 description: "An engineer's guide to quant strategy R&D: from logic validation to a deployable, monitorable code system."
 ---
 
-# Quantitative Strategies and Backtesting
+# 06 · Quantitative Strategies and Backtesting
 
 > A quant strategy R&D guide for software companies and engineering teams. Earlier articles taught traders "how to read the market and place orders"; this article covers the engineer's view: "how to turn a piece of trading logic into a code system that is verifiable, deployable, and monitorable".
 >

@@ -1,9 +1,9 @@
 ---
-title: "Precious Metals and Energy Spot: How to Participate in Gold, Silver, and Crude Oil"
+title: "09 · Precious Metals and Energy Spot: How to Participate in Gold, Silver, and Crude Oil"
 description: "Participation routes for precious metals and energy spot — gold bars, paper gold, gold ETFs, gold T+D, and London gold compared; crude oil derivatives; and how to spot the most dangerous scams"
 ---
 
-# Precious Metals and Energy Spot: How to Participate in Gold, Silver, and Crude Oil
+# 09 · Precious Metals and Energy Spot: How to Participate in Gold, Silver, and Crude Oil
 
 > The previous article, [06 - Commodity Panorama](commodities-overview.md), covered the **global pricing centers** and core drivers of commodities; this one answers a more practical question: **gold, silver, crude oil — what can you actually buy?**
 >

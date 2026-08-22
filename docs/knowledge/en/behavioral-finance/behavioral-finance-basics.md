@@ -1,9 +1,9 @@
 ---
-title: "Foundations of Behavioral Finance"
+title: "01 · Foundations of Behavioral Finance"
 description: "Traditional finance assumes you are a rational agent: fully informed, precisely calculating, always maximizing your own utility. In reality, you snap up discounts, sell your winners and keep your losers, and panic-sell at the bottom of a bear market. The first thing behavioral finance does is…"
 ---
 
-# Foundations of Behavioral Finance
+# 01 · Foundations of Behavioral Finance
 
 > Traditional finance assumes you are a rational agent: fully informed, precisely calculating, always maximizing your own utility. In reality, you snap up 20%-off deals, sell the stocks that made money and keep the ones losing money, and panic-sell at the bottom of a bear market. **The first thing behavioral finance does is tear down the "rational agent" assumption and replace it with an actual human being.**
 

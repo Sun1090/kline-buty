@@ -1,9 +1,9 @@
 ---
-title: "Macro Data Reading: Expectation Gaps, Structure Breakdown, and a Complete Interpretation Template"
+title: "01 · Macro Data Reading: Expectation Gaps, Structure Breakdown, and a Complete Interpretation Template"
 description: "The same 'CPI 3.2%' — why do some call it bearish and others bullish? Because the number itself means nothing; the gap between the number and expectations is what matters. This article builds 'expectation gap' thinking, then breaks down how to read CPI, PMI, nonfarm payrolls, and the unemployment rate item by item…"
 ---
 
-# Macro Data Reading: Expectation Gaps, Structure Breakdown, and a Complete Interpretation Template
+# 01 · Macro Data Reading: Expectation Gaps, Structure Breakdown, and a Complete Interpretation Template
 
 > The same "CPI 3.2%" — why do some shout bearish while others shout bullish? Because **the number itself means nothing; the gap between the number and expectations is what matters**. This article builds the "**<mark>expectation gap</mark>**" mindset, then unpacks reading details for **<mark>CPI</mark>**, **<mark>PMI</mark>**, **<mark>nonfarm payrolls</mark>**, and the **<mark>unemployment rate</mark>** one by one, closing with a replicable complete template for interpreting macro data.
 

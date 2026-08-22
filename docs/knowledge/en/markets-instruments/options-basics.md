@@ -1,9 +1,9 @@
 ---
-title: "Options Basics: The Most Sophisticated Financial Instrument"
+title: "04 · Options Basics: The Most Sophisticated Financial Instrument"
 description: "Options basics — Call and Put, the four elements, ITM/ATM/OTM, buyer vs seller rights and obligations, intrinsic and time value, implied volatility IV, and the Greeks"
 ---
 
-# Options Basics: The Most Sophisticated Financial Instrument
+# 04 · Options Basics: The Most Sophisticated Financial Instrument
 
 > Options are the "smartest" contracts in the financial world: they let you **buy a future right at limited cost** — right direction, you profit from the move; wrong direction, you lose at most the **<mark>premium</mark>**. Sounds wonderful?
 

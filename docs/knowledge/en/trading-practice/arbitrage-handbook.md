@@ -1,9 +1,9 @@
 ---
-title: "Arbitrage in Practice"
+title: "06 · Arbitrage in Practice"
 description: "The core logic of arbitrage and seven mainstream plays — cash-and-carry, calendar, cross-market, cross-commodity, ETF, crypto, and statistical arbitrage."
 ---
 
-# Arbitrage in Practice
+# 06 · Arbitrage in Practice
 
 > Arbitrage is the trading world's closest thing to a "money printer": no directional bets — only the certainty of **spread** convergence. In reality, though, arbitrage is full of traps: spreads that refuse to converge, **liquidity** drying up, fees devouring profit, black swans blowing up. This article lays out the core logic of arbitrage and seven mainstream plays — principle, operational steps, risk points, who they suit — ending with the 5 most common ways arbitrageurs die.
 

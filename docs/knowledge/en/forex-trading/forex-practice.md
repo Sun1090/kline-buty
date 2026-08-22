@@ -1,9 +1,9 @@
 ---
-title: "Forex Trading Practice: Pair Personalities, Pip Value & P&L, and a Beginner Workflow"
+title: "01 · Forex Trading Practice: Pair Personalities, Pip Value & P&L, and a Beginner Workflow"
 description: "The concepts chapter covered it: forex is the world's largest market, how quotes work, how pip value is computed, how dangerous leverage is. This chapter gets practical: every major pair has its own 'personality' — some steady, some explosive, some tracking commodities…"
 ---
 
-# Forex Trading Practice: Pair Personalities, Pip Value & P&L, and a Beginner Workflow
+# 01 · Forex Trading Practice: Pair Personalities, Pip Value & P&L, and a Beginner Workflow
 
 > The concepts chapter already covered: forex as the world's largest market, how to read quotes, how to compute pip value, and how dangerous **<mark>leverage</mark>** is. This chapter goes hands-on: **every major pair has its own "personality"** — some steady, some explosive, some tracking commodities; then it works through lot size, pip value, and P&L with complete numeric examples; then the activity patterns of three sessions, forex-specific uses of technicals and fundamentals — ending in an executable beginner workflow.
 

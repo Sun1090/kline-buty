@@ -1,4 +1,4 @@
-# Regulation & Compliance
+# 16 · Regulation & Compliance
 
 > Rules are the operating system of the market — only by understanding who regulates what, and what gets punished, can you avoid dying without ever knowing why.
 >

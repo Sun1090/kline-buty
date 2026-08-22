@@ -1,9 +1,9 @@
 ---
-title: "Value Investing Classics"
+title: "03 · Value Investing Classics"
 description: "Technical analysis tells you what price is doing; value investing tells you what a thing is actually worth. This tier runs from Graham's The Intelligent Investor through Buffett, Munger, Lynch, and Howard Marks, landing in the Chinese market context — seven books spanning…"
 ---
 
-# Value Investing Classics
+# 03 · Value Investing Classics
 
 > Technical analysis tells you "what price is doing"; value investing tells you "**what a thing is actually worth**". This tier starts from Graham's The Intelligent Investor, passes through Buffett, Munger, Lynch, and Howard Marks, and lands in the Chinese market context — seven books forming a complete spectrum of value investing: **<mark>margin of safety</mark> → moats → cycles → long-termism**.
 >

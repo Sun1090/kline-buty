@@ -1,9 +1,9 @@
 ---
-title: "Japan and Korea Markets"
+title: "01 · Japan and Korea Markets"
 description: "Japan and Korea are the mature markets closest to China, and also the two with the biggest perceived contrast for A-share traders: Japan's zero rates, flat valuations, and retail culture; Korea's chaebol structure, extremely high individual-investor participation, and semiconductor concentration — only by understanding Japan and Korea do you tr…"
 ---
 
-# Japan and Korea Markets
+# 01 · Japan and Korea Markets
 
 > Japan and Korea are the mature markets closest to China, and also the two with the biggest "perceived contrast" for A-share traders: Japan's zero rates, flat valuations, and retail culture; Korea's chaebol structure, extremely high individual-investor participation, and semiconductor concentration. Only by understanding Japan and Korea do you truly grasp that a "mature market" is not "a market without volatility" but "a market whose volatility has different reasons".
 

@@ -1,9 +1,9 @@
 ---
-title: "US and Global ETF Portfolio Construction"
+title: "07 · US and Global ETF Portfolio Construction"
 description: "Building US and global ETF portfolios — choosing broad-base ETFs, style and sector allocation, topping up with global bonds and commodities, the three-fund and permanent portfolios, and DCA in practice"
 ---
 
-# US and Global ETF Portfolio Construction
+# 07 · US and Global ETF Portfolio Construction
 
 > For ordinary people allocating globally, US ETFs are the **lowest-cost, most disciplined** vehicle: broad-base fees down to 0.03%, buyable from 1 share, a whole basket of global assets in one go.
 > This article is a "copy-friendly" practical checklist: how to pick broad-base ETFs, how much style and sector to add, how to top up globally and with bonds and commodities, the US versions of the three-fund and permanent portfolios with ratios, and finally DCA practice, the math of DCA vs lump sum, and a portfolio health checklist.

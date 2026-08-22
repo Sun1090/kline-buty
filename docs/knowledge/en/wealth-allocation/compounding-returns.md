@@ -1,9 +1,9 @@
 ---
-title: "Compounding and Return Expectations"
+title: "02 · Compounding and Return Expectations"
 description: "The compound-interest formula and Rule of 72 in numbers, the four enemies that destroy compounding, and how to make getting rich slowly an accountable path."
 ---
 
-# Compounding and Return Expectations
+# 02 · Compounding and Return Expectations
 
 > Compounding is the mathematical foundation of wealth management — and also its most overestimated, most misunderstood idea. This chapter converts the compounding formula, the Rule of 72, and compounding's four enemies entirely into numbers. Once you finish, you'll understand: "getting rich slowly" isn't a motivational slogan; it's the only road whose books you can actually balance.
 

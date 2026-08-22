@@ -1,9 +1,9 @@
 ---
-title: "Indie Development & Startups"
+title: "03 · Indie Development & Startups"
 description: "For indie developers who want to build trading tools: turn 'I understand trading + I can code' into a product that makes money. More freedom than a job, but harder to earn from — indie development is the process of turning 'a long-term unpaid side gig' into 'a business with uncertain income'…"
 ---
 
-# Indie Development & Startups
+# 03 · Indie Development & Startups
 
 > For **indie developers who want to build trading tools**: turn "I understand trading + I can code" into a product that makes money. This road offers more freedom than employment, but is harder to earn from — **<mark>indie development is the process of turning "a long-term unpaid side gig" into "a business with uncertain income"</mark>**.
 >

@@ -1,9 +1,9 @@
 ---
-title: "A History of Financial Bubbles"
+title: "01 · A History of Financial Bubbles"
 description: "Eight great bubbles dissected on a timeline — from background to evolution to the lessons of human nature — distilling the crash patterns common to them all."
 ---
 
-# A History of Financial Bubbles
+# 01 · A History of Financial Bubbles
 
 > From Dutch tulips in 1637 to the crypto winter of 2022, humanity replays the same script every few decades: **a new narrative ignites imagination → **<mark>leverage</mark>** amplifies gains → everyone joins the party → first cracks appear → panic selling and collapse → regulation arrives late**. This article dissects eight great bubbles on a timeline, reviewing each from four angles — background, evolution, peak and collapse, and lessons of human nature — before closing with a checklist of rules common to all eight.
 >

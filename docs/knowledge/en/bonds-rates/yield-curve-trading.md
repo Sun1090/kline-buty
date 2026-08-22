@@ -1,9 +1,9 @@
 ---
-title: "Yield Curve Trading"
+title: "03 · Yield Curve Trading"
 description: "The yield curve isn't a 'chart for bond investors' — it's the thermometer of the entire macro world: central bank policy, inflation expectations, recession odds, and equity valuations are all written on this one line"
 ---
 
-# Yield Curve Trading
+# 03 · Yield Curve Trading
 
 > The yield curve isn't a "chart for bond investors" — it's **the thermometer of the entire macro world**: central bank policy, inflation expectations, recession odds, and equity valuations are all written on this one line.
 >

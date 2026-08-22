@@ -1,9 +1,9 @@
 ---
-title: "Central Bank Language: Statement Translation and Policy Expectation-Gap Trading"
+title: "02 · Central Bank Language: Statement Translation and Policy Expectation-Gap Trading"
 description: "The central bank is the market's biggest market maker — it does not buy or sell assets directly, yet every word it utters reprices the whole market's rate path. This article treats central bank statements as a foreign language: how to dissect an FOMC statement, what hawkish/dov…"
 ---
 
-# Central Bank Language: Statement Translation and Policy Expectation-Gap Trading
+# 02 · Central Bank Language: Statement Translation and Policy Expectation-Gap Trading
 
 > The central bank is the market's biggest **<mark>market maker</mark>** — it does not buy or sell assets directly, yet every word it utters reprices the whole market's rate path. This article treats central bank statements as a foreign language: how to dissect an FOMC statement, what hawkish/dovish wording looks like, how to read the dot plot, then extends to the different communication cadences of the ECB, BOJ, and PBOC, and closes with a practical framework for **<mark>policy expectation-gap</mark>** trading.
 

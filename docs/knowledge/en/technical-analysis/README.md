@@ -1,4 +1,4 @@
-# Technical Analysis
+# 06 · Technical Analysis
 
 > The previous chapters taught you how to "read the market"; this chapter teaches you how to "read the chart". Candlestick patterns, technical indicators, and volume-price relationships are the three pillars of technical analysis — and the default setup of nearly every market terminal. After finishing this chapter, you should be able to judge independently "what is happening" on a chart, and "whether the signals on the chart deserve your trust".
 >

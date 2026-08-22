@@ -1,9 +1,9 @@
 ---
-title: "Technical Indicators in Depth"
+title: "02 · Technical Indicators in Depth"
 description: "Technical indicators in depth — how trend and oscillator indicators like moving averages, MACD, and KDJ process their inputs, with formulas, parameter settings, and failure scenarios fully explained"
 ---
 
-# Technical Indicators in Depth
+# 02 · Technical Indicators in Depth
 
 > Technical indicators are second-order processing of "price + volume": moving averages are averages of price, MACD is the difference of moving averages, KDJ is the percentile position within a range... **Understanding "what raw material each indicator uses and how many processing steps it takes" matters far more than memorizing formulas** — it determines whether you can see through when an indicator will distort in a given market.
 

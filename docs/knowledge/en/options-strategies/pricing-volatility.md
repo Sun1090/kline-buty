@@ -1,9 +1,9 @@
 ---
-title: "Option Pricing and Volatility: Where Prices Come From, and How to Tell If They're Expensive"
+title: "01 · Option Pricing and Volatility: Where Prices Come From, and How to Tell If They're Expensive"
 description: "The options basics article only gave you the formula premium = intrinsic value + time value. This article answers three deadlier questions: how is that number actually computed…"
 ---
 
-# Option Pricing and Volatility: Where Prices Come From, and How to Tell If They're Expensive
+# 01 · Option Pricing and Volatility: Where Prices Come From, and How to Tell If They're Expensive
 
 > The options basics article only told you the formula "**<mark>premium</mark>** = **<mark>intrinsic value</mark>** + **<mark>time value</mark>**". This article answers three deadlier questions: **how exactly is that number computed? Why is an option that "looks cheap" sometimes astronomically expensive? And how do you tell whether an option is actually overpriced?**
 >

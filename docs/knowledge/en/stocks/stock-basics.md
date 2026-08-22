@@ -1,9 +1,9 @@
 ---
-title: "Stock Basics"
+title: "01 · Stock Basics"
 description: "Stock fundamentals — what a stock is, market participants, the IPO process, what indexes measure, dividend and share-distribution math, and a comparison of the essential differences among stocks, futures, and spot"
 ---
 
-# Stock Basics
+# 01 · Stock Basics
 
 > A stock is a certificate of "company ownership" — buying stock means becoming a shareholder. This article explains from scratch: what a stock is, who is in the market, how a company goes public, what an index represents, how dividends and share distributions are calculated, and closes with one table contrasting the essential differences among stocks, futures, and spot. This is the foundation of the entire stocks chapter.
 

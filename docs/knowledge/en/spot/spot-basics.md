@@ -1,9 +1,9 @@
 ---
-title: "Spot Trading Basics"
+title: "01 · Spot Trading Basics"
 description: "Spot trading basics — the definition of spot, the order flow, four order types, fee structures, and indirect ways to short spot, all in one place"
 ---
 
-# Spot Trading Basics
+# 01 · Spot Trading Basics
 
 > Spot is the most primitive and simplest form of trading: cash for goods, hand to hand.
 > You pay and immediately receive the underlying asset itself (stocks, coins, commodities) — no shares to return, no expiry date, no forced liquidation.

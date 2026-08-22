@@ -1,9 +1,9 @@
 ---
-title: "Forex Automation (EAs) and Copy Trading: Holy Grail or Meat Grinder"
+title: "03 · Forex Automation (EAs) and Copy Trading: Holy Grail or Meat Grinder"
 description: "Forex has two of the most seductive narratives: 'EA auto-profits' and 'copy the pros'. What they share is charging you money on the premise that 'you don't need to trade yourself'. This chapter explains the technical truth about MT4/MT5 and EAs, how backtest scams work, the traps of copy-trading…"
 ---
 
-# Forex Automation (EAs) and Copy Trading: Holy Grail or Meat Grinder
+# 03 · Forex Automation (EAs) and Copy Trading: Holy Grail or Meat Grinder
 
 > Forex has two of the most seductive narratives: "EA auto-profits" and "copy the pros". What they share is **charging you for the promise that "you don't need to trade yourself"**. This chapter covers the technical truth about MT4/MT5 and EAs, how backtest scams operate, the traps of copy-trading communities, the market **maker** bucket-shop model — ending with a platform-selection red-line checklist and a conclusion for ordinary people.
 

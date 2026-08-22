@@ -1,9 +1,9 @@
 ---
-title: "Financial Metrics in Practice"
+title: "02 · Financial Metrics in Practice"
 description: "Answering business questions with numbers: a thorough treatment of five metric groups — DuPont ROE, growth, operating efficiency, solvency, and cash flow."
 ---
 
-# Financial Metrics in Practice
+# 02 · Financial Metrics in Practice
 
 > Metrics are not formulas to memorize but a way to "answer business questions with numbers": what makes this company profitable? Can those profits last? Who holds the power in the supply chain? This article covers the DuPont decomposition of ROE and four other metric groups — growth, operating efficiency, solvency, and cash flow — then breaks down three high-ROE business models and exposes the common pitfalls of combining metrics.
 

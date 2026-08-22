@@ -1,9 +1,9 @@
 ---
-title: "Tax Planning Basics"
+title: "07 · Tax Planning Basics"
 description: "China's personal investment tax framework, the line between legitimate planning and evasion, covering tax categories, rates, and reliefs."
 ---
 
-# Tax Planning Basics
+# 07 · Tax Planning Basics
 
 > Part of every investment gain naturally belongs to taxes — but "how much, when, and how to pay" is a question of rules, not morality. This chapter is **educational**: it clarifies China's personal investment tax framework and draws the boundary between "legitimate planning" and "evasion." All tax items, rates, and reliefs are subject to the latest regulations.
 

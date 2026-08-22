@@ -3,7 +3,7 @@ title: "Classic Reading List (Reading Guide)"
 description: "The previous 19 chapters covered the methods; this chapter recommends the books worth reading over and over, organized in five tiers from beginner to close-reading methodology, and tells you why to read each book and how"
 ---
 
-# Classic Reading List (Reading Guide)
+# 20 · Classic Reading List (Reading Guide)
 
 > The first 19 chapters of this knowledge base have already explained the "methods" thoroughly: how to read candlesticks, how to define a trading system, how to manage risk, how to read financial statements. But behind every method is a framework, and a framework cannot be reverse-engineered from documentation alone — it needs good books underneath, one after another.
 >
