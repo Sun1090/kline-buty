@@ -1,0 +1,67 @@
+name: app-android-apk
+
+# app 分支专用：同一棵树内先构建 Web（根目录 dist/），再经 app-shell 打 Android debug APK。
+# 不依赖任何外部仓库；产物为可侧载 debug APK，上架签名包后续配置。
+on:
+  workflow_dispatch:
+  push:
+    branches: [app]
+
+concurrency:
+  group: app-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          # 仓库内有两份 lockfile（根 + app-shell），必须显式指定
+          cache-dependency-path: package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck & lint
+        run: |
+          npm run typecheck
+          npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build web
+        run: npm run build
+
+      - name: Install shell deps
+        working-directory: app-shell
+        run: npm ci
+
+      - name: Sync web -> www -> native
+        working-directory: app-shell
+        run: |
+          npm run web:sync
+          npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build debug APK
+        working-directory: app-shell/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kline-buty-debug-apk
+          path: app-shell/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
