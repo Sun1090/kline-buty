@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { inflateSync } from 'node:zlib'
 
 /** 等待蜡烛真正渲染（canvas 出现涨跌色像素）；冷启动直连慢时刷新一次重试，避免环境抖动误报 */
 /** 等待盘口数据渲染；冷启动直连慢时刷新重试一次（避免实时数据抖动误报） */
@@ -35,6 +36,66 @@ async function waitOrderBookReady(page: Page) {
     await waitCandlesRendered(page)
     await openPanel()
   }
+}
+
+
+/** 最小 PNG 解码器（仅用于测试）：支持 Chromium 截图导出的 8-bit RGBA / 非 interlace 格式 */
+function decodePng(buf: Buffer): { width: number; height: number; data: Uint8Array } {
+  expect(buf.subarray(0, 8).toString('latin1')).toBe('\x89PNG\r\n\x1a\n')
+  let pos = 8
+  let width = 0
+  let height = 0
+  let bitDepth = 0
+  let colorType = 0
+  let interlace = 0
+  const idat: Buffer[] = []
+  while (pos + 8 <= buf.length) {
+    const len = buf.readUInt32BE(pos)
+    const type = buf.subarray(pos + 4, pos + 8).toString('latin1')
+    const start = pos + 8
+    const end = start + len
+    const chunk = buf.subarray(start, end)
+    if (type === 'IHDR') {
+      width = chunk.readUInt32BE(0)
+      height = chunk.readUInt32BE(4)
+      bitDepth = chunk[8]
+      colorType = chunk[9]
+      interlace = chunk[12]
+    } else if (type === 'IDAT') {
+      idat.push(chunk)
+    } else if (type === 'IEND') break
+    pos = end + 4
+  }
+  expect(bitDepth).toBe(8)
+  expect(colorType).toBe(6)
+  expect(interlace).toBe(0)
+  const raw = inflateSync(Buffer.concat(idat))
+  const stride = width * 4
+  const data = new Uint8Array(height * stride)
+  let rp = 0
+  for (let y = 0; y < height; y++) {
+    const filter = raw[rp++]
+    const row = y * stride
+    for (let x = 0; x < stride; x++) {
+      const rawValue = raw[rp++]
+      const left = x >= 4 ? data[row + x - 4] : 0
+      const up = y > 0 ? data[row - stride + x] : 0
+      const upLeft = x >= 4 && y > 0 ? data[row - stride + x - 4] : 0
+      let value = rawValue
+      if (filter === 1) value += left
+      else if (filter === 2) value += up
+      else if (filter === 3) value += (left + up) >> 1
+      else if (filter === 4) {
+        const p = left + up - upLeft
+        const pa = Math.abs(p - left)
+        const pb = Math.abs(p - up)
+        const pc = Math.abs(p - upLeft)
+        value += pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft
+      }
+      data[row + x] = value & 255
+    }
+  }
+  return { width, height, data }
 }
 
 async function waitCandlesRendered(page: Page) {
@@ -516,6 +577,8 @@ async function dragSelectedAnchorUntil(
 }
 
 test.describe('K 线应用冒烟', () => {
+  test.use({ acceptDownloads: true })
+
   test('页面加载 → 实时行情 + 图表渲染', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -576,6 +639,39 @@ test.describe('K 线应用冒烟', () => {
     await openMore(page)
     expect(await isActive()).toBe(false)
   })
+  test('导出截图：图表水印关闭后仍强制携带免责声明角标', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    // 用户可关闭图表水印；但外发截图必须保留合规声明
+    await openMore(page)
+    const toggle = page.getByTestId('watermark-toggle')
+    await expect(toggle).toBeVisible()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    // 更多面板会覆盖图表右上角：先收起，再点图表内「截图」
+    await page.getByTestId('header-more').click()
+    await expect(page.getByTestId('desktop-more-panel')).toHaveCount(0)
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: '截图', exact: true }).click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m\.png$/)
+    const png = decodePng(readFileSync(await download.path()))
+    // 只检查角标所在右下区域；浅色文字像素量足以区分普通轴标签/网格
+    let textPixels = 0
+    for (let y = Math.max(0, png.height - 48); y < png.height; y++) {
+      for (let x = Math.max(0, png.width - 320); x < png.width; x++) {
+        const i = (y * png.width + x) * 4
+        const [r, g, b, a] = [png.data[i], png.data[i + 1], png.data[i + 2], png.data[i + 3]]
+        if (a > 220 && r > 170 && g > 170 && b > 170 && Math.abs(r - g) < 28 && Math.abs(g - b) < 28) textPixels++
+      }
+    }
+    expect(textPixels).toBeGreaterThan(120)
+  })
+
 
   test('切换周期/指标/交易对无异常', async ({ page }) => {
     const errors: string[] = []

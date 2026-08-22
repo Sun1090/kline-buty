@@ -17,6 +17,7 @@ import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n, localeFor, type MessageKey } from '../i18n'
 import { clampTooltipPos } from './tooltipPos'
+import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'none'
@@ -173,10 +174,11 @@ export function ChartView({
   regionCaptureRef.current = (rect) => {
     const dataUrl = apiRef.current?.takeScreenshot(rect)
     if (!dataUrl) return
-    const a = document.createElement('a')
-    a.href = dataUrl
-    a.download = `${symbol}_${period}_region.png`
-    a.click()
+    void exportScreenshotWithDisclaimer(
+      dataUrl,
+      `${symbol}_${period}_region.png`,
+      t('disclaimer.watermark'),
+    )
     setRegionSelecting(false)
   }
 
@@ -643,10 +645,11 @@ export function ChartView({
         onClick={() => {
           const dataUrl = apiRef.current?.takeScreenshot()
           if (!dataUrl) return
-          const a = document.createElement('a')
-          a.href = dataUrl
-          a.download = `${symbol}_${period}.png`
-          a.click()
+          void exportScreenshotWithDisclaimer(
+            dataUrl,
+            `${symbol}_${period}.png`,
+            t('disclaimer.watermark'),
+          )
         }}
         title={t('drawing.screenshotTitle')}
         style={{
