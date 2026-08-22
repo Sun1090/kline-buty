@@ -56,4 +56,4 @@ cd .. && npm run build && cd app-shell && npm run web:sync && npx cap sync
 1. Keep shell changes inside `app-shell/`; shell deps in `app-shell/package.json` only — never the root
 2. Don't break the toolchain-scope boundary: `eslint.config.js` ignores `app-shell`, `tsconfig.json` includes only `src/` — keep it that way
 3. `npm run build` gate before push (clean commit ≠ buildable)
-4. Uninstall the old APK before installing a new one (until M1 pins the signature)
+4. Uninstall an old ephemeral-CI APK once before installing the first pinned-signature build; later builds upgrade in place

@@ -88,7 +88,7 @@ kline-buty repo (single branch: main)
 |---|---|---|
 | 1 | A bad commit (type error) lands on main → both the web CI and the app-build CI die at the first `tsc` step | **Pre-push local gate**: `npm run build` (~15s) must pass before push |
 | 2 | Syncing without rebuilding → the APK contains the old web (src is v2, www still v1) | **Local packaging trio**: root `npm run build` → `npm run web:sync` in app-shell → `npx cap sync`. CI is inherently safe (full rebuild every run) |
-| 3 | Debug APKs are signed with the ephemeral runner's `~/.android/debug.keystore` — a different signature every CI run → upgrade-install fails; uninstalling wipes localStorage (layouts/alerts/preferences) | M0 accepted: uninstall before installing. **M1 TODO: pin the keystore** (generate once in CI, store in secrets or commit it) |
+| 3 | Debug APKs were signed with the ephemeral runner's `~/.android/debug.keystore` — a different signature every CI run → upgrade-install failed; uninstalling wiped localStorage (layouts/alerts/preferences) | **Fixed in M1:** CI injects a pinned debug keystore from secrets; first migration still requires one uninstall |
 | 4 | `cap sync` rewrites `ios/App/CapApp-SPM/Package.swift` and `capacitor.config.json` on every run → worktree looks dirty | Both are gitignored (`ios/.gitignore`, `android/.gitignore`); `Package.swift` is idempotent (content-stable across runs, verified). Safe to commit the template |
 | 5 | `workflow_dispatch` iOS workflow only triggerable from the default branch — placing it on a non-default branch 404s | Keep app workflows on `main`; `paths` filter limits mobile builds to relevant changes only |
 
@@ -143,7 +143,7 @@ Honest costs:
 
 | Risk | Mitigation |
 |---|---|
-| Ephemeral CI debug signature blocks upgrade installs | M0 uninstall/reinstall (data loss acknowledged); M1 pinned keystore (§3.4 pitfall 4) |
+| Ephemeral CI debug signature blocks upgrade installs | **Fixed in M1:** pinned debug keystore from secrets; first migration requires one uninstall |
 | "Knowledge base" entry 404s in-app | sync script excludes dist/knowledge (59MB) by default; M1 decides: `--with-knowledge` offline pack vs external link |
 | WebView rendering ceiling (old devices, Canvas jank) | re-verify the 20k-candle <60ms budget on mainstream devices; existing windowing; degrade on extreme devices |
 | Binance API unreachable in some networks | dual domains + configurable self-hosted proxy; data layer is pluggable (OKX/Bybit candidates) |
