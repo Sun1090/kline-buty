@@ -376,6 +376,25 @@ describe('moveAnchor（锚点拖拽）', () => {
     expect(moved.points).toEqual([{ time: 20, price: 120 }])
     expect(moved.type).toBe('horizontal')
   })
+  it('水平通道按价格重排，窗口锚点仍可编辑', () => {
+    const d = createDrawing('hchannel', [{ time: 20, price: 120 }, { time: 80, price: 80 }], 'hc')
+    // 拖下沿到更高价格后，两点按价格交换；未拖动点的原始 time 随对象保留。
+    const moved = moveAnchor(d, 1, { time: 50, price: 140 })
+    expect(moved.points[0]).toEqual({ time: 80, price: 80 })
+    expect(moved.points[1]).toEqual({ time: 50, price: 140 })
+    const expanded = moveAnchor(moved, 0, { time: 110, price: 70 })
+    expect(expanded.points[0]).toEqual({ time: 110, price: 70 })
+    expect(expanded.points[1]).toEqual({ time: 50, price: 140 })
+  })
+  it('风险回报三点按时间排序，任一锚点仍可独立编辑', () => {
+    const d = createDrawing('rr', [{ time: 10, price: 100 }, { time: 30, price: 80 }, { time: 60, price: 150 }], 'rr')
+    const movedStop = moveAnchor(d, 1, { time: 35, price: 75 })
+    expect(movedStop.points.map((point) => point.time)).toEqual([10, 35, 60])
+    expect(movedStop.points[1]).toEqual({ time: 35, price: 75 })
+    const movedTarget = moveAnchor(d, 2, { time: 70, price: 160 })
+    expect(movedTarget.points.map((point) => point.time)).toEqual([10, 30, 70])
+    expect(movedTarget.points[2]).toEqual({ time: 70, price: 160 })
+  })
 })
 
 describe('nearestAnchor（锚点命中）', () => {

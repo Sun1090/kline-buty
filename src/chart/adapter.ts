@@ -1054,7 +1054,12 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         const price = p === p1 ? d.points[0].price : d.points[1].price
         this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
-        if (selected) this.drawAnchor(ctx, 0, p.y)
+        if (selected) {
+          // 锚点必须画在时间投影处：nearestAnchor 按同一投影点判定，x=0 会导致可见锚点不可拖。
+          // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
+          ctx.fillStyle = '#4e9cf5'
+          this.drawAnchor(ctx, p.x, p.y)
+        }
       }
       return
     }
@@ -1182,7 +1187,12 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         ctx.setLineDash([])
         this.drawLabel(ctx, 0, pt.y, p!.price.toFixed(2), 'left')
-        if (selected) this.drawAnchor(ctx, 0, pt.y)
+        if (selected) {
+          // 锚点必须画在时间投影处：nearestAnchor 按同一投影点判定，x=0 会导致可见锚点不可拖。
+          // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
+          ctx.fillStyle = '#4e9cf5'
+          this.drawAnchor(ctx, pt.x, pt.y)
+        }
       }
       // 盈亏比标签：右侧（入场线附近），显示 1:ratio
       const { ratio } = riskRewardRatio(d.points[0], d.points[1], d.points[2])

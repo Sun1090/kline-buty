@@ -308,6 +308,65 @@ async function findHorizontalBandAnchor(page: Page, which: 'min' | 'max') {
   }, which)
 }
 
+/** 扫描横贯水平线上的圆形锚点：先定位横线，再在横线附近找局部蓝色圆点 */
+async function findHorizontalLineAnchor(page: Page, which: 'min' | 'max') {
+  return page.evaluate((w) => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return null
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return null
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    const pts: { x: number; y: number }[] = []
+    const rowCount = new Map<number, number>()
+    for (let pixel = 0; pixel < width * height; pixel++) {
+      const i = pixel * 4
+      if (img[i + 3] > 80 && img[i] < 130 && img[i + 1] > 110 && img[i + 1] < 200 && img[i + 2] > 190) {
+        const x = pixel % width
+        const y = Math.floor(pixel / width)
+        pts.push({ x, y })
+        rowCount.set(y, (rowCount.get(y) ?? 0) + 1)
+      }
+    }
+    // 横贯线：单行蓝色像素覆盖大部分宽度；相邻行聚成候选 y。
+    const rows = [...rowCount.entries()]
+      .filter(([, n]) => n > width * 0.35)
+      .map(([y]) => y)
+      .sort((a, b) => a - b)
+    const groups: number[][] = []
+    for (const y of rows) {
+      const group = groups[groups.length - 1]
+      if (!group || y - group[group.length - 1] > 4) groups.push([y])
+      else group.push(y)
+    }
+    const centers = groups.map((group) => {
+      const cy = group.reduce((sum, y) => sum + y, 0) / group.length
+      const near = pts.filter((p) => Math.abs(p.y - cy) <= 8)
+      if (!near.length) return null
+      const columns = new Map<number, number>()
+      for (const p of near) columns.set(p.x, (columns.get(p.x) ?? 0) + 1)
+      // 圆点列高约 5-7px，普通横线只有 1-3px。
+      const candidates = [...columns.entries()]
+        .filter(([, n]) => n >= 4)
+        .map(([x, n]) => ({ x, n, score: n * (1 + x / width) }))
+      if (!candidates.length) return null
+      candidates.sort((a, b) => b.score - a.score)
+      const target = candidates[0]
+      const blob = near.filter((p) => Math.abs(p.x - target.x) <= 4)
+      return {
+        x: blob.reduce((sum, p) => sum + p.x, 0) / blob.length,
+        y: blob.reduce((sum, p) => sum + p.y, 0) / blob.length,
+      }
+    }).filter((v): v is { x: number; y: number } => v !== null)
+    if (!centers.length) return null
+    centers.sort((a, b) => a.y - b.y)
+    return w === 'max' ? centers[centers.length - 1] : centers[0]
+  }, which)
+}
+
 /**
  * 拖拽选中画线的指定锚点（min=首锚点/max=尾锚点），直到 verify 通过或重试耗尽。
  * 实时行情会平移图表，扫描-拖拽存在竞态：失败则重新扫描（必要时点选线中心重新选中）再拖。
@@ -585,6 +644,83 @@ test.describe('K 线应用冒烟', () => {
       )
       .toBeGreaterThan(0)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 切回鼠标后，可见锚点必须可拖：下边框锚点对应 points[1]，拖拽后时间与价格都变化。
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await expect.poll(() => findHorizontalLineAnchor(page, 'max'), { timeout: 5_000 }).not.toBeNull()
+    const readHchannel = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d).flat().filter((x: unknown) => (x as { type?: string }).type === 'hchannel')
+          return (arr[0] as { id: string; points: { time: number; price: number }[] }) ?? null
+        } catch {
+          return null
+        }
+      })
+    const beforeHchannel = await readHchannel()
+    expect(beforeHchannel).not.toBeNull()
+    expect(beforeHchannel!.points).toHaveLength(2)
+    let hchannelAnchorDragged = false
+    for (let attempt = 0; attempt < 4 && !hchannelAnchorDragged; attempt++) {
+      const anchor = await findHorizontalLineAnchor(page, 'max')
+      if (!anchor) {
+        await page.waitForTimeout(200)
+        continue
+      }
+      await page.evaluate(
+        ({ x, y }) => {
+          const chart = document.querySelector('main .chart-container') as HTMLElement | null
+          if (!chart) return
+          const fire = (type: string, tx: number, ty: number) =>
+            chart.dispatchEvent(
+              new PointerEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                pointerId: 1,
+                pointerType: 'mouse',
+                isPrimary: true,
+                clientX: chart.getBoundingClientRect().left + tx,
+                clientY: chart.getBoundingClientRect().top + ty,
+                button: type === 'pointermove' ? -1 : 0,
+                buttons: type === 'pointerup' ? 0 : 1,
+              }),
+            )
+          const down = new PointerEvent('pointerdown', {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            pointerId: 1,
+            pointerType: 'mouse',
+            isPrimary: true,
+            clientX: chart.getBoundingClientRect().left + x,
+            clientY: chart.getBoundingClientRect().top + y,
+            button: 0,
+            buttons: 1,
+          })
+          chart.dispatchEvent(down)
+          fire('pointermove', x + 1, y + 1)
+          fire('pointermove', x + Math.max(1, chart.clientWidth * 0.05), y + chart.clientHeight * 0.06)
+          fire('pointerup', x + Math.max(1, chart.clientWidth * 0.05), y + chart.clientHeight * 0.06)
+        },
+        { x: anchor.x, y: anchor.y },
+      )
+      for (let poll = 0; poll < 6 && !hchannelAnchorDragged; poll++) {
+        await page.waitForTimeout(400)
+        const after = await readHchannel()
+        if (!after || after.id !== beforeHchannel!.id || after.points.length !== 2) continue
+        // hchannel 按价格重排：被拖点低于另一端时会交换索引。
+        // 实时行情平移会让多次重试前的固定索引基准过期，这里只要求快照确实变化且仍是合法升序通道。
+        const changed =
+          JSON.stringify(after.points) !== JSON.stringify(beforeHchannel!.points)
+        const sorted = after.points[0].price <= after.points[1].price
+        hchannelAnchorDragged = changed && sorted
+      }
+    }
+    expect(hchannelAnchorDragged).toBe(true)
+    await page.waitForTimeout(300)
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
