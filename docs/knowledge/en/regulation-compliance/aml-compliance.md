@@ -1,9 +1,9 @@
 ---
-title: "AML and Trading Compliance"
+title: "08 · AML and Trading Compliance"
 description: "A thorough look at AML and KYC rules, covering compliance actions, suspicious transaction markers, and tax filing handling."
 ---
 
-# AML and Trading Compliance
+# 08 · AML and Trading Compliance
 
 > The ID you submit when registering on an exchange, the source-of-funds statement required at withdrawal, the popup telling you your account is restricted — these aren't the platform "giving you a hard time"; they are the **AML (anti-money laundering) compliance system** in motion. This article explains AML/KYC rules thoroughly: what financial institutions and exchanges actually check, which compliance actions ordinary traders encounter, which trading behaviors get flagged as suspicious, and how to handle tax filing.
 

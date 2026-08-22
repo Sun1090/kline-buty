@@ -1,9 +1,9 @@
 ---
-title: "Forex Market: The World's Largest Financial Battlefield"
+title: "01 · Forex Market: The World's Largest Financial Battlefield"
 description: "Forex market explained — currency pairs, the US Dollar Index DXY, quote mechanics, pip value calculation, four-city trading sessions, leverage characteristics, and what drives exchange rates"
 ---
 
-# Forex Market: The World's Largest Financial Battlefield
+# 01 · Forex Market: The World's Largest Financial Battlefield
 
 > The foreign exchange (FX / Forex) market is the world's **largest, most **<mark>liquid</mark>**, and longest-trading** financial market. It has no central exchange and no price limits, and it never stops from Monday to Friday, 24 hours a day — you have to wait for the evening session to buy US stocks, but forex always has a counterparty.
 >

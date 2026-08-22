@@ -1,9 +1,9 @@
 ---
-title: "Order Flow and Market Microstructure"
+title: "09 · Order Flow and Market Microstructure"
 description: "Order flow and market microstructure — candles as results vs. order flow as process, time & sales, order book depth, aggressive buying/selling, and large-order detection"
 ---
 
-# Order Flow and Market Microstructure
+# 09 · Order Flow and Market Microstructure
 
 > Candles are the "result"; **<mark>order flow</mark>** is the "process". A candle tells you what happened this minute/hour; order flow tells you **how it happened**: who is buying aggressively, who is selling aggressively, whether the book has thick walls, whether a large order is a real slam or a fake post. Learning to read order flow is like adding a "microscope" to your chart — you see the buyers and sellers battling behind each candle.
 

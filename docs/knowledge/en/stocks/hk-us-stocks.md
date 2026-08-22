@@ -1,9 +1,9 @@
 ---
-title: "HK and US Stocks"
+title: "03 · HK and US Stocks"
 description: "HK and US stock trading rules — HK T+0 round trips with T+2 settlement, US pre-market and after-hours sessions, the VCM and circuit breakers, compliant account opening and funding, ADRs and index ETFs"
 ---
 
-# HK and US Stocks
+# 03 · HK and US Stocks
 
 > Before allocating to HK or US stocks, understand two entirely different sets of rules: HK stocks trade T+0 round trips but settle T+2, with no price limits but a volatility control mechanism; US stocks trade pre-market and after-hours, with no price limits but circuit breakers. This article also covers the HK vs US differences, broker selection and compliant account opening and funding, plus ADRs and US index ETFs. **When investing offshore, compliance is always the first premise.**
 

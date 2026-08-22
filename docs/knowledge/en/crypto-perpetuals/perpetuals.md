@@ -1,9 +1,9 @@
 ---
-title: "Perpetual Swaps"
+title: "01 · Perpetual Swaps"
 description: "Crypto perpetual swaps explained — what a perpetual swap is, USDT-margined vs coin-margined contracts, cross vs isolated margin, liquidation price calculation, leverage risk, and how to avoid liquidation"
 ---
 
-# Perpetual Swaps
+# 01 · Perpetual Swaps
 
 > The perpetual swap (Perpetual Contract / Perp) is the most popular derivative in the crypto market: trading volume routinely exceeds spot, markets are open 24/7, and **<mark>leverage</mark>** can reach 100x or more.
 > It has no delivery date and no expiry — one contract can be held all the way until "**<mark>liquidation</mark>**" — which is exactly the warning retail traders hear most often in the perpetual market.

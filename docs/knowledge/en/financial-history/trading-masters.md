@@ -1,9 +1,9 @@
 ---
-title: "Trading Masters"
+title: "03 · Trading Masters"
 description: "Eight trading masters — their lives, core methods, and famous lessons — covering the two main lineages: trend-and-sentiment and value-and-quant."
 ---
 
-# Trading Masters
+# 03 · Trading Masters
 
 > The previous two articles covered "how markets destroy people"; this one covers "how people beat the market". The eight masters span trading history's two main lineages: the **trend-and-sentiment school** (Livermore, Dennis) tamed human nature with rules, while the **value-and-quant school** (Buffett, Thorp, Simons) bypassed it with mathematics and a businessman's lens. Each master gets their background, core methods, famous quotes, and lessons from wins and losses, ending with one point **ordinary traders can borrow** — the masters' methods can be copied, and so can their endings. Read them against your own habits.
 >

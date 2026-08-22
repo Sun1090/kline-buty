@@ -1,9 +1,9 @@
 ---
-title: "Why Traders Lose"
+title: "01 · Why Traders Lose"
 description: "The most common reasons retail traders lose — nine behavioral patterns dissected: trading without a plan, excessive leverage, holding losers without a stop-loss, fee attrition from overtrading, and more"
 ---
 
-# Why Traders Lose
+# 01 · Why Traders Lose
 
 > Retail traders never lose because of "bad luck". The vast majority of losses can be attributed to a handful of highly repetitive behavioral patterns — they do not care about your education, your account size, or whether the market is bullish or bearish; they just keep draining your account dry, slowly.
 

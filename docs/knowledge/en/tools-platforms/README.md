@@ -1,4 +1,4 @@
-# Tools & Platforms
+# 17 · Tools & Platforms
 
 > The earlier chapters taught you to **read the market, build a system, and recognize risk**. This chapter answers a different question: what to use for looking, where to get data, which platform to trade on, and in what environment to run your research.
 >

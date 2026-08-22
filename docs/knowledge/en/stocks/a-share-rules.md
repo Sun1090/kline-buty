@@ -1,9 +1,9 @@
 ---
-title: "A-Share Trading Rules"
+title: "02 · A-Share Trading Rules"
 description: "A practical rulebook for trading A-shares — trading hours, call auction vs continuous auction, price limits, T+1, fees, IPO subscription, margin trading, and northbound funds, all in one place"
 ---
 
-# A-Share Trading Rules
+# 02 · A-Share Trading Rules
 
 > This article is a hands-on A-share manual: when you can trade, how much you can buy, how far prices can move, how to work around T+1, exactly what the fees are, how to subscribe to IPOs, how to open a margin account, which account types exist, and what northbound funds are. Rules change constantly — **always defer to the latest announcements of the SSE/SZSE/BSE and the CSRC**; figures here follow the 2025-2026 rules as closely as possible.
 

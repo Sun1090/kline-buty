@@ -1,9 +1,9 @@
 ---
-title: "Central Bank Policy and Event Trading"
+title: "06 · Central Bank Policy and Event Trading"
 description: "Forex is at heart the relative strength of two currencies, and interest rates are the primary driver of exchange rates — so 'what central banks do' decides the medium-term direction more than any technical indicator. Every Fed rate decision, every BOJ verbal intervention, every digit of the NFP report…"
 ---
 
-# Central Bank Policy and Event Trading
+# 06 · Central Bank Policy and Event Trading
 
 > Forex is at heart **the relative strength of two currencies**, and interest rates are the primary driver of exchange rates — so "what central banks do" shapes the medium-term direction more than any technical indicator. Every Fed rate decision, every BOJ verbal intervention, every digit in an NFP report can move EUR/USD dozens of pips within a minute.
 >

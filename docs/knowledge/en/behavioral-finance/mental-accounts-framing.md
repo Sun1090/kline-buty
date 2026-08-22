@@ -1,9 +1,9 @@
 ---
-title: "Mental Accounting & Framing"
+title: "04 · Mental Accounting & Framing"
 description: "Richard Thaler (2017 Nobel laureate in Economics) asked a simple question: is the 100 in your paycheck the same money as a 100 lottery windfall? The rational agent says yes — but in reality almost everyone spends the two completely differently. Money isn't just money…"
 ---
 
-# Mental Accounting & Framing
+# 04 · Mental Accounting & Framing
 
 > Richard Thaler (2017 Nobel laureate in Economics) asked a simple question: **is the 100 from your salary the same as the 100 from a lottery ticket?** A rational agent says "yes" — but in reality, nearly everyone spends those two sums completely differently. Not all money is treated as money — that's **<mark>mental accounting</mark>**. And when rewording the same sentence changes decisions — that's the **<mark>framing effect</mark>**. Together they are the deep psychological explanation for why "**<mark>stop-losses</mark>** never get executed."
 

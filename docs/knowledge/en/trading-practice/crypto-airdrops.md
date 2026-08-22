@@ -1,9 +1,9 @@
 ---
-title: "Crypto Airdrops and Airdrop Farming"
+title: "07 · Crypto Airdrops and Airdrop Farming"
 description: "A practical guide to crypto airdrops and farming — classic cases, cost accounting, expected returns, and anti-Sybil risk."
 ---
 
-# Crypto Airdrops and Airdrop Farming
+# 07 · Crypto Airdrops and Airdrop Farming
 
 > "Airdrop" is a wealth phenomenon unique to crypto: projects distribute their tokens free to early users, and ordinary people can claim tokens of real value just "by doing tasks with their fingers". Hence the industry of "airdrop farming" ("farming" = systematically claiming free tokens at scale).
 >

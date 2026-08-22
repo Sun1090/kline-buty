@@ -1,9 +1,9 @@
 ---
-title: "Volume-Price Analysis"
+title: "03 · Volume-Price Analysis"
 description: "Volume-price analysis — volume as the market's raw data; the meaning of expanding, shrinking, and stacked volume, judging the authenticity of rises and falls, and the classic volume-price relationships"
 ---
 
-# Volume-Price Analysis
+# 03 · Volume-Price Analysis
 
 > Moving averages, MACD, and KDJ are all processed from "price", but **<mark>volume is the only raw data collected directly from the market without any mathematical processing</mark>**. That is why technical analysis has an old saying: "Price can lie; volume hardly can." The core task of volume-price analysis: **<mark>use volume to judge whether the current rise/fall in price is "real"</mark>.**
 

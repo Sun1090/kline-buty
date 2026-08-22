@@ -1,9 +1,9 @@
 ---
-title: "Macro Economy and Markets: Read the Big Picture Before Trading"
+title: "08 · Macro Economy and Markets: Read the Big Picture Before Trading"
 description: "Macro economy and markets — central-bank monetary policy, how to read key economic data, the data calendar, the economic cycle and Merrill Lynch Investment Clock, and market sentiment indicators"
 ---
 
-# Macro Economy and Markets: Read the Big Picture Before Trading
+# 08 · Macro Economy and Markets: Read the Big Picture Before Trading
 
 > Stocks follow companies, commodities follow supply and demand, but **the price of every asset ultimately points to one variable: macro**. One rate move reprices global assets; one payroll print and the dollar and gold jump instantly.
 >

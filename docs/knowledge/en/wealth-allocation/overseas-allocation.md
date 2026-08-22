@@ -1,9 +1,9 @@
 ---
-title: "Overseas Allocation in Practice"
+title: "06 · Overseas Allocation in Practice"
 description: "Compliance boundaries, legitimate paths, costs, and risks of overseas asset allocation — and an objective look at what problems it actually solves."
 ---
 
-# Overseas Allocation in Practice
+# 06 · Overseas Allocation in Practice
 
 > Can ordinary mainland residents buy overseas assets? Yes — but "can you" hinges not on products, on **whether the channel your money takes abroad is compliant**. This chapter teaches no regulatory circumvention; it lays out each path's legal boundaries, costs, and risks, helping you judge objectively: what problems does overseas allocation actually solve — and what new ones does it create?
 

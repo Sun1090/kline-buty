@@ -1,9 +1,9 @@
 ---
-title: "US Stock Options Primer"
+title: "06 · US Stock Options Primer"
 description: "A hands-on guide to US stock Options — reading the option chain, four beginner strategies with worked numbers, US permission tiers, margin and tax rules, and the classic ways to blow up"
 ---
 
-# US Stock Options Primer
+# 06 · US Stock Options Primer
 
 > For the basic concepts of Options (rights vs obligations, the four elements, in/out of the money, the Greeks), read [Options Basics](../markets-instruments/options-basics.md) first.
 > This article upgrades that base toward US practice: what the world's most active options market looks like, how to read an option chain, how to run four beginner strategies (with worked numbers), the US-only permission tiers/**<mark>margin</mark>**/tax rules, and the most common ways to die. **Do not touch any strategy here before the basics of Options are fully digested.**

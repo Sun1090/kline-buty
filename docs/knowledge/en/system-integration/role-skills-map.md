@@ -1,9 +1,9 @@
 ---
-title: "Role Skills Map"
+title: "08 · Role Skills Map"
 description: "A panoramic guide to the eight core roles on a trading system team: responsibilities, hard skills, tech stacks, and career paths."
 ---
 
-# Role Skills Map
+# 08 · Role Skills Map
 
 > What kind of people does a trading system team need? Quant researcher, quant trader, strategy engineer, backend engineer, frontend engineer, SRE, risk engineer, compliance — this article lays out each role's responsibility boundaries, hard skills, tech stack, career path, and common interview questions in one pass, plus the 4–6 person minimum configuration for startup teams.
 >

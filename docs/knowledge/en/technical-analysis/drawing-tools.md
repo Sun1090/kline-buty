@@ -1,9 +1,9 @@
 ---
-title: "Drawing Tools in Practice"
+title: "07 · Drawing Tools in Practice"
 description: "Drawing tools in practice — horizontal lines, trend lines, channels, Fibonacci, and XABCD: turning price structure into verifiable hypotheses"
 ---
 
-# Drawing Tools in Practice
+# 07 · Drawing Tools in Practice
 
 > Drawing is the only way to translate "the price structure you understand" into "a verifiable hypothesis on the screen". Horizontal lines mark **<mark>support/resistance</mark>**, **<mark>trend lines</mark>** mark rhythm, channels mark boundaries, Fibonacci marks retracement targets, XABCD marks harmonic structure — **<mark>the tools themselves have no predictive power; the quality of a drawing depends on "why you drew it here", not "how precisely it is drawn"</mark>.**
 

@@ -1,9 +1,9 @@
 ---
-title: "Bonds and Interest Rates: The Pricing Anchor of Assets"
+title: "02 · Bonds and Interest Rates: The Pricing Anchor of Assets"
 description: "Bonds and interest rates explained — bond pricing, the yield curve, the risk-free rate, the US 10-year pricing anchor, and how hikes and cuts transmit to every asset class"
 ---
 
-# Bonds and Interest Rates: The Pricing Anchor of Assets
+# 02 · Bonds and Interest Rates: The Pricing Anchor of Assets
 
 > Stocks, forex, and crypto all have their speculators, but **what truly determines "how much money is worth" are bonds and interest rates**. When the Fed hikes, global stocks tremble, gold falls, crypto crashes — the starting point of the transmission chain is always the bond market.
 >

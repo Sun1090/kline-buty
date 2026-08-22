@@ -1,9 +1,9 @@
 ---
-title: "Trading Interfaces and Order Lifecycle: The Heart of the System"
+title: "04 · Trading Interfaces and Order Lifecycle: The Heart of the System"
 description: "Interface shapes, the order state machine, matching principles, reconciliation and rate limits, plus a battle-scarred bug checklist."
 ---
 
-# Trading Interfaces and Order Lifecycle: The Heart of the System
+# 04 · Trading Interfaces and Order Lifecycle: The Heart of the System
 
 > Mistakes in the market data module cost data quality; mistakes in the trading module cost real money. The trading interface is the part of the whole integration system that **least tolerates trial and error**: duplicate orders, un-cancellable orders, corrupted state, out-of-order reports — every one of them burns cash directly.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Carry Trade and Interest Rate Differentials: The Primary Driver of Exchange Rates"
+title: "02 · Carry Trade and Interest Rate Differentials: The Primary Driver of Exchange Rates"
 description: "The forex market's most classic, most profitable, and most dangerous strategy has only one name: the carry trade — borrow low-yield currencies, buy high-yield currencies, and earn the rate differential while you sleep. But it was also the detonator of the August 2024 global equity crash. This chapter…"
 ---
 
-# Carry Trade and Interest Rate Differentials: The Primary Driver of Exchange Rates
+# 02 · Carry Trade and Interest Rate Differentials: The Primary Driver of Exchange Rates
 
 > The forex market's most classic, most profitable, and most dangerous strategy has only one name: **the carry trade** — borrow a low-yield currency, buy a high-yield currency, and earn the rate differential while you sleep. But it was also the detonator of the August 2024 global equity crash. This chapter dissects its principle, math, risks, and that famous "unwind crisis", ending with compliant variants ordinary people can access.
 

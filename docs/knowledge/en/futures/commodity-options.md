@@ -1,9 +1,9 @@
 ---
-title: "Futures Options and Commodity Options: Contracts That Insure Your Futures"
+title: "07 · Futures Options and Commodity Options: Contracts That Insure Your Futures"
 description: "Futures options and commodity options — mechanics, domestic products, volatility traits, hands-on buyer and seller strategies, option pricing Greeks, and common ways to die"
 ---
 
-# Futures Options and Commodity Options: Contracts That Insure Your Futures
+# 07 · Futures Options and Commodity Options: Contracts That Insure Your Futures
 
 > An option is "paying a **<mark>premium</mark>** to buy the right to choose". When the underlying is a futures contract, it is a futures option; when the product sits in agriculture, metals, or energy, it is a commodity option. This article explains the mechanics of these options, domestic products, **<mark>volatility</mark>** traits, and the common ways buyers and sellers die.
 

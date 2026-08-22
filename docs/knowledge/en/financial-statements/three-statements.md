@@ -1,9 +1,9 @@
 ---
-title: "Reading the Three Statements Closely"
+title: "01 · Reading the Three Statements Closely"
 description: "A close reading of the balance sheet, income statement, and cash flow statement, explaining how the three statements tie together, with a 10-item earnings-quality checklist and a practical workflow."
 ---
 
-# Reading the Three Statements Closely
+# 01 · Reading the Three Statements Closely
 
 > Financial reports are letters companies write to their shareholders: the balance sheet describes the "net worth", the income statement the "face", and the cash flow statement the "substance". This article reads each of the three statements line by line, explains how they tie together, provides a 10-item "earnings quality" checklist, and finishes by walking through a full analysis with the simplified statements of a fictional company.
 

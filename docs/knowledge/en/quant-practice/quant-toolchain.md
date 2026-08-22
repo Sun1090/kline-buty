@@ -1,9 +1,9 @@
 ---
-title: "Quant Toolchain"
+title: "01 · Quant Toolchain"
 description: "Build a sufficient, low-friction quant research toolchain for the individual programmer and run the research loop at minimal cost."
 ---
 
-# Quant Toolchain
+# 01 · Quant Toolchain
 
 > For individual programmers / traders who want to get into quant: first assemble a toolchain that is "good enough, no fuss". This article does not chase an engineering team's arms race — it just wants you running the research loop on your own machine at the lowest possible cost.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Options in Practice and Risk Control: From Paper Trading to Real Money"
+title: "04 · Options in Practice and Risk Control: From Paper Trading to Real Money"
 description: "The previous three articles covered how options are priced, how to read the Greeks, and which strategies exist. This one answers the final question: how to put that knowledge to work in live trading — and how not to get wiped out"
 ---
 
-# Options in Practice and Risk Control: From Paper Trading to Real Money
+# 04 · Options in Practice and Risk Control: From Paper Trading to Real Money
 
 > The previous three articles covered how options are priced, how to read the Greeks, and which strategies exist. This one answers the final question: **how to put that knowledge to work in live trading — and how not to get wiped out.**
 >

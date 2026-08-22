@@ -1,9 +1,9 @@
 ---
-title: "DeFi and the On-Chain Ecosystem Deep Dive: From Yield Myths to a Risk Dissection"
+title: "15 · DeFi and the On-Chain Ecosystem Deep Dive: From Yield Myths to a Risk Dissection"
 description: "A deep dive into DeFi and the on-chain ecosystem — the concrete mechanics, dollar math, and risk switches of staking, lending, liquidity mining, yield aggregation, and cross-chain bridges"
 ---
 
-# DeFi and the On-Chain Ecosystem Deep Dive: From Yield Myths to a Risk Dissection
+# 15 · DeFi and the On-Chain Ecosystem Deep Dive: From Yield Myths to a Risk Dissection
 
 > [07 - Crypto Landscape](crypto-landscape.md) covered the framework view of DeFi (CEX vs DEX, four ways to play, contract risks); this article is a **hands-on deep dive**: not stopping at "DeFi is decentralized finance", but taking staking, lending, **<mark>liquidity</mark>** mining, yield aggregation, and cross-chain bridges apart one by one — their **concrete mechanics, dollar math, and risk switches**.
 >

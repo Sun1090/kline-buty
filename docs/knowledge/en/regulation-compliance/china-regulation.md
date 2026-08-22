@@ -1,9 +1,9 @@
 ---
-title: "China's Financial Regulatory System"
+title: "01 · China's Financial Regulatory System"
 description: "Maps China's financial regulators to each type of institution, building the skeleton of the regulatory system around the question of who regulates what."
 ---
 
-# China's Financial Regulatory System
+# 01 · China's Financial Regulatory System
 
 > The most common mistake traders make is treating exchanges, brokers, and banks as "the same kind of thing". In reality, every category of institution in the Chinese market answers to a different regulator, and every trading rule carries a piece of regulatory history. This article starts from "who regulates what" to build the skeleton of China's financial regulatory system.
 

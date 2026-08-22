@@ -1,5 +1,5 @@
 ---
-title: "Candlestick & Chart Basics"
+title: "03 · Candlestick & Chart Basics"
 description: "Candlestick and chart fundamentals — the four elements of a single candle, timeframe selection, moving-average usage, volume confirmation, and chart type differences; enough to start reading charts right away"
 ---
 

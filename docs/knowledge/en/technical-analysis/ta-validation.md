@@ -1,9 +1,9 @@
 ---
-title: "Technical Analysis: Critique and Validation"
+title: "06 · Technical Analysis: Critique and Validation"
 description: "Critique and validation of technical analysis — the momentum effect, support/resistance anchoring, backtesting methodology, and an academic audit of whether a signal is truly effective"
 ---
 
-# Technical Analysis: Critique and Validation
+# 06 · Technical Analysis: Critique and Validation
 
 > The previous articles taught you how to "use" technical analysis; this one pours cold water on it: does technical analysis actually work? What does academia say? Why do some people make money and others lose on the same pattern? And — **when is a signal "genuinely effective" rather than "looks effective"?**
 

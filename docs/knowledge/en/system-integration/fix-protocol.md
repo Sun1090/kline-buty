@@ -1,9 +1,9 @@
 ---
-title: "FIX Protocol Deep Dive: The Common Language of Global Institutional Trading"
+title: "09 · FIX Protocol Deep Dive: The Common Language of Global Institutional Trading"
 description: "FIX message format, core message types, session keep-alive, and a selection guide for overseas institutional markets."
 ---
 
-# FIX Protocol Deep Dive: The Common Language of Global Institutional Trading
+# 09 · FIX Protocol Deep Dive: The Common Language of Global Institutional Trading
 
 > Domestic futures have CTP; crypto exchanges have REST/WebSocket — but the common language of overseas institutional markets (CME, Interactive Brokers, interbank) is FIX. It is finance's oldest and most widely deployed "text exchange format" — no SDK, no private binary, just a field dictionary and line after line of `Tag=Value`.
 >

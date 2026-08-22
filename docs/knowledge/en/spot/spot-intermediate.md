@@ -1,9 +1,9 @@
 ---
-title: "Spot Practice: Next Level"
+title: "02 · Spot Practice: Next Level"
 description: "Spot trading in practice, advanced — funding workflows, order placement techniques, position management, combining spot with yield products, and review checklists; curing the two chronic faults of buying too high and failing to hold"
 ---
 
-# Spot Practice: Next Level
+# 02 · Spot Practice: Next Level
 
 > The basics article covered "what spot is and how to place orders"; this article answers "how it is actually done in practice".
 > From funding, order placement techniques, and position management to the combination of spot and yield products — everything is grounded in concrete workflows and numeric examples.

@@ -1,9 +1,9 @@
 ---
-title: "Beginner Books"
+title: "01 · Beginner Books"
 description: "The first batch of books for complete beginners. This tier's goal is not teaching you how to trade, but building three things: a sound view of money (how money works), a sound view of assets (what is an asset vs. a liability), and a sound view of investing (investing before trading; slow is fast)"
 ---
 
-# Beginner Books
+# 01 · Beginner Books
 
 > The first batch of books for **complete beginners**. This tier's goal is not to teach you "how to trade stocks or place trades," but to build three things: **a sound view of money (how money works), a sound view of assets (what counts as an asset and what counts as a liability), and a sound view of investing (invest before trading — slow is fast)**.
 >

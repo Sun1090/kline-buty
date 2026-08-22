@@ -1,9 +1,9 @@
 ---
-title: "Funding Rates"
+title: "02 · Funding Rates"
 description: "Crypto perpetual funding rates explained — positive vs negative rates, the 8-hour settlement mechanism, typical ranges, rate arbitrage in extreme markets, and holding cost control"
 ---
 
-# Funding Rates
+# 02 · Funding Rates
 
 > Perpetual swaps have no delivery date, so what keeps the price glued to spot? The answer is the **<mark>funding rate</mark>**.
 > It is the periodic "toll" settled between longs and shorts — the cost retail traders overlook most easily, and the one long-term holders should watch most closely.

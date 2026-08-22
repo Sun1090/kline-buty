@@ -1,9 +1,9 @@
 ---
-title: "Asset Allocation Basics"
+title: "01 · Asset Allocation Basics"
 description: "Why allocation beats stock picking and timing, the temperaments of core asset classes, and portfolio logic for long-term holding."
 ---
 
-# Asset Allocation Basics
+# 01 · Asset Allocation Basics
 
 > Traders study "what to buy next"; asset allocators study "what to hold for the long run." This chapter answers three questions: why allocation matters more than stock picking and timing, what temperament each core asset class has, and how to combine them into a portfolio you can actually hold for years.
 

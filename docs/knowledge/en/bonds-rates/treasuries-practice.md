@@ -1,9 +1,9 @@
 ---
-title: "Treasury Investment in Practice"
+title: "01 · Treasury Investment in Practice"
 description: "Treasuries (US government bonds) are the anchor of the global risk-free rate and the 'cleanest fixed income' ordinary investors can buy — no credit risk (under the assumption that Treasuries don't default), only interest rate risk"
 ---
 
-# Treasury Investment in Practice
+# 01 · Treasury Investment in Practice
 
 > Treasuries (US government bonds) are **<mark>the anchor of the global risk-free rate</mark>** and the "cleanest fixed income" ordinary investors can buy — no credit risk (under the assumption that Treasuries don't default), only **<mark>interest rate risk</mark>**.
 >

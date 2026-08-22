@@ -1,9 +1,9 @@
 ---
-title: "Forex Technical Analysis and Practical Patterns"
+title: "05 · Forex Technical Analysis and Practical Patterns"
 description: "Forex is the world's deepest and most 'pure' market for technical analysis: no price limits, no T+1, no insider earnings reports — prices form through global auction. Technical analysis is far more usable here than in A-shares — but precisely because everyone uses it, the same…"
 ---
 
-# Forex Technical Analysis and Practical Patterns
+# 05 · Forex Technical Analysis and Practical Patterns
 
 > Forex is the world's **deepest** market and the most "pure" arena for technical analysis: no price limits, no T+1, no insider earnings reports — price forms through a global auction. Technical tools are far more usable here than in A-shares — but precisely because everyone uses them, **the same pattern can behave completely differently across pairs and sessions**.
 >

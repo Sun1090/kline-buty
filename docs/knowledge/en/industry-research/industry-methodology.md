@@ -1,9 +1,9 @@
 ---
-title: "Industry Research Methodology"
+title: "01 · Industry Research Methodology"
 description: "Research the industry before researching a stock — the first lesson of sell-side analysts and the scarcest skill among retail investors"
 ---
 
-# Industry Research Methodology
+# 01 · Industry Research Methodology
 
 > Research the industry before you research any stock — this is the sell-side analyst's first lesson, and the one retail investors most often skip.
 > This article lays out a five-step framework for industry research, the top-down and bottom-up paths, industry classification conventions,

@@ -1,9 +1,9 @@
 ---
-title: "Swing and Trend in Practice"
+title: "02 · Swing and Trend in Practice"
 description: "Swing and trend trading in practice — from trend confirmation and entry/exit to position management and the most common ways to die."
 ---
 
-# Swing and Trend in Practice
+# 02 · Swing and Trend in Practice
 
 > Swing trading (Swing Trading): hold for days to weeks, **capture a 5%-30% move and move on**. It doesn't test your speed and cost control the way day trading does, nor your conviction the way long-term investing does — it tests your ability to **judge the market state**: is this a trending market? How far has the trend gone? Should you get on board or get out?
 >

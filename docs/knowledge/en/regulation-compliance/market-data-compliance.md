@@ -1,9 +1,9 @@
 ---
-title: "Market Data and Tooling Compliance"
+title: "07 · Market Data and Tooling Compliance"
 description: "Covers data rights and licensing, permissions for displaying real-time quotes, the boundary with investment advice, and a compliance checklist for open-source projects."
 ---
 
-# Market Data and Tooling Compliance
+# 07 · Market Data and Tooling Compliance
 
 > Build a charting tool, a market data site, or a quant terminal — however elegant the code, three questions remain: **where does market data come from, can you display it to others, and how should you disclaim when you do**. This article approaches from four angles — data rights and licensing, permissions for real-time quotes, the boundary between tools and "investment advice", and common compliance points for open-source projects — to give developers an actionable checklist.
 

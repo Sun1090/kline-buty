@@ -1,9 +1,9 @@
 ---
-title: "Credit Bonds & High Yield"
+title: "04 · Credit Bonds & High Yield"
 description: "Government bonds settle the risk-free rate; the other half of the bond world is credit — the possibility that a borrowing company defaults, priced openly by the market. That price is the credit spread"
 ---
 
-# Credit Bonds & High Yield
+# 04 · Credit Bonds & High Yield
 
 > Government bonds settle the "risk-free rate"; the other half of the bond world is **credit**: the market openly prices the possibility that a borrowing company **<mark>defaults</mark>** — and that price is the **<mark>credit spread</mark>**.
 >

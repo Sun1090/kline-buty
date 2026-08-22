@@ -1,4 +1,4 @@
-# Global Markets Map
+# 25 · Global Markets Map
 
 > Your trading world should not consist only of A-shares and crypto. The Nikkei, KOSPI, DAX, Nifty, VN Index... these names turn on the same planet every day, connected to your positions by a liquidity transmission chain: Fed rate cuts → weaker dollar → inflows into emerging markets → northbound capital → A-shares. In the order of "Japan & Korea → Europe → Emerging Markets → Cross-Border Practice", this chapter unfolds the global markets map for you: what each market looks like, what personality it has, how to participate, and how much it actually relates to A-shares.
 

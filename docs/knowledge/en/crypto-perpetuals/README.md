@@ -1,4 +1,4 @@
-# Crypto Perpetuals
+# 05 · Crypto Perpetuals
 
 > Crypto derivatives are the world's hottest — and most brutal — casino: 24/7 trading, 100x leverage, funding rates, wick-hunt liquidations...
 > This chapter explains the mechanics and risks of perpetual swaps, funding rates, and the wider zoo of crypto derivatives (options, leveraged tokens, dual investment, on-chain contracts).

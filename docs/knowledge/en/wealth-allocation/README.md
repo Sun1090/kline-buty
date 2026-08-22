@@ -1,4 +1,4 @@
-# Wealth Allocation
+# 14 · Wealth Allocation
 
 > All previous chapters taught you "how to trade"; this chapter teaches you "how to allocate, how to preserve value, how to live." Trading solves "earning"; wealth management solves "keeping" — **for the vast majority of people, asset allocation matters more than trading skill**: you can live well without knowing how to trade, but without knowing how to allocate, you may hand back every yuan you earned.
 

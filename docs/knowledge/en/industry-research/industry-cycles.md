@@ -1,9 +1,9 @@
 ---
-title: "Sector Prosperity & Cycles"
+title: "04 · Sector Prosperity & Cycles"
 description: "Half of industry analysis is 'size and landscape' (slow variables); the other half is 'where are we now' (fast variables)"
 ---
 
-# Sector Prosperity & Cycles
+# 04 · Sector Prosperity & Cycles
 
 > Half of industry analysis is "size and landscape" (slow variables); the other half is "where are we now" (fast variables).
 > Cyclical industries earn from supply-demand mismatches; growth industries earn from rising penetration — both require judging prosperity position.

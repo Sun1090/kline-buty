@@ -1,9 +1,9 @@
 ---
-title: "Data & Research Platforms"
+title: "02 · Data & Research Platforms"
 description: "A layered tour of quant data sources, historical quotes, macro and industry data, and research reports, with a zero-cost research toolkit."
 ---
 
-# Data & Research Platforms
+# 02 · Data & Research Platforms
 
 > "Watching charts relies on software; research relies on data." Most people get stuck at step one: where does data come from, does it cost money, and how do you make sure it's right once you have it?
 >

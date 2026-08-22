@@ -1,9 +1,9 @@
 ---
-title: "Cash Flow Analysis"
+title: "04 · Cash Flow Analysis"
 description: "Why cash flow matters more than profit, the three patterns of operating cash flow, and how to use FCF and DCF — with a cash-flow mine-sweeping checklist."
 ---
 
-# Cash Flow Analysis
+# 04 · Cash Flow Analysis
 
 > There's an old market saying: profit is an opinion; cash is a fact. Profit can be "arranged" with accounting techniques, but cash must genuinely flow in and out. This article explains why cash flow beats profit, the three patterns of operating cash flow, the proper use and limits of FCF and DCF, and closes with a cash-flow mine-sweeping checklist.
 

@@ -1,4 +1,4 @@
-# Forex Trading in Practice
+# 23 · Forex Trading in Practice
 
 > [09-Markets & Instruments / 01-The Forex Market](../markets-instruments/forex-market.md) covered the "concepts" of forex: market size, quoting conventions, pip value calculation, trading hours, and leverage. This chapter goes deeper with **hands-on practice** — the concepts chapter answers "what is this market"; this chapter answers "how do you survive in it".
 >

@@ -1,9 +1,9 @@
 ---
-title: "Funds and ETFs: The Ordinary Person's Asset Tool"
+title: "03 · Funds and ETFs: The Ordinary Person's Asset Tool"
 description: "Funds and ETFs explained — public vs private, active vs passive, on-exchange vs off-exchange, ETF arbitrage and premiums/discounts, the case for index investing, dollar-cost averaging, and a broad-based index list"
 ---
 
-# Funds and ETFs: The Ordinary Person's Asset Tool
+# 03 · Funds and ETFs: The Ordinary Person's Asset Tool
 
 > For most people, buying stocks directly or trading futures is not the optimal answer — **funds are the convenient tool for ordinary people to participate in the market**: low threshold, diversified risk, time-saving.
 >

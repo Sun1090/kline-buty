@@ -1,9 +1,9 @@
 ---
-title: "A-Share Special Plays"
+title: "05 · A-Share Special Plays"
 description: "Seven signature A-share plays dissected one by one — limit-up chasing, IPO subscriptions, convertible bond T+0, and ST delisting risk."
 ---
 
-# A-Share Special Plays
+# 05 · A-Share Special Plays
 
 > The reason A-shares feel "hard to understand" is that the market has many plays unique to it: price limits, T+1, limit-up chasing, IPO subscriptions, convertible bond T+0, ST delisting, theme speculation... These plays are both wealth amplifiers and meat grinders. This article dissects all seven: **the logic of each play, its operational essentials, and its risk points**, ending with a beginner pitfall-avoidance checklist.
 

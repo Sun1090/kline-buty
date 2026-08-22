@@ -1,9 +1,9 @@
 ---
-title: "Portfolio Management & Rebalancing"
+title: "06 · Portfolio Management & Rebalancing"
 description: "Building a crypto portfolio — BTC/ETH/altcoin allocation ratios, rebalancing triggers, the correlation matrix, drawdown control, and long-term holding discipline"
 ---
 
-# Portfolio Management & Rebalancing
+# 06 · Portfolio Management & Rebalancing
 
 > Buying coins is easy; the hard part is **holding without panic, not running when down, not floating when up**. Portfolio management does not answer "what to buy" but "how much to buy and when to adjust". This article is the method that turns crypto assets from gambling into a system.
 >

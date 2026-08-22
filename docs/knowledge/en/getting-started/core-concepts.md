@@ -1,5 +1,5 @@
 ---
-title: "Trading Core Concepts"
+title: "02 · Trading Core Concepts"
 description: "A dictionary of trading terms — leverage, margin, liquidation, order book, slippage, market orders, limit orders; each with a plain-language explanation, a one-line example, and a worked calculation"
 ---
 

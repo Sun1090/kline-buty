@@ -1,9 +1,9 @@
 ---
-title: "Emerging Markets"
+title: "03 · Emerging Markets"
 description: "Emerging Markets (EM) combine high-growth imagination with high-volatility reality: India's long bull narrative, Vietnam's manufacturing relocation, Brazil's resource endowment, Mexico's nearshoring… each sounds like 'A-shares ten years ago'. But emerging markets share one fate — massive capital inflows and outflows. One Fed hike, and money leaves and c…"
 ---
 
-# Emerging Markets
+# 03 · Emerging Markets
 
 > **<mark>Emerging markets</mark>** (EM) combine "high-growth imagination + high-volatility reality": India's long bull narrative, Vietnam's manufacturing relocation, Brazil's resource endowment, Mexico's nearshoring... each sounds like "A-shares ten years ago". But EMs share a single fate — **<mark>massive capital in-and-out flows</mark>**: the moment the Fed hikes, money leaves and currencies collapse. Reading EMs is half about economic stories and half about global **<mark>liquidity</mark>**.
 

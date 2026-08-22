@@ -1,9 +1,9 @@
 ---
-title: "Day Trading in Practice"
+title: "01 · Day Trading in Practice"
 description: "A day trading survival guide — run the numbers on fees and slippage, and master practical T+0 buy-low sell-high methods."
 ---
 
-# Day Trading in Practice
+# 01 · Day Trading in Practice
 
 > Day trading (Intraday Trading): **open and close positions within the same day**, holding no **position** overnight. T+0 venues include: domestic futures, crypto perpetuals and spot, US stocks, and intraday round-trips on an A-share existing holding (using a base position to sell high and buy low under the T+1 regime).
 >

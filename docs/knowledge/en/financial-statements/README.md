@@ -1,4 +1,4 @@
-# Financial Statements Deep Dive
+# 18 · Financial Statements Deep Dive
 
 > Financial reports are letters companies write to their shareholders — and also a stage for fraudsters. This chapter teaches you how to read the "letter" and how to see through the "stage".
 > If [Chapter: Stocks](../stocks/) taught you to get a rough read on financial statements, this chapter dissects the three statements line by line, applies metrics in practice, reviews real fraud cases, and ends with a complete report-reading workflow you can follow step by step.

@@ -1,9 +1,9 @@
 ---
-title: "Perpetual Blow-Up Case Studies"
+title: "06 · Perpetual Blow-Up Case Studies"
 description: "Three typical contract blow-up case studies — a 20x long hunted by a wick, a counter-trend bag-holder without a stop, and a long-term position crushed by funding rates — each with a full timeline and lessons"
 ---
 
-# Perpetual Blow-Up Case Studies
+# 06 · Perpetual Blow-Up Case Studies
 
 > No amount of theory beats watching one real blow-up unfold. This article reconstructs three fictional but highly typical cases, from "confident entry" to "account at zero", with complete timelines. Each case flags **the key moments where a stop-loss could have saved the day**.
 >

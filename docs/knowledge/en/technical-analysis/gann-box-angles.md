@@ -1,9 +1,9 @@
 ---
-title: "Gann Box and Angles in Practice"
+title: "08 · Gann Box and Angles in Practice"
 description: "Gann box and angle lines in practice — drawing the 1x1 angle line, the time-price relationship, Gann box structure, and their use as a language for describing market structure"
 ---
 
-# Gann Box and Angles in Practice
+# 08 · Gann Box and Angles in Practice
 
 > The greatest legacy Gann (W.D. Gann) left traders is not "predicted price points" but a thinking toolkit for **<mark>drawing the time-price relationship with angles and squares</mark>**. Standing on the critical ground of [05 · Elliott · Gann · Chan](elliott-gann-chan.md), this article focuses on **how to draw, read, and use the Gann box / Gann angles in chart software** — treating them as a "structural description language", not a "holy grail".
 

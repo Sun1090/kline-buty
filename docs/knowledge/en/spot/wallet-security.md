@@ -1,9 +1,9 @@
 ---
-title: "Secure Storage & Wallet Management"
+title: "05 · Secure Storage & Wallet Management"
 description: "A complete guide to storing crypto assets safely — hot wallets, cold wallets, and hardware wallets compared; seed phrase management; exchange risk assessment; multi-sig schemes; and an anti-theft anti-loss checklist"
 ---
 
-# Secure Storage & Wallet Management
+# 05 · Secure Storage & Wallet Management
 
 > "Not your keys, not your coins." Cryptocurrency's decentralized nature shifts the responsibility for security from banks onto you. One leaked seed phrase, one phishing signature, one exchange blow-up can each take you to zero. This article is about **how not to lose your coins**.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Order Types and Execution Mechanics"
+title: "05 · Order Types and Execution Mechanics"
 description: "Trigger logic for market, limit, stop-market, stop-limit, and OCO orders, the causes of slippage, and handling partial fills, with an illustrated order book depth walkthrough"
 ---
 
-# Order Types and Execution Mechanics
+# 05 · Order Types and Execution Mechanics
 
 > The moment you press "Buy" on a trading screen, a chain of events fires: your order enters the matching engine, matches against resting orders on the other side, fills partially or fully, and the remainder either keeps waiting or gets canceled. This article breaks down the trigger logic of every order type so you know **which order to use and when**.
 >

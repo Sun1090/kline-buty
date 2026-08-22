@@ -3,7 +3,7 @@ title: "Quant Practice"
 description: "How an individual trader with some coding skills can go from zero to a working pipeline of data → backtest → strategy → (compliant) automation."
 ---
 
-# Quant Practice
+# 15 · Quant Practice
 
 > Earlier chapters taught you how to **read markets and manage positions**; Chapter 10 (System Integration) teaches software teams **how to build trading systems**. This chapter lands on the plainest spot between the two — **how an individual trader who knows some code can actually run the full pipeline of data → backtest → strategy → (compliant) automation from scratch**.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Financial Statement Analysis in Practice"
+title: "05 · Financial Statement Analysis in Practice"
 description: "Integrating statement knowledge, metric tools, and mine-sweeping thinking into a 10-step reading method, an analysis template, and common report-reading mistakes."
 ---
 
-# Financial Statement Analysis in Practice
+# 05 · Financial Statement Analysis in Practice
 
 > The previous four articles gave you statement knowledge, metric tools, a fraud radar, and cash-flow thinking. This article assembles them into one pipeline: the complete 10-step reading method, a copy-ready analysis template, sector-specific reading priorities, the practical rhythm of earnings season's three checkpoints, and the five most common reading mistakes. **After finishing this article, you can independently complete a full analysis of any financial report.**
 

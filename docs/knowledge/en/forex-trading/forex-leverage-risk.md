@@ -1,9 +1,9 @@
 ---
-title: "Forex Leverage and Risk Management: Learn Not to Die Before Chasing Profit"
+title: "04 · Forex Leverage and Risk Management: Learn Not to Die Before Chasing Profit"
 description: "The core of forex margin trading is a lever: it lets $1,000 control $100,000 of notional value — and lets a novice walk into a casino carrying a crowbar. This chapter first drills the leverage math to the bone, then works through blow-up mechanics with numbers, risk management…"
 ---
 
-# Forex Leverage and Risk Management: Learn Not to Die Before Chasing Profit
+# 04 · Forex Leverage and Risk Management: Learn Not to Die Before Chasing Profit
 
 > The core of forex **<mark>margin</mark>** trading is a lever: it lets $1,000 control $100,000 of notional value — and lets a novice walk into a casino carrying a crowbar. This chapter drills the leverage math to the bone, then walks through **<mark>blow-up</mark>** mechanics with numeric examples, the risk-management checklist, the truth about "locking" positions, withdrawal discipline after profits, and finally the regulatory reality — **leveraged forex has no legal retail channel in mainland China**.
 

@@ -1,9 +1,9 @@
 ---
-title: "Advanced Trade Review"
+title: "05 · Advanced Trade Review"
 description: "Advanced trade review — upgrading from a diary to data-driven review across five layers: single trade, periodic, system, emotion, and market environment"
 ---
 
-# Advanced Trade Review
+# 05 · Advanced Trade Review
 
 > The Trading Plan article provided a basic journal template and the three-layer review framework; this article builds two things on top of it. **First, it upgrades "review" from "keeping a diary" to "data-driven trade review"** — so every record feeds the statistics. **Second, it fully answers "what to review"** — the five layers of single trade, periodic, system, emotion, and market environment: which method for each, and what conclusions each produces.
 

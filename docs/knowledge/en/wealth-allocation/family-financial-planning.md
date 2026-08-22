@@ -1,9 +1,9 @@
 ---
-title: "Family Financial Planning"
+title: "03 · Family Financial Planning"
 description: "Run your family like a company: balance sheet, cash flow, emergency reserves, debt management, and the four-bucket money framework."
 ---
 
-# Family Financial Planning
+# 03 · Family Financial Planning
 
 > Run your family like a company: a balance sheet, a cash-flow statement, emergency reserves, debt management, budget discipline. Nothing here relies on "inside tips" or "get-rich-quick chances" — it is financial order any household can follow.
 

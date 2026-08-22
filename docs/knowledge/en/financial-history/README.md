@@ -1,4 +1,4 @@
-# Financial History
+# 13 · Financial History
 
 > The previous twelve chapters taught you how to "read the market, build a system, and manage risk"; this chapter teaches you to read the scripts that replay throughout history. **Learn from history**: centuries of bubbles and crashes are one and the same "textbook of human nature" — only the props change each time (tulips → real estate → the internet → Bitcoin), while the script never does. **Trading masters and schools of thought** are your "method library": they spent their lifetimes proving which roads work and which potholes can never be filled. After reading this chapter you will truly understand: **"This time is different" is the most expensive six-word sentence in financial history.**
 

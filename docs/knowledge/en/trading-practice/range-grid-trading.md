@@ -1,9 +1,9 @@
 ---
-title: "Range Markets and Grid Trading in Practice"
+title: "03 · Range Markets and Grid Trading in Practice"
 description: "A complete guide to grid trading in range markets — principles, parameter setup, mathematical expectation, and one-sided-market risk."
 ---
 
-# Range Markets and Grid Trading in Practice
+# 03 · Range Markets and Grid Trading in Practice
 
 > The nightmare of trend traders is the range; so is the paradise of range traders. Grid trading (Grid Trading) is the most classic "mechanical" play in a range market: **no need to predict direction — just admit "I don't know where price will go, but I know it will likely bounce back and forth within a band"** — then slice the band into grids and buy low, sell high.
 >

@@ -1,9 +1,9 @@
 ---
-title: "Stock Analysis Methods"
+title: "04 · Stock Analysis Methods"
 description: "Stock analysis methods — the three-layer fundamental framework, reading the three financial statements, key financial metrics, valuation tools (PE/PB/PS/dividend yield/DCF), and the three classic retail traps"
 ---
 
-# Stock Analysis Methods
+# 04 · Stock Analysis Methods
 
 > Watching the tape and guessing direction is "speculating"; only when you can articulate "why buy, why it should rise, and under what conditions to sell" are you researching stocks. This article provides a complete framework: the three layers of fundamental analysis, how to read the three statements, key financial metrics, the mainstream valuation tools (PE/PB/PS/dividend yield/DCF), the correct use of technical and news analysis, and the three traps retail investors fall into most.
 

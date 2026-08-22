@@ -1,9 +1,9 @@
 ---
-title: "Position Sizing and Money Management"
+title: "06 · Position Sizing and Money Management"
 description: "Per-trade risk exposure calculation, the Kelly formula, fixed-fraction methods, equity curve drawdown control, and liquidation prevention, with an illustrated position allocation breakdown"
 ---
 
-# Position Sizing and Money Management
+# 06 · Position Sizing and Money Management
 
 > Traders blow up not because they "called the direction wrong", but because they "were too heavy when they were wrong". You can be wrong on direction many times; be wrong on position sizing a few times and you're out. This article is the math that **keeps you alive**.
 >

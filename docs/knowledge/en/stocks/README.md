@@ -1,4 +1,4 @@
-# Stocks
+# 04 · Stocks
 
 > Stocks are the asset class ordinary people encounter most: A-shares, HK stocks, and US stocks — three markets, three sets of rules.
 > This chapter first explains the essence of stocks and how indexes work, then breaks down the trading rules of A-shares and of HK/US stocks separately,

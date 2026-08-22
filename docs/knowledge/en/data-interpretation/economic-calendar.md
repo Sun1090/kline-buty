@@ -1,9 +1,9 @@
 ---
-title: "Economic Calendar User Guide: Event Classification, Weekly Scheduling, and Event Trading"
+title: "05 · Economic Calendar User Guide: Event Classification, Weekly Scheduling, and Event Trading"
 description: "Data is not a flood; it is a train on a schedule — and the economic calendar is the timetable. Knowing which 'event checkpoints' your holdings must pass this week gives your position sizing and stop-losses a target. This article covers the three-tier event classification, the 10-minute Sunday-evening scheduling method, position checks before m…"
 ---
 
-# Economic Calendar User Guide: Event Classification, Weekly Scheduling, and Event Trading
+# 05 · Economic Calendar User Guide: Event Classification, Weekly Scheduling, and Event Trading
 
 > Data is not a flood; it is a train on a schedule — **<mark>the economic calendar</mark> is that train's timetable**. Knowing which "event checkpoints" your instruments must pass this week makes **position sizing** and **stop-losses** targeted. This article covers the three-tier event classification, the 10-minute Sunday-evening scheduling method, the pre-event position checkup, and the trade-off between "ambushing before events vs following after them".
 

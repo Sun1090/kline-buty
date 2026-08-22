@@ -1,9 +1,9 @@
 ---
-title: "New Tracks & Theme Investing"
+title: "05 · New Tracks & Theme Investing"
 description: "Every era has its 'sexiest' track — from the internet and new energy to AI and robotics — and retail investors are most easily drawn in there"
 ---
 
-# New Tracks & Theme Investing
+# 05 · New Tracks & Theme Investing
 
 > Every era has its "sexiest" track — from the internet and new energy to AI and robotics — and nowhere draws retail investors in, or hurts them more.
 > New tracks aren't off-limits; you just have to understand their life cycle: who is pumping it, how far along the pump is,

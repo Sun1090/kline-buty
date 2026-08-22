@@ -1,9 +1,9 @@
 ---
-title: "Runtime & Automation Environment"
+title: "05 · Runtime & Automation Environment"
 description: "From server selection to deployment, operations, and a security baseline — keeping quant scripts running stably and automatically for the long term."
 ---
 
-# Runtime & Automation Environment
+# 05 · Runtime & Automation Environment
 
 > Your analysis scripts are written; next comes making them **run long-term, stably, and automatically** — and this step hides no fewer pitfalls than strategy itself: wrong server choice, misaligned time zones, leaked keys, lost logs, a crashed program nobody notices at 3 a.m. …
 >

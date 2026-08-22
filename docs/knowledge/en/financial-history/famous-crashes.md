@@ -1,9 +1,9 @@
 ---
-title: "Famous Crashes and Black Swans"
+title: "02 · Famous Crashes and Black Swans"
 description: "Extreme market events from 1987 to 2020 reviewed one by one — what happened, how markets reacted, and the risk-control lessons they left behind."
 ---
 
-# Famous Crashes and Black Swans
+# 02 · Famous Crashes and Black Swans
 
 > The previous article covered how bubbles **rise slowly**; this one covers how crashes **come down in an instant**. A single-day -22.6% in 1987, -9% in five minutes in 2010, a 30% Swiss-franc gap in 2015, negative oil prices in 2020 — these extreme moves that "textbooks barely dare to describe" are the final exam for your risk-control system. Each section gives what happened, how markets reacted, and the lessons, closing with a checklist of what black swans teach ordinary traders.
 >

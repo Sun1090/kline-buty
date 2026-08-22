@@ -1,9 +1,9 @@
 ---
-title: "Crypto Spot Deep Dive"
+title: "03 · Crypto Spot Deep Dive"
 description: "A crypto spot special — what cryptocurrency is, CEX vs DEX, wallets and seed phrases, funding channels, stablecoin de-pegs, on-chain transfers, and crypto-specific risks"
 ---
 
-# Crypto Spot Deep Dive
+# 03 · Crypto Spot Deep Dive
 
 > Crypto spot may look like "the crypto version of spot", but hidden reefs are everywhere: decentralization, private keys, Gas, de-pegs,
 > hackers, exit scams… any one of these concepts can wipe out a beginner.

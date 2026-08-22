@@ -1,4 +1,4 @@
-# Market Ecosystem
+# 12 · Market Ecosystem
 
 > The earlier chapters taught you to "read the rules and read the charts." This chapter asks you to step back and take a more fundamental view: **the market is not a neutral quoting machine — it is an ecosystem of participants**. On the other side of every trade you make sits a specific person or machine — with goals, information, and capital very different from yours.
 >

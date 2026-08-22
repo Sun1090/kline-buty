@@ -1,9 +1,9 @@
 ---
-title: "Market Data Systems: The Eyes of Trading Software"
+title: "03 · Market Data Systems: The Eyes of Trading Software"
 description: "A full walkthrough of market data system architecture, covering data sources, protocols, latency, reconnect recovery, and storage strategy."
 ---
 
-# Market Data Systems: The Eyes of Trading Software
+# 03 · Market Data Systems: The Eyes of Trading Software
 
 > The value of market data lies not in "receiving it" but in "complete, ordered, timely". For an integration project, the market data module's pitfalls concentrate almost entirely on three questions: **where does the data come from, what happens on disconnect, how high is the latency**.
 >

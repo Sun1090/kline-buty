@@ -1,9 +1,9 @@
 ---
-title: "Risk Controls and Capital Management: The Last Line of Defense Must Be Your Own"
+title: "05 · Risk Controls and Capital Management: The Last Line of Defense Must Be Your Own"
 description: "Client-side risk control architecture, covering pre-trade checks, circuit breaker design, exception handling, and audit trails."
 ---
 
-# Risk Controls and Capital Management: The Last Line of Defense Must Be Your Own
+# 05 · Risk Controls and Capital Management: The Last Line of Defense Must Be Your Own
 
 > Across all integration projects, the sentence clients say most is "doesn't the exchange/OMS already have risk controls?" — the biggest misconception. OMS/exchange risk controls are the **floor** (**<mark>forced liquidation</mark>**, limit breaches, abnormal trading monitoring), not the guardrail: they only guarantee "no systemic risk", never "your strategy won't lose money".
 >

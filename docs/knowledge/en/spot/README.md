@@ -1,4 +1,4 @@
-# Spot
+# 02 · Spot
 
 > Spot is the simplest form of trading: cash for goods, hand to hand — no leverage, no delivery, no forced liquidation.
 > This chapter explains the underlying logic of spot buying and selling from scratch, then expands into low-risk strategies such as DCA, grid trading, and arbitrage,

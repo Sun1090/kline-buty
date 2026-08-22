@@ -1,9 +1,9 @@
 ---
-title: "CTP Integration in Practice: From Zero to First Order"
+title: "10 · CTP Integration in Practice: From Zero to First Order"
 description: "The full CTP futures interface workflow in practice, from environment setup and the development flow to a minimal runnable example and common pitfalls."
 ---
 
-# CTP Integration in Practice: From Zero to First Order
+# 10 · CTP Integration in Practice: From Zero to First Order
 
 > The previous article covered FIX; this one covers the de facto standard for domestic Chinese futures — CTP. It is the interface most quant teams and software companies deal with: C++ DLL, callback model, GBK encoding, authentication + double login… every step has its traps.
 >

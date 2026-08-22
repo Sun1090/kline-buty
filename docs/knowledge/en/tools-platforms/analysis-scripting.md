@@ -1,9 +1,9 @@
 ---
-title: "Analysis & Scripting"
+title: "04 · Analysis & Scripting"
 description: "From TradingView to a Python workflow, making analysis reproducible — the right way to script your analysis."
 ---
 
-# Analysis & Scripting
+# 04 · Analysis & Scripting
 
 > The earlier chapters settled "what to watch with, where to get data, where to trade." This one solves "how to make analysis something you can repeat."
 >

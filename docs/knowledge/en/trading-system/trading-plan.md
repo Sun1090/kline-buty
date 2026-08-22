@@ -1,9 +1,9 @@
 ---
-title: "Trading Plan"
+title: "01 · Trading Plan"
 description: "Trading plans — turning entries, exits, stop-losses and adds from feelings into rules, behavioral comparisons of planned vs unplanned traders, and how to write your own plan"
 ---
 
-# Trading Plan
+# 01 · Trading Plan
 
 > This article answers one question: **what makes you dare to press a button at some price level and put your own money on the line?** If your answer is "a feeling", "news", or "other people bought it", it is no different in essence from tossing chips onto a roulette wheel. A trading plan turns every decision to enter, exit, place a **<mark>stop-loss</mark>**, or add to a position from "feelings" into "rules".
 

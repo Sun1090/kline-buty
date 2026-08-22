@@ -1,9 +1,9 @@
 ---
-title: "Competitive Landscape & Economic Moats"
+title: "03 · Competitive Landscape & Economic Moats"
 description: "Industry size determines 'how big the pie is'; the competitive landscape determines 'how big your slice can be'"
 ---
 
-# Competitive Landscape & Economic Moats
+# 03 · Competitive Landscape & Economic Moats
 
 > Industry size determines "how big the pie is"; the competitive landscape determines "how big your slice can be."
 > Within one industry, leaders and non-leaders can live utterly different lives — the difference comes from landscape and moat.

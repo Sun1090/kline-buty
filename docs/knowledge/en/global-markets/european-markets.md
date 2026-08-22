@@ -1,9 +1,9 @@
 ---
-title: "European Markets"
+title: "02 · European Markets"
 description: "\"European markets\" is not one market but a patchwork of dozens of national markets: Germany is the manufacturing engine, France luxury and nuclear power, the UK finance and energy, Switzerland and the Nordics the home of safe-haven assets and high-quality consumer stocks. Europe's single currency (the euro) ties their rates, FX, and bonds together while…"
 ---
 
-# European Markets
+# 02 · European Markets
 
 > "European markets" is not one market but a patchwork of dozens of national markets: Germany is the manufacturing engine, France luxury goods and nuclear power, the UK finance and energy, Switzerland and Northern Europe the home of safe-haven assets and high-quality consumer stocks. Europe's single currency (the euro) binds their rates, exchange rates, and bonds together while fiscal policy stays fragmented — grasp this "one currency, many fiscals" structure and you understand most questions about European markets.
 

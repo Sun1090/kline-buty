@@ -1,9 +1,9 @@
 ---
-title: "Broker & Futures Broker Selection"
+title: "03 · Broker & Futures Broker Selection"
 description: "A comparison across four channel types — A-share brokers, futures brokers, HK/US brokers, and crypto exchanges — with safety checklists."
 ---
 
-# Broker & Futures Broker Selection
+# 03 · Broker & Futures Broker Selection
 
 > Quotes, data, tools — all set. The last multiple-choice question is: **where to keep your money and where to place orders.** That choice directly determines your trading costs (commissions, interest, **<mark>slippage</mark>**) and fund safety.
 >

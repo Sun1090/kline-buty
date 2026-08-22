@@ -1,9 +1,9 @@
 ---
-title: "Detecting Financial Fraud"
+title: "03 · Detecting Financial Fraud"
 description: "A full map of fraud motives and techniques, a review of the Luckin Coffee case, plus the three-high signals, audit opinions, and a detection toolbox."
 ---
 
-# Detecting Financial Fraud
+# 03 · Detecting Financial Fraud
 
 > **<mark>Financial fraud</mark>** is the most expensive tuition in A-share history. This article maps fraud motives and techniques in full, reviews the convicted 2020 Luckin Coffee case, lays out the "three highs" signals, audit-opinion types, and a detection toolbox, and shows you how to use CSRC and exchange inquiry letters as free due diligence. **Content draws only on publicly disclosed information and convicted cases; no non-convicted company is named.**
 

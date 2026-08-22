@@ -1,9 +1,9 @@
 ---
-title: "Spot Trading Strategies"
+title: "04 · Spot Trading Strategies"
 description: "Six spot trading strategies — DCA, grid, value investing, swing, arbitrage, and new listings/airdrops; each with its fit, core logic, and risk points so you can find your seat"
 ---
 
-# Spot Trading Strategies
+# 04 · Spot Trading Strategies
 
 > Spot has no **<mark>leverage</mark>** and no **<mark>forced liquidation</mark>** — it is the battlefield best suited for ordinary people to participate in long term.
 > This article breaks down 6 classic spot strategies: DCA, grid, value investing, swing, **<mark>arbitrage</mark>**, and market-specific plays.

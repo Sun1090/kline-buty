@@ -1,9 +1,9 @@
 ---
-title: "Equity Curve and Performance Attribution"
+title: "04 · Equity Curve and Performance Attribution"
 description: "Equity curve and performance attribution — how to read the equity curve, maximum drawdown, Sharpe ratio, and deciding whether profits come from a good system or a good market"
 ---
 
-# Equity Curve and Performance Attribution
+# 04 · Equity Curve and Performance Attribution
 
 > The first three articles of this chapter covered "how to write a plan, how to control risk, how to manage your mind"; this one is the **acceptance test**: whether your system works is not decided by a handful of winning trades but by one thing — **the equity curve**. It also answers the sharper question: when the curve rises, is it because the system is good, or because the market is good? Where exactly does the money come from? That is performance attribution.
 

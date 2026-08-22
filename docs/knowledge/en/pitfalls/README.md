@@ -1,4 +1,4 @@
-# Pitfalls
+# 08 · Pitfalls
 
 > This is the last stop of the knowledge base — and the least romantic one: it does not teach you how to make money, it teaches you how to **not lose money, not get scammed, and not go to jail**.
 >

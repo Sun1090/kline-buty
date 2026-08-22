@@ -1,9 +1,9 @@
 ---
-title: "The Complete Catalog of Option Combinations: Classified by Risk-Return Type"
+title: "03 · The Complete Catalog of Option Combinations: Classified by Risk-Return Type"
 description: "There are thousands of option strategies, but fewer than 20 are truly worth a retail trader's mastery. This article sorts them into four classes by 'what money you're earning': directional, volatility, income, and hedging strategies"
 ---
 
-# The Complete Catalog of Option Combinations: Classified by Risk-Return Type
+# 03 · The Complete Catalog of Option Combinations: Classified by Risk-Return Type
 
 > There are thousands of option strategies, but **fewer than 20 are truly worth mastering**. This article sorts them into four classes by "what money you're earning": directional strategies, **volatility** strategies, income strategies, and **hedging** strategies.
 >

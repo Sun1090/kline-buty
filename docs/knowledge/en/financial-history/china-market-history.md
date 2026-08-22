@@ -1,9 +1,9 @@
 ---
-title: "A Brief History of China's Stock Market"
+title: "05 · A Brief History of China's Stock Market"
 description: "Ten key stages of China's stock market on a timeline — from subscription warrants to registration-based IPOs — distilling the A-share market's most characteristic patterns."
 ---
 
-# A Brief History of China's Stock Market
+# 05 · A Brief History of China's Stock Market
 
 > China's stock market is barely thirty years old, yet it has replayed nearly two centuries of mature-market scripts: subscription-warrant frenzies, freed share prices, price limits, state-share reduction, **<mark>split-share structure reform</mark>**, **<mark>leverage</mark>** bulls, **<mark>thousand-stock limit-downs</mark>**, a failed circuit-breaker pilot, and the arrival of registration-based IPOs. This article walks through ten key stages chronologically, each reviewed from four angles — **background, landmark events, market characteristics, and lessons** — and closes with the market's most distinctive "signature patterns". Understand these, and you understand every "wolf is coming" prelude in the A-share market.
 >

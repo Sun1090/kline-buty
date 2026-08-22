@@ -1,9 +1,9 @@
 ---
-title: "Integration Overview and Role Division: Draw the Map Before Writing Code"
+title: "01 · Integration Overview and Role Division: Draw the Map Before Writing Code"
 description: "Integration map, module checklist, and role division for trading systems, clarifying system boundaries and team responsibilities."
 ---
 
-# Integration Overview and Role Division: Draw the Map Before Writing Code
+# 01 · Integration Overview and Role Division: Draw the Map Before Writing Code
 
 > When a software company takes on a "trading system integration" project, the most common failure mode is not weak technology but **starting to dig the foundation before the map exists**: developers don't know who owns market data, which module the risk controls hang on, where backtest data comes from, or where the boundary with the client lies. This article solves the "big picture" problem first — one system map, one module checklist, one set of role divisions, then milestones and risk points.
 >

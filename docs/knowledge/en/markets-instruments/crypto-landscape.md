@@ -1,9 +1,9 @@
 ---
-title: "Crypto Landscape: From Digital Gold to the Map of Crypto"
+title: "07 · Crypto Landscape: From Digital Gold to the Map of Crypto"
 description: "Crypto landscape — major coin positioning, market-cap distribution and the crypto map, the CEX vs DEX landscape, on-chain data, and DeFi/NFT/Meme risks"
 ---
 
-# Crypto Landscape: From Digital Gold to the Map of Crypto
+# 07 · Crypto Landscape: From Digital Gold to the Map of Crypto
 
 > Crypto is the youngest, most volatile, and most contested market of chapter 09. It has no exchange annual reports, no PE valuation, no central-bank backing — only code, consensus, and sentiment.
 >

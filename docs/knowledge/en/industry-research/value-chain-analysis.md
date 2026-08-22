@@ -1,9 +1,9 @@
 ---
-title: "Value Chain Analysis"
+title: "02 · Value Chain Analysis"
 description: "An industry is not a monolith but a value chain with upstream/downstream division of labor: the upstream sells raw materials, the midstream manufactures, and the downstream builds brands and channels"
 ---
 
-# Value Chain Analysis
+# 02 · Value Chain Analysis
 
 > An industry is not a monolith but a value chain divided among upstream, midstream, and downstream: raw materials at the top, manufacturing in the middle, brands and channels at the bottom.
 > Profit is not evenly distributed — within the same industry, different segments differ wildly in their ability to earn.

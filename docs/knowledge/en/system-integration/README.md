@@ -1,4 +1,4 @@
-# System Integration
+# 10 · System Integration
 
 > Every earlier chapter was written for **traders**: how to read the market, how to manage positions, how to avoid pitfalls. This chapter switches perspective completely — it is written for **software companies / engineering teams**: when you take on the job of "building a trading system for a client" and need to integrate with futures OMSs, securities counter systems, or crypto exchange APIs, this chapter covers all the engineering knowledge you need.
 >

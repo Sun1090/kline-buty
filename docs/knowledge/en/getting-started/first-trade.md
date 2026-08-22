@@ -1,9 +1,9 @@
 ---
-title: "Your First Trade: The Complete Flow from Account Setup to Order Placement"
+title: "07 · Your First Trade: The Complete Flow from Account Setup to Order Placement"
 description: "A complete hands-on walkthrough of a beginner's first crypto trade — choosing a platform, registering and depositing, reading the trading screen, placing your first order, setting take-profit and stop-loss, and a checklist of common beginner mistakes"
 ---
 
-# Your First Trade: The Complete Flow from Account Setup to Order Placement
+# 07 · Your First Trade: The Complete Flow from Account Setup to Order Placement
 
 > The previous six articles covered what markets are, what the terms mean, how to read charts, how orders work, and how to manage position sizing. This one ties it all into a single thread: completing your **first cryptocurrency trade** from scratch.
 >
