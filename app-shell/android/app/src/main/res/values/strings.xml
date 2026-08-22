@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kline Buty</string>
+    <string name="title_activity_main">Kline Buty</string>
+    <string name="package_name">app.klinebuty.chart</string>
+    <string name="custom_url_scheme">app.klinebuty.chart</string>
+</resources>

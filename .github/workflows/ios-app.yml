@@ -1,0 +1,62 @@
+name: app-ios-simulator-build
+
+# app 分支专用：iOS 模拟器免签名构建（冒烟验证）。上架/TestFlight 需签名后另行处理。
+# Capacitor 8 iOS 工程走 SPM（无 xcworkspace/CocoaPods），用 -project + -target 构建。
+on:
+  workflow_dispatch:
+
+jobs:
+  simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck & lint
+        run: |
+          npm run typecheck
+          npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build web
+        run: npm run build
+
+      - name: Install shell deps
+        working-directory: app-shell
+        run: npm ci
+
+      - name: Sync web -> www -> native
+        working-directory: app-shell
+        run: |
+          npm run web:sync
+          npx cap sync ios
+
+      - name: Build for simulator (unsigned)
+        working-directory: app-shell/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -target App -configuration Debug \
+            -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: Zip .app
+        working-directory: app-shell/ios/App
+        run: |
+          APP_PATH=$(find build -name "App.app" -type d | head -1)
+          echo "found: $APP_PATH"
+          zip -r -y "$RUNNER_TEMP/KlineButy-sim.zip" "$APP_PATH"
+
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: kline-buty-ios-simulator
+          path: ${{ runner.temp }}/KlineButy-sim.zip
+          retention-days: 14

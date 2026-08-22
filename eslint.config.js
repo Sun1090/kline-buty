@@ -4,7 +4,8 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public/sw.js', '.vitepress', 'docs-site/.vitepress/dist', 'docs-site/docs/knowledge'] },
+  // app-shell：app 分支的 Capacitor 壳工程（含 www 压缩产物与原生模板），不参与 Web 代码质量门禁
+  { ignores: ['dist', 'node_modules', 'public/sw.js', '.vitepress', 'docs-site/.vitepress/dist', 'docs-site/docs/knowledge', 'app-shell'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
