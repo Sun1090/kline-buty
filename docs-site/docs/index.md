@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Trading Knowledge Base
   text: From first candle to full-time desk · systematic trading learning
-  tagline: Spot / Futures / Stocks / Crypto Perpetuals / Forex / Options / Macro / Quant / Regulation · 27 chapters · 173 in-depth articles (English edition in progress)
+  tagline: Spot / Futures / Stocks / Crypto Perpetuals / Forex / Options / Macro / Quant / Regulation · 27 chapters · 173 in-depth articles · English & 中文
   image:
     src: /hero-chart.svg
     alt: Candlestick chart and order book
@@ -36,26 +36,28 @@ features:
 
 > **Disclaimer**: Everything here is for study and research only — it is not investment advice. Trading carries significant risk.
 
-::: info 🌍 Bilingual edition — English first
-This site is now English-first with a complete Simplified Chinese edition one click away (top-right language switch, or [中文版](/zh/)). The 173-article Chinese library is complete today; English chapters are being translated progressively — [Getting Started](/getting-started/) is fully available.
+::: info 🌍 Bilingual edition
+This site is fully available in English and Simplified Chinese — switch anytime via the top-right language toggle or [中文版](/zh/). Both editions cover the same 27 chapters / 173 articles.
 :::
 
 ## 🧭 Role-Based Paths
 
 | Who you are | Your path |
 |---|---|
-| 🐣 **Complete beginner** | [Getting Started](getting-started/) → [Spot](zh/spot/) → [Wealth Allocation](zh/wealth-allocation/) |
-| 📈 **Stock investor** | [Stocks](zh/stocks/) → [Financial Statements](zh/financial-statements/) → [Industry Research](zh/industry-research/) → [Trading Practice](zh/trading-practice/) |
-| 🔩 **Futures / commodities** | [Futures](zh/futures/) → [Markets & Instruments](zh/markets-instruments/) → [Data Interpretation](zh/data-interpretation/) |
-| 🪙 **Crypto trader** | [Crypto Perpetuals](zh/crypto-perpetuals/) → [Markets & Instruments](zh/markets-instruments/) → [Trading Practice](zh/trading-practice/) → [Regulation](zh/regulation-compliance/) |
-| 💻 **Quant / developer** | [Quant Practice](zh/quant-practice/) → [System Integration](zh/system-integration/) → [Tools & Platforms](zh/tools-platforms/) → [Career](zh/career/) |
-| 🎯 **Options learner** | [Markets & Instruments](zh/markets-instruments/) → [Options Strategies](zh/options-strategies/) |
-| 🛡️ **Just don't blow up** | [Pitfalls](zh/pitfalls/) → [Behavioral Finance](zh/behavioral-finance/) → [Regulation](zh/regulation-compliance/) |
-| 📜 **History & masters** | [Financial History](zh/financial-history/) → [Reading List](zh/reading-list/) → [Behavioral Finance](zh/behavioral-finance/) |
+| 🐣 **Complete beginner** | [Getting Started](getting-started/) → [Spot](spot/) → [Wealth Allocation](wealth-allocation/) |
+| 📈 **Stock investor** | [Stocks](stocks/) → [Financial Statements](financial-statements/) → [Industry Research](industry-research/) → [Trading Practice](trading-practice/) |
+| 🔩 **Futures / commodities** | [Futures](futures/) → [Markets & Instruments](markets-instruments/) → [Data Interpretation](data-interpretation/) |
+| 🪙 **Crypto trader** | [Crypto Perpetuals](crypto-perpetuals/) → [Markets & Instruments](markets-instruments/) → [Trading Practice](trading-practice/) → [Regulation](regulation-compliance/) |
+| 💻 **Quant / developer** | [Quant Practice](quant-practice/) → [System Integration](system-integration/) → [Tools & Platforms](tools-platforms/) → [Career](career/) |
+| 🎯 **Options learner** | [Markets & Instruments](markets-instruments/) → [Options Strategies](options-strategies/) |
+| 🛡️ **Just don't blow up** | [Pitfalls](pitfalls/) → [Behavioral Finance](behavioral-finance/) → [Regulation](regulation-compliance/) |
+| 📜 **History & masters** | [Financial History](financial-history/) → [Reading List](reading-list/) → [Behavioral Finance](behavioral-finance/) |
+
+## 🗺️ Learning Roadmap
 
 <LearnPath />
 
-> Complete 27-chapter catalog with per-chapter descriptions lives in the [中文版 index](/zh/) and the sidebar. English chapters are translated in reading order; untranslated links open the Chinese edition.
+> Prefer Chinese? Every path above has a full Simplified Chinese edition — switch via the top-right language toggle or start from the [中文版首页](/zh/).
 
 ---
 

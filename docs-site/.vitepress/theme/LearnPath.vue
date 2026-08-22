@@ -6,7 +6,7 @@ const { lang } = useData()
 const isZH = computed(() => String(lang.value || '').startsWith('zh'))
 
 const roles = computed(() => {
-  const prefix = isZH.value ? '' : 'zh/'
+  const prefix = isZH.value ? 'zh/' : ''
   const label = (zh, en) => (isZH.value ? zh : en)
   return [
     { id: 'all', icon: '🌐', label: label('全部章节', 'All chapters'), chapters: [] },
@@ -96,7 +96,7 @@ const stages = computed(() => {
     ] },
   ]
   const src = isZH.value ? zh : en
-  const prefix = isZH.value ? '' : 'zh/'
+  const prefix = isZH.value ? 'zh/' : ''
   return src.map((s) => ({
     ...s,
     items: s.items.map(([id, label, desc]) => ({ id, label, desc, dir: `${prefix}${id}/` })),
