@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="380" fill="url(#bgl)" rx="16"/>
+  <text x="380" y="38" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">杠杆 = 借来的放大镜 —— 同倍放大盈亏，也同倍放大爆仓风险</text>
+
+  <!-- No leverage -->
+  <rect x="40" y="70" width="320" height="130" rx="12" fill="#12203a" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="200" y="100" fill="#aab8d6" font-size="15" font-weight="700" text-anchor="middle">1× 无杠杆（本金 10,000 元）</text>
+  <rect x="70" y="120" width="90" height="50" rx="8" fill="#1e392f" stroke="#26a69a" stroke-width="2"/>
+  <text x="115" y="145" fill="#7ce0d0" font-size="13" text-anchor="middle">涨 10% → +10%</text>
+  <text x="115" y="163" fill="#8fa3c8" font-size="11" text-anchor="middle">+1,000 元</text>
+  <rect x="240" y="120" width="90" height="50" rx="8" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="285" y="145" fill="#ef7a7a" font-size="13" text-anchor="middle">跌 10% → −10%</text>
+  <text x="285" y="163" fill="#8fa3c8" font-size="11" text-anchor="middle">−1,000 元</text>
+  <text x="200" y="192" fill="#5f6f95" font-size="12" text-anchor="middle">亏完需要 100% 反向，几乎不可能爆仓</text>
+
+  <!-- 10x leverage -->
+  <rect x="400" y="70" width="320" height="130" rx="12" fill="#12203a" stroke="#ef5350" stroke-width="2"/>
+  <text x="560" y="100" fill="#ff9d9d" font-size="15" font-weight="700" text-anchor="middle">10× 杠杆（本金 10,000 元，开 10 万仓位）</text>
+  <rect x="430" y="120" width="90" height="50" rx="8" fill="#1e392f" stroke="#26a69a" stroke-width="2"/>
+  <text x="475" y="145" fill="#7ce0d0" font-size="13" text-anchor="middle">涨 10% → +100%</text>
+  <text x="475" y="163" fill="#8fa3c8" font-size="11" text-anchor="middle">+10,000 元（翻倍）</text>
+  <rect x="600" y="120" width="90" height="50" rx="8" fill="#3d2020" stroke="#ef5350" stroke-width="2"/>
+  <text x="645" y="145" fill="#ef7a7a" font-size="13" text-anchor="middle">跌 10% → −100%</text>
+  <text x="645" y="163" fill="#8fa3c8" font-size="11" text-anchor="middle">保证金清零 = 爆仓</text>
+  <text x="560" y="192" fill="#ef7a7a" font-size="12" text-anchor="middle">仅需反向波动 10% 即爆仓，插针瞬间本金归零</text>
+
+  <!-- Formula -->
+  <rect x="40" y="235" width="680" height="52" rx="10" fill="#0d1526" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="380" y="260" fill="#c8d3ea" font-size="15" text-anchor="middle">爆仓距离 ≈ 1 ÷ 杠杆倍数（不含仓位管理余量）</text>
+  <text x="380" y="280" fill="#8fa3c8" font-size="13" text-anchor="middle">10× → 反向 10% 爆仓 ｜ 100× → 反向 1% 爆仓 ｜ 125× → 反向 0.8% 爆仓</text>
+
+  <text x="380" y="330" fill="#ffd3d3" font-size="13" text-anchor="middle">⚠ 新手默认：不开杠杆，或从 2–3 倍开始；把仓位控制在可承受归零的范围内。</text>
+  <text x="380" y="352" fill="#5f6f95" font-size="12" text-anchor="middle">极端行情（插针/跳空）可能穿仓倒欠，即负余额。</text>
+</svg>

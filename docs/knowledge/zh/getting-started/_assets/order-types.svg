@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" font-family="-apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8892b0"/>
+    </marker>
+  </defs>
+  <rect width="720" height="360" fill="url(#bg)"/>
+
+  <!-- Price line -->
+  <polyline points="40,280 100,240 160,260 220,180 280,200 340,120 400,140 460,80 520,100 580,50 660,70"
+    fill="none" stroke="#64ffda" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Limit buy zone (below current price) -->
+  <line x1="40" y1="230" x2="680" y2="230" stroke="#64b3f4" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="48" y="224" fill="#64b3f4" font-size="13">限价买单（等待价格回落）</text>
+
+  <!-- Stop loss zone -->
+  <line x1="40" y1="310" x2="680" y2="310" stroke="#ef4565" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="48" y="304" fill="#ef4565" font-size="13">止损触发价（跌破后市价卖出）</text>
+
+  <!-- Take profit zone -->
+  <line x1="40" y1="60" x2="680" y2="60" stroke="#4caf87" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="48" y="54" fill="#4caf87" font-size="13">止盈触发价（涨到后市价卖出）</text>
+
+  <!-- Current price marker -->
+  <circle cx="580" cy="50" r="5" fill="#64ffda"/>
+  <text x="592" y="46" fill="#64ffda" font-size="14" font-weight="bold">当前价</text>
+
+  <!-- Entry marker -->
+  <circle cx="340" cy="120" r="5" fill="#ffd166"/>
+  <text x="352" y="116" fill="#ffd166" font-size="13">入场点</text>
+
+  <!-- Annotations -->
+  <text x="40" y="340" fill="#8892b0" font-size="12">市价单：立即以当前最优价成交</text>
+  <text x="380" y="340" fill="#8892b0" font-size="12">限价单：只在指定价格或更好成交</text>
+</svg>
