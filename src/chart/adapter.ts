@@ -48,6 +48,7 @@ import {
   normalizePoints,
   regressionSegments,
   requiredPoints,
+  TOUCH_ANCHOR_THRESHOLD_PX,
   speedLines,
   type Drawing,
   type DrawingTool,
@@ -1896,6 +1897,8 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线编辑（只读模式）：锚点拖拽 → 整线移动 → 选中/取消
     if (this.drawingTool === 'none') {
+      // 手指接触面远大于鼠标光标，锚点判定单独放宽；整线/选中仍用桌面阈值，避免误抢相邻画线
+      const anchorThreshold = e.pointerType === 'touch' ? TOUCH_ANCHOR_THRESHOLD_PX : undefined
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
       const startTime = time !== null ? Number(time) : 0
@@ -1905,7 +1908,7 @@ export class LightweightChartAdapter implements ChartApi {
         : null
 
       if (selected) {
-        const anchorIdx = nearestAnchor(selected, x, y, (t, p) => this.project(t, p))
+        const anchorIdx = nearestAnchor(selected, x, y, (t, p) => this.project(t, p), anchorThreshold)
         if (anchorIdx !== null) {
           this.dragEdit = { id: selected.id, kind: 'anchor', anchorIdx, startTime, startPrice, orig: selected }
           this.dragPreview = selected

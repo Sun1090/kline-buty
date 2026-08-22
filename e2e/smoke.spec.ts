@@ -4299,7 +4299,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(before).not.toBeNull()
     expect(before!.points).toHaveLength(2)
 
-    // 切回鼠标 → 定位尾锚点（最右侧蓝色簇）→ 触屏拖拽仅尾锚点
+    // 切回鼠标 → 定位尾锚点（最右侧蓝色簇）→ 触屏拖拽仅尾锚点。
+    // 起点故意偏移 12px：超过桌面 8px 阈值，验证触屏放宽到 16px 后仍能抓住锚点。
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '鼠标', exact: true }).tap()
     await expect.poll(() => findDrawingAnchor(page, 'max'), { timeout: 5000 }).not.toBeNull()
@@ -4317,11 +4318,12 @@ test.describe('移动端（390×844 触屏视口）', () => {
       }
       cdp = await page.context().newCDPSession(page)
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: anchor.x, y: anchor.y }] })
+      const grabX = anchor.x + 12
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: grabX, y: anchor.y }] })
       for (let i = 1; i <= 6; i++) {
         await cdp.send('Input.dispatchTouchEvent', {
           type: 'touchMove',
-          touchPoints: [{ x: anchor.x + i * 6, y: anchor.y + i * 8 }],
+          touchPoints: [{ x: grabX + i * 6, y: anchor.y + i * 8 }],
         })
         await page.waitForTimeout(25)
       }
