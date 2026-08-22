@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="460" viewBox="0 0 820 460" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="820" height="460" fill="url(#bgr)" rx="16"/>
+  <text x="410" y="36" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">常见反转 &amp; 持续形态速记（关键：颈线 / 突破确认）</text>
+
+  <!-- Head & shoulders top -->
+  <g>
+    <text x="145" y="78" fill="#ffd9a0" font-size="14" font-weight="700" text-anchor="middle">头肩顶</text>
+    <polyline points="60,150 95,180 130,125 165,215" fill="none" stroke="#e8b56e" stroke-width="2.5"/>
+    <polyline points="165,215 200,145 235,180 270,150" fill="none" stroke="#e8b56e" stroke-width="2.5"/>
+    <line x1="60" y1="218" x2="270" y2="218" stroke="#ef5350" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="165" y="150" fill="#e8b56e" font-size="11" text-anchor="middle">头</text>
+    <text x="95" y="188" fill="#8fa3c8" font-size="11" text-anchor="middle">左肩</text>
+    <text x="232" y="188" fill="#8fa3c8" font-size="11" text-anchor="middle">右肩</text>
+    <text x="165" y="240" fill="#ef7a7a" font-size="11.5" text-anchor="middle">跌破颈线 = 确认看跌</text>
+  </g>
+
+  <!-- Double top -->
+  <g>
+    <text x="395" y="78" fill="#ffd9a0" font-size="14" font-weight="700" text-anchor="middle">双顶（M 顶）</text>
+    <polyline points="330,190 365,130 395,165 430,130 460,190" fill="none" stroke="#e8b56e" stroke-width="2.5"/>
+    <line x1="330" y1="228" x2="460" y2="228" stroke="#ef5350" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="367" y="128" fill="#e8b56e" font-size="11" text-anchor="middle">①顶</text>
+    <text x="428" y="128" fill="#e8b56e" font-size="11" text-anchor="middle">②顶</text>
+    <text x="362" y="173" fill="#8fa3c8" font-size="10.5" text-anchor="middle">中继(支撑/颈线)</text>
+    <text x="395" y="250" fill="#ef7a7a" font-size="11.5" text-anchor="middle">破颈线 → 看跌</text>
+  </g>
+
+  <!-- Triangle / flag -->
+  <g>
+    <text x="660" y="78" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">旗形 / 三角旗</text>
+    <polyline points="575,215 600,120 620,215" fill="none" stroke="#26a69a" stroke-width="2.5"/>
+    <polyline points="575,200 610,110 645,200" fill="none" stroke="#ef5350" stroke-width="2.5"/>
+    <text x="610" y="168" fill="#8fa3c8" font-size="11" text-anchor="middle">三角旗</text>
+    <line x1="575" y1="215" x2="648" y2="215" stroke="#3d4a6b" stroke-width="1.5"/>
+    <text x="615" y="240" fill="#7ce0d0" font-size="11.5" text-anchor="middle">上破后继续 → 持续形态</text>
+    <text x="615" y="258" fill="#5f6f95" font-size="11" text-anchor="middle">量缩整理，突破放量</text>
+  </g>
+
+  <line x1="30" y1="280" x2="790" y2="280" stroke="#2a3550" stroke-width="1.5"/>
+
+  <!-- Head & shoulders bottom -->
+  <g>
+    <text x="145" y="312" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">头肩底</text>
+    <polyline points="60,290 95,330 130,300 165,360" fill="none" stroke="#26a69a" stroke-width="2.5"/>
+    <polyline points="165,360 200,305 235,330 270,292" fill="none" stroke="#26a69a" stroke-width="2.5"/>
+    <line x1="60" y1="368" x2="270" y2="368" stroke="#7ce0d0" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="95" y="322" fill="#8fa3c8" font-size="11" text-anchor="middle">左肩</text>
+    <text x="165" y="368" fill="#26a69a" font-size="11" text-anchor="middle">头</text>
+    <text x="232" y="322" fill="#8fa3c8" font-size="11" text-anchor="middle">右肩</text>
+    <text x="165" y="392" fill="#7ce0d0" font-size="11.5" text-anchor="middle">放量突破颈线 = 确认看涨</text>
+    <text x="165" y="410" fill="#5f6f95" font-size="11" text-anchor="middle">缩量假突破常见——等回踩确认</text>
+  </g>
+
+  <!-- Double bottom -->
+  <g>
+    <text x="395" y="312" fill="#7ce0d0" font-size="14" font-weight="700" text-anchor="middle">双底（W 底）</text>
+    <polyline points="330,420 365,390 395,415 430,385 460,425" fill="none" stroke="#26a69a" stroke-width="2.5"/>
+    <line x1="330" y1="382" x2="460" y2="382" stroke="#7ce0d0" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="367" y="398" fill="#26a69a" font-size="11" text-anchor="middle">①底</text>
+    <text x="428" y="395" fill="#26a69a" font-size="11" text-anchor="middle">②底</text>
+    <text x="395" y="372" fill="#8fa3c8" font-size="10.5" text-anchor="middle">颈线</text>
+    <text x="395" y="440" fill="#7ce0d0" font-size="11.5" text-anchor="middle">破颈线 → 看涨</text>
+  </g>
+
+  <!-- Rectangle -->
+  <g>
+    <text x="660" y="312" fill="#ffd9a0" font-size="14" font-weight="700" text-anchor="middle">矩形（箱体）</text>
+    <rect x="575" y="330" width="90" height="72" fill="none" stroke="#e8b56e" stroke-width="2.5"/>
+    <path d="M 590 335 q 10 10 8 20 t -8 22 t 8 22" fill="none" stroke="#8fa3c8" stroke-width="2"/>
+    <text x="620" y="325" fill="#e8b56e" font-size="11" text-anchor="middle">上沿(压制)</text>
+    <text x="620" y="418" fill="#e8b56e" font-size="11" text-anchor="middle">下沿(支撑)</text>
+    <text x="620" y="440" fill="#ffd9a0" font-size="11.5" text-anchor="middle">突破上沿=看涨，跌破下沿=看跌</text>
+  </g>
+</svg>
