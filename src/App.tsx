@@ -45,6 +45,14 @@ import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
 
+// 壳内启用原生状态栏与启动屏；浏览器环境动态 import 会立即返回，不影响普通 Web 使用。
+void Promise.all([import('@capacitor/status-bar'), import('@capacitor/splash-screen')]).then(async ([{ StatusBar }, { SplashScreen }]) => {
+  const style = await StatusBar.getStyle()
+  await StatusBar.setStyle({ style: style.style === 'Dark' ? 'Light' : 'Dark' })
+  await StatusBar.setBackgroundColor({ color: '#0b0e14' })
+  await SplashScreen.hide()
+}).catch(() => undefined)
+
 const STATUS_TEXT: Record<string, MessageKey> = {
   loading: 'status.loading',
   connecting: 'status.connecting',

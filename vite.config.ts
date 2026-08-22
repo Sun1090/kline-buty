@@ -5,6 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
+  resolve: {
+    // 壳插件只装在 app-shell/；主应用动态 import 仅用于壳内初始化，Web/测试环境走空实现降级。
+    alias: [
+      { find: '@capacitor/status-bar', replacement: '/src/shell-compat.ts' },
+      { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
+    ],
+  },
   server: {
     port: 5173,
     proxy: {

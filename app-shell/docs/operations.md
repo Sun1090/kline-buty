@@ -53,7 +53,7 @@ cd .. && npm run build && cd app-shell && npm run web:sync && npx cap sync
 
 ## 5. Hard rules (violating these always ends badly)
 
-1. Keep shell changes inside `app-shell/`; shell deps in `app-shell/package.json` only — never the root
+1. Keep shell changes inside `app-shell/`; shell deps in `app-shell/package.json` only — never the root. Web-side dynamic imports may reference shell plugins when type declarations are local and the runtime call fails safely outside the shell.
 2. Don't break the toolchain-scope boundary: `eslint.config.js` ignores `app-shell`, `tsconfig.json` includes only `src/` — keep it that way
 3. `npm run build` gate before push (clean commit ≠ buildable)
 4. Uninstall an old ephemeral-CI APK once before installing the first pinned-signature build; later builds upgrade in place

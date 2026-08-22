@@ -39,6 +39,13 @@ If the secret is absent, the Android workflow generates a new pinned key once an
 
 > Migration from an old ephemeral-CI APK still needs one uninstall first: Android cannot replace an app whose signature differs. That uninstall is one-time; later pinned builds can upgrade in place.
 
+## Safe area, status bar and splash
+
+- Web uses `viewport-fit=cover`; the app shell consumes `env(safe-area-inset-*)` through the existing header height so notches do not cover controls.
+- Android uses transparent system bars with light icons; iOS pins light status-bar content for the dark terminal theme.
+- `@capacitor/status-bar` and `@capacitor/splash-screen` are installed only in `app-shell/package.json`; the web bundle imports them dynamically and degrades to a no-op outside Capacitor.
+- The launch splash keeps the dark background and is hidden after the first shell bridge handshake.
+
 ## 3. iOS simulator build (current verification path)
 
 iOS currently produces an **unsigned, simulator-only** .app:
