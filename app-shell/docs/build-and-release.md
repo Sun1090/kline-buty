@@ -1,6 +1,6 @@
 # Build & Release
 
-> This doc covers only the app shell (app branch): builds, artifacts, installation, release roadmap. Web deployment lives in the root `docs/05-部署.md` on main (untouched here).
+> This doc covers only the app shell: builds, artifacts, installation, release roadmap. Web deployment lives in the root `docs/05-部署.md`.
 
 ---
 
@@ -10,8 +10,8 @@ This machine has **no** Android SDK / Xcode — all native builds run on GitHub 
 
 | Workflow | File | Trigger | Artifact | Retention |
 |---|---|---|---|---|
-| app-android-apk | `.github/workflows/android-app.yml` | push to `app` / manual | `kline-buty-debug-apk` (sideloadable debug APK) | 14 days |
-| app-ios-simulator-build | `.github/workflows/ios-app.yml` | **manual only** (macOS runners bill at 10× — save minutes) | `kline-buty-ios-simulator` (unsigned simulator .app.zip) | 14 days |
+| app-android-apk | `.github/workflows/android-app.yml` | push to `main` (paths-limited: `app-shell/**`, `src/**`, `package*.json`, the workflow itself) / manual | `kline-buty-debug-apk` (sideloadable debug APK) | 14 days |
+| app-ios-simulator-build | `.github/workflows/ios-app.yml` | push to `main` (paths-limited) / manual | `kline-buty-ios-simulator` (unsigned simulator .app.zip) | 14 days |
 
 Both run the same chain: checkout `app` → root `npm ci` → `typecheck + lint + test + build` (dist/) → `app-shell`: `npm ci + web:sync + cap sync` → native build. **Every run is a full rebuild — stale-web-in-APK cannot happen in CI** (local packaging lacks that guarantee; see the trio in operations.md).
 
@@ -58,6 +58,6 @@ iOS currently produces an **unsigned, simulator-only** .app:
 |---|---|---|
 | gradle SDK / license errors | runner missing components/licenses | add an `android-actions/setup-android` step |
 | setup-node: Multiple lockfiles | two lockfiles in the repo | already handled via `cache-dependency-path: package-lock.json` — don't drop it when editing |
-| root `npm run build` fails | broken web code merged from main (pitfall 1) | reproduce locally with `npm run build`, fix, push — this is exactly what the post-merge gate catches |
+| root `npm run build` fails | broken web code on main (pitfall 1) | reproduce locally with `npm run build`, fix, push — this is exactly what the pre-push gate catches |
 | xcodebuild can't find scheme/target | iOS project layout changed | keep `-project App.xcodeproj -target App` (Capacitor 8 has no xcworkspace) |
 | cap sync: Could not find TypeScript | app-shell deps incomplete | ensure `app-shell/package.json` has typescript and the lockfile is committed |

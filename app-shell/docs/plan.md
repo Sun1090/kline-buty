@@ -47,55 +47,52 @@ kline-buty is a complete web terminal (benchmarked against OKX/Binance/Bybit cha
 
 The app needs local notifications (price alerts), push, status bar/safe-area, splash, share — Capacitor ships first-class plugins for all; Tauri v2's mobile plugin ecosystem is still young (community consensus). Desktop flips the trade-off — Tauri's bundle is far smaller. Same web core feeds both.
 
-### 3.3 Target architecture (final: same repo + `app` branch + `app-shell/`)
+### 3.3 Target architecture (final: single `main` branch + `app-shell/`)
 
-**Decision (2026-08-22, final)**: the original kline-buty working directory is under active development, so app work is isolated in a clean clone pulled from remote `main` (this directory), on a dedicated `app` branch. Web and app build from the same tree (no cross-repo sync); `main` stays pure web.
+**Decision (2026-08-22, revised)**: app-shell lives on `main` alongside the web code — one branch, one tree. The earlier `app`-branch variant (isolating app work on a dedicated branch) was retired after it proved unworkable: a `workflow_dispatch` iOS workflow must live on the default branch to be triggerable, and the app branch had drifted ahead of main carrying real web commits. Keeping everything on `main` removes the merge-sync overhead and lets both Android and iOS workflows trigger cleanly.
 
 ```
-kline-buty repo (one tree, two branches)
-├── main branch          # pure web: app code, tests, E2E, Pages/Vercel deploys (zero app code)
-│      │ npm run build → dist/
-│      ▼
-└── app branch = main + only app-shell/ and two workflows
-   app-shell/
-   ├── README.md             # shell entry: command quick-ref + rules
-   ├── AGENTS.md             # agent entry (hard rules)
-   ├── scripts/sync-web.mjs  # in-tree copy: ../dist → www/ (excludes knowledge/ by default)
-   ├── capacitor.config.ts   # appId app.klinebuty.chart, webDir: www
-   ├── android/              # native project (generated locally; no Android SDK needed; builds in CI)
-   ├── ios/                  # native project (Capacitor 8 uses SPM; no CocoaPods)
-   ├── docs/                 # plan / build-and-release / operations (English only)
-   └── package.json          # shell-only deps (Capacitor); never touches root package.json
-   .github/workflows/android-app.yml / ios-app.yml   # trigger: branches [app]
+kline-buty repo (single branch: main)
+├── src/                    # web app (React 18 + TS + Vite + lightweight-charts)
+│   │ npm run build → dist/
+│   ▼
+├── app-shell/             # Capacitor 8 shell (consumes root dist/)
+│   ├── README.md          # shell entry: command quick-ref + rules
+│   ├── AGENTS.md          # agent entry (hard rules)
+│   ├── scripts/sync-web.mjs   # in-tree copy: ../dist → www/ (excludes knowledge/ by default)
+│   ├── capacitor.config.ts    # appId app.klinebuty.chart, webDir: www
+│   ├── android/           # native project (generated locally; no Android SDK needed; builds in CI)
+│   ├── ios/               # native project (Capacitor 8 uses SPM; no CocoaPods)
+│   ├── docs/              # plan / build-and-release / operations (English only)
+│   └── package.json       # shell-only deps (Capacitor); never touches root package.json
+└── .github/workflows/
+    ├── ci.yml             # web gate: typecheck/lint/test/build (push to main / PR)
+    ├── pages.yml          # docs site deploy (push to main)
+    ├── android-app.yml    # Android debug APK (push to main, paths-limited; manual)
+    └── ios-app.yml        # iOS simulator build (push to main, paths-limited; manual)
 ```
 
-**Discipline (keeps `git merge main` into app near-conflict-free forever):**
+**Discipline (single-branch):**
 
-1. The app branch makes **zero modifications** to files that exist on main — sole exception: `'app-shell'` added to the `eslint.config.js` ignore list (otherwise lint scans the minified www/ output: 6,309 false errors).
-2. All shell deps live in `app-shell/package.json`; root package.json is never touched.
-3. **Never open an app→main PR**; the app branch only absorbs updates via one-way `git merge main`.
-4. **Never check out main to work in this clone** (web changes belong in the original kline-buty directory). Checking out main removes app-shell's tracked .gitignore files, leaving generated files (android assets etc.) unprotected — a subsequent `git add -A` on main would commit junk. Absorb updates with:
-   ```bash
-   git fetch origin && git merge origin/main
-   ```
-5. kline-buty's own CI (ci.yml/pages.yml) triggers only on main/PR — pushing the app branch never runs them.
+1. Web changes (`src/`, root configs) and app-shell changes coexist on `main`; commit them together or in separate commits as natural.
+2. Shell deps live in `app-shell/package.json`; root `package.json` is never touched (keeps the two dep trees disjoint).
+3. `app-shell/` is ignored by the web toolchain: `eslint.config.js` ignores it, `tsconfig.json` `include: ["src"]` excludes it, Vite/vitest don't traverse it. No cross-contamination.
+4. Refreshing the packaged web: root `npm run build` → inside `app-shell/` `npm run web:sync && npx cap sync`. CI does this automatically on push.
+5. Web gate (ci.yml) and deploy (pages.yml) run on every main push; Android/iOS app builds trigger only when `app-shell/**` or `src/**` change (paths filter) — so pure-docs commits don't burn mobile-runner minutes.
 
-- The daily dev loop is unchanged: `npm run dev` on main (browser + real-device browser). Refreshing the packaged web only needs a root build followed by `npm run cap:sync` inside app-shell.
 - Extracting a shared `packages/core` is postponed indefinitely: with a single consumer it's premature abstraction, and src/ module boundaries are already clean.
 
 ### 3.4 Six pitfalls & six rules (live-demonstrated 2026-08-22 in throwaway repos)
 
 | # | Pitfall (reproduced live) | Rule |
 |---|---|---|
-| 1 | A bad commit on main (type error) merges cleanly, but the app branch CI dies at the very first `tsc` step | **Post-merge local gate**: `npm run build` (~15s) must pass before push |
-| 2 | Editing src/ on the app branch: the change never reaches main (web users never get it), and when main later touches the same area a bogus conflict erupts | **Only edit files inside `app-shell/`** (the eslint line excepted); web changes always go through main |
-| 3 | Merging then syncing without rebuilding → the APK contains the old web (src is v2, www still v1) | **Local packaging trio**: root `npm run build` → `npm run web:sync` in app-shell → push. CI is inherently safe (full rebuild every run) |
-| 4 | Debug APKs are signed with the ephemeral runner's `~/.android/debug.keystore` — a different signature every CI run → upgrade-install fails; uninstalling wipes localStorage (layouts/alerts/preferences) | M0 accepted: uninstall before installing. **M1 TODO: pin the keystore** (generate once in CI, store in secrets or commit it) |
-| 5 | Uncommitted WIP in the original directory belongs to no branch — merges never carry it over | **Web changes must be committed & pushed to main** before the app can get them |
-| 6 | Conflict resolution spiraling | **Escape hatch**: `git diff --name-only --diff-filter=U` to scope it; `git merge --abort` to reset. Never commit conflict markers |
-| 7 | Committing app-shell work while main has drifted → the gap widens; a later merge piles up unrelated hunks | **Pre-commit fetch**: `git fetch origin && git merge origin/main` before staging app-shell changes; resolve, rebuild (`npm run build`), then commit |
+| 1 | A bad commit (type error) lands on main → both the web CI and the app-build CI die at the first `tsc` step | **Pre-push local gate**: `npm run build` (~15s) must pass before push |
+| 2 | Syncing without rebuilding → the APK contains the old web (src is v2, www still v1) | **Local packaging trio**: root `npm run build` → `npm run web:sync` in app-shell → `npx cap sync`. CI is inherently safe (full rebuild every run) |
+| 3 | Debug APKs are signed with the ephemeral runner's `~/.android/debug.keystore` — a different signature every CI run → upgrade-install fails; uninstalling wipes localStorage (layouts/alerts/preferences) | M0 accepted: uninstall before installing. **M1 TODO: pin the keystore** (generate once in CI, store in secrets or commit it) |
+| 4 | `cap sync` rewrites `ios/App/CapApp-SPM/Package.swift` and `capacitor.config.json` on every run → worktree looks dirty | Both are gitignored (`ios/.gitignore`, `android/.gitignore`); `Package.swift` is idempotent (content-stable across runs, verified). Safe to commit the template |
+| 5 | `workflow_dispatch` iOS workflow only triggerable from the default branch — placing it on a non-default branch 404s | Keep app workflows on `main`; `paths` filter limits mobile builds to relevant changes only |
 
-package.json conflicts ruled out by test: the app branch never touches root package.json, so a new dependency added on main auto-merges (verified with a simulated lodash addition). The only conflict surface is the eslint.config.js ignore line (resolution: keep both words).
+The earlier pitfall table (branch-isolation rules, merge-conflict cookbooks) is retired with the `app` branch — single-branch has no cross-branch merge to conflict. The two dep trees stay disjoint by convention: shell deps in `app-shell/package.json`, web deps in root `package.json`.
 
 ## 4. Network layer (verified: zero changes)
 
@@ -136,7 +133,7 @@ Honest costs:
 
 | Phase | Scope | Acceptance |
 |---|---|---|
-| M0 shell validation ✅ (2026-08-22, local) | app branch + app-shell/ + Android/iOS projects + in-tree sync script + cloud-build workflows; lint/typecheck at parity with main | pending: push app branch → CI APK → real-device check of chart/gestures/direct connection |
+| M0 shell validation ✅ (2026-08-22, local) | app-shell/ on main + Android/iOS projects + in-tree sync script + cloud-build workflows; lint/typecheck at parity with web | done: push main → CI APK built & downloaded; pending real-device check of chart/gestures/direct connection |
 | M1 mobile experience (~2 wks) | all P0 items + notifications + pipeline | installable via TestFlight / Play internal |
 | M2 app polish (~2 wks) | safe-area/status-bar/back button, share, Sentry, splash | real-device checklist green |
 | M3 v1.0 release | store assets, privacy policy, overseas launch | App Store (non-CN) + Google Play approved |
@@ -152,7 +149,7 @@ Honest costs:
 | Binance API unreachable in some networks | dual domains + configurable self-hosted proxy; data layer is pluggable (OKX/Bybit candidates) |
 | Store review (crypto category) | market data + paper trading only; no real trading, no key custody; copy emphasizes tools/education; overseas first |
 | Mainland compliance (filing, crypto content) | no mainland launch; PWA + APK sideload; revisit only with non-crypto data sources |
-| Branch drift from main | one-way `git merge main`; the only main-file touch is the eslint ignore line — conflict probability ≈ 0; app→main PRs forbidden |
+| Web/app dep tree entanglement | shell deps in `app-shell/package.json`, web deps in root `package.json` — never cross-add; `tsconfig.json` `include: ["src"]` and eslint ignore keep the toolchain scopes disjoint |
 | Hot-update policy | not relied upon; store release cadence |
 
 ## 8. Market research summary (2026-08)
@@ -165,7 +162,7 @@ Honest costs:
 
 ## 9. Open items (need a decision)
 
-1. ~~Repo shape~~ → **Decided (2026-08-22, final): same repo + `app` branch + `app-shell/`.** The earlier standalone-repo variant is retired (backup at kline-buty-app.bak, delete once confirmed).
+1. ~~Repo shape~~ → **Decided (2026-08-22, revised): single `main` branch with `app-shell/` in-tree.** The earlier standalone-repo variant was retired; the `app`-branch variant was retired after the `workflow_dispatch`-on-default-branch constraint and branch drift proved unworkable.
 2. `appId: app.klinebuty.chart` is a placeholder (changeable until first store submission, fixed forever after).
 3. Background price alerts: serverless poller vs native background task — M4.
 4. Monetization timing: does cloud-sync/multi-device Pro subscription enter v1.x?

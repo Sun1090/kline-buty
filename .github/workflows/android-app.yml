@@ -1,11 +1,16 @@
 name: app-android-apk
 
-# app 分支专用：同一棵树内先构建 Web（根目录 dist/），再经 app-shell 打 Android debug APK。
+# main 分支：同一棵树内先构建 Web（根目录 dist/），再经 app-shell 打 Android debug APK。
 # 不依赖任何外部仓库；产物为可侧载 debug APK，上架签名包后续配置。
 on:
   workflow_dispatch:
   push:
-    branches: [app]
+    branches: [main]
+    paths:
+      - 'app-shell/**'
+      - 'src/**'
+      - 'package*.json'
+      - '.github/workflows/android-app.yml'
 
 concurrency:
   group: app-android-${{ github.ref }}

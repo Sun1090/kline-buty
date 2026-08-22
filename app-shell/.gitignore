@@ -1,4 +1,4 @@
-# 壳工程局部忽略（app 分支对 main 已有文件零改动，忽略规则收在本目录内）
+# 壳工程局部忽略（忽略规则收在本目录内，与 Web 侧 .gitignore 互不干扰）
 node_modules
 www
 .DS_Store
