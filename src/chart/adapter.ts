@@ -1348,10 +1348,9 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
       }
       ctx.setLineDash([])
-      for (const pt of [a, b]) {
-        ctx.beginPath()
-        ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2)
-        ctx.fill()
+      if (selected) {
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }
