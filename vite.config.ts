@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     // 壳插件只装在 app-shell/；主应用动态 import 仅用于壳内初始化，Web/测试环境走空实现降级。
     alias: [
+      { find: /^@capacitor\/app$/, replacement: '/src/shell-app.ts' },
       { find: '@capacitor/status-bar', replacement: '/src/shell-compat.ts' },
       { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
     ],

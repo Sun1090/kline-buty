@@ -44,6 +44,7 @@ import { MAIN_OPTIONS, SUB_OPTIONS } from './components/headerOptions'
 import { useI18n, type Lang, type MessageKey } from './i18n'
 import { buildCsv, csvFileName } from './utils/csv'
 import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
+import { nextBackTarget } from './chart/backNavigation'
 
 // 壳内启用原生状态栏与启动屏；浏览器环境动态 import 会立即返回，不影响普通 Web 使用。
 void Promise.all([import('@capacitor/status-bar'), import('@capacitor/splash-screen')]).then(async ([{ StatusBar }, { SplashScreen }]) => {
@@ -106,6 +107,66 @@ export function App() {
   const headerRef = useRef<HTMLElement>(null)
   const [headerH, setHeaderH] = useState(0)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  // Android 返回键：优先逐层关闭浮层；无可关闭状态时交还系统默认退出行为。
+  useEffect(() => {
+    let disposed = false
+    let handle: { remove: () => Promise<void> } | null = null
+    void import('@capacitor/app')
+      .then(({ App }) => App.addListener('backButton', () => {
+        const target = nextBackTarget({
+          textEditing: Boolean(editingTextId),
+          quickOrderOpen: quickOrder !== null,
+          shortcutsOpen,
+          settingsOpen,
+          marketListMobileOpen,
+          sidePanelOpen: depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen,
+          replayActive: replay !== null,
+          selectedDrawing: selectedDrawingId !== null,
+        })
+        if (!target) return
+        if (target === 'text-editor') {
+          setEditingTextId(null)
+          setTextDraft('')
+          setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
+          setTextColor('')
+          return
+        }
+        if (target === 'quick-order') setQuickOrder(null)
+        if (target === 'shortcuts') setShortcutsOpen(false)
+        if (target === 'indicator-settings') setSettingsOpen(false)
+        if (target === 'market-list') setMarketListMobileOpen(false)
+        if (target === 'side-panel') {
+          setDepthOpen(false)
+          setOrderBookOpen(false)
+          setVolumeProfileOpen(false)
+          setSentimentOpen(false)
+        }
+        if (target === 'replay') setReplay(null)
+        if (target === 'selected-drawing') setSelectedDrawingId(null)
+      }))
+      .then((subscription) => {
+        if (disposed) void subscription?.remove()
+        else handle = subscription ?? null
+      })
+      .catch(() => undefined)
+    return () => {
+      disposed = true
+      void handle?.remove()
+    }
+  }, [
+    editingTextId,
+    quickOrder,
+    shortcutsOpen,
+    settingsOpen,
+    marketListMobileOpen,
+    depthOpen,
+    orderBookOpen,
+    volumeProfileOpen,
+    sentimentOpen,
+    replay,
+    selectedDrawingId,
+  ])
 
   // 测量 header 实际高度（工具栏换行时变化）+ 窄屏检测：右侧面板抽屉定位依赖
   useEffect(() => {
