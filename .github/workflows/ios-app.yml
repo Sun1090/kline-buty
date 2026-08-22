@@ -1,9 +1,16 @@
 name: app-ios-simulator-build
 
-# app 分支专用：iOS 模拟器免签名构建（冒烟验证）。上架/TestFlight 需签名后另行处理。
+# main 分支：iOS 模拟器免签名构建（冒烟验证）。上架/TestFlight 需签名后另行处理。
 # Capacitor 8 iOS 工程走 SPM（无 xcworkspace/CocoaPods），用 -project + -target 构建。
+# 手动 workflow_dispatch 随时可触发；push 仅在 app-shell/src 变更时跑（macOS runner 贵）。
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app-shell/**'
+      - 'src/**'
+      - '.github/workflows/ios-app.yml'
 
 jobs:
   simulator:

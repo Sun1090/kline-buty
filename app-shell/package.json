@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Capacitor 壳工程（app 分支专用）。Web 产物来自仓库根的 dist/，本目录不包含业务代码。",
+  "description": "Capacitor 壳工程。Web 产物来自仓库根的 dist/，本目录不包含业务代码。",
   "scripts": {
     "web:sync": "node scripts/sync-web.mjs",
     "cap:sync": "npm run web:sync && cap sync"
