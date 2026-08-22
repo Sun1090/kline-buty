@@ -60,7 +60,7 @@ export function QuickOrder({ symbol, side, price, onConfirm, onClose }: QuickOrd
         </span>
         <button
           onClick={onClose}
-          aria-label="close"
+          aria-label={t('common.close')}
           style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 13, padding: 0 }}
         >
           ✕
