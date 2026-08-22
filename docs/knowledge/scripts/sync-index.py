@@ -80,6 +80,12 @@ def build_catalog():
             p for p in os.listdir(os.path.join(ZH, ch))
             if p.endswith('.md') and p != 'README.md'
         )
+        # 按正文 H1 的「NN ·」序号排序；无编号退回文件名序
+        def doc_no(fname):
+            with open(os.path.join(ZH, ch, fname), encoding='utf-8') as f:
+                m = re.search(r'^# (\d{1,2})\s*·', f.read(), re.M)
+            return int(m.group(1)) if m else 999
+        files.sort(key=lambda f: (doc_no(f), f))
         for fname in files:
             rel = os.path.join(ch, fname)
             _, desc = doc_desc(rel)

@@ -79,6 +79,16 @@ function docNo(title) {
   return m ? m[1] : null
 }
 
+/** 按标题「NN ·」序号排序章节文档；无编号的退回文件名序 */
+function sortByDocNo(chDir) {
+  return (a, b) => {
+    const na = Number(docNo(firstHeading(join(chDir, a)) ?? ''))
+    const nb = Number(docNo(firstHeading(join(chDir, b)) ?? ''))
+    if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb
+    return a.localeCompare(b)
+  }
+}
+
 /** 按固定顺序列出某语言树下实际存在的章节目录 */
 function chaptersUnder(dir) {
   if (!existsSync(dir)) return []
@@ -99,7 +109,7 @@ function docIndex() {
       const chDir = join(dir, folder)
       acc[`${keyPrefix}${folder}`] = readdirSync(chDir)
         .filter((f) => f.endsWith('.md') && f !== 'index.md')
-        .sort()
+        .sort(sortByDocNo(chDir))
         .map((f) => {
           const title = firstHeading(join(chDir, f)) ?? f.replace(/\.md$/, '')
           return {
@@ -120,7 +130,7 @@ function sidebarFor(dir, prefix, overviewText) {
     const chDir = join(dir, folder)
     const files = readdirSync(chDir)
       .filter((f) => f.endsWith('.md') && f !== 'index.md')
-      .sort()
+      .sort(sortByDocNo(chDir))
     const items = [
       { text: overviewText, link: `${prefix}/${folder}/` },
       ...files.map((f) => ({
