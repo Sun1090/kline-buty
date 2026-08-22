@@ -197,6 +197,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '知识库首页', link: '/zh/' },
+          { text: '快速开始', link: '/zh/getting-started/' },
           { text: '行情应用', link: 'https://kline-buty.vercel.app/' },
         ],
         outline: { level: [2, 3], label: '本页目录' },
@@ -213,6 +214,7 @@ export default defineConfig({
     logo: `${BASE}icon.svg`,
     nav: [
       { text: 'Home', link: '/' },
+      { text: 'Getting Started', link: '/getting-started/' },
       { text: 'Live Charts', link: 'https://kline-buty.vercel.app/' },
     ],
     sidebar: {
