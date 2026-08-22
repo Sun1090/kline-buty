@@ -69,6 +69,8 @@ export interface Point {
 export type Project = (time: number, price: number) => Point | null
 
 const HIT_THRESHOLD_PX = 8
+/** 触屏锚点命中阈值：手指接触面和定位误差明显大于鼠标，放宽到约两倍 */
+export const TOUCH_ANCHOR_THRESHOLD_PX = 16
 /** 多段折线最大锚点数（集满自动提交，实际交互靠双击收尾，故设大值） */
 export const POLYLINE_MAX_POINTS = 64
 /** 文本标注默认字号（px） */
@@ -577,15 +579,22 @@ export function moveAnchor(d: Drawing, idx: number, point: { time: number; price
   return { ...d, points: normalizePoints(d.type, points) }
 }
 
-/** 命中锚点：返回最近的锚点下标（阈值内），未命中 null */
-export function nearestAnchor(d: Drawing, px: number, py: number, project: Project): number | null {
+/** 命中锚点：返回最近的锚点下标（阈值内），未命中 null。
+ * thresholdPx 可供触屏手势放宽半径；不传时保持桌面鼠标的精确命中。 */
+export function nearestAnchor(
+  d: Drawing,
+  px: number,
+  py: number,
+  project: Project,
+  thresholdPx: number = HIT_THRESHOLD_PX,
+): number | null {
   let best: number | null = null
   let bestDist = Infinity
   d.points.forEach((p, i) => {
     const pt = project(p.time, p.price)
     if (!pt) return
     const dist = Math.hypot(px - pt.x, py - pt.y)
-    if (dist < HIT_THRESHOLD_PX && dist < bestDist) {
+    if (dist < thresholdPx && dist < bestDist) {
       bestDist = dist
       best = i
     }

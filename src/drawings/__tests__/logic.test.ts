@@ -31,6 +31,7 @@ import {
   wedgeLines,
   moveDrawing,
   nearestAnchor,
+  TOUCH_ANCHOR_THRESHOLD_PX,
   normalizePoints,
   regressionSegments,
   requiredPoints,
@@ -411,6 +412,11 @@ describe('nearestAnchor（锚点命中）', () => {
   })
   it('投影失败（锚点不可见）跳过', () => {
     expect(nearestAnchor(trend, 0, 200, () => null)).toBeNull()
+  })
+  it('默认阈值保持鼠标精确命中；触屏可显式放宽', () => {
+    // 距锚点 0 约 14.4px：超过桌面 8px，但属于手指定位常见误差
+    expect(nearestAnchor(trend, 10, 210, project)).toBeNull()
+    expect(nearestAnchor(trend, 10, 210, project, TOUCH_ANCHOR_THRESHOLD_PX)).toBe(0)
   })
 })
 
