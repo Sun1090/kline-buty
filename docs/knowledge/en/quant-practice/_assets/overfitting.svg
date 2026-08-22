@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="440" fill="url(#bgof)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">过拟合长什么样 —— 尖峰是噪音，高原才是规律</text>
+
+  <!-- 左图: 参数绩效地形 -->
+  <text x="210" y="70" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">① 参数遍历：找「最佳参数」</text>
+  <!-- 地形格子 5x4, 每格 44x36, 起点 x=70 y=90 -->
+  <g>
+    <rect x="70"  y="90" width="44" height="36" fill="#26a69a" opacity="0.25"/>
+    <rect x="114" y="90" width="44" height="36" fill="#26a69a" opacity="0.4"/>
+    <rect x="158" y="90" width="44" height="36" fill="#26a69a" opacity="0.3"/>
+    <rect x="202" y="90" width="44" height="36" fill="#26a69a" opacity="0.2"/>
+    <rect x="246" y="90" width="44" height="36" fill="#26a69a" opacity="0.15"/>
+    <rect x="70"  y="126" width="44" height="36" fill="#26a69a" opacity="0.45"/>
+    <rect x="114" y="126" width="44" height="36" fill="#26a69a" opacity="0.7"/>
+    <rect x="158" y="126" width="44" height="36" fill="#26a69a" opacity="0.75"/>
+    <rect x="202" y="126" width="44" height="36" fill="#26a69a" opacity="0.55"/>
+    <rect x="246" y="126" width="44" height="36" fill="#26a69a" opacity="0.3"/>
+    <rect x="70"  y="162" width="44" height="36" fill="#26a69a" opacity="0.4"/>
+    <rect x="114" y="162" width="44" height="36" fill="#26a69a" opacity="0.85"/>
+    <rect x="158" y="162" width="44" height="36" fill="#26a69a" opacity="0.9"/>
+    <rect x="202" y="162" width="44" height="36" fill="#26a69a" opacity="0.6"/>
+    <rect x="246" y="162" width="44" height="36" fill="#26a69a" opacity="0.35"/>
+    <rect x="70"  y="198" width="44" height="36" fill="#26a69a" opacity="0.2"/>
+    <rect x="114" y="198" width="44" height="36" fill="#26a69a" opacity="0.5"/>
+    <rect x="158" y="198" width="44" height="36" fill="#ef5350" opacity="0.95"/>
+    <rect x="202" y="198" width="44" height="36" fill="#26a69a" opacity="0.3"/>
+    <rect x="246" y="198" width="44" height="36" fill="#26a69a" opacity="0.15"/>
+  </g>
+  <!-- 尖峰标记 -->
+  <circle cx="180" cy="216" r="9" fill="none" stroke="#ef5350" stroke-width="2.5"/>
+  <text x="180" y="254" fill="#ef5350" font-size="12" font-weight="700" text-anchor="middle">尖峰：f5/s20 年化 40%</text>
+  <text x="135" y="272" fill="#8fa3c8" font-size="11.5" text-anchor="middle">邻居 f4/s19 直接亏钱 → 是噪音</text>
+  <!-- 高原标记 -->
+  <rect x="110" y="120" width="96" height="82" fill="none" stroke="#e8b56e" stroke-width="2" stroke-dasharray="5 4" rx="6"/>
+  <text x="290" y="140" fill="#e8b56e" font-size="12" font-weight="700">高原：一整片都不差</text>
+  <text x="290" y="158" fill="#8fa3c8" font-size="11.5">参数±20% 绩效平滑下降</text>
+  <text x="290" y="176" fill="#8fa3c8" font-size="11.5">这才是可上实盘的规律</text>
+  <text x="210" y="304" fill="#c8d3ea" font-size="12.5" text-anchor="middle">横轴 fast · 纵轴 slow · 颜色 = 样本内年化</text>
+
+  <!-- 右图: 样本内 vs 样本外 -->
+  <text x="590" y="70" fill="#eef2ff" font-size="14.5" font-weight="700" text-anchor="middle">② 样本外验证：真相时刻</text>
+  <!-- 坐标 -->
+  <line x1="430" y1="290" x2="760" y2="290" stroke="#3d4a6b" stroke-width="1.5"/>
+  <line x1="430" y1="90" x2="430" y2="290" stroke="#3d4a6b" stroke-width="1.5"/>
+  <!-- 分界线: 样本内/样本外 -->
+  <line x1="595" y1="90" x2="595" y2="290" stroke="#3d4a6b" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="512" y="308" fill="#8fa3c8" font-size="11.5" text-anchor="middle">样本内（挑参数）</text>
+  <text x="680" y="308" fill="#8fa3c8" font-size="11.5" text-anchor="middle">样本外（没见过）</text>
+  <!-- 样本内曲线: 平滑上扬 -->
+  <path d="M 430 250 C 480 230 540 200 595 170" fill="none" stroke="#26a69a" stroke-width="3"/>
+  <!-- 样本外: 尖峰参数崩塌 -->
+  <path d="M 595 170 C 630 200 650 260 665 275 S 700 285 760 278" fill="none" stroke="#ef5350" stroke-width="3"/>
+  <!-- 样本外: 高原参数稳住 -->
+  <path d="M 595 190 C 640 175 700 165 760 150" fill="none" stroke="#e8b56e" stroke-width="3" stroke-dasharray="7 4"/>
+  <text x="470" y="112" fill="#26a69a" font-size="12" font-weight="700">样本内：都很漂亮</text>
+  <text x="655" y="112" fill="#ef5350" font-size="12" font-weight="700">尖峰参数 → 崩</text>
+  <text x="645" y="130" fill="#e8b56e" font-size="12" font-weight="700">高原参数 → 稳</text>
+  <text x="595" y="336" fill="#c8d3ea" font-size="12.5" text-anchor="middle">纵轴 资金 · 横轴 时间</text>
+
+  <!-- 底部结论 -->
+  <line x1="60" y1="356" x2="740" y2="356" stroke="#3d4a6b" stroke-width="1"/>
+  <text x="400" y="384" fill="#c8d3ea" font-size="13.5" text-anchor="middle">挑参数挑出来的是历史，不是未来——样本内选「高原」，样本外才有资格谈实盘</text>
+  <text x="400" y="406" fill="#8fa3c8" font-size="12" text-anchor="middle">任何参数组合都能在历史中事后找到盈利点，这是规律不是能力</text>
+</svg>
