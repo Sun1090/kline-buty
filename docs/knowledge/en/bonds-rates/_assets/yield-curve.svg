@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgyc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#bgyc)" rx="16"/>
+  <text x="400" y="32" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">收益率曲线三种形态 —— 形态即市场对未来的定价</text>
+
+  <!-- axes -->
+  <line x1="80" y1="70" x2="80" y2="330" stroke="#8fa3c8" stroke-width="2"/>
+  <line x1="80" y1="330" x2="740" y2="330" stroke="#8fa3c8" stroke-width="2"/>
+  <text x="40" y="330" fill="#8fa3c8" font-size="11" transform="rotate(-90 40 330)">收益 ↑</text>
+  <text x="740" y="350" fill="#8fa3c8" font-size="11" text-anchor="end">期限 →（短端 2y → 长端 10y）</text>
+  <text x="420" y="345" fill="#8fa3c8" font-size="12" text-anchor="middle">2y</text>
+  <text x="600" y="345" fill="#8fa3c8" font-size="12" text-anchor="middle">10y</text>
+
+  <!-- normal curve -->
+  <path d="M 140 290 Q 300 230 420 190 S 660 130 720 105" fill="none" stroke="#26a69a" stroke-width="3"/>
+  <text x="300" y="210" fill="#7ce0d0" font-size="12.5" font-weight="700">正常/陡峭</text>
+  <text x="300" y="228" fill="#8fa3c8" font-size="11">短低长高 · 锁钱久利息高</text>
+
+  <!-- flat -->
+  <path d="M 180 200 Q 380 205 680 196" fill="none" stroke="#e8b56e" stroke-width="3"/>
+  <text x="440" y="185" fill="#ffd9a0" font-size="12.5" font-weight="700">平坦</text>
+  <text x="440" y="200" fill="#8fa3c8" font-size="11">短端被加息顶高 · 长端被衰退压</text>
+
+  <!-- inverted -->
+  <path d="M 150 130 Q 320 185 440 225 S 660 270 720 280" fill="none" stroke="#ef5350" stroke-width="3"/>
+  <text x="280" y="130" fill="#ff9d9d" font-size="12.5" font-weight="700">倒挂 ⚠</text>
+  <text x="280" y="148" fill="#8fa3c8" font-size="11" text-anchor="middle">短端高于长端</text>
+
+  <!-- legend bottom -->
+  <rect x="120" y="356" width="560" height="34" rx="8" fill="#0d1526" stroke="#3d4a6b" stroke-width="1.5"/>
+  <text x="400" y="378" fill="#ff9d9d" font-size="12.5" text-anchor="middle">倒挂 = 央行按住短端 + 市场用脚投票长端 → 历史上最可靠的衰退预警（但时间差可达数月到几年）</text>
+</svg>

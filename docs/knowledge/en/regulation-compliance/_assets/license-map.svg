@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bglm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="alm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4e9cf5"/>
+    </marker>
+  </defs>
+  <rect width="800" height="440" fill="url(#bglm)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">中国金融牌照图谱 —— 谁发牌、谁持牌、能干什么</text>
+
+  <!-- 第一层: 监管者 -->
+  <rect x="40" y="66" width="720" height="64" rx="10" fill="#182238" stroke="#4e9cf5" stroke-width="1.5"/>
+  <text x="70" y="90" fill="#eef2ff" font-size="13.5" font-weight="700">监管者（发牌方）</text>
+  <g fill="#c8d3ea" font-size="12.5">
+    <text x="70" y="114">央行：支付牌照</text>
+    <text x="225" y="114">证监会：证券 / 公募 / 私募 / 期货</text>
+    <text x="480" y="114">金融监管总局：银行 / 保险 / 信托</text>
+    <text x="700" y="114">地方金融局：小贷 / 担保</text>
+  </g>
+
+  <!-- 连接线 -->
+  <line x1="200" y1="130" x2="200" y2="152" stroke="#4e9cf5" stroke-width="1.5" marker-end="url(#alm)"/>
+  <line x1="400" y1="130" x2="400" y2="152" stroke="#4e9cf5" stroke-width="1.5" marker-end="url(#alm)"/>
+  <line x1="600" y1="130" x2="600" y2="152" stroke="#4e9cf5" stroke-width="1.5" marker-end="url(#alm)"/>
+
+  <!-- 第二层: 持牌机构 -->
+  <rect x="40" y="156" width="720" height="88" rx="10" fill="#182238" stroke="#26a69a" stroke-width="1.5"/>
+  <text x="70" y="180" fill="#eef2ff" font-size="13.5" font-weight="700">持牌机构（经营方）</text>
+  <g font-size="12">
+    <rect x="60" y="192" width="118" height="38" rx="6" fill="#101a2e" stroke="#3d4a6b"/>
+    <text x="119" y="209" fill="#c8d3ea" text-anchor="middle">证券公司（券商）</text>
+    <text x="119" y="224" fill="#8fa3c8" text-anchor="middle">门槛：高</text>
+    <rect x="190" y="192" width="118" height="38" rx="6" fill="#101a2e" stroke="#3d4a6b"/>
+    <text x="249" y="209" fill="#c8d3ea" text-anchor="middle">公募基金公司</text>
+    <text x="249" y="224" fill="#8fa3c8" text-anchor="middle">门槛：高</text>
+    <rect x="320" y="192" width="118" height="38" rx="6" fill="#101a2e" stroke="#e8b56e" stroke-dasharray="4 3"/>
+    <text x="379" y="209" fill="#c8d3ea" text-anchor="middle">私募管理人</text>
+    <text x="379" y="224" fill="#e8b56e" text-anchor="middle">备案制 · 中</text>
+    <rect x="450" y="192" width="118" height="38" rx="6" fill="#101a2e" stroke="#3d4a6b"/>
+    <text x="509" y="209" fill="#c8d3ea" text-anchor="middle">期货公司</text>
+    <text x="509" y="224" fill="#8fa3c8" text-anchor="middle">门槛：高</text>
+    <rect x="580" y="192" width="86" height="38" rx="6" fill="#101a2e" stroke="#3d4a6b"/>
+    <text x="623" y="209" fill="#c8d3ea" text-anchor="middle">银行</text>
+    <text x="623" y="224" fill="#8fa3c8" text-anchor="middle">极高</text>
+    <rect x="678" y="192" width="72" height="38" rx="6" fill="#101a2e" stroke="#3d4a6b"/>
+    <text x="714" y="209" fill="#c8d3ea" text-anchor="middle">保险</text>
+    <text x="714" y="224" fill="#8fa3c8" text-anchor="middle">极高</text>
+  </g>
+
+  <line x1="400" y1="244" x2="400" y2="266" stroke="#4e9cf5" stroke-width="1.5" marker-end="url(#alm)"/>
+
+  <!-- 第三层: 业务 -->
+  <rect x="40" y="270" width="720" height="64" rx="10" fill="#182238" stroke="#e8b56e" stroke-width="1.5"/>
+  <text x="70" y="294" fill="#eef2ff" font-size="13.5" font-weight="700">面向你的业务（收钱方）</text>
+  <g fill="#c8d3ea" font-size="12.5">
+    <text x="70" y="318">券商：开户交易 · 投顾（另需资质）</text>
+    <text x="320" y="318">基金：申购赎回 · 财富号</text>
+    <text x="530" y="318">期货：开户 · 居间人（人不是员工）</text>
+  </g>
+
+  <!-- 识别要点 -->
+  <rect x="40" y="352" width="720" height="58" rx="10" fill="#2a1620" stroke="#ef5350" stroke-width="1.2"/>
+  <text x="400" y="376" fill="#ef5350" font-size="13.5" font-weight="700" text-anchor="middle">⚠ 三分钟识别持牌机构</text>
+  <text x="400" y="398" fill="#c8d3ea" font-size="12" text-anchor="middle">官网查牌照号 → 对公账户收款（对私账户 = 红旗）→ 查监管处罚记录；「老师带单」不在任何一层里</text>
+</svg>

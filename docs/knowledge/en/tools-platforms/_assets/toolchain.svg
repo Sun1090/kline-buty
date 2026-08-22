@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bgtc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1d2e"/><stop offset="1" stop-color="#101224"/>
+    </linearGradient>
+    <marker id="atc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4e9cf5"/>
+    </marker>
+  </defs>
+  <rect width="800" height="440" fill="url(#bgtc)" rx="16"/>
+  <text x="400" y="34" fill="#eef2ff" font-size="20" font-weight="700" text-anchor="middle">行情工具三件套 —— 看盘、研究、自动化各司其职</text>
+
+  <!-- 需求层 -->
+  <g font-size="13" fill="#c8d3ea" text-anchor="middle">
+    <rect x="80" y="70" width="180" height="42" rx="8" fill="#182238" stroke="#4e9cf5" stroke-width="1.5"/>
+    <text x="170" y="96">📱 看盘：快与顺手</text>
+    <rect x="310" y="70" width="180" height="42" rx="8" fill="#182238" stroke="#26a69a" stroke-width="1.5"/>
+    <text x="400" y="96">🔍 研究：全与深</text>
+    <rect x="540" y="70" width="180" height="42" rx="8" fill="#182238" stroke="#e8b56e" stroke-width="1.5"/>
+    <text x="630" y="96">🤖 自动化：稳与可复现</text>
+  </g>
+
+  <line x1="170" y1="112" x2="170" y2="140" stroke="#4e9cf5" stroke-width="2" marker-end="url(#atc)"/>
+  <line x1="400" y1="112" x2="400" y2="140" stroke="#26a69a" stroke-width="2" marker-end="url(#atc)"/>
+  <line x1="630" y1="112" x2="630" y2="140" stroke="#e8b56e" stroke-width="2" marker-end="url(#atc)"/>
+
+  <!-- 工具层 -->
+  <g font-size="12" fill="#c8d3ea" text-anchor="middle">
+    <rect x="60" y="144" width="220" height="96" rx="10" fill="#101a2e" stroke="#4e9cf5" stroke-width="1.2"/>
+    <text x="170" y="168" fill="#eef2ff" font-size="13" font-weight="700">行情软件 / App</text>
+    <text x="170" y="190">同花顺 · 东方财富 · 通达信</text>
+    <text x="170" y="208">交易所 App · TradingView</text>
+    <text x="170" y="226" fill="#8fa3c8" font-size="11">延时 3s 内够用，别为快付费焦虑</text>
+
+    <rect x="290" y="144" width="220" height="96" rx="10" fill="#101a2e" stroke="#26a69a" stroke-width="1.2"/>
+    <text x="400" y="168" fill="#eef2ff" font-size="13" font-weight="700">数据 / 研究平台</text>
+    <text x="400" y="190">Choice · Wind · 免费拼图（爬虫/API）</text>
+    <text x="400" y="208">财报 · 研报 · 宏观数据库</text>
+    <text x="400" y="226" fill="#8fa3c8" font-size="11">免费够用一阵，深度研究才需要付费</text>
+
+    <rect x="520" y="144" width="220" height="96" rx="10" fill="#101a2e" stroke="#e8b56e" stroke-width="1.2"/>
+    <text x="630" y="168" fill="#eef2ff" font-size="13" font-weight="700">脚本 / 回测 / 服务器</text>
+    <text x="630" y="190">Python + SQLite · 回测引擎</text>
+    <text x="630" y="208">VPS + 监控告警 + 日志</text>
+    <text x="630" y="226" fill="#8fa3c8" font-size="11">核心是可复现，不是界面炫</text>
+  </g>
+
+  <!-- 底部陷阱与原则 -->
+  <rect x="60" y="268" width="680" height="60" rx="10" fill="#2a1620" stroke="#ef5350" stroke-width="1.2"/>
+  <text x="400" y="292" fill="#ef5350" font-size="13.5" font-weight="700" text-anchor="middle">⚠ 免费软件的三个数据陷阱</text>
+  <text x="400" y="314" fill="#c8d3ea" font-size="12" text-anchor="middle">行情延时 15 分钟 · 复权口径不一（前/后复权差异巨大）·「资金流向」是推算不是事实</text>
+
+  <text x="400" y="362" fill="#c8d3ea" font-size="13.5" text-anchor="middle">职责分离原则：下单通道用持牌券商 App，看盘研究用顺手工具，自动化单独环境——三不混用</text>
+  <text x="400" y="386" fill="#8fa3c8" font-size="12" text-anchor="middle">工具组合不是越多越好：每多一个工具就多一个口径要对、多一份订阅费要付</text>
+</svg>
