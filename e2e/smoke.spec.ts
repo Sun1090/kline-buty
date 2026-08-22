@@ -184,46 +184,127 @@ async function findDrawingAnchor(
       }
     }
     if (!pts.length) return null
-    const ext = w === 'max' ? Math.max(...pts.map((p) => p.x)) : Math.min(...pts.map((p) => p.x))
 
-    // 线条与锚点圆点都会产生蓝色像素；按纵向连通块聚簇，避免把同一 x 上汇聚的多条线
-    // 平均成远离圆心的点（回归通道右端的中线/上下轨就是典型场景）。
-    type Cluster = { sx: number; sy: number; n: number }
-    let clusters: Cluster[] = []
-    for (let y = 0; y < height; y++) {
-      const row = pts.filter((p) => p.y === y)
-      if (!row.length) continue
-      const groups: { xs: number[] }[] = []
-      for (const p of row.sort((a, b) => a.x - b.x)) {
-        const g = groups[groups.length - 1]
-        if (!g || p.x - g.xs[g.xs.length - 1] > 2) groups.push({ xs: [p.x] })
-        else g.xs.push(p.x)
-      }
-      for (const g of groups) {
-        const cx = g.xs.reduce((sum, x) => sum + x, 0) / g.xs.length / dpr
-        const cy = y / dpr
-        const last = clusters[clusters.length - 1]
-        if (last && Math.abs(cy - last.sy / last.n) <= 3 && Math.abs(cx - last.sx / last.n) <= 8)
-          Object.assign(last, { sx: last.sx + cx, sy: last.sy + cy, n: last.n + 1 })
-        else clusters.push({ sx: cx, sy: cy, n: 1 })
+    // 选中锚点是实心半径 3px 圆点；线条通常只有 1-2px。用积分图统计每个点
+    // 周围 9×9 蓝色像素数，圆形锚点会形成显著高密度中心，从而与细线区分。
+    const gw = Math.ceil(width / dpr) + 1
+    const gh = Math.ceil(height / dpr) + 1
+    const integral = new Uint32Array(gw * gh)
+    for (const p of pts) {
+      const gx = Math.min(gw - 1, Math.max(0, Math.round(p.x)))
+      const gy = Math.min(gh - 1, Math.max(0, Math.round(p.y)))
+      integral[gy * gw + gx]++
+    }
+    for (let y = 1; y < gh; y++) {
+      let rowSum = 0
+      for (let x = 1; x < gw; x++) {
+        rowSum += integral[y * gw + x]
+        integral[y * gw + x] = rowSum + integral[(y - 1) * gw + x]
       }
     }
-    clusters = clusters.filter((c) => c.n >= 2)
-    if (!clusters.length) {
-      // 抗锯齿或小圆点兜底：仍取最外侧像素带，但优先用其中间纵向位置
-      const near = pts.filter((p) => (w === 'max' ? p.x > ext - 5 : p.x < ext + 5))
-      if (!near.length) return null
-      const midY = [...near].sort((a, b) => a.y - b.y)[Math.floor(near.length / 2)].y
-      const core = near.filter((p) => Math.abs(p.y - midY) <= 2)
-      const sx = core.reduce((s, p) => s + p.x, 0) / core.length
-      const sy = core.reduce((s, p) => s + p.y, 0) / core.length
-      return { x: rect.left + sx, y: rect.top + sy }
+    const boxCount = (x: number, y: number) => {
+      const x0 = Math.max(0, x - 4)
+      const y0 = Math.max(0, y - 4)
+      const x1 = Math.min(gw - 1, x + 4)
+      const y1 = Math.min(gh - 1, y + 4)
+      return integral[y1 * gw + x1] - integral[y0 * gw + x1] - integral[y1 * gw + x0] + integral[y0 * gw + x0]
     }
-    clusters.sort((a, b) =>
-      w === 'max' ? b.sx / b.n - a.sx / a.n : a.sx / a.n - b.sx / b.n,
-    )
-    const target = clusters[0]
+    type Candidate = { x: number; y: number; score: number }
+    const candidates: Candidate[] = []
+    for (const p of pts) {
+      const gx = Math.round(p.x)
+      const gy = Math.round(p.y)
+      const score = boxCount(gx, gy)
+      // 半径 3 圆点约 28+ 像素；1-2px 线条在 9×9 内通常远低于该阈值。
+      if (score >= 28) candidates.push({ x: p.x, y: p.y, score })
+    }
+    if (!candidates.length) return null
+
+    // 按密度排序后做贪心邻近聚类，避免固定网格把同一圆点切到两个桶。
+    type Group = { sx: number; sy: number; n: number }
+    const groups: Group[] = []
+    for (const candidate of [...candidates].sort((a, b) => b.score - a.score)) {
+      const group = groups.find(
+        (g) => Math.hypot(g.sx / g.n - candidate.x, g.sy / g.n - candidate.y) <= 3,
+      )
+      if (!group) {
+        groups.push({ sx: candidate.x, sy: candidate.y, n: 1 })
+        continue
+      }
+      group.sx += candidate.x
+      group.sy += candidate.y
+      group.n++
+    }
+    groups.sort((a, b) => (w === 'max' ? b.sx / b.n - a.sx / a.n : a.sx / a.n - b.sx / b.n))
+    const target = groups[0]
     return { x: rect.left + target.sx / target.n, y: rect.top + target.sy / target.n }
+  }, which)
+}
+
+/** 扫描价格带选中态锚点：先由横贯边框定位两条 y，再在边框附近找圆形锚点；which=max 取下边框，min 取上边框 */
+async function findHorizontalBandAnchor(page: Page, which: 'min' | 'max') {
+  return page.evaluate((w) => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return null
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return null
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    // overlay 已按 dpr setTransform，设备像素坐标就是 adapter 的容器 CSS 坐标。
+    const pts: { x: number; y: number }[] = []
+    const rowCount = new Map<number, number>()
+    for (let pixel = 0; pixel < width * height; pixel++) {
+      const i = pixel * 4
+      if (img[i + 3] > 80 && img[i] < 130 && img[i + 1] > 110 && img[i + 1] < 200 && img[i + 2] > 190) {
+        const x = pixel % width
+        const y = Math.floor(pixel / width)
+        pts.push({ x, y })
+        rowCount.set(y, (rowCount.get(y) ?? 0) + 1)
+      }
+    }
+    if (!pts.length) {
+      return null
+    }
+
+    // 横贯边框：单行蓝色像素覆盖大部分宽度；相邻行聚成上下两条边。
+    const borderRows = [...rowCount.entries()]
+      .filter(([, n]) => n > width * 0.35)
+      .map(([y]) => y)
+      .sort((a, b) => a - b)
+    const groups: number[][] = []
+    for (const y of borderRows) {
+      const g = groups[groups.length - 1]
+      if (!g || y - g[g.length - 1] > 4) groups.push([y])
+      else g.push(y)
+    }
+    if (groups.length < 2) return null
+
+    // 锚点不是边框端点：它画在该锚点价格的时间投影处，且是边框附近的局部圆点。
+    // 按列统计边框附近像素，找显著高于横线的局部 blob；不能取最右端（那里只是边框）。
+    const centers = groups.map((g) => {
+      const cy = g.reduce((sum, y) => sum + y, 0) / g.length
+      const near = pts.filter((p) => Math.abs(p.y - cy) <= 8)
+      if (!near.length) return null
+      const columns = new Map<number, number>()
+      for (const p of near) columns.set(p.x, (columns.get(p.x) ?? 0) + 1)
+      const candidates = [...columns.entries()]
+        .filter(([, n]) => n >= 3)
+        .map(([x, n]) => ({ x, n, score: n * (1 + x / width) }))
+      if (!candidates.length) return null
+      // 右侧优先，避免左侧价格标签干扰；阈值只排除普通 1-2px 边框线。
+      candidates.sort((a, b) => b.score - a.score)
+      const target = candidates[0]
+      const blob = near.filter((p) => Math.abs(p.x - target.x) <= 4)
+      return {
+        x: blob.reduce((sum, p) => sum + p.x, 0) / blob.length,
+        y: blob.reduce((sum, p) => sum + p.y, 0) / blob.length,
+      }
+    }).filter((v): v is { x: number; y: number } => v !== null)
+    if (centers.length < 2) return null
+    return w === 'max' ? centers[centers.length - 1] : centers[0]
   }, which)
 }
 
@@ -1174,7 +1255,100 @@ test.describe('K 线应用冒烟', () => {
     expect(saved!.points[0].price).toBeLessThan(saved!.points[1].price)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
-    // 像素：刚创建处于选中态 → overlay 出现蓝色水平带双边框（≥2 个独立 y 行），且带内区域半透明填充
+    // 切回鼠标 → 选中屏幕下边框锚点并向下拖拽：该锚点对应 points[0]（最低价）。
+    // 被拖锚点的时间和价格都应变化；高价端保持不变，且两点仍按价格升序。
+    await openDrawing(page)
+    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await expect
+      .poll(() => findHorizontalBandAnchor(page, 'max'), { timeout: 5_000 })
+      .not.toBeNull()
+    const readPband = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)
+            .flat()
+            .filter((x: unknown) => (x as { type?: string }).type === 'pband')
+          return (arr[0] as { id: string; type: string; points: { time: number; price: number }[] }) ?? null
+        } catch {
+          return null
+        }
+      })
+    const beforeLowerDrag = await readPband()
+    expect(beforeLowerDrag).toEqual(saved)
+    // 每次尝试前重新扫描当前下边框锚点；实时行情会平移图表，必须跟随最新渲染位置。
+    // overlay 扫描返回的是容器坐标，而 adapter 的 pointer 判定也使用容器坐标，
+    // 因此这里直接在容器上派发 PointerEvent，避免 page.mouse 的窗口坐标二次换算。
+    let lowerDragged = false
+    for (let attempt = 0; attempt < 4 && !lowerDragged; attempt++) {
+      const anchor = await findHorizontalBandAnchor(page, 'max')
+      if (!anchor) {
+        await page.waitForTimeout(100)
+        continue
+      }
+      await page.evaluate(
+        ({ x, y }) => {
+          const chart = document.querySelector('main .chart-container') as HTMLElement | null
+          if (!chart) return false
+          const fire = (type: string, tx: number, ty: number) =>
+            chart.dispatchEvent(
+              new PointerEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                pointerId: 1,
+                pointerType: 'mouse',
+                isPrimary: true,
+                clientX: chart.getBoundingClientRect().left + tx,
+                clientY: chart.getBoundingClientRect().top + ty,
+                button: type === 'pointermove' ? -1 : 0,
+                buttons: type === 'pointerup' ? 0 : 1,
+              }),
+            )
+          // adapter 使用容器坐标判定锚点；扫描已返回同一坐标系。
+          // 先小步移动进入拖拽，再拖到目标点，避免 page.mouse 再次做窗口坐标换算。
+          const down = new PointerEvent('pointerdown', {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            pointerId: 1,
+            pointerType: 'mouse',
+            isPrimary: true,
+            clientX: chart.getBoundingClientRect().left + x,
+            clientY: chart.getBoundingClientRect().top + y,
+            button: 0,
+            buttons: 1,
+          })
+          chart.dispatchEvent(down)
+          fire('pointermove', x + 1, y + 1)
+          fire('pointermove', x + Math.max(1, chart.clientWidth * 0.06), y + chart.clientHeight * 0.07)
+          fire('pointerup', x + Math.max(1, chart.clientWidth * 0.06), y + chart.clientHeight * 0.07)
+        },
+        { x: anchor.x, y: anchor.y },
+      )
+      for (let poll = 0; poll < 6 && !lowerDragged; poll++) {
+        await page.waitForTimeout(500)
+        const after = await readPband()
+        if (!after || after.id !== saved!.id || after.points.length !== 2) continue
+        lowerDragged =
+          after.points[1].time === saved!.points[1].time &&
+          after.points[1].price === saved!.points[1].price &&
+          after.points[0].time !== saved!.points[0].time &&
+          after.points[0].price !== saved!.points[0].price &&
+          after.points[0].price < saved!.points[0].price &&
+          after.points[0].price < after.points[1].price
+      }
+    }
+    expect(lowerDragged).toBe(true)
+
+    // 拖拽成功后画线仍保持选中。先点空白处取消，再按移动后的坐标重新选中，
+    // 确保后续像素校验读取的是落库数据渲染出的新带体，而不是残留的拖拽预览。
+    const movedLowerAnchor = await findHorizontalBandAnchor(page, 'max')
+    expect(movedLowerAnchor).not.toBeNull()
+    await page.mouse.click(box!.x + box!.width * 0.85, box!.y + box!.height * 0.12)
+    await page.mouse.click(box!.x + movedLowerAnchor!.x, box!.y + movedLowerAnchor!.y)
+
+    // 像素：重新选中后 → overlay 出现蓝色水平带双边框（≥2 个独立 y 行），且带内区域半透明填充
     const blueBandStats = () =>
       page.evaluate(() => {
         const overlay = [...document.querySelectorAll('canvas')].find((c) => {

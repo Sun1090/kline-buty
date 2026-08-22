@@ -1450,6 +1450,15 @@ describe('价格带（pband，时间区间的横向孪生）', () => {
     expect(moved.points[1].price).toBe(130)
   })
 
+  it('moveAnchor 拖高价锚点到低价之下时自动交换，仍保持价格升序', () => {
+    const d = createDrawing('pband', [{ time: 0, price: 100 }, { time: 100, price: 140 }], 'pb3')
+    const moved = moveAnchor(d, 1, { time: 100, price: 80 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[0]).toEqual({ time: 100, price: 80 })
+    expect(moved.points[1]).toEqual({ time: 0, price: 100 })
+    expect(moved.points[0].price).toBeLessThan(moved.points[1].price)
+  })
+
   it('hitTest 价格带：带内任意位置区域命中 / 边框外按竖直距离 / 远处不命中', () => {
     // A(0,120) B(100,80) → 屏幕 (0,180)/(100,220)，水平带 [180,220]（屏幕 y 向下）
     const d = createDrawing('pband', [{ time: 0, price: 120 }, { time: 100, price: 80 }], 'pb2')
