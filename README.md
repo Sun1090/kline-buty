@@ -86,7 +86,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-40-blueviolet" alt="40 drawing tools" /> <img src="https://img.shields.io/badge/indicators-13-success" alt="13 indicators" /> <img src="https://img.shields.io/badge/E2E-91-blue" alt="91 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-603-yellow" alt="601 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/drawing_tools-42-blueviolet" alt="42 drawing tools" /> <img src="https://img.shields.io/badge/indicators-19-success" alt="19 indicators" /> <img src="https://img.shields.io/badge/E2E-94-blue" alt="94 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-604-yellow" alt="604 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 Research & Planning — docs complete
 - ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
