@@ -471,7 +471,8 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
 
   // 重开画线弹层 → 删除（绘制完成自动选中）
   await page.getByTestId('mobile-menu-drawing').tap()
-  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
@@ -552,7 +553,8 @@ test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 
 
   // 重开画线弹层 → 删除（提交后自动选中）
   await page.getByTestId('mobile-menu-drawing').tap()
-  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
@@ -657,7 +659,8 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
 
   // 重开画线弹层 → 删除
   await page.getByTestId('mobile-menu-drawing').tap()
-  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
@@ -975,7 +978,8 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
 
   // 删除并确认清空
   await page.getByTestId('mobile-menu-drawing').tap()
-  await page.getByRole('button', { name: '删除', exact: true }).first().tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
@@ -986,5 +990,79 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
     }
   })
   expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
+
+test('移动端：系统取消指针 → 三角形不误提交，已确认锚点保留可继续绘制', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
+
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '三角形', exact: true }).tap()
+  await page.waitForTimeout(300)
+
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const savedTriangles = () =>
+    page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        return Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
+      } catch {
+        return -1
+      }
+    })
+
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const touchAt = async (fx: number, fy: number) => {
+    const x = box.x + box.width * fx
+    const y = box.y + box.height * fy
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(120)
+  }
+
+  // 第 1 针确认后进入手势间隙；第 2 针被系统取消，必须丢弃当前针且不能把半程图形落库。
+  await touchAt(0.3, 0.58)
+  expect(await savedTriangles()).toBe(0)
+  const cancelX = box.x + box.width * 0.55
+  const cancelY = box.y + box.height * 0.58
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cancelX, y: cancelY }] })
+  await page.waitForTimeout(80)
+  await page
+    .locator('main div')
+    .first()
+    .evaluate((el) => el.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1, pointerType: 'touch', isPrimary: true })))
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await page.waitForTimeout(300)
+  expect(await savedTriangles()).toBe(0)
+
+  // 取消只回滚当前针；已确认的第 1 针保留，继续两针仍能正常完成三点三角形。
+  await touchAt(0.62, 0.58)
+  await touchAt(0.4, 0.42)
+  await expect.poll(savedTriangles, { timeout: 10_000 }).toBe(1)
+
+  const countAll = () =>
+    page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
+      } catch {
+        return -2
+      }
+    })
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
+  await page.waitForTimeout(400)
+  expect(await countAll()).toBe(0)
   expect(errors).toHaveLength(0)
 })
