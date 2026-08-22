@@ -51,7 +51,9 @@ jobs:
       - name: Build for simulator (unsigned)
         working-directory: app-shell/ios/App
         run: |
-          xcodebuild -project App.xcodeproj -target App -configuration Debug \
+          # 列 scheme 确认（Capacitor 8 SPM 工程的 scheme 与 target 同名 App）
+          xcodebuild -project App.xcodeproj -list
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
       - name: Zip .app
