@@ -3,7 +3,7 @@ title: "13 · Volatility and VIX: Fear Can Be Priced"
 description: "Volatility and VIX explained — historical vs implied volatility, how the VIX is constructed and its traits, futures contango decay, crypto volatility, and a primer on volatility trading"
 ---
 
-# 13 · **<mark>Volatility</mark>** and VIX: Fear Can Be Priced
+# 13 · Volatility and VIX: Fear Can Be Priced
 
 > Most traders stare only at whether prices rise or fall and ignore the second dimension: **how violently prices move**. Volatility is that dimension — it doesn't tell you direction, only "how big the moves will be".
 >

@@ -3,7 +3,7 @@ title: "05 · Futures Trading Strategies: From Hedging Risk to Trading Volatilit
 description: "Futures trading strategies explained — hedging, cash-futures arbitrage, calendar and inter-commodity spreads, trend following, intraday scalping, and algorithmic trading"
 ---
 
-# 05 · Futures Trading Strategies: From **<mark>Hedging</mark>** Risk to Trading Volatility
+# 05 · Futures Trading Strategies: From Hedging Risk to Trading Volatility
 
 > Futures strategies broadly serve two kinds of people: those who want to **eliminate risk** (hedging, **<mark>arbitrage</mark>**) and those who want to **take risk for returns** (trend, intraday, algorithmic). This article lays out the mainstream ways to play futures — principle, suitable audience, risk points — to help you find your own position.
 

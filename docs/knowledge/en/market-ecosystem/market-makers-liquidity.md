@@ -3,7 +3,7 @@ title: "02 · Market Makers & Liquidity"
 description: "A deep dive into market-maker mechanics and the liquidity system — understand your true trading costs and where slippage comes from."
 ---
 
-# 02 · **Market Makers** & **Liquidity**
+# 02 · Market Makers & Liquidity
 
 > You've heard it said: "There's always a **<mark>counterparty</mark>** on the other side of the screen." That confidence comes from market makers and the whole liquidity system. A market without liquidity is a swimming pool with no water — jumping in is easy; climbing out is another matter.
 >
