@@ -86,7 +86,7 @@ src/
 
 ## 进度
 
-<img src="https://img.shields.io/badge/%E7%94%BB%E7%BA%BF%E5%B7%A5%E5%85%B7-40-blueviolet" alt="40 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-89-blue" alt="89 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-599-yellow" alt="599 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/%E7%94%BB%E7%BA%BF%E5%B7%A5%E5%85%B7-40-blueviolet" alt="40 种画线工具" /> <img src="https://img.shields.io/badge/指标-13-success" alt="13 种指标" /> <img src="https://img.shields.io/badge/E2E-89-blue" alt="89 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-600-yellow" alt="600 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 调研立项
 - ✅ M1 数据地基：币安 REST/WS 封装、MarketStore、断线重连

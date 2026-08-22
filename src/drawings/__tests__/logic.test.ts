@@ -362,6 +362,15 @@ describe('moveAnchor（锚点拖拽）', () => {
     expect(moved.points[0]).toEqual({ time: 100, price: 50 })
     expect(moved.points[1]).toEqual({ time: 30, price: 90 })
   })
+  it('回归通道窗口锚点可编辑且保持时间排序', () => {
+    const d = createDrawing('regchan', [{ time: 10, price: 100 }, { time: 100, price: 120 }], 'rc')
+    const moved = moveAnchor(d, 1, { time: 5, price: 90 })
+    expect(moved.points[0]).toEqual({ time: 5, price: 90 })
+    expect(moved.points[1]).toEqual({ time: 10, price: 100 })
+    const expanded = moveAnchor(d, 1, { time: 150, price: 80 })
+    expect(expanded.points[0]).toEqual({ time: 10, price: 100 })
+    expect(expanded.points[1]).toEqual({ time: 150, price: 80 })
+  })
   it('水平线单锚点替换', () => {
     const moved = moveAnchor(horizontal, 0, { time: 20, price: 120 })
     expect(moved.points).toEqual([{ time: 20, price: 120 }])

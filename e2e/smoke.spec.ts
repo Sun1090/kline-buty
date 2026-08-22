@@ -185,11 +185,45 @@ async function findDrawingAnchor(
     }
     if (!pts.length) return null
     const ext = w === 'max' ? Math.max(...pts.map((p) => p.x)) : Math.min(...pts.map((p) => p.x))
-    const near = pts.filter((p) => (w === 'max' ? p.x > ext - 8 : p.x < ext + 8))
-    if (!near.length) return null
-    const sx = near.reduce((s, p) => s + p.x, 0) / near.length
-    const sy = near.reduce((s, p) => s + p.y, 0) / near.length
-    return { x: rect.left + sx, y: rect.top + sy }
+
+    // 线条与锚点圆点都会产生蓝色像素；按纵向连通块聚簇，避免把同一 x 上汇聚的多条线
+    // 平均成远离圆心的点（回归通道右端的中线/上下轨就是典型场景）。
+    type Cluster = { sx: number; sy: number; n: number }
+    let clusters: Cluster[] = []
+    for (let y = 0; y < height; y++) {
+      const row = pts.filter((p) => p.y === y)
+      if (!row.length) continue
+      const groups: { xs: number[] }[] = []
+      for (const p of row.sort((a, b) => a.x - b.x)) {
+        const g = groups[groups.length - 1]
+        if (!g || p.x - g.xs[g.xs.length - 1] > 2) groups.push({ xs: [p.x] })
+        else g.xs.push(p.x)
+      }
+      for (const g of groups) {
+        const cx = g.xs.reduce((sum, x) => sum + x, 0) / g.xs.length / dpr
+        const cy = y / dpr
+        const last = clusters[clusters.length - 1]
+        if (last && Math.abs(cy - last.sy / last.n) <= 3 && Math.abs(cx - last.sx / last.n) <= 8)
+          Object.assign(last, { sx: last.sx + cx, sy: last.sy + cy, n: last.n + 1 })
+        else clusters.push({ sx: cx, sy: cy, n: 1 })
+      }
+    }
+    clusters = clusters.filter((c) => c.n >= 2)
+    if (!clusters.length) {
+      // 抗锯齿或小圆点兜底：仍取最外侧像素带，但优先用其中间纵向位置
+      const near = pts.filter((p) => (w === 'max' ? p.x > ext - 5 : p.x < ext + 5))
+      if (!near.length) return null
+      const midY = [...near].sort((a, b) => a.y - b.y)[Math.floor(near.length / 2)].y
+      const core = near.filter((p) => Math.abs(p.y - midY) <= 2)
+      const sx = core.reduce((s, p) => s + p.x, 0) / core.length
+      const sy = core.reduce((s, p) => s + p.y, 0) / core.length
+      return { x: rect.left + sx, y: rect.top + sy }
+    }
+    clusters.sort((a, b) =>
+      w === 'max' ? b.sx / b.n - a.sx / a.n : a.sx / a.n - b.sx / b.n,
+    )
+    const target = clusters[0]
+    return { x: rect.left + target.sx / target.n, y: rect.top + target.sy / target.n }
   }, which)
 }
 
@@ -211,7 +245,7 @@ async function dragSelectedAnchorUntil(
       const center = await findDrawnLineCenter(page)
       if (center) {
         await page.mouse.move(center.x, center.y)
-        await page.mouse.click()
+        await page.mouse.click(center.x, center.y)
         await page.waitForTimeout(300)
         anchor = await findDrawingAnchor(page, which)
       }
@@ -3080,6 +3114,21 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     expect(saved!.points).toHaveLength(2)
     expect(saved!.points[1].time).toBeGreaterThan(saved!.points[0].time)
 
+    const readFirst = () =>
+      page.evaluate(() => {
+        try {
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const arr = Object.values(d)[0] as {
+            id: string
+            type: string
+            points: { time: number; price: number }[]
+          }[]
+          return arr[0] ?? null
+        } catch {
+          return null
+        }
+      })
+
     // 切回鼠标（只读）→ 点击中线附近可选中（命中检测走 K 线回归线段）
     await openDrawing(page)
     await page.getByRole('button', { name: '鼠标' }).click()
@@ -3087,6 +3136,31 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     const center = (await findDrawnLineCenter(page))!
     await page.mouse.click(center.x, center.y)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 拖拽最右侧（尾）锚点：窗口锚点必须可编辑；回归通道按时间排序，另一端保持不变
+    const tailMoved = await dragSelectedAnchorUntil(
+      page,
+      'max',
+      // 尾锚点通常贴近图表右缘；向左上拖回主区，避免落进价格轴导致事件丢失
+      -box!.width * 0.08,
+      -box!.height * 0.04,
+      async () => {
+        const after = await readFirst()
+        if (!after || after.points.length !== 2) return false
+        const headSame =
+          after.points[0].time === saved!.points[0].time && after.points[0].price === saved!.points[0].price
+        const tailChanged =
+          after.points[1].time !== saved!.points[1].time || after.points[1].price !== saved!.points[1].price
+        return (
+          after.id === saved!.id &&
+          after.type === 'regchan' &&
+          headSame &&
+          tailChanged &&
+          after.points[1].time > after.points[0].time
+        )
+      },
+    )
+    expect(tailMoved).toBe(true)
 
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
