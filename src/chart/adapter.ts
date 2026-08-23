@@ -1325,6 +1325,40 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'daterange') {
+      // 日期范围（Date Range）：A/B 两点定义时间范围，渲染半透明竖带 + 边界线 + 中间天数/小时数标签。
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      const b = this.project(pb.time, pb.price)
+      if (!a || !b) return
+      const h = this.overlay.height / (window.devicePixelRatio || 1)
+      const left = Math.min(a.x, b.x)
+      const right = Math.max(a.x, b.x)
+      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillRect(left, 0, right - left, h)
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      for (const x of [left, right]) {
+        ctx.beginPath()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, h)
+        ctx.stroke()
+      }
+      // 时间差标签（秒→天/小时）
+      const dt = Math.abs(pb.time - pa.time)
+      const days = dt / 86400
+      const hours = dt / 3600
+      const label = days >= 1 ? `${days.toFixed(1)}d` : `${hours.toFixed(1)}h`
+      this.drawLabel(ctx, (left + right) / 2, 16, label, 'left')
+      if (selected) {
+        ctx.fillStyle = '#4e9cf5'
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
     if (d.type === 'rr') {
       // 风险回报（R:R）：A 入场 / B 止损 / C 止盈 → 三条水平线横贯全宽（止损/止盈虚线）+ 左侧价格标签 + 右侧盈亏比标签
       const pts = [d.points[0], d.points[1], d.points[2]]

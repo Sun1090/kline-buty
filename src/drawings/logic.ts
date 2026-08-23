@@ -44,6 +44,7 @@ export type DrawingTool =
   | 'rr'
   | 'position'
   | 'forecast'
+  | 'daterange'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -1021,6 +1022,19 @@ export function hitTestDrawings(
       const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
       if (a && b && c) {
         dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y), Math.abs(py - c.y))
+      }
+    } else if (d.type === 'daterange') {
+      // 日期范围：竖带内部任意位置可选中；外部按到左右边框的水平距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        if (px >= left && px <= right) {
+          dist = 0
+        } else {
+          dist = Math.min(Math.abs(px - left), Math.abs(px - right))
+        }
       }
     } else if (d.type === 'forecast') {
       // 预测：命中 A→B 历史段或 B→C 投影段
