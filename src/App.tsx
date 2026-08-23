@@ -264,7 +264,7 @@ export function App() {
     // 移动端画线完成自动切回「鼠标」只读模式：避免再次轻点误建画线，
     // 且可直接触屏拖拽编辑（桌面端保持工具不切，连续画线）
     if (isMobile) setDrawingTool('none')
-    if (d.type === 'text') {
+    if (d.type === 'text' || d.type === 'note') {
       setTextDraft('')
       setEditingTextId(created.id)
     }
@@ -292,7 +292,7 @@ export function App() {
   const selectedDrawing = drawings.find((d) => d.id === selectedDrawingId)
   const startEditingText = (id: string) => {
     const d = drawings.find((x) => x.id === id)
-    if (!d || d.type !== 'text') return
+    if (!d || (d.type !== 'text' && d.type !== 'note')) return
     setSelectedDrawingId(id)
     setTextDraft(d.text ?? '')
     setTextFontSize(d.fontSize ?? DEFAULT_TEXT_FONT_SIZE)
@@ -300,7 +300,7 @@ export function App() {
     setEditingTextId(id)
   }
   const startEditingSelectedText = () => {
-    if (selectedDrawing?.type === 'text') startEditingText(selectedDrawing.id)
+    if (selectedDrawing?.type === 'text' || selectedDrawing?.type === 'note') startEditingText(selectedDrawing.id)
   }
   const deleteSelectedDrawing = () => {
     if (!selectedDrawingId) return
@@ -482,7 +482,7 @@ export function App() {
           onDrawingTool={setDrawingTool}
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}
-          onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          onEditSelectedText={selectedDrawing?.type === 'text' || selectedDrawing?.type === 'note' ? startEditingSelectedText : undefined}
           drawings={drawings}
           selectedDrawingId={selectedDrawingId}
           onSelectDrawing={setSelectedDrawingId}
@@ -549,7 +549,7 @@ export function App() {
           onDrawingTool={setDrawingTool}
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}
-          onEditSelectedText={selectedDrawing?.type === 'text' ? startEditingSelectedText : undefined}
+          onEditSelectedText={selectedDrawing?.type === 'text' || selectedDrawing?.type === 'note' ? startEditingSelectedText : undefined}
           drawings={drawings}
           selectedDrawingId={selectedDrawingId}
           onSelectDrawing={setSelectedDrawingId}

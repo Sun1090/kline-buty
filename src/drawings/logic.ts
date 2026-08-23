@@ -8,6 +8,7 @@ export type DrawingTool =
   | 'fib'
   | 'channel'
   | 'text'
+  | 'note'
   | 'rect'
   | 'ray'
   | 'hray'
@@ -52,11 +53,11 @@ export interface Drawing {
   id: string
   type: DrawingType
   points: { time: number; price: number }[]
-  /** 文本标注内容（仅 type === 'text'，支持 \n 多行） */
+  /** 文本/备注内容（text 与 note 共用，支持 \n 多行） */
   text?: string
-  /** 文本标注字号（仅 type === 'text'，缺省 14） */
+  /** 文本/备注字号（text 与 note 共用，缺省 14） */
   fontSize?: number
-  /** 文本标注颜色（仅 type === 'text'，缺省跟随主题黄） */
+  /** 文本颜色（text 用；note 固定便签配色） */
   color?: string
   /** 图层管理：隐藏（不渲染 + 不参与命中，画线仍保留在数据里） */
   hidden?: boolean
@@ -124,7 +125,7 @@ export function fibPrices(from: number, to: number): number[] {
 
 /** 各画线工具所需锚点数（用于多段点击交互） */
 export function requiredPoints(type: DrawingTool | DrawingType): number {
-  if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return 1
+  if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'note' || type === 'pricelabel') return 1
   if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended') return 2
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
   if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return 3
@@ -543,7 +544,7 @@ export function measureInfo(a: { price: number }, b: { price: number }): { diff:
 
 /** 归一化锚点：单点工具只保留一点；方向敏感工具（射线/扇形/箭头/斐波那契扩展）保持原始顺序；其余两点工具按时间排序 */
 export function normalizePoints(type: DrawingType, pts: { time: number; price: number }[]) {
-  if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return [pts[0]]
+  if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'note' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz' || type === 'forecast') return [a, b]
@@ -678,6 +679,15 @@ export function hitTestDrawings(
         // 文本框区域整体可选中（类似矩形区域命中），锚点附近优先
         if (Math.abs(px - a.x) <= halfW && Math.abs(py - a.y) <= halfH) {
           dist = Math.min(HIT_THRESHOLD_PX - 1, Math.hypot(px - a.x, py - a.y))
+        }
+      }
+    } else if (d.type === 'note') {
+      const a = project(d.points[0].time, d.points[0].price)
+      if (a) {
+        const { halfW, halfH } = textHitExtents(d)
+        // 便签卡片区域整体可选中，与文本标注一致
+        if (Math.abs(px - a.x) <= halfW && Math.abs(py - a.y) <= halfH) {
+          dist = 0
         }
       }
     } else if (d.type === 'channel') {

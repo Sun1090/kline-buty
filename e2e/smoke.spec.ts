@@ -4383,6 +4383,94 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     expect(errors).toHaveLength(0)
   })
 
+  test('画线：备注便签 → 点击创建 → 编辑器输入落库 → 刷新后保留 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '备注' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.42)
+
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await expect(page.locator('[data-testid="text-confirm"]')).toBeVisible({ timeout: 5000 })
+    const textarea = page.locator('textarea').first()
+    await textarea.fill('关键位备注')
+    await page.getByTestId('text-confirm').click()
+    await expect(page.getByTestId('text-confirm')).toHaveCount(0)
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'note').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    let saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'note')
+        return (arr[0] as { text?: string }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved?.text).toBe('关键位备注')
+
+    await page.reload()
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'note')
+        return (arr[0] as { text?: string }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved?.text).toBe('关键位备注')
+
+    // 刷新后画线恢复为未选中态；点击便签本体重新选中，再走桌面删除链路
+    const noteCenter = await findDrawnLineCenter(page)
+    expect(noteCenter).not.toBeNull()
+    await page.mouse.click(noteCenter!.x, noteCenter!.y)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'note').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
+
 test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
@@ -5356,6 +5444,83 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
+
+  test('移动端：备注便签 → 触摸创建并编辑 → 长按本体回填改字 → 删除', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '备注' }).tap()
+    await page.waitForTimeout(200)
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width * 0.42, y: box.y + box.height * 0.42 }],
+    })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    await page.getByTestId('mobile-text-input').fill('移动备注')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+
+    const center = await findDrawnLineCenter(page)
+    expect(center).not.toBeNull()
+    if (!center) return
+    cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+    await page.waitForTimeout(300)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('mobile-text-input')).toHaveValue('移动备注')
+    await page.getByTestId('mobile-text-input').fill('移动改字')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'note')
+        return (arr[0] as { text?: string }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved?.text).toBe('移动改字')
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'note').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+    expect(errors).toHaveLength(0)
+  })
 
   test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
     const errors: string[] = []
