@@ -17,6 +17,13 @@ import {
 } from 'lightweight-charts'
 import { zoomRangeAround } from './pinchZoom'
 import { PinchLingeringTracker, TouchDrawingGestureLock, TouchTapTracker } from './touchGestures'
+import {
+  TouchInertiaTracker,
+  decayInertiaVelocity,
+  horizontalInertiaBars,
+  inertiaSettled,
+  shouldStartHorizontalInertia,
+} from './inertiaScroll'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
@@ -310,6 +317,18 @@ export class LightweightChartAdapter implements ChartApi {
   private touchMoved = false
   /** 单指触摸起点（判移动阈值用） */
   private touchStartPos: { x: number; y: number } | null = null
+  /** 单指快扫速度采样；lightweight-charts 当前触屏 kinetic 未生效，由适配层补齐惯性 */
+  private touchInertia = new TouchInertiaTracker()
+  /** 惯性滚动动画帧；null 表示未运行动画 */
+  private inertiaFrame: number | null = null
+  /** 松手时估算出的横向速度（px/s） */
+  private inertiaVelocity = 0
+  /** 动画起始时间（rAF 时钟，毫秒） */
+  private inertiaStartedAt = 0
+  /** 上一帧时间，用来把速度换算成本帧位移 */
+  private lastInertiaAt = 0
+  /** 启动动画时的主图可视宽度（px） */
+  private inertiaVisibleWidthPx = 0
   /** 单指触屏十字光标跟踪中（移动端无 hover，拖动/长按时跟随手指显示 OHLC） */
   private touchCrosshair = false
   /** 单指长按计时器（250ms 未移动即钉住十字光标，轻点不闪线） */
@@ -330,6 +349,12 @@ export class LightweightChartAdapter implements ChartApi {
   private static readonly TOUCH_MOVE_PX = 10
   /** 双击复位间隔（ms） */
   private static readonly DOUBLE_TAP_MS = 300
+  /** 惯性启动最低横向速度（px/s）；慢拖松手不滑 */
+  private static readonly INERTIA_MIN_PX_PER_SECOND = 500
+  /** 惯性半衰期（ms）：约 1 秒后剩 4.5%，手感接近移动端列表 */
+  private static readonly INERTIA_HALF_LIFE_MS = 225
+  /** 惯性判停阈值（px/s），避免无限小数帧浪费电量 */
+  private static readonly INERTIA_SETTLE_PX_PER_SECOND = 20
   /** 捏合结束后残留单指的最短防护时长（ms） */
   private static readonly PINCH_RESIDUE_MS = 120
   /** 框选截图模式 */
@@ -2127,6 +2152,7 @@ export class LightweightChartAdapter implements ChartApi {
    * - 框选截图：整段取消。
    */
   private onPointerCancel = () => {
+    this.cancelTouchInertia()
     this.drawingDown = null
     this.dragPreview = null
     this.dragEdit = null
@@ -2163,6 +2189,79 @@ export class LightweightChartAdapter implements ChartApi {
     this.touchHoldPos = null
   }
 
+  /**
+   * 松手后的横向惯性滚动。
+   * 只接管单指快扫：每帧把像素速度换算成 logical range 平移量，
+   * 新手势、系统取消或组件销毁都必须先取消动画。
+   */
+  private startTouchInertia(velocityX: number) {
+    const range = this.chart.timeScale().getVisibleLogicalRange()
+    const rect = this.container.getBoundingClientRect()
+    if (!range || !Number.isFinite(range.from) || !Number.isFinite(range.to)) return
+    if (range.to - range.from <= 0 || !(rect.width > 0)) return
+    this.cancelTouchInertia()
+    this.inertiaVelocity = velocityX
+    this.inertiaVisibleWidthPx = rect.width
+    this.inertiaStartedAt = performance.now()
+    this.lastInertiaAt = this.inertiaStartedAt
+    this.inertiaFrame = requestAnimationFrame(this.animateTouchInertia)
+  }
+
+  private animateTouchInertia = (frameTime: number) => {
+    this.inertiaFrame = null
+    const dtMs = Math.min(100, Math.max(0, frameTime - this.lastInertiaAt))
+    const elapsedMs = Math.max(0, frameTime - this.inertiaStartedAt)
+    this.lastInertiaAt = frameTime
+
+    const velocity = decayInertiaVelocity(
+      this.inertiaVelocity,
+      elapsedMs,
+      LightweightChartAdapter.INERTIA_HALF_LIFE_MS,
+    )
+    const range = this.chart.timeScale().getVisibleLogicalRange()
+    if (!range || !Number.isFinite(range.from) || !Number.isFinite(range.to)) return
+    if (range.to - range.from <= 0) return
+
+    let bars = horizontalInertiaBars(
+      velocity,
+      dtMs,
+      this.inertiaVisibleWidthPx,
+      range.to - range.from,
+    )
+    // 数据尾部仍保留图表配置的 rightOffset 空隙；贴边后立即停止，避免持续空转。
+    const maxTo = Math.max(
+      range.to,
+      this.mainSeries.data().length - 1 + (this.chart.options().timeScale.rightOffset || 0),
+    )
+    let stopped = false
+    if (range.to + bars > maxTo) {
+      bars = Math.max(0, maxTo - range.to)
+      stopped = true
+    }
+
+    const from = range.from + bars
+    const to = range.to + bars
+    if (from !== range.from || to !== range.to) {
+      this.chart.timeScale().setVisibleLogicalRange({ from, to })
+    }
+
+    if (stopped || inertiaSettled(velocity, LightweightChartAdapter.INERTIA_SETTLE_PX_PER_SECOND)) {
+      this.inertiaVelocity = 0
+      return
+    }
+    this.inertiaVelocity = velocity
+    this.inertiaFrame = requestAnimationFrame(this.animateTouchInertia)
+  }
+
+  /** 取消进行中的惯性动画；不清除十字光标，由具体手势决定后续视觉状态 */
+  private cancelTouchInertia() {
+    if (this.inertiaFrame !== null) {
+      cancelAnimationFrame(this.inertiaFrame)
+      this.inertiaFrame = null
+    }
+    this.inertiaVelocity = 0
+  }
+
   /** 十字光标松手保留：拖完/长按抬起后保留 2s（期间轻点立即消除），到期自动清除 */
   private startTouchLinger() {
     this.clearTouchLinger()
@@ -2187,6 +2286,8 @@ export class LightweightChartAdapter implements ChartApi {
   /** 触屏按下：单指（非画线）长按文本打开编辑器 / 长按钉十字光标 / 拖拽编辑；双指记录起始指距与价格区间 */
   private onTouchStart = (e: TouchEvent) => {
     this.clearTouchHold()
+    this.cancelTouchInertia()
+    this.touchInertia.reset()
     if (this.regionSelect) {
       this.clearTouchLinger()
       this.touchTaps.invalidate()
@@ -2297,6 +2398,9 @@ export class LightweightChartAdapter implements ChartApi {
         this.draw()
         return
       }
+      if (this.drawingTool === 'none' && !this.dragEdit && !this.pinchLinger.active) {
+        this.touchInertia.move(t.clientX, t.clientY)
+      }
       const s0 = this.touchStartPos
       const moved =
         !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
@@ -2395,6 +2499,12 @@ export class LightweightChartAdapter implements ChartApi {
       this.touchTaps.invalidate()
       this.lastTapAt = 0
       this.startTouchLinger()
+      const { x, y } = this.touchInertia.release()
+      if (shouldStartHorizontalInertia(x === 0 ? { x: 0, y } : { x, y }, {
+        minPxPerSecond: LightweightChartAdapter.INERTIA_MIN_PX_PER_SECOND,
+      })) {
+        this.startTouchInertia(x)
+      }
       return
     }
     // 长按钉线后抬起：同样保留片刻（不再是「抬起即消失」）
@@ -2846,6 +2956,7 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   destroy() {
+    this.cancelTouchInertia()
     this.clearTouchLinger()
     this.container.removeEventListener('pointermove', this.onPointerMove)
     this.container.removeEventListener('pointerdown', this.onPointerDown)

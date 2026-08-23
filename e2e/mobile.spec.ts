@@ -241,6 +241,79 @@ test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻
   expect(errs).toHaveLength(0)
 })
 
+test('移动端：快扫松手后图表横向惯性滚动，最终自然稳定', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.addInitScript(() => localStorage.clear())
+  await page.goto('/?perf=1200')
+  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  const box = await page.locator('.chart-container').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  // 只统计当前点与最近历史锚点的斜率，慢拖历史不会稀释快扫速度
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  const cx = box.x + box.width * 0.5
+  const cy = box.y + box.height * 0.42
+
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  for (let i = 1; i <= 10; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: cx - i * 25, y: cy }],
+    })
+    await page.waitForTimeout(20)
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+
+  const seriesSignature = () =>
+    page.evaluate(() => {
+      let best: HTMLCanvasElement | null = null
+      let bestArea = 0
+      for (const canvas of document.querySelectorAll('.chart-container canvas')) {
+        const style = getComputedStyle(canvas)
+        const rect = canvas.getBoundingClientRect()
+        const area = rect.width * rect.height
+        if (style.position === 'absolute' && style.zIndex === '2' && area > bestArea) {
+          bestArea = area
+          best = canvas as HTMLCanvasElement
+        }
+      }
+      if (!best) return null
+      const ctx = best.getContext('2d')
+      if (!ctx) return null
+      let hash = 2166136261
+      for (let i = 0; i < ctx.canvas.width; i += 4) {
+        for (let j = 0; j < ctx.canvas.height; j += 7) {
+          const data = ctx.getImageData(i, j, 1, 1).data
+          hash = (((hash ^ (data[0] * 65536 + data[1] * 256 + data[2])) * 16777619) >>> 0)
+        }
+      }
+      return hash
+    })
+
+  // 惯性动画期间应至少出现一次画面变化；动画结束后连续两帧保持不变。
+  const first = await seriesSignature()
+  expect(first).not.toBeNull()
+  const signatures = [first]
+  let movedDuringInertia = false
+  for (let i = 0; i < 12; i++) {
+    await page.waitForTimeout(30)
+    signatures.push(await seriesSignature())
+    if (signatures.at(-1) !== signatures.at(-2)) movedDuringInertia = true
+  }
+  expect(movedDuringInertia).toBe(true)
+  await page.waitForTimeout(1600)
+  const stableA = await seriesSignature()
+  await page.waitForTimeout(80)
+  const stableB = await seriesSignature()
+  expect(stableB).toBe(stableA)
+  expect(stableA).not.toBe(signatures[0])
+  expect(errors).toHaveLength(0)
+})
+
 test('移动端：两次快速拖动不误判双击复位（pointer capture 提前释放防护）', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
