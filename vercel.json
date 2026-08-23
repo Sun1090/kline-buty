@@ -1,3 +1,14 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/knowledge/:path*", "destination": "/knowledge/404.html" },
+    { "source": "/((?!knowledge/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/knowledge/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
 }

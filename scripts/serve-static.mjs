@@ -53,6 +53,13 @@ createServer((req, res) => {
     res.end(readFileSync(file))
     return
   }
+  // 知识库未知路径 → 知识库双语 404 页（与线上 vercel.json 的 /knowledge 软 404 对齐）
+  if (url.pathname === '/knowledge' || url.pathname.startsWith('/knowledge/')) {
+    const nf = join(DIST, 'knowledge', '404.html')
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' })
+    res.end(readFileSync(nf))
+    return
+  }
   // SPA 回退：应用路由（如 /?symbol=BTCUSDT 或未知路径）→ 根 index.html
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' })
   res.end(readFileSync(join(DIST, 'index.html')))

@@ -20,6 +20,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
+  // 文档站（VitePress）自带资源指纹与多语言路由，交还浏览器默认行为，避免离线回退到主应用壳
+  if (url.pathname.startsWith('/knowledge')) return
   if (url.pathname.includes('/api') || url.pathname.includes('/fapi') || url.pathname.includes('/ws')) return
   event.respondWith(
     fetch(event.request)
