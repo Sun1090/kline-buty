@@ -5485,6 +5485,14 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
     await page.waitForTimeout(300)
+    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+
+    // 编辑器已接管手势：同一手指继续滑动不得再驱动横向惯性或十字光标
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: center.x + 120, y: center.y }],
+    })
+    await page.waitForTimeout(80)
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
     await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })

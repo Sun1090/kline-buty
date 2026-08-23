@@ -257,6 +257,8 @@ const SUB_PANE_HEIGHT = 90
 export const TOUCH_PIN_VIBRATE_MS = 10
 /** 双击复位的触觉反馈时长（ms，Android vibrate） */
 export const TOUCH_RESET_VIBRATE_MS = 12
+/** 长按打开文本/便签编辑器的触觉反馈时长（ms，Android vibrate） */
+export const TOUCH_EDIT_VIBRATE_MS = 14
 
 /**
  * 触觉反馈：兼容不支持/navigator 缺失的环境。
@@ -340,6 +342,8 @@ export class LightweightChartAdapter implements ChartApi {
   private touchHoldPos: { x: number; y: number } | null = null
   /** 长按钉线已触发（本触摸会话内，抬起时据此决定保留十字光标） */
   private touchHoldFired = false
+  /** 长按已打开文本/便签编辑器；同一触摸的后续移动不再驱动图表手势 */
+  private touchEditOpened = false
   /** 十字光标松手保留计时器（拖完/长按抬起后保留片刻便于读 OHLC，轻点或新手势立即消除） */
   private touchLingerTimer: number | null = null
   /** 十字光标正处于松手保留期 */
@@ -2361,6 +2365,7 @@ export class LightweightChartAdapter implements ChartApi {
     this.hoverKey = null
     this.touchMoved = false
     this.touchHoldFired = false
+    this.touchEditOpened = false
     this.clearTouchHold()
     this.clearTouchLinger()
     if (this.touchCrosshair) this.setTouchCrosshair(false)
@@ -2503,6 +2508,7 @@ export class LightweightChartAdapter implements ChartApi {
     // 防止其后续移动/抬起产生十字线或误触发双击复位。
     const pinchResidue = this.pinchLinger.active && e.touches.length === 1
     this.touchHoldFired = false
+    this.touchEditOpened = false
     this.pinch = null
     this.touchMoved = pinchResidue
     this.touchStartPos = null
@@ -2545,11 +2551,14 @@ export class LightweightChartAdapter implements ChartApi {
         this.touchHoldTimer = window.setTimeout(() => {
           this.touchHoldTimer = null
           if (!this.touchMoved && this.touchHoldPos) {
-            // 长按文本：选中并打开编辑器；标记 touchMoved 避免抬起被计入双击复位
+            // 长按文本：选中并打开编辑器；标记 touchMoved 避免抬起被计入双击复位。
+            // 后续同一手指滑动属于编辑器外的取消动作，不能继续平移图表或显示十字线。
             this.touchMoved = true
+            this.touchEditOpened = true
             this.selectedDrawingId = hitText.id
             this.drawingCallbacks?.onSelect?.(hitText.id)
             this.drawingCallbacks?.onEditText?.(hitText.id)
+            vibrateIfSupported(navigator.vibrate?.bind(navigator), TOUCH_EDIT_VIBRATE_MS)
             this.setTouchCrosshair(false)
             this.draw()
           }
@@ -2602,6 +2611,7 @@ export class LightweightChartAdapter implements ChartApi {
       if (this.drawingTool === 'none' && !this.dragEdit && !this.pinchLinger.active) {
         this.touchInertia.move(t.clientX, t.clientY)
       }
+      if (this.touchEditOpened) return
       const s0 = this.touchStartPos
       const moved =
         !!s0 && Math.hypot(t.clientX - s0.x, t.clientY - s0.y) > LightweightChartAdapter.TOUCH_MOVE_PX
