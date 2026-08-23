@@ -14,6 +14,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "docs:prepare": "node scripts/docs-prepare.mjs",
+    "docs:lint": "node scripts/kb-lint.mjs",
     "docs:dev": "npm run docs:prepare && vitepress dev docs-site",
     "docs:build": "node scripts/docs-build.mjs"
   },

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kline-buty.vercel.app/knowledge/sitemap.xml
