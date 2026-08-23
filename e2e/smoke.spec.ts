@@ -4216,6 +4216,11 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect(page.getByText('リアルタイム', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('タイプ', { exact: false }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: '日本語', exact: true })).toBeVisible()
+    // 免责声明链路随语言切换：页脚、图表水印与导出角标同源
+    const footer = page.getByTestId('disclaimer')
+    const chartNote = page.getByTestId('chart-watermark')
+    await expect(footer).toContainText('投資助言ではありません')
+    await expect(chartNote).toContainText('1分')
     // 日本語 → 한국어
     await page.getByRole('button', { name: '日本語', exact: true }).click()
     await expect(page.getByText('실시간', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
