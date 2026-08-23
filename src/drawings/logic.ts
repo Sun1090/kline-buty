@@ -42,6 +42,7 @@ export type DrawingTool =
   | 'pricerange'
   | 'fibtz'
   | 'rr'
+  | 'position'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -124,7 +125,7 @@ export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return 1
   if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended') return 2
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return 3
   return 2
 }
 
@@ -548,7 +549,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -1006,6 +1007,14 @@ export function hitTestDrawings(
       }
     } else if (d.type === 'rr') {
       // 风险回报：命中三条水平线（入场/止损/止盈）任一条的竖直距离
+      const a = d.points[0] ? project(d.points[0].time, d.points[0].price) : null
+      const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
+      const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
+      if (a && b && c) {
+        dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y), Math.abs(py - c.y))
+      }
+    } else if (d.type === 'position') {
+      // 持仓计划：命中三条水平线（入场/止损/止盈）任一条的竖直距离，与 rr 相同
       const a = d.points[0] ? project(d.points[0].time, d.points[0].price) : null
       const b = d.points[1] ? project(d.points[1].time, d.points[1].price) : null
       const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null

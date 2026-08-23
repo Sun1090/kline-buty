@@ -1660,6 +1660,32 @@ describe('风险回报（rr，A 入场 / B 止损 / C 止盈）', () => {
   })
 })
 
+describe('持仓计划（position，A 入场 / B 止损 / C 止盈）', () => {
+  it('requiredPoints：持仓计划为三点', () => {
+    expect(requiredPoints('position')).toBe(3)
+  })
+
+  it('createDrawing / moveAnchor 保持三点（多锚点工具不重排，按点击顺序）', () => {
+    const d = createDrawing('position', [{ time: 0, price: 100 }, { time: 50, price: 80 }, { time: 100, price: 150 }], 'pt1')
+    expect(d.points).toHaveLength(3)
+    expect(d.points[0]).toEqual({ time: 0, price: 100 })
+    expect(d.points[1]).toEqual({ time: 50, price: 80 })
+    expect(d.points[2]).toEqual({ time: 100, price: 150 })
+    const moved = moveAnchor(d, 2, { time: 110, price: 160 })
+    expect(moved.points).toHaveLength(3)
+    expect(moved.points[2]).toEqual({ time: 110, price: 160 })
+  })
+
+  it('hitTest 持仓计划：三条水平线（入场/止损/止盈）任一条附近命中', () => {
+    // A(0,100) 入场线；B(50,50) 止损线；C(100,150) 止盈线
+    const d = createDrawing('position', [{ time: 0, price: 100 }, { time: 50, price: 50 }, { time: 100, price: 150 }], 'pt2')
+    expect(hitTestDrawings([d], 30, 200, project)).toBe('pt2') // 入场线
+    expect(hitTestDrawings([d], 10, 250, project)).toBe('pt2') // 止损线
+    expect(hitTestDrawings([d], 90, 150, project)).toBe('pt2') // 止盈线
+    expect(hitTestDrawings([d], 50, 300, project)).toBeNull() // 距最近线 50px
+  })
+})
+
 describe('图层管理（hidden/locked/patch）', () => {
   it('toggleDrawingHidden：翻转隐藏态并保留其余字段', () => {
     const d = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')
