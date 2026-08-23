@@ -40,12 +40,6 @@ onMounted(() => {
       <div class="kb-doc-card-title">
         <span v-if="d.no" class="kb-doc-card-no">{{ d.no }}</span>
         {{ d.title }}
-        <span
-          v-for="t in (d.tags || [])"
-          :key="t"
-          class="kb-badge"
-          :class="`c-${t.color || 'blue'}`"
-        >{{ t.text }}</span>
       </div>
       <p v-if="d.desc" class="kb-doc-card-desc">{{ d.desc }}</p>
     </a>

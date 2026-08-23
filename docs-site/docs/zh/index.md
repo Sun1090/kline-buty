@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: 开始阅读
-      link: /01-入门基础/
+      link: /zh/getting-started/
     - theme: alt
       text: 返回行情应用
       link: https://kline-buty.vercel.app/

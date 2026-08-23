@@ -6,7 +6,6 @@ const { lang } = useData()
 const isZH = computed(() => String(lang.value || '').startsWith('zh'))
 
 const roles = computed(() => {
-  const prefix = isZH.value ? 'zh/' : ''
   const label = (zh, en) => (isZH.value ? zh : en)
   return [
     { id: 'all', icon: '🌐', label: label('全部章节', 'All chapters'), chapters: [] },
@@ -17,7 +16,7 @@ const roles = computed(() => {
     { id: 'quant', icon: '💻', label: label('量化 / 程序员', 'Quant'), chapters: ['quant-practice', 'system-integration', 'tools-platforms', 'career'] },
     { id: 'option', icon: '🎯', label: label('期权学习', 'Options'), chapters: ['markets-instruments', 'options-strategies'] },
     { id: 'safe', icon: '🛡️', label: label('只求避坑', 'Risk-averse'), chapters: ['pitfalls', 'behavioral-finance', 'regulation-compliance'] },
-  ].map((r) => ({ ...r, prefix }))
+  ]
 })
 
 const active = ref('all')
@@ -96,7 +95,7 @@ const stages = computed(() => {
     ] },
   ]
   const src = isZH.value ? zh : en
-  const prefix = isZH.value ? 'zh/' : ''
+  const prefix = isZH.value ? '/zh/' : '/'
   return src.map((s) => ({
     ...s,
     items: s.items.map(([id, label, desc]) => ({ id, label, desc, dir: `${prefix}${id}/` })),
