@@ -84,6 +84,10 @@ interface ChartViewProps {
   onDrawingUpdate?: (id: string, points: { time: number; price: number }[]) => void
   /** 文本标注快捷编辑回调（桌面双击 / 移动端长按） */
   onEditText?: (id: string) => void
+  /** 取消进行中的多锚点画线进度 */
+  onCancelDrawingProgress?: () => void
+  /** 注册取消画线的 ref（供 App Esc 快捷键调用 adapter.cancelDrawing()） */
+  onCancelDrawingProgressRef?: React.MutableRefObject<(() => void) | null>
   /** 主题模式（canvas 渲染色） */
   themeMode?: 'dark' | 'light'
   /** 主题色预设（涨跌/强调色） */
@@ -124,6 +128,8 @@ export function ChartView({
   onDrawingSelect,
   onDrawingUpdate,
   onEditText,
+  onCancelDrawingProgress,
+  onCancelDrawingProgressRef,
   themeMode = 'dark',
   colorPreset = 'classic',
   showWatermark = true,
@@ -240,6 +246,11 @@ export function ChartView({
           }
         : null,
     )
+    // 注册取消画线进度回调（App 层 Esc 快捷键 / 外部取消）
+    if (onCancelDrawingProgressRef) {
+      onCancelDrawingProgressRef.current = () => api.cancelDrawing()
+    }
+    void onCancelDrawingProgress
     api.onRegionCapture((rect) => regionCaptureRef.current?.(rect))
 
     let lastLoadAt = 0

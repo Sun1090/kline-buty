@@ -183,6 +183,8 @@ export interface ChartApi {
   setSelectedDrawing?(id: string | null): void
   /** 画线回调（创建完成/选中变化） */
   setDrawingCallbacks(cb: DrawingCallbacks | null): void
+  /** 取消进行中的多锚点画线（清空进度并恢复手势） */
+  cancelDrawing(): void
   /** 截图：主图 + 画线图层合成 PNG dataURL；传 rect 时裁剪该区域（CSS 像素） */
   takeScreenshot(rect?: RegionRect): string | null
   /** 进入框选截图模式（拖拽出矩形，松开回调 onRegionCapture） */
@@ -465,6 +467,11 @@ export class LightweightChartAdapter implements ChartApi {
 
   setDrawingCallbacks(cb: DrawingCallbacks | null) {
     this.drawingCallbacks = cb
+  }
+
+  /** 取消进行中的多锚点画线：清空进度、恢复平移/捏合 */
+  cancelDrawing() {
+    this.resetDrawing()
   }
 
   setSelectedDrawing(id: string | null) {
