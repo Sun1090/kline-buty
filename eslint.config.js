@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
   // app-shell：app 分支的 Capacitor 壳工程（含 www 压缩产物与原生模板），不参与 Web 代码质量门禁
-  { ignores: ['dist', 'node_modules', 'public/sw.js', '.vitepress', 'docs-site/.vitepress/dist', 'docs-site/docs/knowledge', 'app-shell'] },
+  { ignores: ['dist', 'node_modules', 'public/sw.js', '.vitepress', 'docs-site/.vitepress/dist', 'docs-site/docs/knowledge', 'app-shell', '*-probe*.mjs', 'manual-accept.mjs', 'touch-probe-temp.mjs'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
