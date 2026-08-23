@@ -45,14 +45,15 @@ npm run build && npm run e2e
 
 ## Push 与部署
 
-1. 确认分支基于最新 `origin/main`，必要时 rebase。
-2. Push 前再次确认 staged 内容。
-3. Push 后观察：
+1. 本地提交必须同步推送远程；`docs/knowledge/` 的知识库提交也不例外，不能长期留在本地。
+2. 确认分支基于最新 `origin/main`，必要时 rebase。
+3. Push 前再次确认 staged 内容。
+4. Push 后观察：
    - `CI` workflow
    - `Deploy to GitHub Pages` workflow
-4. Pages 成功后抽查四条链接（GitHub Pages + Vercel 各两条：应用首页 `/` 与知识库 `/knowledge/`），用 `curl` 验证新内容真的上线——不只看 200，要 grep 本次改动的特征（如新容器类名、frontmatter title、图引用）。CI 绿 ≠ 内容已部署，Pages 部署比 Vercel 慢数分钟，要等够再抽查。
-5. 如 Vercel 已接入，也等待部署完成并抽查。
-6. 部署失败时不要口头说“稍后重试”，要给出失败日志定位和下一步修复。
+5. Pages 成功后抽查四条链接（GitHub Pages + Vercel 各两条：应用首页 `/` 与知识库 `/knowledge/`），用 `curl` 验证新内容真的上线——不只看 200，要 grep 本次改动的特征（如新容器类名、frontmatter title、图引用）。CI 绿 ≠ 内容已部署，Pages 部署比 Vercel 慢数分钟，要等够再抽查。
+6. 如 Vercel 已接入，也等待部署完成并抽查。
+7. 部署失败时不要口头说“稍后重试”，要给出失败日志定位和下一步修复。
 
 ## 紧急回滚
 
