@@ -1686,6 +1686,33 @@ describe('持仓计划（position，A 入场 / B 止损 / C 止盈）', () => {
   })
 })
 
+describe('预测线（forecast，A→B 历史 / B→C 同幅度投影）', () => {
+  it('requiredPoints：预测线为两点', () => {
+    expect(requiredPoints('forecast')).toBe(2)
+  })
+
+  it('createDrawing：保持原始顺序（方向敏感）', () => {
+    const d = createDrawing('forecast', [{ time: 100, price: 120 }, { time: 20, price: 80 }], 'fc1')
+    expect(d.points[0]).toEqual({ time: 100, price: 120 })
+    expect(d.points[1]).toEqual({ time: 20, price: 80 })
+  })
+
+  it('moveAnchor 保持两点', () => {
+    const d = createDrawing('forecast', [{ time: 0, price: 100 }, { time: 100, price: 150 }], 'fc2')
+    const moved = moveAnchor(d, 1, { time: 110, price: 160 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[1]).toEqual({ time: 110, price: 160 })
+  })
+
+  it('hitTest：A→B 段和 B→C 投影段均命中', () => {
+    // A(0,200)→B(50,100)，C 投影到 (100,0)
+    const d = createDrawing('forecast', [{ time: 0, price: 200 }, { time: 50, price: 100 }], 'fc3')
+    expect(hitTestDrawings([d], 25, 150, project)).toBe('fc3') // A→B 中点
+    expect(hitTestDrawings([d], 75, 250, project)).toBe('fc3') // B→C 投影中点
+    expect(hitTestDrawings([d], 80, 180, project)).toBeNull() // 远离
+  })
+})
+
 describe('图层管理（hidden/locked/patch）', () => {
   it('toggleDrawingHidden：翻转隐藏态并保留其余字段', () => {
     const d = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')

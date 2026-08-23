@@ -1275,6 +1275,49 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'forecast') {
+      // 预测（Forecast）：A→B 实线历史段，B→C 虚线箭头投影段（同幅度时间+价格延伸）。
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      const b = this.project(pb.time, pb.price)
+      if (!a || !b) return
+      const c = { x: 2 * b.x - a.x, y: 2 * b.y - a.y }
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      // A→B 实线
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      // B→C 投影虚线
+      ctx.setLineDash([6, 4])
+      ctx.beginPath()
+      ctx.moveTo(b.x, b.y)
+      ctx.lineTo(c.x, c.y)
+      ctx.stroke()
+      ctx.setLineDash([])
+      // C 端箭头
+      const angle = Math.atan2(c.y - b.y, c.x - b.x)
+      for (const da of [-Math.PI / 7, Math.PI / 7]) {
+        ctx.beginPath()
+        ctx.moveTo(c.x, c.y)
+        ctx.lineTo(c.x - 10 * Math.cos(angle + da), c.y - 10 * Math.sin(angle + da))
+        ctx.stroke()
+      }
+      // 涨跌幅标签
+      const diff = pb.price - pa.price
+      const pct = pa.price === 0 ? 0 : (diff / pa.price) * 100
+      const sign = diff >= 0 ? '+' : ''
+      this.drawLabel(ctx, c.x + 8, c.y, `${sign}${diff.toFixed(2)} (${sign}${pct.toFixed(2)}%)`, 'left')
+      if (selected) {
+        ctx.fillStyle = '#4e9cf5'
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
+      }
+      return
+    }
+
     if (d.type === 'rr') {
       // 风险回报（R:R）：A 入场 / B 止损 / C 止盈 → 三条水平线横贯全宽（止损/止盈虚线）+ 左侧价格标签 + 右侧盈亏比标签
       const pts = [d.points[0], d.points[1], d.points[2]]
