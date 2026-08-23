@@ -4,6 +4,7 @@ import {
   createDrawing,
   cycleLines,
   cycleXs,
+  cubicBezierPoints,
   CYCLE_LINE_COUNT,
   DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
@@ -771,6 +772,46 @@ describe('hitTestDrawings（M21 三角形/圆弧）', () => {
     expect(hitTestDrawings([arc], 50, 250, project)).toBe('ar') // 圆周另一端（容差内）
     expect(hitTestDrawings([arc], 50, 200, project)).toBeNull() // 圆心距圆周 50px
     expect(hitTestDrawings([arc], 50, 130, project)).toBeNull() // 距圆周 20px
+  })
+})
+
+describe('贝塞尔曲线（M22）', () => {
+  // project: x = time, y = 300 - price
+  // A(0,100) → 屏幕 (0,200)；控制点 (50,50) → (50,250)；C(100,100) → (100,200)
+  const bezier: Drawing = createDrawing(
+    'bezier',
+    [
+      { time: 0, price: 100 },
+      { time: 50, price: 50 },
+      { time: 100, price: 100 },
+    ],
+    'bz',
+  )
+
+  it('需要 A/B/C 三点，且保留点击顺序', () => {
+    expect(requiredPoints('bezier')).toBe(3)
+    const pts = normalizePoints('bezier', [
+      { time: 20, price: 120 },
+      { time: 0, price: 100 },
+      { time: 100, price: 80 },
+    ])
+    expect(pts.map((p) => p.time)).toEqual([20, 0, 100])
+  })
+
+  it('三次贝塞尔采样经过端点并向控制点弯曲', () => {
+    const pts = cubicBezierPoints({ x: 0, y: 200 }, { x: 50, y: 250 }, { x: 100, y: 200 }, 48)
+    expect(pts[0]).toEqual({ x: 0, y: 200 })
+    expect(pts[pts.length - 1]).toEqual({ x: 100, y: 200 })
+    const mid = pts[Math.floor(pts.length / 2)]
+    expect(mid.x).toBeCloseTo(50, 6)
+    expect(mid.y).toBeGreaterThan(225)
+    expect(mid.y).toBeLessThan(250)
+  })
+
+  it('曲线中段可命中，远离曲线不命中', () => {
+    expect(hitTestDrawings([bezier], 50, 238, project)).toBe('bz')
+    expect(hitTestDrawings([bezier], 50, 200, project)).toBeNull()
+    expect(hitTestDrawings([bezier], 50, 290, project)).toBeNull()
   })
 })
 

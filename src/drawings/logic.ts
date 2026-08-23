@@ -27,6 +27,7 @@ export type DrawingTool =
   | 'triangle'
   | 'wedge'
   | 'arc'
+  | 'bezier'
   | 'polyline'
   | 'measure'
   | 'speedlines'
@@ -128,7 +129,7 @@ export function requiredPoints(type: DrawingTool | DrawingType): number {
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'note' || type === 'pricelabel') return 1
   if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended') return 2
   if (type === 'polyline' || type === 'xabcd' || type === 'elliott') return type === 'polyline' ? POLYLINE_MAX_POINTS : 5
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return 3
+  if (type === 'fibext' || type === 'triangle' || type === 'bezier' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return 3
   return 2
 }
 
@@ -542,6 +543,25 @@ export function measureInfo(a: { price: number }, b: { price: number }): { diff:
   return { diff, pct }
 }
 
+/** 三点贝塞尔曲线：A/C 为端点，B 为控制点 */
+export function cubicBezierPoints(
+  a: Point,
+  control: Point,
+  c: Point,
+  samples = 48,
+): Point[] {
+  const count = Math.max(2, Math.floor(samples))
+  const points: Point[] = []
+  for (let i = 0; i <= count; i++) {
+    const t = i / count
+    const mt = 1 - t
+    const x = mt * mt * mt * a.x + 3 * mt * mt * t * control.x + 3 * mt * t * t * control.x + t * t * t * c.x
+    const y = mt * mt * mt * a.y + 3 * mt * mt * t * control.y + 3 * mt * t * t * control.y + t * t * t * c.y
+    points.push({ x, y })
+  }
+  return points
+}
+
 /** 归一化锚点：单点工具只保留一点；方向敏感工具（射线/扇形/箭头/斐波那契扩展）保持原始顺序；其余两点工具按时间排序 */
 export function normalizePoints(type: DrawingType, pts: { time: number; price: number }[]) {
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'note' || type === 'pricelabel') return [pts[0]]
@@ -552,7 +572,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
-  if (type === 'fibext' || type === 'triangle' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return pts.slice(0, 3)
+  if (type === 'fibext' || type === 'triangle' || type === 'bezier' || type === 'wedge' || type === 'pitchfork' || type === 'parray' || type === 'pchannel' || type === 'rr' || type === 'position') return pts.slice(0, 3)
   return a.time <= b.time ? [a, b] : [b, a]
 }
 
@@ -621,6 +641,16 @@ function pointInTriangle(p: Point, a: Point, b: Point, c: Point): boolean {
   const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
   const hasPos = d1 > 0 || d2 > 0 || d3 > 0
   return !(hasNeg && hasPos)
+}
+
+function distToPolyline(p: Point, pts: Point[]): number {
+  if (pts.length === 0) return Infinity
+  if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y)
+  let dist = Infinity
+  for (let i = 0; i + 1 < pts.length; i++) {
+    dist = Math.min(dist, distToSegment(p, pts[i], pts[i + 1]))
+  }
+  return dist
 }
 
 function distToSegment(p: Point, a: Point, b: Point): number {
@@ -771,6 +801,17 @@ export function hitTestDrawings(
       if (a && b && c) {
         const p = { x: px, y: py }
         dist = Math.min(distToSegment(p, a, c), distToSegment(p, b, c))
+      }
+    } else if (d.type === 'bezier') {
+      // 三点贝塞尔曲线：按屏幕投影采样后命中任一曲线段
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const pc = d.points[2]
+      const a = pa ? project(pa.time, pa.price) : null
+      const control = pb ? project(pb.time, pb.price) : null
+      const c = pc ? project(pc.time, pc.price) : null
+      if (a && control && c) {
+        dist = distToPolyline({ x: px, y: py }, cubicBezierPoints(a, control, c))
       }
     } else if (d.type === 'arc') {
       const a = project(d.points[0].time, d.points[0].price)
