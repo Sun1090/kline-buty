@@ -21,6 +21,8 @@ jobs:
         run: npm run lint
       - name: Validate knowledge base
         run: python3 docs/knowledge/scripts/validate-knowledge.py
+      - name: Knowledge base structure lint
+        run: npm run docs:lint
       - name: Unit tests
         run: npm test
       - name: Build

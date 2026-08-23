@@ -21,6 +21,8 @@ const DOCS_ZH = join(DOCS, 'zh')
 
 // Pages 部署在 /kline-buty/knowledge/，Vercel / Docker / 本地默认 /knowledge/
 const BASE = process.env.DOCS_BASE_PATH || '/knowledge/'
+// 站点部署主域：Pages 构建注入 github.io，其余默认 Vercel 主域
+const SITE_URL = process.env.DOCS_SITE_URL || 'https://kline-buty.vercel.app'
 
 /** 章节顺序的唯一定义（无数字前缀，顺序由本数组决定） */
 const CHAPTER_ORDER = [
@@ -180,7 +182,7 @@ export default defineConfig({
   cleanUrls: false,
   ignoreDeadLinks: true,
   sitemap: {
-    hostname: 'https://kline-buty.vercel.app',
+    hostname: SITE_URL,
   },
   markdown: {
     anchor: { slugify },
@@ -208,15 +210,8 @@ export default defineConfig({
     [
       'meta',
       {
-        property: 'og:url',
-        content: `https://kline-buty.vercel.app${BASE}`,
-      },
-    ],
-    [
-      'meta',
-      {
         property: 'og:image',
-        content: `https://kline-buty.vercel.app${BASE}hero-chart.svg`,
+        content: `${SITE_URL}${BASE}hero-chart.svg`,
       },
     ],
   ],
@@ -245,7 +240,7 @@ export default defineConfig({
     },
   },
   themeConfig: {
-    logo: `${BASE}icon.svg`,
+    logo: '/icon.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Getting Started', link: '/getting-started/' },
@@ -256,6 +251,13 @@ export default defineConfig({
       '/zh/': zhSidebar,
     },
     outline: { level: [2, 3], label: 'On this page' },
+    notFound: {
+      title: 'Page Not Found · 页面未找到',
+      quote:
+        'This knowledge-base page does not exist. Try the home page, the search box, or the Chinese edition from the language switch. 此知识库页面不存在，请从首页、搜索框或右上角语言切换进入。',
+      linkLabel: 'Back to home · 返回首页',
+      linkText: 'Home · 首页',
+    },
     docFooter: { prev: 'Previous', next: 'Next' },
     lastUpdated: { text: 'Last updated', formatOptions: { dateStyle: 'short', timeStyle: 'short' } },
     search: {
@@ -276,9 +278,18 @@ export default defineConfig({
       copyright: 'Kline Buty · Trading Knowledge Base',
     },
   },
-  // 每页注入章节文档索引，供 DocCards 组件渲染章节卡片导航
-  transformHead() {
+  // 每页注入章节文档索引（DocCards 数据源）与逐页 og:url / og:title
+  transformHead(ctx) {
     const idx = JSON.stringify(docIndex()).replace(/</g, '\\u003c')
-    return [['script', { id: 'kb-doc-index-data', type: 'application/json' }, idx]]
+    const url = `${SITE_URL}${BASE}${ctx.pageData.relativePath}`
+      .replace(/index\.md$/, '')
+      .replace(/\.md$/, '.html')
+    const title = ctx.pageData.title ? `${ctx.pageData.title} · Trading Knowledge Base` : undefined
+    const head = [
+      ['script', { id: 'kb-doc-index-data', type: 'application/json' }, idx],
+      ['meta', { property: 'og:url', content: url }],
+    ]
+    if (title) head.push(['meta', { property: 'og:title', content: title }])
+    return head
   },
 })
