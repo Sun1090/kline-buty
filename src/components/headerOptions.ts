@@ -57,6 +57,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'triangle', labelKey: 'drawing.triangle' },
   { value: 'wedge', labelKey: 'drawing.wedge' },
   { value: 'arc', labelKey: 'drawing.arc' },
+  { value: 'bezier', labelKey: 'drawing.bezier' },
   { value: 'ray', labelKey: 'drawing.ray' },
   { value: 'hray', labelKey: 'drawing.hray' },
   { value: 'vray', labelKey: 'drawing.vray' },

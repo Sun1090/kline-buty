@@ -38,6 +38,7 @@ import {
   gannBoxSegments,
   gannFanRays,
   cycleLines,
+  cubicBezierPoints,
   fibTimeZones,
   fibChannelLevels,
   hitTestDrawings,
@@ -1484,6 +1485,27 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.fillText(labels[i] ?? '', pts[i].x + 6, pts[i].y + off)
       }
       if (selected) for (const p of pts) this.drawAnchor(ctx, p.x, p.y)
+      return
+    }
+
+    if (d.type === 'bezier') {
+      // 三点贝塞尔曲线：A/C 为端点，B 为控制点；投影后采样渲染
+      // 必须放在通用两点投影之前：多锚点收集期的预览可能只有 1 个锚点
+      const [pa, pb, pc] = d.points
+      const ba = pa ? this.project(pa.time, pa.price) : null
+      const control = pb ? this.project(pb.time, pb.price) : null
+      const c = pc ? this.project(pc.time, pc.price) : null
+      if (ba && control && c) {
+        const pts = cubicBezierPoints(ba, control, c)
+        ctx.beginPath()
+        ctx.moveTo(pts[0].x, pts[0].y)
+        for (const pt of pts.slice(1)) ctx.lineTo(pt.x, pt.y)
+        ctx.stroke()
+      }
+      for (const pt of [ba, control, c]) {
+        if (!pt) continue
+        this.drawAnchor(ctx, pt.x, pt.y)
+      }
       return
     }
 
