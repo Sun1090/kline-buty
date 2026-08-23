@@ -179,12 +179,46 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: false,
   ignoreDeadLinks: true,
+  sitemap: {
+    hostname: 'https://kline-buty.vercel.app',
+  },
   markdown: {
     anchor: { slugify },
   },
   head: [
     ['meta', { name: 'theme-color', content: '#2962ff' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}icon.svg` }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:site_name', content: 'Trading Knowledge Base' }],
+    [
+      'meta',
+      {
+        property: 'og:title',
+        content: 'Trading Knowledge Base · Kline Buty',
+      },
+    ],
+    [
+      'meta',
+      {
+        property: 'og:description',
+        content:
+          'Spot, futures, stocks, crypto perpetuals, options, forex, macro, quant and regulation — a systematic trading knowledge base. English & 中文.',
+      },
+    ],
+    [
+      'meta',
+      {
+        property: 'og:url',
+        content: `https://kline-buty.vercel.app${BASE}`,
+      },
+    ],
+    [
+      'meta',
+      {
+        property: 'og:image',
+        content: `https://kline-buty.vercel.app${BASE}hero-chart.svg`,
+      },
+    ],
   ],
   locales: {
     root: { label: 'English', lang: 'en-US' },
