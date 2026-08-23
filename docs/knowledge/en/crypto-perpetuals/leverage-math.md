@@ -1,5 +1,5 @@
 ---
-title: "05 · The Math of Leverage: Why 10x Is Not '10x Profit'"
+title: "05 · The Math of Leverage: Why 10x Is Not \"10x Profit\""
 description: "The mathematical reality of leverage — margin occupation, liquidation price calculation, maintenance margin, isolated vs cross differences, how fees amplify costs, and your true effective leverage"
 ---
 

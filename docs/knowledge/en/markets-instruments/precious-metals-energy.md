@@ -78,7 +78,7 @@ Silver's investment forms map one-to-one with gold's, but **the volatility is co
 
 - **Higher volatility**: silver's **<mark>volatility</mark>** is about 1.5-2x gold's — it surges harder in bull markets (it is called "the poor man's gold") and falls harder in bear markets. **Industrial character is a double-edged sword**: when the economy is good, industrial demand adds fuel and rallies have big elasticity; when the economy is bad, industrial demand shrinks and safe-haven money only recognizes gold, so the downside has no floor.
 - Silver's supply-demand structure is more "hard-constrained" than gold's: gold inventories are mostly central-bank reserves with good liquidity; most silver is consumed by industry, **the recoverable supply elasticity is small**, and emerging demand such as photovoltaic silver keeps the supply-gap story fermenting again and again (per latest data).
-- The gold-silver ratio (gold price ÷ silver price) is the classic gauge of whether silver is "expensive" (see [⑤](#⑤-gold-silver-and-oil-gold-ratios-common-sense-on-two-classic-ratios)): a very high ratio (silver relatively cheap) has historically often been followed by silver catch-up rallies.
+- The gold-silver ratio (gold price ÷ silver price) is the classic gauge of whether silver is "expensive" (see [⑤](#gold-silver-and-oil-gold-ratios-common-sense-on-two-classic-ratios)): a very high ratio (silver relatively cheap) has historically often been followed by silver catch-up rallies.
 - Participation note: silver ETFs are the most convenient form for domestic retail; silver futures (SHFE AG) belong to the futures chapter and are not expanded here. London silver is the same story as London gold — **do not participate through any "spot silver" platform**.
 
 ---

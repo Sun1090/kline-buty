@@ -1,5 +1,5 @@
 ---
-title: "12 · Alternative Asset Investing: Collectibles and 'Hobby Investing'"
+title: "12 · Alternative Asset Investing: Collectibles and \"Hobby Investing\""
 description: "Alternative asset investing — liquidity, pricing and authenticity risks of collectibles such as Moutai, Rolex, whisky casks and digital collectibles, plus the correct position discipline"
 ---
 

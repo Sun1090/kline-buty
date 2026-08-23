@@ -77,7 +77,7 @@ Giving a $1,000 account 1:500 leverage puts the client on a tightrope where "20 
 
 Mainstream regulators validated leverage's harm with real money: EU ESMA caps retail leverage at **1:30 for major pairs**, UK FCA also 1:30, US **1:50**. **Brokers offering 1:500/1:1000 are almost all offshore-regulated** — what they sell isn't service, it's permission to lose fast.
 
-> Leverage caps defer to the latest regulations. The first criterion for judging a broker is always its license (see [Chapter 03, Section 6](forex-ea.md#六平台选择的红线清单)) — never "how generous the leverage is".
+> Leverage caps defer to the latest regulations. The first criterion for judging a broker is always its license (see [Chapter 03, Section 6](forex-ea.md#6-red-line-checklist-for-choosing-a-platform)) — never "how generous the leverage is".
 
 ---
 
@@ -186,7 +186,7 @@ The most neglected question in forex: **once you make money, where does the mone
 | Discipline | Explanation |
 |---|---|
 | **Withdraw partial profits regularly** | Each time you gain meaningfully (e.g., double your capital), immediately withdraw part (e.g., 50%) — **take the profit out of the account** instead of letting it compound the leverage |
-| **Test withdrawals before anything else** | The first thing after depositing is testing withdrawal (see [Chapter 03, Section 6](forex-ea.md#六平台选择的红线清单)), not opening positions |
+| **Test withdrawals before anything else** | The first thing after depositing is testing withdrawal (see [Chapter 03, Section 6](forex-ea.md#6-red-line-checklist-for-choosing-a-platform)), not opening positions |
 | **Set a "withdraw-only" line** | Once you hit your target, the account allows only withdrawals, no additional deposits |
 | **Watch for "profit-time withdrawal blocks"** | If after you profit the platform suddenly demands "more trading volume first" or "tax/margin payments" — **this is the classic shady-broker script for harvesting winning clients** |
 
@@ -209,7 +209,7 @@ The most neglected question in forex: **once you make money, where does the mone
 | **Compliance of moving funds abroad** | Funding via underground banks/crypto/"cross-border e-commerce collection" channels **is itself non-compliant**, and those funds enjoy no domestic legal protection |
 | **Run-off risk** | Offshore platforms register in offshore jurisdictions; corporate entities are hard to trace, and recovery after collapse is nearly impossible |
 | **Lack of legal protection** | Disputes require foreign legal proceedings: language, timelines, and costs are prohibitive; domestic regulators can only block sites and warn — they cannot recover funds for individuals |
-| **Information asymmetry** | License authenticity, whether orders are bet against you, whether funds are segregated — nearly unverifiable individually (see [the MM mechanism in Chapter 03](forex-ea.md#五做市商-vs-ecnstp你的对手是谁)) |
+| **Information asymmetry** | License authenticity, whether orders are bet against you, whether funds are segregated — nearly unverifiable individually (see [the MM mechanism in Chapter 03](forex-ea.md#5-market-makers-vs-ecnstp-who-is-your-counterparty)) |
 
 ### 3. The Regulators' Clear Position
 

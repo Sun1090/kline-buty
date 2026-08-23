@@ -39,7 +39,7 @@ where n is years held. Key point: **returns are reinvested, interest earns inter
 | 10% | ~7.2 years |
 | 12% | 6 years |
 
-**Numeric example (illustrative figures)**: CNY 100,000 at 10% annualized becomes CNY 200,000 in just over 7 years, CNY 400,000 in about 14, CNY 800,000 in about 21 — roughly tripling in ~22 years. Used in reverse: **a "doubling promise" at 20% annualized means doubling every 3.6 years; any "guaranteed" scheme faster than that deserves suspicion.**
+**Numeric example (illustrative figures)**: CNY 100,000 at 10% annualized becomes CNY 200,000 in just over 7 years, CNY 400,000 in about 14, CNY 800,000 in about 21 — three doublings, roughly 8× in ~22 years. Used in reverse: **a "doubling promise" at 20% annualized means doubling every 3.6 years; any "guaranteed" scheme faster than that deserves suspicion.**
 
 ### 1.3 Compounding with regular investing: how monthly money rolls
 
@@ -146,9 +146,9 @@ Compounding requires "principal + gains" to stay intact in the account, rolling.
 | Year 3 | +20% | +100% |
 | ... | ... | ... |
 | 10-year arithmetic mean | 20% | 20% |
-| **10-year geometric mean (what you actually get)** | **20%** | **~6%** |
+| **10-year geometric mean (what you actually get)** | **20%** | **~−10.6%** |
 
-**Do the math**: starting from CNY 10,000 in scenario B: 1 → 2 → 0.8 → 1.6 → 0.64 → ... each two-year cycle leaves only 0.8×, so after 10 years you have about CNY 10,600; scenario A: 1.2¹⁰ ≈ CNY 61,900.
+**Do the math**: starting from CNY 10,000 in scenario B: 1 → 2 → 0.8 → 1.6 → 0.64 → ... each two-year cycle leaves only 0.8×; ten years is five cycles and 0.8⁵ ≈ 0.33 — about CNY 3,300 left (a two-thirds loss). Scenario A: 1.2¹⁰ ≈ CNY 61,900.
 
 **The difference between the two averages is precisely the tax collected by **<mark>volatility</mark>.** The bigger the swings, the further geometric mean falls below arithmetic mean — that's the "average illusion": media-touted "20% annualized" is usually arithmetic; your actual result follows the geometric measure.
 
@@ -223,7 +223,7 @@ Fill it top to bottom and your capital plan takes shape:
 
 ## 6. Four Everyday Applications of Compounding
 
-1. **Retirement savings**: starting DCA of CNY 2,000/month at 25 vs CNY 4,000/month at 35 involves different total contributions (the latter contributes more). Better comparison: **CNY 2,000/month from 25 at 7% reaches ~CNY 3.5M by 60; CNY 2,000/month from 35 reaches ~CNY 1.4M** — a 10-year head start yields a 2.5× difference. Starting early beats contributing more.
+1. **Retirement savings**: starting DCA of CNY 2,000/month at 25 vs CNY 4,000/month at 35 involves different total contributions (the latter contributes more). Better comparison: **CNY 2,000/month from 25 at 7% reaches ~CNY 3.5M by 60; CNY 2,000/month from 35 reaches ~CNY 1.6M** — a 10-year head start yields a ~2.2× difference. Starting early beats contributing more.
 2. **Children's education fund**: starting at birth vs at primary school differs not merely in time but in the entire exponential curve.
 3. **Prepaying a mortgage**: prepayment saves simple loan interest, while the same money could compound for 30 years — in low-rate eras, run this calculation carefully (see [03 - Family Financial Planning](family-financial-planning.md)).
 4. **Every "compounding" marketing pitch**: insurance products wrapped in "compound growth" language (see [05 - Insurance and Protection](insurance-basics.md)) — first calculate the guaranteed rate. **"Compounding" is mathematics, not a sales point.**

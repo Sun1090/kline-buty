@@ -119,7 +119,7 @@ Altcoin: entry 1.00, stop 0.92 (−8%), 0.08 risk per coin → quantity = 100/0.
 ```
 
 - Sizing by risk amount makes the **risk exposure** of every trade in the account uniform; a single failure cannot break you.
-- Cautionary counter-example: opening 10 positions at once, each with 10% of capital and a 1% risk budget, is fine; but 10% of capital per trade with a 10% stop means 5 simultaneous losses cost half the account.
+- Cautionary counter-example: opening 10 positions at once, each with 10% of capital and a 1% risk budget, is fine; but if each trade puts ~10% of your *total* capital at risk (heavy size plus a wide stop), five simultaneous losses cost you half the account.
 
 **Position sizing quick reference:**
 
@@ -307,7 +307,7 @@ Loss = 4% × 50 × 20% = 40% of principal → badly hurt but alive
 □ 2. Is the position sized from the "risk amount", not a number off the top of my head?
 □ 3. Is the risk-reward ≥ 1:1.5? (risk-reward ratio)
 □ 4. Does this trade match the entry rules in my trading plan (not a spur-of-the-moment idea)?
-□ 5. Is today's / this week's loss budget intact (3% daily, 8% weekly)?
+□ 5. Is today's / this week's loss budget still intact (the daily / weekly caps from the drawdown rules above)?
 □ 6. Am I free of revenge trading, overconfidence, or emotional turbulence?
 □ 7. Is the leverage within the cap I set for myself?
 □ 8. Do I understand and accept this trade's worst case (slippage included)?

@@ -1,5 +1,5 @@
 ---
-title: "02 · Margin, Leverage & Forced Liquidation: A Trader's Lifeline"
+title: "02 · Margin, Leverage, and Forced Liquidation: A Trader's Lifeline"
 description: "Margin, leverage, and forced liquidation in futures explained — the margin system, leverage multiples, mark-to-market, liquidation mechanics, margin calls, negative-balance blow-throughs, and a beginner risk-control checklist"
 ---
 
@@ -99,7 +99,7 @@ Key points:
 
 ## 4. Forced Liquidation (Blow-Up) Mechanics in Detail
 
-![Forced liquidation (blow-up) flow: from opening the position to **<mark>blowing through to negative balance</mark>**](_assets/liquidation-flow.svg)
+![Forced liquidation (blow-up) flow: from opening the position to blowing through to negative balance](_assets/liquidation-flow.svg)
 
 ### 4.1 What Is Forced Liquidation
 
@@ -196,10 +196,9 @@ Negative-balance amount = Total loss − Account equity (including the liquidate
 
 Example:
 
-- Equity 10000 CNY, fully margined at 10% (10x leverage), long one lot of soybean meal (10 tons/lot, price 3000 CNY).
+- Equity 10000 CNY, 10% margin rate, long one lot of soybean meal (10 tons/lot, price 3000 CNY → notional 30000 CNY, margin occupied 3000 CNY).
 - Next day a surprise event gaps the price down **5%** to 2850 CNY/ton (limit down).
-- Loss = 150 × 10 = 1500 CNY? — no liquidation yet. Start over:
-- If the product's daily limit is 5% and you are fully margined with no funds to add: loss 1500 CNY, equity 8500 — still safe.
+- Loss = 150 × 10 = 1500 CNY → equity 8500. Only 30% of your capital is tied up as margin on a single lot, so a 5% price move is far from liquidation — **this is what "not fully margined" buys you**.
 
 Try a more extreme case — **full margin + consecutive gaps**:
 
