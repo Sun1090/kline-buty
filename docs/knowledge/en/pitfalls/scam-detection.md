@@ -291,3 +291,9 @@ If **any one** of the following lines appears, **leave immediately** — legitim
 - Why do scams work? Because they all hit the psychological weaknesses covered in [01-Why Traders Lose](why-traders-lose.md): FOMO, overconfidence, trusting tips.
 - For legitimate trading channels and compliance boundaries: [03-Compliance and Taxes](compliance-taxes.md).
 - To learn independent judgment instead of depending on a "guru": [07-Trading Systems](../trading-system/).
+
+---
+
+## Risk Warning
+
+> ⚠️ **Risk Warning**: The patterns in this chapter cover the most common scam archetypes, not an exhaustive list — scams constantly re-skin themselves. The checklists lower your odds of being scammed, but they never replace two baseline rules: only use licensed channels, and only trade money you can afford to lose. If you have been scammed, report to the police and preserve evidence immediately. This article is for study and research only — it is not investment or legal advice.

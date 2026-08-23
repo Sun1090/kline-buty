@@ -7,7 +7,7 @@ description: "Bonds and interest rates explained — bond pricing, the yield cur
 
 > Stocks, forex, and crypto all have their speculators, but **what truly determines "how much money is worth" are bonds and interest rates**. When the Fed hikes, global stocks tremble, gold falls, crypto crashes — the starting point of the transmission chain is always the bond market.
 >
-> This article clarifies three things: **how bonds are priced, what the **<mark>yield</mark>** curve is saying, and how interest rates rule all assets**. This is not proprietary knowledge for "bond people" — it is foundational common sense every trader should own.
+> This article clarifies three things: how bonds are priced, what the <mark>yield</mark> curve is saying, and how interest rates rule all assets. This is not proprietary knowledge for "bond people" — it is foundational common sense every trader should own.
 
 ---
 

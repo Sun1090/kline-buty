@@ -299,7 +299,7 @@ ATR(n) = n-period average of TR
 | Volatility stop | Stop price = entry ∓ k × ATR (k usually 2–3) | Stop distance adapts to volatility: not swept by noise, still protective |
 | Position sizing | Position size = per-trade risk amount / (k × ATR) | Converts "how much to lose" into "how much to buy" |
 | Breakout entry | Enter when close breaks entry + k × ATR | Volatility breakout method (e.g., the Turtle system) |
-| Regime gauge | Rising ATR = expanding volatility (trend launch/intense); falling ATR = compressing volatility (sideways/pre-breakout) |
+| Regime gauge | Rising ATR = expanding volatility; falling ATR = compressing volatility | Expanding marks a trend launching / turning intense; compressing marks consolidation / a possible breakout ahead |
 
 **Common mistakes**:
 - ATR is only a "volatility ruler" with no direction — it never tells you up or down, only "how big each step is".

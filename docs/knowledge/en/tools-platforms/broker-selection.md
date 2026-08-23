@@ -9,7 +9,7 @@ description: "A comparison across four channel types — A-share brokers, future
 >
 > This article covers four channel types: A-share brokers, futures brokers, HK/US brokers, and crypto exchanges — for each, "how to compare, what to compare, where the pitfalls are" — ending with a **safety checklist that applies no matter which account you open**.
 
-### Four Channels at a Glance
+## Four Channels at a Glance
 
 | Channel | Core selection variables | Main costs | Safety core |
 |---|---|---|---|

@@ -26,11 +26,11 @@ Xiao Li watches BTC surge from 95,000 to 100,000 and concludes "breakout confirm
        No stop set: "I'm confident, I don't need one"
 
 14:15  BTC rises to 101,200 (+1.2%)
-       Floating profit = 12,000 USDT (+240% of margin)
+       Floating profit = 1,200 USDT (+24% of margin)
        Xiao Li: "See, I told you it'd rise" → adds 50% to the position
 
 15:30  BTC pulls back to 99,500
-       Floating profit shrinks to +7,500 → Xiao Li shrugs it off
+       Floating profit turns into a −500 loss → Xiao Li shrugs it off
 
 16:00  A large sell order smashes through support
        BTC drops from 99,500 to 94,800 in 3 minutes (−4.7%)
@@ -46,8 +46,8 @@ Xiao Li watches BTC surge from 95,000 to 100,000 and concludes "breakout confirm
 | Time | What happened | What could have been done |
 |---|---|---|
 | 14:00 | No stop set at entry | Set the stop at 97,000 (−3%); maximum loss 3,000 |
-| 14:15 | Added size at +240% floating profit | Should have taken partial profit instead of adding |
-| 15:30 | No alarm at the pullback | Profit shrinking from 12,000 to 7,500 was already a clear signal |
+| 14:15 | Added size at +24% floating profit | Should have taken partial profit instead of adding |
+| 15:30 | No alarm at the pullback | Floating profit turning into a −500 loss was already a clear signal |
 
 ::: danger ⚠️ Lessons
 1. **Chasing a rally means a naturally high entry price** — your liquidation price sits close to market
@@ -132,9 +132,9 @@ Daily funding cost:
 Day 30  ETH closes at 3,050 (+1.67%)
         Price gain = 30,000 × 1.67% = 500 USDT
         Funding paid = −1,350 USDT
-        Net P&L = 500 - 1,350 = **−850 USDT**
+        Net P&L = 500 − 30 − 1,350 = **−880 USDT**
 
-        ETH went up, yet Xiao Zhang lost 850 USDT (−14.2% of margin)
+        ETH went up, yet Xiao Zhang lost 880 USDT (−14.7% of margin)
 ```
 
 ### Cost Breakdown
@@ -144,7 +144,7 @@ Day 30  ETH closes at 3,050 (+1.67%)
 | Price gain | +500 | +8.3% |
 | Entry + exit fees (Taker) | −30 | −0.5% |
 | Funding (30 days) | **−1,350** | **−22.5%** |
-| **Net P&L** | **−850** | **−14.2%** |
+| **Net P&L** | **−880** | **−14.7%** |
 
 ::: warning ⚠️ Lessons
 1. **You can lose money even when right on direction** — holding costs can eat the entire profit
