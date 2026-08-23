@@ -38,6 +38,7 @@ import {
   speedLines,
   timeRangeXs,
   priceBandYs,
+  priceRangeInfo,
   riskRewardRatio,
   trendAngleDeg,
   textHitExtents,
@@ -1494,6 +1495,49 @@ describe('价格带（pband，时间区间的横向孪生）', () => {
     expect(hitTestDrawings([d], 50, 260, project)).toBeNull() // 距边框 40px
   })
 })
+
+
+describe('价格区间框（pricerange）', () => {
+  it('priceRangeInfo：低价/高价/价差/涨幅归一，不依赖锚点顺序', () => {
+    expect(priceRangeInfo({ price: 120 }, { price: 80 })).toEqual({ low: 80, high: 120, diff: 40, pct: 50 })
+    expect(priceRangeInfo({ price: 80 }, { price: 120 })).toEqual({ low: 80, high: 120, diff: 40, pct: 50 })
+  })
+
+  it('requiredPoints：价格区间框为两点', () => {
+    expect(requiredPoints('pricerange')).toBe(2)
+  })
+
+  it('normalizePoints：按价格排序（低价在前），时间保持各自锚点', () => {
+    const a = normalizePoints('pricerange', [{ time: 100, price: 120 }, { time: 20, price: 80 }])
+    expect(a[0]).toEqual({ time: 20, price: 80 })
+    expect(a[1]).toEqual({ time: 100, price: 120 })
+    const b = normalizePoints('pricerange', [{ time: 20, price: 80 }, { time: 100, price: 120 }])
+    expect(b[0].price).toBe(80)
+    expect(b[1].price).toBe(120)
+  })
+
+  it('createDrawing / moveAnchor 保持两点；拖高价到低价之下自动交换', () => {
+    const d = createDrawing('pricerange', [{ time: 0, price: 120 }, { time: 100, price: 80 }], 'pr1')
+    expect(d.points).toHaveLength(2)
+    expect(d.points[0]).toEqual({ time: 100, price: 80 })
+    expect(d.points[1]).toEqual({ time: 0, price: 120 })
+    const moved = moveAnchor(d, 1, { time: 30, price: 70 })
+    expect(moved.points).toHaveLength(2)
+    expect(moved.points[0]).toEqual({ time: 30, price: 70 })
+    expect(moved.points[1]).toEqual({ time: 100, price: 80 })
+  })
+
+  it('hitTest 价格区间框：内部区域命中 / 外部按最短距离 / 远处不命中', () => {
+    // A/B 归一后 (100,80)/(0,120) → 屏幕 (100,220)/(0,180)，矩形 [0,100]×[180,220]
+    const d = createDrawing('pricerange', [{ time: 0, price: 120 }, { time: 100, price: 80 }], 'pr2')
+    expect(hitTestDrawings([d], 50, 200, project)).toBe('pr2') // 内部
+    expect(hitTestDrawings([d], 0, 180, project)).toBe('pr2') // 左上角
+    expect(hitTestDrawings([d], 100, 220, project)).toBe('pr2') // 右下角
+    expect(hitTestDrawings([d], 104, 200, project)).toBe('pr2') // 右侧 4px 内
+    expect(hitTestDrawings([d], 140, 260, project)).toBeNull() // 远处
+  })
+})
+
 
 describe('斐波那契时间区间（fibtz）', () => {
   it('FIB_TIME_ZONE_NUMS：斐波那契倍数（1,2,3,5,8,13,21,34,55）', () => {

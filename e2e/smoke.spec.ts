@@ -1769,6 +1769,114 @@ test.describe('K 线应用冒烟', () => {
       .toBe(0)
   })
 
+
+  test('画线：价格区间框 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色矩形边框 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '价格区间框' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 拖出 A（左上高价）→ B（右下低价）：落库仍必须归一成低价在前
+    await page.mouse.move(box!.x + box!.width * 0.38, box!.y + box!.height * 0.32)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.62, box!.y + box!.height * 0.58, { steps: 8 })
+    await page.mouse.up()
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'pricerange')
+        return (arr[0] as { id: string; points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[0].price).toBeLessThan(saved!.points[1].price)
+    expect(saved!.points[0].time).not.toBe(saved!.points[1].time)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+
+    // 刚创建处于选中态：矩形上下边框产生多个蓝像素行，左右边框产生多个蓝像素列
+    const blueRectStats = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { n: 0, rows: 0, cols: 0 }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { n: 0, rows: 0, cols: 0 }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        let n = 0
+        const rowCount = new Map<number, number>()
+        const colCount = new Map<number, number>()
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            const x = (i / 4) % w
+            const y = Math.floor(i / 4 / w)
+            rowCount.set(y, (rowCount.get(y) ?? 0) + 1)
+            colCount.set(x, (colCount.get(x) ?? 0) + 1)
+          }
+        }
+        return {
+          n,
+          rows: [...rowCount.values()].filter((c) => c > 20).length,
+          cols: [...colCount.values()].filter((c) => c > 10).length,
+        }
+      })
+    await expect.poll(() => blueRectStats().then((s) => s.n), { timeout: 10_000 }).toBeGreaterThan(300)
+    await expect.poll(() => blueRectStats().then((s) => s.rows), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+    await expect.poll(() => blueRectStats().then((s) => s.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
+
   test('画线：斐波那契通道 → A→B 定义摆幅 → 落库两点保序 → 像素校验选中蓝色平行线（≥4 条）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')
@@ -4677,6 +4785,129 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(0)
     expect(errors).toHaveLength(0)
   })
+
+  test('移动端：触屏拖拽创建价格区间框 → 落库两点按价格排序 → 选中蓝色矩形边框 → 删除', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '价格区间框' }).tap()
+    await page.waitForTimeout(200)
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const x0 = box.x + box.width * 0.32
+    const y0 = box.y + box.height * 0.34
+    const x1 = box.x + box.width * 0.62
+    const y1 = box.y + box.height * 0.58
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x0 + ((x1 - x0) * i) / 8, y: y0 + ((y1 - y0) * i) / 8 }],
+      })
+      await page.waitForTimeout(25)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'pricerange')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    expect(saved!.points[0].price).toBeLessThan(saved!.points[1].price)
+
+    // 触摸松手后默认选中：蓝色矩形至少形成上下两行、左右两列
+    const stats = () =>
+      page.evaluate(() => {
+        const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+          const st = getComputedStyle(c)
+          return st.position === 'absolute' && st.zIndex === '5'
+        })
+        if (!overlay) return { n: 0, rows: 0, cols: 0 }
+        const ctx = overlay.getContext('2d')
+        if (!ctx) return { n: 0, rows: 0, cols: 0 }
+        const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
+        const w = overlay.width
+        let n = 0
+        const rows = new Map<number, number>()
+        const cols = new Map<number, number>()
+        for (let i = 0; i < img.length; i += 4) {
+          const r = img[i]
+          const g = img[i + 1]
+          const b = img[i + 2]
+          const a = img[i + 3]
+          if (a > 60 && r < 130 && g > 110 && g < 200 && b > 190) {
+            n++
+            const x = (i / 4) % w
+            const y = Math.floor(i / 4 / w)
+            rows.set(y, (rows.get(y) ?? 0) + 1)
+            cols.set(x, (cols.get(x) ?? 0) + 1)
+          }
+        }
+        return {
+          n,
+          rows: [...rows.values()].filter((c) => c > 12).length,
+          cols: [...cols.values()].filter((c) => c > 6).length,
+        }
+      })
+    await expect.poll(() => stats().then((v) => v.n), { timeout: 10_000 }).toBeGreaterThan(180)
+    await expect.poll(() => stats().then((v) => v.rows), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+    await expect.poll(() => stats().then((v) => v.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+    expect(errors).toHaveLength(0)
+  })
+
   test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))

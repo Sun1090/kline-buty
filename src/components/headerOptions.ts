@@ -71,6 +71,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'fibtz', labelKey: 'drawing.fibtz' },
   { value: 'timerange', labelKey: 'drawing.timerange' },
   { value: 'pband', labelKey: 'drawing.pband' },
+  { value: 'pricerange', labelKey: 'drawing.pricerange' },
   { value: 'rr', labelKey: 'drawing.rr' },
   { value: 'gann', labelKey: 'drawing.gann' },
   { value: 'gannbox', labelKey: 'drawing.gannbox' },
