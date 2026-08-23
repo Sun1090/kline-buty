@@ -1944,6 +1944,72 @@ test.describe('K 线应用冒烟', () => {
   })
 
 
+  test('画线：预测线 → 拖 A→B → 落库两点保持原始顺序 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    await openDrawing(page)
+    await page.getByRole('button', { name: '预测线' }).click()
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    // 从左上拖到右下（下跌方向）
+    await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.55, { steps: 6 })
+    await page.mouse.up()
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'forecast')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: '删除' }).click()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+  })
+
+
   test('画线：斐波那契通道 → A→B 定义摆幅 → 落库两点保序 → 像素校验选中蓝色平行线（≥4 条）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto('/')
@@ -5053,6 +5119,91 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(0)
     expect(errors).toHaveLength(0)
   })
+
+  test('移动端：预测线 → 触摸拖 A→B → 落库两点 → 删除', async ({ page }) => {
+    test.setTimeout(90_000)
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto('/')
+    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await waitCandlesRendered(page)
+    const chart = page.locator('main div').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '预测线' }).tap()
+    await page.waitForTimeout(200)
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const x0 = box.x + box.width * 0.32
+    const y0 = box.y + box.height * 0.34
+    const x1 = box.x + box.width * 0.58
+    const y1 = box.y + box.height * 0.56
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] })
+    for (let i = 1; i <= 6; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x0 + ((x1 - x0) * i) / 6, y: y0 + ((y1 - y0) * i) / 6 }],
+      })
+      await page.waitForTimeout(30)
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    await page.waitForTimeout(400)
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
+            } catch {
+              return 0
+            }
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(1)
+    const saved = await page.evaluate(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const arr = Object.values(d)
+          .flat()
+          .filter((x: unknown) => (x as { type?: string }).type === 'forecast')
+        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(saved).not.toBeNull()
+    expect(saved!.points).toHaveLength(2)
+
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '删除' }).tap()
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            try {
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              return Object.values(d)
+                .flat()
+                .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
+            } catch {
+              return -1
+            }
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(0)
+    expect(errors).toHaveLength(0)
+  })
+
 
   test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
     const errors: string[] = []

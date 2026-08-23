@@ -43,6 +43,7 @@ export type DrawingTool =
   | 'fibtz'
   | 'rr'
   | 'position'
+  | 'forecast'
 
 export type DrawingType = Exclude<DrawingTool, 'none'>
 
@@ -544,7 +545,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   if (type === 'horizontal' || type === 'vertical' || type === 'cross' || type === 'text' || type === 'pricelabel') return [pts[0]]
   const [a, b] = pts
   if (!a || !b) return pts
-  if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
+  if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz' || type === 'forecast') return [a, b]
   if (type === 'hchannel' || type === 'pband' || type === 'pricerange') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
@@ -1020,6 +1021,14 @@ export function hitTestDrawings(
       const c = d.points[2] ? project(d.points[2].time, d.points[2].price) : null
       if (a && b && c) {
         dist = Math.min(Math.abs(py - a.y), Math.abs(py - b.y), Math.abs(py - c.y))
+      }
+    } else if (d.type === 'forecast') {
+      // 预测：命中 A→B 历史段或 B→C 投影段
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const c = { x: 2 * b.x - a.x, y: 2 * b.y - a.y }
+        dist = Math.min(distToSegment({ x: px, y: py }, a, b), distToSegment({ x: px, y: py }, b, c))
       }
     } else if (d.type === 'pitchfork') {
       // 安德鲁叉：命中三条射线（中轨 + 上下平行轨）任一条
