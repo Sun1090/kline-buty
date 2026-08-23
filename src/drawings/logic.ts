@@ -39,6 +39,7 @@ export type DrawingTool =
   | 'angle'
   | 'timerange'
   | 'pband'
+  | 'pricerange'
   | 'fibtz'
   | 'rr'
 
@@ -104,6 +105,12 @@ export function textHitExtents(d: Drawing): { halfW: number; halfH: number } {
 }
 
 /** 斐波那契回撤分位（从高位向低位） */
+export function priceRangeInfo(a: { price: number }, b: { price: number }) {
+  const low = Math.min(a.price, b.price)
+  const high = Math.max(a.price, b.price)
+  return { low, high, diff: high - low, pct: low === 0 ? 0 : ((high - low) / low) * 100 }
+}
+
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
 
 export function fibPrices(from: number, to: number): number[] {
@@ -537,7 +544,7 @@ export function normalizePoints(type: DrawingType, pts: { time: number; price: n
   const [a, b] = pts
   if (!a || !b) return pts
   if (type === 'ray' || type === 'hray' || type === 'vray' || type === 'extended' || type === 'fibfan' || type === 'gann' || type === 'arrow' || type === 'circle' || type === 'speedlines' || type === 'cycle' || type === 'fibchannel' || type === 'fibtz') return [a, b]
-  if (type === 'hchannel' || type === 'pband') return a.price <= b.price ? [a, b] : [b, a]
+  if (type === 'hchannel' || type === 'pband' || type === 'pricerange') return a.price <= b.price ? [a, b] : [b, a]
   if (type === 'xabcd' || type === 'elliott') return pts.slice(0, 5)
   if (type === 'polyline') return pts
   if (type === 'measure') return [a, b]
@@ -983,6 +990,19 @@ export function hitTestDrawings(
         } else {
           dist = Math.min(Math.abs(py - top), Math.abs(py - bottom))
         }
+      }
+    } else if (d.type === 'pricerange') {
+      // 价格区间框：矩形内部区域命中；外部按到边框的最短距离
+      const a = project(d.points[0].time, d.points[0].price)
+      const b = project(d.points[1].time, d.points[1].price)
+      if (a && b) {
+        const left = Math.min(a.x, b.x)
+        const right = Math.max(a.x, b.x)
+        const top = Math.min(a.y, b.y)
+        const bottom = Math.max(a.y, b.y)
+        const dx = px < left ? left - px : px > right ? px - right : 0
+        const dy = py < top ? top - py : py > bottom ? py - bottom : 0
+        dist = Math.hypot(dx, dy)
       }
     } else if (d.type === 'rr') {
       // 风险回报：命中三条水平线（入场/止损/止盈）任一条的竖直距离

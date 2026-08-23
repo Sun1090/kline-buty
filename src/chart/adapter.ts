@@ -43,6 +43,7 @@ import {
   hitTestDrawings,
   timeRangeXs,
   priceBandYs,
+  priceRangeInfo,
   riskRewardRatio,
   trendAngleDeg,
   measureInfo,
@@ -1199,6 +1200,35 @@ export class LightweightChartAdapter implements ChartApi {
           ctx.fillStyle = '#4e9cf5'
           this.drawAnchor(ctx, p.x, p.y)
         }
+      }
+      return
+    }
+
+    if (d.type === 'pricerange') {
+      // 价格区间框：A/B 两点定义时间与价格范围；半透明填充、四边框、
+      // 上下边界价格标签与中上部价差/百分比标签。
+      const pa = d.points[0]
+      const pb = d.points[1]
+      const a = this.project(pa.time, pa.price)
+      const b = this.project(pb.time, pb.price)
+      if (!a || !b) return
+      const left = Math.min(a.x, b.x)
+      const right = Math.max(a.x, b.x)
+      const top = Math.min(a.y, b.y)
+      const bottom = Math.max(a.y, b.y)
+      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillRect(left, top, right - left, bottom - top)
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.strokeRect(left, top, right - left, bottom - top)
+      this.drawLabel(ctx, left, top, Math.max(pa.price, pb.price).toFixed(2), 'left')
+      this.drawLabel(ctx, left, bottom, Math.min(pa.price, pb.price).toFixed(2), 'left')
+      const info = priceRangeInfo(pa, pb)
+      this.drawLabel(ctx, (left + right) / 2, top - 8, `+${info.diff.toFixed(2)} (+${info.pct.toFixed(2)}%)`, 'left')
+      if (selected) {
+        ctx.fillStyle = '#4e9cf5'
+        this.drawAnchor(ctx, a.x, a.y)
+        this.drawAnchor(ctx, b.x, b.y)
       }
       return
     }
