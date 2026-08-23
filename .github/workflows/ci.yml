@@ -23,6 +23,8 @@ jobs:
         run: python3 docs/knowledge/scripts/validate-knowledge.py
       - name: Knowledge base structure lint
         run: npm run docs:lint
+      - name: Knowledge base anchor check
+        run: npm run docs:anchor
       - name: Unit tests
         run: npm test
       - name: Build
