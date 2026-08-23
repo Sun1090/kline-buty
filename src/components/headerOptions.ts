@@ -75,6 +75,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'rr', labelKey: 'drawing.rr' },
   { value: 'position', labelKey: 'drawing.positionTool' },
   { value: 'forecast', labelKey: 'drawing.forecast' },
+  { value: 'daterange', labelKey: 'drawing.daterange' },
   { value: 'gann', labelKey: 'drawing.gann' },
   { value: 'gannbox', labelKey: 'drawing.gannbox' },
   { value: 'pricelabel', labelKey: 'drawing.pricelabel' },

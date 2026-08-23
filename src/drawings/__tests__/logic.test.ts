@@ -1713,6 +1713,27 @@ describe('预测线（forecast，A→B 历史 / B→C 同幅度投影）', () =>
   })
 })
 
+describe('日期范围（daterange，两点竖带）', () => {
+  it('requiredPoints：日期范围为两点', () => {
+    expect(requiredPoints('daterange')).toBe(2)
+  })
+
+  it('createDrawing / moveAnchor 按时间排序', () => {
+    const d = createDrawing('daterange', [{ time: 100, price: 100 }, { time: 20, price: 200 }], 'dr1')
+    expect(d.points[0].time).toBeLessThanOrEqual(d.points[1].time)
+    const moved = moveAnchor(d, 0, { time: 50, price: 150 })
+    expect(moved.points).toHaveLength(2)
+  })
+
+  it('hitTest：竖带内命中，外部不命中', () => {
+    // A(0,*)→B(100,*) → 竖带 [0,100]
+    const d = createDrawing('daterange', [{ time: 0, price: 100 }, { time: 100, price: 200 }], 'dr2')
+    expect(hitTestDrawings([d], 50, 200, project)).toBe('dr2') // 带内
+    expect(hitTestDrawings([d], -15, 200, project)).toBeNull() // 左侧外
+    expect(hitTestDrawings([d], 110, 200, project)).toBeNull() // 右侧外
+  })
+})
+
 describe('图层管理（hidden/locked/patch）', () => {
   it('toggleDrawingHidden：翻转隐藏态并保留其余字段', () => {
     const d = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1')
