@@ -1233,6 +1233,48 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'position') {
+      // 持仓计划（Position Tool）：A 入场 / B 止损 / C 止盈。
+      // 时间范围矩形（A→最远锚点）+ 三条水平线 + 标签 + 盈亏比。
+      const pts = [d.points[0], d.points[1], d.points[2]]
+      const ys = pts.map((p) => (p ? this.project(p.time, p.price) : null))
+      if (ys.some((y) => !y)) return
+      const w = this.overlay.width / (window.devicePixelRatio || 1)
+      const entryY = ys[0]!.y
+      // 时间范围矩形：从 A.time 到 B/C 最远 time
+      const tA = this.project(pts[0]!.time, pts[0]!.price)!
+      const maxTime = Math.max(pts[1]!.time, pts[2]!.time)
+      const tEnd = this.project(maxTime, pts[0]!.price) ?? tA
+      ctx.fillStyle = this.theme.yellow + '0d'
+      ctx.fillRect(tA.x, Math.min(ys[1]!.y, ys[2]!.y), tEnd.x - tA.x, Math.abs(ys[2]!.y - ys[1]!.y))
+      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '40'
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.strokeRect(tA.x, Math.min(ys[1]!.y, ys[2]!.y), tEnd.x - tA.x, Math.abs(ys[2]!.y - ys[1]!.y))
+      // 三条水平线
+      for (let i = 0; i < 3; i++) {
+        const p = pts[i]
+        const pt = ys[i]!
+        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.lineWidth = selected ? 1.6 : 1
+        if (i > 0) ctx.setLineDash([5, 4])
+        ctx.beginPath()
+        ctx.moveTo(0, pt.y)
+        ctx.lineTo(w, pt.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        const tag = i === 0 ? 'E' : i === 1 ? 'S' : 'T'
+        this.drawLabel(ctx, pt.x + 4, pt.y, `${tag}:${p!.price.toFixed(2)}`, 'left')
+        if (selected) {
+          ctx.fillStyle = '#4e9cf5'
+          this.drawAnchor(ctx, pt.x, pt.y)
+        }
+      }
+      // 盈亏比标签
+      const { ratio } = riskRewardRatio(d.points[0], d.points[1], d.points[2])
+      this.drawLabel(ctx, w - 8, entryY - 8, this.labels.rrRatio.replace('{ratio}', ratio.toFixed(2)), 'right')
+      return
+    }
+
     if (d.type === 'rr') {
       // 风险回报（R:R）：A 入场 / B 止损 / C 止盈 → 三条水平线横贯全宽（止损/止盈虚线）+ 左侧价格标签 + 右侧盈亏比标签
       const pts = [d.points[0], d.points[1], d.points[2]]

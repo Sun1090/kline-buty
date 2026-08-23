@@ -73,6 +73,7 @@ export const DRAWING_TOOLS: { value: DrawingTool; labelKey: MessageKey }[] = [
   { value: 'pband', labelKey: 'drawing.pband' },
   { value: 'pricerange', labelKey: 'drawing.pricerange' },
   { value: 'rr', labelKey: 'drawing.rr' },
+  { value: 'position', labelKey: 'drawing.positionTool' },
   { value: 'gann', labelKey: 'drawing.gann' },
   { value: 'gannbox', labelKey: 'drawing.gannbox' },
   { value: 'pricelabel', labelKey: 'drawing.pricelabel' },
