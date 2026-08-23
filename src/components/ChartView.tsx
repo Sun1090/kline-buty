@@ -15,7 +15,7 @@ import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
-import { useI18n, localeFor, type MessageKey } from '../i18n'
+import { useI18n, localeFor, chartLabelsFor, type MessageKey } from '../i18n'
 import { clampTooltipPos } from './tooltipPos'
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
@@ -183,7 +183,7 @@ export function ChartView({
     void exportScreenshotWithDisclaimer(
       dataUrl,
       `${symbol}_${period}_region.png`,
-      t('disclaimer.watermark'),
+      chartLabelsFor(lang).watermark,
     )
     setRegionSelecting(false)
   }
@@ -659,7 +659,7 @@ export function ChartView({
           void exportScreenshotWithDisclaimer(
             dataUrl,
             `${symbol}_${period}.png`,
-            t('disclaimer.watermark'),
+            chartLabelsFor(lang).watermark,
           )
         }}
         title={t('drawing.screenshotTitle')}
