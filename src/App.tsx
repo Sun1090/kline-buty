@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PERIODS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
@@ -81,6 +81,7 @@ export function App() {
   const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
+  const cancelDrawingRef = useRef<(() => void) | null>(null)
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [textDraft, setTextDraft] = useState('')
@@ -247,6 +248,11 @@ export function App() {
   const depth = useDepth(symbol)
   const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
+
+  /** 取消进行中的多锚点画线进度（由 ChartView 转发到 adapter） */
+  const cancelDrawingProgress = useCallback(() => {
+    cancelDrawingRef.current?.()
+  }, [])
 
   const commitDrawing = (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => {
     const created = createDrawing(d.type, d.points)
@@ -417,13 +423,16 @@ export function App() {
           setShortcutsOpen((v) => !v)
           break
         case 'escape':
-          // Esc：关闭快捷键浮层 → 退出文本编辑 → 取消选中画线
+          // Esc：关闭快捷键浮层 → 退出文本编辑 → 取消画线进度 → 取消选中画线
           if (shortcutsOpen) setShortcutsOpen(false)
           else if (editingTextId) {
             setEditingTextId(null)
             setTextDraft('')
             setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
             setTextColor('')
+          } else if (drawingTool !== 'none') {
+            cancelDrawingProgress()
+            setDrawingTool('none')
           } else if (selectedDrawingId) {
             setSelectedDrawingId(null)
           }
@@ -438,6 +447,8 @@ export function App() {
     editingTextId,
     textDraft,
     shortcutsOpen,
+    drawingTool,
+    cancelDrawingProgress,
     mainIndicator,
     subIndicator,
     deleteSelectedDrawing,
@@ -732,6 +743,8 @@ export function App() {
             onDrawingSelect={setSelectedDrawingId}
             onDrawingUpdate={updateDrawing}
             onEditText={startEditingText}
+            onCancelDrawingProgress={cancelDrawingProgress}
+            onCancelDrawingProgressRef={cancelDrawingRef}
           />
         )}
         </main>
