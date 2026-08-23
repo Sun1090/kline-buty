@@ -3667,7 +3667,6 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     const created = await readFirst()
     expect(created).not.toBeNull()
     expect(created!.points).toHaveLength(2)
-
     // 切回鼠标后：右侧射线命中；锚点左侧同价不命中
     await openDrawing(page)
     await page.getByRole('button', { name: '鼠标', exact: true }).click()
