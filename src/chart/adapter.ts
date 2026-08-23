@@ -149,6 +149,25 @@ export function watermarkFitSize(
 }
 
 /**
+ * 水平射线方向解析：第二点只提供创建方向，渲染始终从第一锚点向右延伸。
+ * 返回 0/1，供单元测试锁定“方向点不改变终点”的交互约定。
+ */
+export function horizontalRayDirection(): 0 | 1 {
+  return 1
+}
+
+/**
+ * 垂直射线方向解析：第二点决定向上或向下延伸；
+ * 与水平射线一样，方向点本身不成为可拖拽终点。
+ */
+export function verticalRayDirection(
+  a: { y: number },
+  b: { y: number },
+): 'up' | 'down' {
+  return b.y >= a.y ? 'down' : 'up'
+}
+
+/**
  * 渲染层隔离接口：UI/数据层只依赖它，不直接触碰具体图表库。
  * 将来替换渲染引擎（自研 Canvas / klinecharts）时仅需新实现本接口。
  */
