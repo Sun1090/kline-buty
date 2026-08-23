@@ -1713,6 +1713,29 @@ describe('预测线（forecast，A→B 历史 / B→C 同幅度投影）', () =>
   })
 })
 
+describe('备注便签（note，单点卡片）', () => {
+  it('requiredPoints：备注为单点', () => {
+    expect(requiredPoints('note')).toBe(1)
+  })
+
+  it('createDrawing / moveAnchor 保留单点和内容字段', () => {
+    const base = createDrawing('note', [{ time: 30, price: 120 }], 'note1')
+    expect(base.points).toEqual([{ time: 30, price: 120 }])
+    const withText = { ...base, text: '关键位提醒' }
+    const moved = moveAnchor(withText, 0, { time: 40, price: 130 })
+    expect(moved.points).toEqual([{ time: 40, price: 130 }])
+    expect(moved.text).toBe('关键位提醒')
+  })
+
+  it('hitTest：卡片内部命中，外部不命中', () => {
+    // project: (t,p) => ({x:t,y:300-p})；默认字号 14，命中框至少 24×12
+    const d = { ...createDrawing('note', [{ time: 50, price: 150 }], 'note2'), text: '备注' }
+    expect(hitTestDrawings([d], 50, 150, project)).toBe('note2')
+    expect(hitTestDrawings([d], 65, 150, project)).toBe('note2')
+    expect(hitTestDrawings([d], 80, 150, project)).toBeNull()
+  })
+})
+
 describe('日期范围（daterange，两点竖带）', () => {
   it('requiredPoints：日期范围为两点', () => {
     expect(requiredPoints('daterange')).toBe(2)

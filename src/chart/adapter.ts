@@ -770,6 +770,51 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
 
+    if (d.type === 'note') {
+      // 备注/便签：单点锚定，黄色折叠角卡片；复用 text 的多行内容与命中逻辑
+      const a = this.project(d.points[0].time, d.points[0].price)
+      if (!a) return
+      const fontSize = d.fontSize ?? DEFAULT_TEXT_FONT_SIZE
+      const raw = d.text && d.text.trim() ? d.text : this.labels.defaultText
+      const lines = raw.split('\n')
+      ctx.font = `${fontSize}px system-ui`
+      const lineH = Math.round(fontSize * 1.4)
+      const padX = 8
+      const padY = 7
+      const fold = 9
+      const w = Math.max(48, Math.max(...lines.map((l) => ctx.measureText(l).width)) + padX * 2)
+      const h = Math.max(fontSize + padY * 2, lineH * lines.length + padY * 2)
+      const bx = a.x - w / 2
+      const by = a.y - h / 2
+      ctx.fillStyle = selected ? 'rgba(78,156,245,0.16)' : 'rgba(245,192,47,0.14)'
+      ctx.beginPath()
+      ctx.moveTo(bx, by)
+      ctx.lineTo(bx + w - fold, by)
+      ctx.lineTo(bx + w, by + fold)
+      ctx.lineTo(bx + w, by + h)
+      ctx.lineTo(bx, by + h)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = selected ? '#4e9cf5' : '#f5c02f'
+      ctx.lineWidth = selected ? 1.6 : 1
+      ctx.stroke()
+      // 折叠角三角
+      ctx.fillStyle = selected ? 'rgba(78,156,245,0.35)' : 'rgba(245,192,47,0.42)'
+      ctx.beginPath()
+      ctx.moveTo(bx + w - fold, by)
+      ctx.lineTo(bx + w, by + fold)
+      ctx.lineTo(bx + w - fold, by + fold)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = selected ? '#4e9cf5' : this.theme.textColor
+      ctx.textBaseline = 'middle'
+      lines.forEach((line, i) => {
+        ctx.fillText(line, bx + padX, by + padY + lineH * i + lineH / 2 + 0.5)
+      })
+      if (selected) this.drawAnchor(ctx, a.x, a.y)
+      return
+    }
+
     if (d.type === 'pricelabel') {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return
@@ -2036,7 +2081,7 @@ export class LightweightChartAdapter implements ChartApi {
     const y = e.clientY - rect.top
     const hit = hitTestDrawings(this.drawings, x, y, (t, p) => this.project(t, p))
     if (!hit) return
-    const d = this.drawings.find((dd) => dd.id === hit && dd.type === 'text')
+    const d = this.drawings.find((dd) => dd.id === hit && (dd.type === 'text' || dd.type === 'note'))
     if (!d) return
     this.selectedDrawingId = d.id
     this.drawingCallbacks?.onSelect?.(d.id)
@@ -2493,7 +2538,7 @@ export class LightweightChartAdapter implements ChartApi {
       const ly = t.clientY - rect.top
       const hitId = hitTestDrawings(this.drawings, lx, ly, (tm, p) => this.project(tm, p))
       // 命中文本标注 → 长按直接打开编辑器（无论是否已选中；pointer 已开启的拖拽不阻断，长按优先）
-      const hitText = hitId ? this.drawings.find((d) => d.id === hitId && d.type === 'text') : null
+      const hitText = hitId ? this.drawings.find((d) => d.id === hitId && (d.type === 'text' || d.type === 'note')) : null
       if (hitText) {
         this.clearTouchHold()
         this.touchHoldPos = { x: t.clientX, y: t.clientY }
