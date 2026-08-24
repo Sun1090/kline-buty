@@ -138,6 +138,7 @@
 | [drawing-tools.md](zh/technical-analysis/drawing-tools.md) | 画线是把「你看懂的价格结构」翻译成「屏幕上可验证的假设」的唯一手段。水平线标出<mark>支撑压力</mark>，<ma… |
 | [gann-box-angles.md](zh/technical-analysis/gann-box-angles.md) | 江恩（W.D. Gann）留给交易者的最大遗产，不是「预测点位」，而是一套<mark>用角度与正方形把时间-价格关系画出… |
 | [order-flow-microstructure.md](zh/technical-analysis/order-flow-microstructure.md) | K 线是「结果」，<mark>订单流</mark>是「过程」。K 线告诉你这一分钟/这一小时发生了什么，订单流告诉你它是… |
+| [orderbook-depth.md](zh/technical-analysis/orderbook-depth.md) | 订单簿（Order Book）是市场上「正在排队等待成交」的订单集合。K 线告诉你价格去了哪里，订单簿告诉你价格为什么能… |
 
 ### 07 · 交易系统篇
 
@@ -378,7 +379,7 @@
 
 ## 知识库规模
 
-> 共 **27 个篇章 / 173 篇文档 / 约 42,719 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
+> 共 **27 个篇章 / 174 篇文档 / 约 42,946 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
 
 ## 内容约定
 
