@@ -813,6 +813,25 @@ describe('贝塞尔曲线（M22）', () => {
     expect(hitTestDrawings([bezier], 50, 200, project)).toBeNull()
     expect(hitTestDrawings([bezier], 50, 290, project)).toBeNull()
   })
+
+  it('moveAnchor 拖动控制点后槽位语义不变（A/C 端点、B 控制点）', () => {
+    const moved = moveAnchor(bezier, 1, { time: 60, price: 20 })
+    expect(moved.points.map((p) => p.time)).toEqual([0, 60, 100])
+    expect(moved.points[1]).toEqual({ time: 60, price: 20 })
+    // 端点 A 拖到 C 右侧也不重排：贝塞尔槽位即语义（A→控制→C）
+    const movedEnd = moveAnchor(bezier, 0, { time: 200, price: 100 })
+    expect(movedEnd.points.map((p) => p.time)).toEqual([200, 50, 100])
+  })
+
+  it('moveDrawing 整线平移三点同步偏移', () => {
+    const moved = moveDrawing(bezier, 10, -5)
+    expect(moved.points).toEqual([
+      { time: 10, price: 95 },
+      { time: 60, price: 45 },
+      { time: 110, price: 95 },
+    ])
+    expect(moved.id).toBe('bz')
+  })
 })
 
 describe('moveAnchor（M21 三角形/圆弧）', () => {

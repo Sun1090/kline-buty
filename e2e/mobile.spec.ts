@@ -1164,6 +1164,111 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
   expect(errors).toHaveLength(0)
 })
 
+test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 → 自动切回鼠标 → 删除', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/')
+  await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+  await waitCandlesRendered(page)
+  await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
+
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByRole('button', { name: '贝塞尔曲线', exact: true }).tap()
+  await page.waitForTimeout(300)
+
+  const box = await page.locator('main').boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+
+  // 三针收集：A（左）→ 控制点 B（中，低点）→ C（右），均落在已有蜡烛数据区内
+  const taps = [
+    [0.25, 0.45],
+    [0.4, 0.6],
+    [0.55, 0.45],
+  ]
+  for (const [fx, fy] of taps) {
+    const x = box.x + box.width * fx
+    const y = box.y + box.height * fy
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(500)
+  }
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          try {
+            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+            return Object.values(d)
+              .flat()
+              .filter((x: unknown) => (x as { type?: string }).type === 'bezier').length
+          } catch {
+            return 0
+          }
+        }),
+      { timeout: 10_000 },
+    )
+    .toBe(1)
+  const saved = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)
+        .flat()
+        .find((x: unknown) => (x as { type?: string }).type === 'bezier') as
+          | { points: { time: number; price: number }[] }
+          | undefined
+    } catch {
+      return undefined
+    }
+  })
+  expect(saved?.points).toHaveLength(3)
+  // 槽位语义：A/B/C 按点击顺序保留，B（控制点）在中间
+  expect(saved?.points[0].time).toBeLessThan(saved?.points[1].time ?? 0)
+  expect(saved?.points[1].time).toBeLessThan(saved?.points[2].time ?? 0)
+  // 控制点价格更低（向下弯曲），端点价格相近
+  expect(saved?.points[1].price).toBeLessThan(saved?.points[0].price ?? 0)
+
+  // 提交后自动切回只读：再次轻点不得误建第二条贝塞尔
+  const cx = box.x + box.width * 0.5
+  const cy = box.y + box.height * 0.5
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await page.waitForTimeout(500)
+  const count = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d)
+        .flat()
+        .filter((x: unknown) => (x as { type?: string }).type === 'bezier').length
+    } catch {
+      return -1
+    }
+  })
+  expect(count).toBe(1)
+
+  // 删除并确认清空
+  await page.getByTestId('mobile-menu-drawing').tap()
+  await page.getByTestId('drawing-layers-open').tap()
+  await page.getByTestId('drawing-layer-clear').tap()
+  await page.waitForTimeout(400)
+  const after = await page.evaluate(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
+    } catch {
+      return -2
+    }
+  })
+  expect(after).toBe(0)
+  expect(errors).toHaveLength(0)
+})
+
 test('移动端：系统取消指针 → 三角形不误提交，已确认锚点保留可继续绘制', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
