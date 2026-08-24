@@ -66,4 +66,34 @@ describe('orderBookRows 盘口聚合', () => {
     expect(data.asks).toEqual([])
     expect(data.spread).toBe(0)
   })
+
+  it('groupSize 聚合：同价格桶合并数量，桶价向下取整', () => {
+    // ×10 聚合：bids 100 → 桶 100；99/98/97/96 → 桶 90；asks 101~105 → 桶 100
+    const { bids, asks } = orderBookRows(snap, 8, 10)
+    expect(bids.map((r) => r.price)).toEqual([100, 90])
+    expect(bids[0].quantity).toBe(1) // 100 桶：仅 100
+    expect(bids[1].quantity).toBe(2 + 3 + 4 + 9) // 90 桶：99/98/97/96
+    expect(asks.map((r) => r.price)).toEqual([100])
+    expect(asks[0].quantity).toBe(1 + 4 + 5 + 10 + 20) // 100 桶：101~105
+    expect(asks[0].cumulative).toBe(40)
+  })
+
+  it('groupSize 聚合后 spread 按桶边界计算', () => {
+    // ×10：卖一桶 100，买一桶 100 → 价差 0；桶 90 存在但买一仍是 100
+    const { spread } = orderBookRows(snap, 8, 10)
+    expect(spread).toBe(0)
+  })
+
+  it('groupSize = 0 等价于不聚合；groupSize = 1 会取整到整数价', () => {
+    const raw = orderBookRows(snap)
+    const g0 = orderBookRows(snap, 8, 0)
+    expect(g0.bids.map((r) => r.price)).toEqual(raw.bids.map((r) => r.price))
+    expect(g0.asks.map((r) => r.price)).toEqual(raw.asks.map((r) => r.price))
+    const frac: DepthSnapshot = {
+      bids: [{ price: 99.5, quantity: 1 }],
+      asks: [{ price: 100.5, quantity: 2 }],
+    }
+    expect(orderBookRows(frac, 8, 0).bids[0].price).toBe(99.5)
+    expect(orderBookRows(frac, 8, 1).bids[0].price).toBe(99)
+  })
 })
