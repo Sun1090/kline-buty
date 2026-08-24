@@ -12,7 +12,7 @@ import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from './indicators/params'
-import { createReplay, tickReplay, seekReplay, setSpeed, type ReplayState } from './replay/engine'
+import { createReplay, tickReplay, seekReplay, setSpeed, cycleSpeed, type ReplayState } from './replay/engine'
 import { PositionPanel } from './components/PositionPanel'
 import { AlertPanel } from './components/AlertPanel'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
@@ -400,6 +400,12 @@ export function App() {
           e.preventDefault()
           setReplay((r) => (r ? { ...r, playing: !r.playing } : r))
           break
+        case 'replay-step':
+          setReplay((r) => (r ? seekReplay(r, r.cursor + action.dir) : r))
+          break
+        case 'replay-speed':
+          setReplay((r) => (r ? cycleSpeed(r, action.dir) : r))
+          break
         case 'delete-drawing':
           if (selectedDrawingId) deleteSelectedDrawing()
           break
@@ -437,6 +443,8 @@ export function App() {
             setDrawingTool('none')
           } else if (selectedDrawingId) {
             setSelectedDrawingId(null)
+          } else if (replay) {
+            setReplay(null)
           }
           break
       }
@@ -454,6 +462,7 @@ export function App() {
     mainIndicator,
     subIndicator,
     deleteSelectedDrawing,
+    replay,
   ])
 
   const statusColor =
@@ -824,6 +833,8 @@ export function App() {
             <div>{t('shortcuts.cycleSub')}</div>
             <div>{t('shortcuts.fullscreen')}</div>
             <div>{t('shortcuts.replay')}</div>
+            <div>{t('shortcuts.replayStep')}</div>
+            <div>{t('shortcuts.replaySpeed')}</div>
             <div>{t('shortcuts.deleteDrawing')}</div>
             <div>{t('shortcuts.escape')}</div>
             <div>{t('shortcuts.hint')}</div>

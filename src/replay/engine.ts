@@ -32,6 +32,14 @@ export function setSpeed(state: ReplayState, speed: number): ReplayState {
   return { ...state, speed: REPLAY_SPEEDS.includes(speed as never) ? speed : state.speed }
 }
 
+/** 循环切换倍速（dir=1 更快 / -1 更慢，首尾环绕） */
+export function cycleSpeed(state: ReplayState, dir: 1 | -1): ReplayState {
+  const speeds = REPLAY_SPEEDS as readonly number[]
+  const idx = speeds.indexOf(state.speed)
+  const next = speeds[(idx + dir + speeds.length) % speeds.length]
+  return { ...state, speed: next }
+}
+
 function clampCursor(cursor: number, total: number): number {
   return Math.max(0, Math.min(cursor, Math.max(0, total - 1)))
 }

@@ -22,6 +22,15 @@ describe('shortcutFor', () => {
     expect(shortcutFor(ev(' ', { metaKey: true }), false).type).toBe('none')
   })
 
+  it('回放步进 ← / →，倍速 ↑ / ↓（带修饰键不触发）', () => {
+    expect(shortcutFor(ev('ArrowRight'), false)).toEqual({ type: 'replay-step', dir: 1 })
+    expect(shortcutFor(ev('ArrowLeft'), false)).toEqual({ type: 'replay-step', dir: -1 })
+    expect(shortcutFor(ev('ArrowUp'), false)).toEqual({ type: 'replay-speed', dir: 1 })
+    expect(shortcutFor(ev('ArrowDown'), false)).toEqual({ type: 'replay-speed', dir: -1 })
+    expect(shortcutFor(ev('ArrowRight', { metaKey: true }), false).type).toBe('none')
+    expect(shortcutFor(ev('ArrowUp', { ctrlKey: true }), false).type).toBe('none')
+  })
+
   it('删除画线 Delete / Backspace', () => {
     expect(shortcutFor(ev('Delete'), false)).toEqual({ type: 'delete-drawing' })
     expect(shortcutFor(ev('Backspace'), false)).toEqual({ type: 'delete-drawing' })
