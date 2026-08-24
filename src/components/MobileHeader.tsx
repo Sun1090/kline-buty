@@ -5,6 +5,8 @@ import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { ColorPresetId, ThemeMode } from '../theme'
 import { useI18n, type MessageKey } from '../i18n'
 import { DrawingLayers } from './DrawingLayers'
+import { DrawingToolPicker } from './DrawingToolPicker'
+import { OptionGrid } from './OptionGrid'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
 import { ThemePicker } from './ThemePicker'
@@ -14,7 +16,6 @@ import {
   SUB_OPTIONS,
   TYPE_OPTIONS,
   optionLabel,
-  type HeaderOption,
 } from './headerOptions'
 
 type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more' | 'layers'
@@ -103,46 +104,6 @@ const PANEL_STYLE: CSSProperties = {
   overflowY: 'auto',
   WebkitOverflowScrolling: 'touch',
   overscrollBehavior: 'contain',
-}
-
-/** 弹层内网格选项按钮（类型/主图/副图/画线） */
-function OptionGrid({
-  options,
-  value,
-  onPick,
-  label,
-}: {
-  options: HeaderOption[]
-  value: string
-  onPick: (v: string) => void
-  label: (o: HeaderOption) => string
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-      {options.map((o) => {
-        const active = o.value === value
-        return (
-          <button
-            key={o.value}
-            onClick={() => onPick(o.value)}
-            style={{
-              flex: '0 0 auto',
-              minWidth: 72,
-              padding: '7px 10px',
-              fontSize: 12,
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-              color: active ? '#fff' : 'var(--text-dim)',
-            }}
-          >
-            {label(o)}
-          </button>
-        )
-      })}
-    </div>
-  )
 }
 
 function SectionTitle({ children }: { children: string }) {
@@ -472,10 +433,9 @@ export function MobileHeader(props: MobileHeaderProps) {
                   </button>
                 </div>
               )}
-              <OptionGrid
-                options={DRAWING_TOOLS}
+              <DrawingToolPicker
+                testIdPrefix="mobile-drawing"
                 value={props.drawingTool}
-                label={(o) => optionLabel(o, t)}
                 onPick={(v) => {
                   props.onDrawingTool(v as DrawingTool)
                   closePanel()

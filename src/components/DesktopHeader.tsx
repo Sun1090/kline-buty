@@ -7,6 +7,7 @@ import {
 } from '../drawings/logic'
 import { useI18n, type MessageKey } from '../i18n'
 import { DrawingLayers } from './DrawingLayers'
+import { DrawingToolPicker } from './DrawingToolPicker'
 import { PeriodBar } from './PeriodBar'
 import { SymbolPicker } from './SymbolPicker'
 import { ThemePicker } from './ThemePicker'
@@ -16,7 +17,6 @@ import {
   SUB_OPTIONS,
   TYPE_OPTIONS,
   optionLabel,
-  type HeaderOption,
 } from './headerOptions'
 import type { MobileHeaderProps } from './MobileHeader'
 
@@ -51,46 +51,6 @@ const PANEL_STYLE: CSSProperties = {
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <div style={{ fontSize: 11, color: 'var(--text-faint)', margin: '8px 0 6px' }}>{children}</div>
-  )
-}
-
-/** 弹层内网格选项按钮（画线工具等）—— 自动换行，不产生横向滚动条 */
-function OptionGrid({
-  options,
-  value,
-  onPick,
-  label,
-}: {
-  options: HeaderOption[]
-  value: string
-  onPick: (v: string) => void
-  label: (o: HeaderOption) => string
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-      {options.map((o) => {
-        const active = o.value === value
-        return (
-          <button
-            key={o.value}
-            onClick={() => onPick(o.value)}
-            style={{
-              flex: '0 0 auto',
-              minWidth: 72,
-              padding: '7px 10px',
-              fontSize: 12,
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-              color: active ? '#fff' : 'var(--text-dim)',
-            }}
-          >
-            {label(o)}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -434,10 +394,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
       {menu === 'drawing' && (
         <div style={PANEL_STYLE} data-testid="desktop-drawing-panel">
           <SectionTitle>{t('drawing.group')}</SectionTitle>
-          <OptionGrid
-            options={DRAWING_TOOLS}
+          <DrawingToolPicker
+            testIdPrefix="desktop-drawing"
             value={props.drawingTool}
-            label={(o) => optionLabel(o, t)}
             onPick={(v) => {
               props.onDrawingTool(v as DrawingTool)
               setMenu(null)
