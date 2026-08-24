@@ -13,6 +13,16 @@ export default defineConfig({
       { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // lightweight-charts 拆为独立 vendor chunk，利用浏览器缓存减少重复下载
+          vendor: ['lightweight-charts'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
