@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Trading Knowledge Base
   text: From first candle to full-time desk · systematic trading learning
-  tagline: Spot / Futures / Stocks / Crypto Perpetuals / Forex / Options / Macro / Quant / Regulation · 27 chapters · 173 in-depth articles · English & 中文
+  tagline: Spot / Futures / Stocks / Crypto Perpetuals / Forex / Options / Macro / Quant / Regulation · 27 chapters · 174 in-depth articles · English & 中文
   image:
     src: /hero-chart.svg
     alt: Candlestick chart and order book
