@@ -22,7 +22,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   const { t } = useI18n()
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
-  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission } = alertsApi
+  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, history, clearHistory } = alertsApi
 
   const priceNum = Number(price)
   const valid = Number.isFinite(priceNum) && priceNum > 0
@@ -144,6 +144,34 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div style={{ marginTop: 10, borderTop: '1px solid #2a2e39', paddingTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>
+              {t('alert.history')}（{history.length}）
+            </span>
+            <button
+              onClick={clearHistory}
+              style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 11 }}
+            >
+              {t('alert.clearHistory')}
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 140, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+            {history.map((h, i) => (
+              <div key={`${h.alertId}-${h.at}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)', fontSize: 11 }}>
+                <span>
+                  {h.symbol.replace('USDT', '/USDT')} {h.direction === 'above' ? '≥' : '≤'} {h.price.toFixed(2)} → {h.triggeredPrice.toFixed(2)}
+                </span>
+                <span style={{ color: 'var(--text-faint)' }}>
+                  {new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

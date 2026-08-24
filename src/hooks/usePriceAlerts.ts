@@ -4,8 +4,24 @@ import { createAlert, shouldTrigger } from '../alerts/engine'
 import { useI18n } from '../i18n'
 
 const STORAGE_KEY = 'kline-buty:alerts'
+const HISTORY_KEY = 'kline-buty:alertHistory'
+/** 触发历史上限（新记录在前，超限裁剪最旧） */
+export const ALERT_HISTORY_MAX = 50
 
 export type NotificationPermissionState = 'granted' | 'denied' | 'default' | 'unsupported'
+
+/** 一次提醒触发的事件记录（跨品种共享，新记录在前） */
+export interface AlertTriggerEvent {
+  alertId: string
+  symbol: string
+  direction: 'above' | 'below'
+  /** 提醒目标价 */
+  price: number
+  /** 触发时的最新价 */
+  triggeredPrice: number
+  /** 触发时间戳（ms） */
+  at: number
+}
 
 export interface AlertsApi {
   alerts: PriceAlert[]
@@ -14,17 +30,28 @@ export interface AlertsApi {
   removeAlert: (id: string) => void
   resetAlert: (id: string) => void
   requestPermission: () => Promise<NotificationPermissionState>
+  /** 触发历史（新记录在前，上限 ALERT_HISTORY_MAX） */
+  history: AlertTriggerEvent[]
+  clearHistory: () => void
 }
 
-function loadAlerts(): PriceAlert[] {
+function loadList<T>(key: string): T[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as PriceAlert[]
+    const parsed = JSON.parse(raw) as T[]
     return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
   }
+}
+
+function loadAlerts(): PriceAlert[] {
+  return loadList<PriceAlert>(STORAGE_KEY)
+}
+
+function loadHistory(): AlertTriggerEvent[] {
+  return loadList<AlertTriggerEvent>(HISTORY_KEY)
 }
 
 /** 触发提示音（WebAudio 合成，不依赖音频文件；被浏览器策略拦截时静默） */
@@ -59,6 +86,7 @@ export function usePriceAlerts(
 ): AlertsApi {
   const { t } = useI18n()
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
+  const [history, setHistory] = useState<AlertTriggerEvent[]>(loadHistory)
   const [permission, setPermission] = useState<NotificationPermissionState>(() =>
     typeof Notification === 'undefined'
       ? 'unsupported'
@@ -101,6 +129,27 @@ export function usePriceAlerts(
   alertsRef.current = alerts
   const persistRef = useRef(persist)
   persistRef.current = persist
+  const historyRef = useRef(history)
+  historyRef.current = history
+  const appendHistory = useCallback((events: AlertTriggerEvent[]) => {
+    setHistory((prev) => {
+      const next = [...events, ...prev].slice(0, ALERT_HISTORY_MAX)
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+      } catch {
+        /* noop */
+      }
+      return next
+    })
+  }, [])
+  const clearHistory = useCallback(() => {
+    setHistory([])
+    try {
+      localStorage.removeItem(HISTORY_KEY)
+    } catch {
+      /* noop */
+    }
+  }, [])
 
   // 最新价到达 → 触发通知（仅当前可见品种的提醒）
   useEffect(() => {
@@ -129,7 +178,17 @@ export function usePriceAlerts(
     persistRef.current(
       alertsRef.current.map((a) => (triggeredIds.has(a.id) ? { ...a, triggered: true } : a)),
     )
-  }, [latestPrice, permission, t])
+    appendHistory(
+      due.map((a) => ({
+        alertId: a.id,
+        symbol: a.symbol,
+        direction: a.direction,
+        price: a.price,
+        triggeredPrice: lp.price,
+        at: Date.now(),
+      })),
+    )
+  }, [latestPrice, permission, t, appendHistory])
 
-  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission }
+  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, history, clearHistory }
 }
