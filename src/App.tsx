@@ -81,6 +81,8 @@ export function App() {
   const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
+  /** 新建画线默认颜色偏好（'' = 跟随主题），跨会话持久化 */
+  const [drawingColor, setDrawingColor] = usePersistedState<string>('drawingColor', '')
   const cancelDrawingRef = useRef<(() => void) | null>(null)
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
@@ -255,7 +257,7 @@ export function App() {
   }, [])
 
   const commitDrawing = (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => {
-    const created = createDrawing(d.type, d.points)
+    const created = { ...createDrawing(d.type, d.points), color: drawingColor || undefined }
     setDrawingsBySymbol((prev) => ({
       ...prev,
       [symbol]: [...(prev[symbol] ?? []), created],
@@ -479,6 +481,8 @@ export function App() {
           subIndicator={subIndicator}
           onSubIndicator={setSubIndicator}
           drawingTool={drawingTool}
+          drawingColor={drawingColor}
+          onDrawingColor={setDrawingColor}
           onDrawingTool={setDrawingTool}
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}
@@ -546,6 +550,8 @@ export function App() {
           subIndicator={subIndicator}
           onSubIndicator={setSubIndicator}
           drawingTool={drawingTool}
+          drawingColor={drawingColor}
+          onDrawingColor={setDrawingColor}
           onDrawingTool={setDrawingTool}
           drawingSelected={selectedDrawingId !== null}
           onDeleteSelectedDrawing={deleteSelectedDrawing}

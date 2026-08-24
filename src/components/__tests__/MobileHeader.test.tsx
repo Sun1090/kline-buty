@@ -46,6 +46,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     mainIndicator: 'ma' as MainIndicatorKind,
     subIndicator: 'volume' as SubIndicatorKind,
     drawingTool: 'none' as DrawingTool,
+    drawingColor: '',
+    onDrawingColor: vi.fn(),
     drawingSelected: false,
     drawings: [],
     selectedDrawingId: null,
