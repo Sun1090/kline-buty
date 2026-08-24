@@ -19,10 +19,28 @@ export interface OrderBookData {
   maxTotal: number
 }
 
-/** 盘口订单簿：两侧各取前 limit 档，按价格从最优价向外排列，附带累计量与占比 */
-export function orderBookRows(snapshot: DepthSnapshot, limit = 8): OrderBookData {
-  const bids = [...snapshot.bids].sort((a, b) => b.price - a.price)
-  const asks = [...snapshot.asks].sort((a, b) => a.price - b.price)
+/** 按价格宽度聚合档位：bucket = floor(price / groupSize) * groupSize，同桶量合并。
+ * groupSize <= 0 时原样返回排序结果。 */
+function groupLevels(rows: { price: number; quantity: number }[], groupSize: number, ascending: boolean) {
+  const sorted = ascending
+    ? [...rows].sort((a, b) => a.price - b.price)
+    : [...rows].sort((a, b) => b.price - a.price)
+  if (groupSize <= 0) return sorted
+  const merged = new Map<number, { price: number; quantity: number }>()
+  for (const r of sorted) {
+    const bucket = Math.floor(r.price / groupSize) * groupSize
+    const found = merged.get(bucket)
+    if (found) found.quantity += r.quantity
+    else merged.set(bucket, { price: bucket, quantity: r.quantity })
+  }
+  return [...merged.values()].sort((a, b) => (ascending ? a.price - b.price : b.price - a.price))
+}
+
+/** 盘口订单簿：两侧各取前 limit 档，按价格从最优价向外排列，附带累计量与占比。
+ * groupSize > 0 时按价格宽度聚合档位（盘口精度切换）。 */
+export function orderBookRows(snapshot: DepthSnapshot, limit = 8, groupSize = 0): OrderBookData {
+  const bids = groupLevels(snapshot.bids, groupSize, false)
+  const asks = groupLevels(snapshot.asks, groupSize, true)
 
   const build = (rows: { price: number; quantity: number }[]): OrderBookRow[] => {
     let cum = 0

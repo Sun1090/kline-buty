@@ -60,4 +60,37 @@ describe('OrderBook 移动端快捷下单', () => {
     expect(screen.queryByTestId('qo-buy')).toBeNull()
     expect(screen.queryByTestId('qo-sell')).toBeNull()
   })
+
+  it('聚合精度切换：×10 后档位价变为桶价，循环回 ×1 恢复', () => {
+    const rich: DepthSnapshot = {
+      bids: [
+        { price: 99.5, quantity: 1 },
+        { price: 98.7, quantity: 2 },
+      ],
+      asks: [
+        { price: 100.2, quantity: 3 },
+        { price: 101.9, quantity: 4 },
+      ],
+    }
+    render(<OrderBook symbol="BTCUSDT" depth={rich} />)
+    expect(screen.getByText('99.50')).toBeDefined()
+    expect(screen.getByText('100.20')).toBeDefined()
+
+    const toggle = screen.getByTestId('ob-group-toggle')
+    expect(toggle.textContent).toContain('×1')
+    fireEvent.click(toggle) // → ×10
+    expect(toggle.textContent).toContain('×10')
+    // 桶价：99.5→90，98.7→90 合并；100.2→100，101.9→100 合并
+    expect(screen.queryByText('99.50')).toBeNull()
+    expect(screen.getByText('90.00')).toBeDefined()
+    expect(screen.getByText('100.00')).toBeDefined()
+    // 卖一桶 100 - 买一桶 90 → 价差 10
+    expect(screen.getByTestId('ob-spread').textContent).toContain('10.0')
+
+    fireEvent.click(toggle) // → ×100
+    expect(toggle.textContent).toContain('×100')
+    fireEvent.click(toggle) // → ×1
+    expect(toggle.textContent).toContain('×1')
+    expect(screen.getByText('99.50')).toBeDefined()
+  })
 })

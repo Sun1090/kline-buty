@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { orderBookRows, type OrderBookRow } from '../depth/orderbook'
 import { fmtCompact } from '../depth/format'
@@ -19,6 +19,8 @@ interface OrderBookProps {
 const BID = 'var(--up)'
 const ASK = 'var(--down)'
 const LIMIT = 8
+/** 聚合精度档位（价格宽度），循环切换；0 = 不聚合（显示 ×1） */
+const GROUP_STEPS = [0, 10, 100] as const
 
 function fmtPrice(v: number) {
   return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
@@ -103,10 +105,12 @@ function Row({
   )
 }
 
-/** 盘口订单簿：卖盘（上）/ 价差 / 买盘（下），含累计量与占比比例条 */
+/** 盘口订单簿：卖盘（上）/ 价差 / 买盘（下），含累计量与占比比例条；支持价格聚合精度切换 */
 export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrder }: OrderBookProps) {
   const { t } = useI18n()
-  const data = useMemo(() => orderBookRows(depth ?? { bids: [], asks: [] }, LIMIT), [depth])
+  const [groupIdx, setGroupIdx] = useState(0)
+  const groupSize = GROUP_STEPS[groupIdx]
+  const data = useMemo(() => orderBookRows(depth ?? { bids: [], asks: [] }, LIMIT, groupSize), [depth, groupSize])
   const hasData = data.bids.length > 0 && data.asks.length > 0
 
   return (
@@ -120,8 +124,26 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
       }}
       data-testid="order-book"
     >
-      <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 2 }}>
-        {t('orderBook.title', { symbol: symbol.replace('USDT', '/USDT') })}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+          {t('orderBook.title', { symbol: symbol.replace('USDT', '/USDT') })}
+        </span>
+        <button
+          data-testid="ob-group-toggle"
+          onClick={() => setGroupIdx((i) => (i + 1) % GROUP_STEPS.length)}
+          title={t('orderBook.group')}
+          style={{
+            border: '1px solid #2a2e39',
+            borderRadius: 4,
+            background: 'transparent',
+            color: groupIdx > 0 ? 'var(--yellow)' : 'var(--text-faint)',
+            cursor: 'pointer',
+            fontSize: 10,
+            padding: '1px 6px',
+          }}
+        >
+          {t('orderBook.group')} ×{groupSize === 0 ? 1 : groupSize}
+        </button>
       </div>
       <div
         style={{
