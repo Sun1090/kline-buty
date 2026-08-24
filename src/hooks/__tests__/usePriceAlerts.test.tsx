@@ -88,4 +88,56 @@ describe('usePriceAlerts', () => {
     rerender({ price: { symbol: 'BTCUSDT', price: 58000 } })
     expect(notifyMock).toHaveBeenCalledTimes(2)
   })
+
+  it('触发时写入历史（含触发价），持久化且清空生效', () => {
+    const { result, rerender } = renderHook(({ price }) => usePriceAlerts(price), {
+      initialProps: { price: null as { symbol: string; price: number } | null },
+    })
+    expect(result.current.history).toHaveLength(0)
+    act(() => {
+      result.current.addAlert('BTCUSDT', 'above', 65000)
+    })
+    rerender({ price: { symbol: 'BTCUSDT', price: 65123.45 } })
+    expect(result.current.history).toHaveLength(1)
+    expect(result.current.history[0]).toMatchObject({
+      alertId: result.current.alerts[0].id,
+      symbol: 'BTCUSDT',
+      direction: 'above',
+      price: 65000,
+      triggeredPrice: 65123.45,
+    })
+    const stored = JSON.parse(localStorage.getItem('kline-buty:alertHistory')!)
+    expect(stored).toHaveLength(1)
+    act(() => {
+      result.current.clearHistory()
+    })
+    expect(result.current.history).toHaveLength(0)
+    expect(localStorage.getItem('kline-buty:alertHistory')).toBeNull()
+  })
+
+  it('历史按新记录在前排序且上限 50 条', () => {
+    // 直接注入 55 条历史（模拟长期累积）
+    const seeded = Array.from({ length: 55 }, (_, i) => ({
+      alertId: `a${i}`,
+      symbol: 'BTCUSDT',
+      direction: 'above' as const,
+      price: 100 + i,
+      triggeredPrice: 101 + i,
+      at: 1_000_000 + i,
+    }))
+    localStorage.setItem('kline-buty:alertHistory', JSON.stringify(seeded))
+    const { result, rerender } = renderHook(({ price }) => usePriceAlerts(price), {
+      initialProps: { price: null as { symbol: string; price: number } | null },
+    })
+    expect(result.current.history).toHaveLength(55)
+    act(() => {
+      result.current.addAlert('BTCUSDT', 'below', 50)
+    })
+    rerender({ price: { symbol: 'BTCUSDT', price: 49 } })
+    // 触发 1 条后裁剪到上限 50，新记录在最前
+    expect(result.current.history).toHaveLength(50)
+    expect(result.current.history[0].triggeredPrice).toBe(49)
+    expect(result.current.history[0].at).toBeGreaterThan(seeded[54].at)
+    expect(JSON.parse(localStorage.getItem('kline-buty:alertHistory')!)).toHaveLength(50)
+  })
 })

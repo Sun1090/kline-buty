@@ -294,6 +294,8 @@ export const zh = {
     lineSl: '止损',
   },
   alert: {
+    history: '触发历史',
+    clearHistory: '清空记录',
     title: '价格提醒 · {symbol}',
     granted: '通知已开启',
     unsupported: '环境不支持通知',
@@ -667,6 +669,8 @@ export const en: Messages = {
     lineSl: 'SL',
   },
   alert: {
+    history: 'Trigger history',
+    clearHistory: 'Clear history',
     title: 'Price alert · {symbol}',
     granted: 'Notifications on',
     unsupported: 'Notifications unsupported',
@@ -1038,6 +1042,8 @@ export const ja: Messages = {
     lineSl: '損切り (SL)',
   },
   alert: {
+    history: '発火履歴',
+    clearHistory: '履歴を削除',
     title: '価格アラート · {symbol}',
     granted: '通知オン',
     unsupported: 'この環境では通知を利用できません',
@@ -1410,6 +1416,8 @@ export const ko: Messages = {
     lineSl: '손절 (SL)',
   },
   alert: {
+    history: '발동 기록',
+    clearHistory: '기록 지우기',
     title: '가격 알림 · {symbol}',
     granted: '알림 켜짐',
     unsupported: '이 환경에서는 알림을 지원하지 않습니다',
@@ -1793,6 +1801,8 @@ export const es: Messages = {
     lineSl: 'SL',
   },
   alert: {
+    history: 'Historial de alertas',
+    clearHistory: 'Borrar historial',
     title: 'Alerta de precio · {symbol}',
     granted: 'Notificaciones activadas',
     unsupported: 'Notificaciones no compatibles',

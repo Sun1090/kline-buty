@@ -15,6 +15,8 @@ function makeApi(overrides: Partial<AlertsApi> = {}): AlertsApi {
     addAlert: vi.fn(),
     removeAlert: vi.fn(),
     resetAlert: vi.fn(),
+    history: [],
+    clearHistory: vi.fn(),
     requestPermission: vi.fn(async () => 'granted' as const),
     ...overrides,
   }
@@ -67,5 +69,25 @@ describe('AlertPanel', () => {
     expect(screen.getByText(/已触发/)).toBeDefined()
     fireEvent.click(screen.getByText('重置'))
     expect(api.resetAlert).toHaveBeenCalledWith('a1')
+  })
+
+  it('无历史时不显示历史区块', () => {
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={makeApi()} />)
+    expect(screen.queryByText(/触发历史/)).toBeNull()
+  })
+
+  it('显示触发历史（跨品种、含目标价与触发价）并可清空', () => {
+    const api = makeApi({
+      history: [
+        { alertId: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggeredPrice: 65120.5, at: new Date('2026-08-24T10:00:00').getTime() },
+        { alertId: 'a2', symbol: 'ETHUSDT', direction: 'below', price: 2900, triggeredPrice: 2888, at: new Date('2026-08-24T09:30:00').getTime() },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    expect(screen.getByText('触发历史（2）')).toBeDefined()
+    expect(screen.getByText(/BTC\/USDT ≥ 65000\.00 → 65120\.50/)).toBeDefined()
+    expect(screen.getByText(/ETH\/USDT ≤ 2900\.00 → 2888\.00/)).toBeDefined()
+    fireEvent.click(screen.getByText('清空记录'))
+    expect(api.clearHistory).toHaveBeenCalledTimes(1)
   })
 })
