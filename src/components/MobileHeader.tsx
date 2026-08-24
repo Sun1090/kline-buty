@@ -4,6 +4,7 @@ import type { ChartType, MainIndicatorKind, SubIndicatorKind } from './ChartView
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { ColorPresetId, ThemeMode } from '../theme'
 import { useI18n, type MessageKey } from '../i18n'
+import { DrawingColorRow } from './DrawingColorRow'
 import { DrawingLayers } from './DrawingLayers'
 import { DrawingToolPicker } from './DrawingToolPicker'
 import { OptionGrid } from './OptionGrid'
@@ -38,6 +39,9 @@ export interface MobileHeaderProps {
   subIndicator: SubIndicatorKind
   onSubIndicator: (s: SubIndicatorKind) => void
   drawingTool: DrawingTool
+  /** 新建画线默认颜色偏好（'' = 跟随主题） */
+  drawingColor: string
+  onDrawingColor: (c: string) => void
   onDrawingTool: (t: DrawingTool) => void
   drawingSelected: boolean
   onDeleteSelectedDrawing: () => void
@@ -441,6 +445,7 @@ export function MobileHeader(props: MobileHeaderProps) {
                   closePanel()
                 }}
               />
+              <DrawingColorRow testIdPrefix="mobile-drawing" value={props.drawingColor} onChange={props.onDrawingColor} />
               <button
                 data-testid="drawing-layers-open"
                 onClick={() => setMenu('layers')}

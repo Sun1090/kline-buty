@@ -718,7 +718,9 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   private drawOne(ctx: CanvasRenderingContext2D, d: Drawing, selected: boolean) {
-    const color = selected ? '#4e9cf5' : this.theme.yellow
+    // 用户自定义色优先；未设置时跟随主题色。alpha 后缀（如 + '88'）依赖 hex 格式
+    const userColor = d.color || this.theme.yellow
+    const color = selected ? '#4e9cf5' : userColor
     ctx.strokeStyle = color
     ctx.fillStyle = color
     ctx.lineWidth = selected ? 1.6 : 1
@@ -770,7 +772,7 @@ export class LightweightChartAdapter implements ChartApi {
       const a = this.project(d.points[0].time, d.points[0].price)
       if (!a) return
       const fontSize = d.fontSize ?? DEFAULT_TEXT_FONT_SIZE
-      const fill = d.color || this.theme.yellow
+      const fill = d.color || userColor
       // 多行文本：按 \n 分段逐行渲染，行高 = 字号 × 1.4
       const raw = d.text && d.text.trim() ? d.text : this.labels.defaultText
       const lines = raw.split('\n')
@@ -857,14 +859,14 @@ export class LightweightChartAdapter implements ChartApi {
       if (!a) return
       const b = pb ? this.project(pb.time, pb.price) : null
       const c = pc ? this.project(pc.time, pc.price) : null
-      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillStyle = userColor + '1f'
       ctx.beginPath()
       ctx.moveTo(a.x, a.y)
       if (b) ctx.lineTo(b.x, b.y)
       if (c) ctx.lineTo(c.x, c.y)
       ctx.closePath()
       ctx.fill()
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.stroke()
       for (const pt of [a, b, c]) {
@@ -884,7 +886,7 @@ export class LightweightChartAdapter implements ChartApi {
       const c = pc ? this.project(pc.time, pc.price) : null
       if (!c) return
       const w = this.overlay.width / (window.devicePixelRatio || 1)
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       for (const pt of [a, b]) {
         if (!pt) continue
@@ -930,7 +932,7 @@ export class LightweightChartAdapter implements ChartApi {
           const isExt = level >= 1
           const x0 = isExt ? right : left
           const x1 = isExt ? w : right
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
           ctx.beginPath()
           ctx.moveTo(x0, y)
           ctx.lineTo(x1, y)
@@ -938,7 +940,7 @@ export class LightweightChartAdapter implements ChartApi {
           this.drawLabel(ctx, x0, y, `${level.toFixed(3)} ${price.toFixed(2)}`, isExt ? 'right' : 'left')
         }
         // 摆幅框
-        ctx.strokeStyle = this.theme.yellow + '66'
+        ctx.strokeStyle = userColor + '66'
         ctx.strokeRect(left, Math.min(a.y, b.y), right - left, Math.abs(a.y - b.y))
       }
       // C 回撤点竖虚线标记
@@ -946,7 +948,7 @@ export class LightweightChartAdapter implements ChartApi {
         const c = this.project(pc.time, pc.price)
         if (c) {
           ctx.setLineDash([3, 3])
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '88'
           ctx.beginPath()
           ctx.moveTo(c.x, Math.min(a.y, c.y))
           ctx.lineTo(c.x, Math.max(a.y, c.y))
@@ -985,7 +987,7 @@ export class LightweightChartAdapter implements ChartApi {
         const slope = dir.y / dir.x
         const y0 = p0.y + slope * (0 - p0.x)
         const y1 = p0.y + slope * (w - p0.x)
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
         ctx.lineWidth = selected ? 1.6 : 1
         if (level === 0) {
           ctx.setLineDash([])
@@ -1025,7 +1027,7 @@ export class LightweightChartAdapter implements ChartApi {
         bottom = pRect.bottom - cRect.top
       }
       for (const { level, x } of fibTimeXs(a.x, b.x)) {
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
         ctx.lineWidth = selected ? 1.6 : 1
         if (level === 0 || level === 1) {
           ctx.setLineDash([])
@@ -1071,7 +1073,7 @@ export class LightweightChartAdapter implements ChartApi {
       }
       for (const { index, time } of cycleLines(pa, pb)) {
         const x = xOf(time, index)
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
         ctx.lineWidth = selected ? 1.6 : 1
         if (index === 0) {
           ctx.setLineDash([])
@@ -1120,14 +1122,14 @@ export class LightweightChartAdapter implements ChartApi {
         const x0 = xOf(lines[i].time, lines[i].n)
         const x1 = xOf(lines[i + 1].time, lines[i + 1].n)
         if (i % 2 === 0) {
-          ctx.fillStyle = this.theme.yellow + '12'
+          ctx.fillStyle = userColor + '12'
           ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0), bottom - top)
         }
       }
       // 分界线
       for (const { n, time } of lines) {
         const x = xOf(time, n)
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.setLineDash(n === 1 ? [] : [4, 3])
         ctx.beginPath()
@@ -1152,10 +1154,10 @@ export class LightweightChartAdapter implements ChartApi {
       const w = this.overlay.width / (window.devicePixelRatio || 1)
       const top = Math.min(p1.y, p2.y)
       const bottom = Math.max(p1.y, p2.y)
-      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillStyle = userColor + '14'
       ctx.fillRect(0, top, w, bottom - top)
       for (const p of [p1, p2]) {
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.beginPath()
         ctx.moveTo(0, p.y)
@@ -1180,7 +1182,7 @@ export class LightweightChartAdapter implements ChartApi {
       if (!a) return
       const b = this.project(d.points[1].time, d.points[1].price)
       if (!b) return
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.beginPath()
       ctx.moveTo(a.x, a.y)
@@ -1226,10 +1228,10 @@ export class LightweightChartAdapter implements ChartApi {
         bottom = pRect.bottom - cRect.top
       }
       // 半透明竖带
-      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillStyle = userColor + '14'
       ctx.fillRect(left, top, right - left, bottom - top)
       // 左右边框
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
       ctx.lineWidth = selected ? 1.6 : 1
       for (const x of [left, right]) {
         ctx.beginPath()
@@ -1259,10 +1261,10 @@ export class LightweightChartAdapter implements ChartApi {
       if (!p1 || !p2) return
       const w = this.overlay.width / (window.devicePixelRatio || 1)
       const { top, bottom } = priceBandYs(p1.y, p2.y)
-      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillStyle = userColor + '14'
       ctx.fillRect(0, top, w, bottom - top)
       for (const p of [p1, p2]) {
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.beginPath()
         ctx.moveTo(0, p.y)
@@ -1292,9 +1294,9 @@ export class LightweightChartAdapter implements ChartApi {
       const right = Math.max(a.x, b.x)
       const top = Math.min(a.y, b.y)
       const bottom = Math.max(a.y, b.y)
-      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillStyle = userColor + '1f'
       ctx.fillRect(left, top, right - left, bottom - top)
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.strokeRect(left, top, right - left, bottom - top)
       this.drawLabel(ctx, left, top, Math.max(pa.price, pb.price).toFixed(2), 'left')
@@ -1321,16 +1323,16 @@ export class LightweightChartAdapter implements ChartApi {
       const tA = this.project(pts[0]!.time, pts[0]!.price)!
       const maxTime = Math.max(pts[1]!.time, pts[2]!.time)
       const tEnd = this.project(maxTime, pts[0]!.price) ?? tA
-      ctx.fillStyle = this.theme.yellow + '0d'
+      ctx.fillStyle = userColor + '0d'
       ctx.fillRect(tA.x, Math.min(ys[1]!.y, ys[2]!.y), tEnd.x - tA.x, Math.abs(ys[2]!.y - ys[1]!.y))
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '40'
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '40'
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.strokeRect(tA.x, Math.min(ys[1]!.y, ys[2]!.y), tEnd.x - tA.x, Math.abs(ys[2]!.y - ys[1]!.y))
       // 三条水平线
       for (let i = 0; i < 3; i++) {
         const p = pts[i]
         const pt = ys[i]!
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         if (i > 0) ctx.setLineDash([5, 4])
         ctx.beginPath()
@@ -1359,7 +1361,7 @@ export class LightweightChartAdapter implements ChartApi {
       const b = this.project(pb.time, pb.price)
       if (!a || !b) return
       const c = { x: 2 * b.x - a.x, y: 2 * b.y - a.y }
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       // A→B 实线
       ctx.beginPath()
@@ -1404,9 +1406,9 @@ export class LightweightChartAdapter implements ChartApi {
       const h = this.overlay.height / (window.devicePixelRatio || 1)
       const left = Math.min(a.x, b.x)
       const right = Math.max(a.x, b.x)
-      ctx.fillStyle = this.theme.yellow + '14'
+      ctx.fillStyle = userColor + '14'
       ctx.fillRect(left, 0, right - left, h)
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       for (const x of [left, right]) {
         ctx.beginPath()
@@ -1437,7 +1439,7 @@ export class LightweightChartAdapter implements ChartApi {
       for (let i = 0; i < 3; i++) {
         const p = pts[i]
         const pt = ys[i]!
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         if (i > 0) ctx.setLineDash([5, 4])
         ctx.beginPath()
@@ -1469,7 +1471,7 @@ export class LightweightChartAdapter implements ChartApi {
         if (!pt) return
         pts.push(pt)
       }
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.beginPath()
       ctx.moveTo(pts[0].x, pts[0].y)
@@ -1597,12 +1599,12 @@ export class LightweightChartAdapter implements ChartApi {
         if (!p || !q) continue
         if (i === 0) {
           // 主对角线：实线默认色
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor
           ctx.lineWidth = selected ? 1.6 : 1
           ctx.setLineDash([])
         } else {
           // B 竖直线 + 分位线：虚线浅色
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '88'
           ctx.lineWidth = selected ? 1.4 : 1
           ctx.setLineDash(i === 1 ? [3, 3] : [5, 4])
         }
@@ -1629,11 +1631,11 @@ export class LightweightChartAdapter implements ChartApi {
         const q = this.project(seg.to.time, seg.to.price)
         if (!p || !q) continue
         if (i === 0) {
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor
           ctx.lineWidth = selected ? 1.6 : 1
           ctx.setLineDash([])
         } else {
-          ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '99'
+          ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '99'
           ctx.lineWidth = selected ? 1.4 : 1
           ctx.setLineDash([5, 4])
         }
@@ -1656,9 +1658,9 @@ export class LightweightChartAdapter implements ChartApi {
       const right = Math.max(a.x, b.x)
       const top = Math.min(a.y, b.y)
       const bottom = Math.max(a.y, b.y)
-      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillStyle = userColor + '1f'
       ctx.fillRect(left, top, right - left, bottom - top)
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.strokeRect(left, top, right - left, bottom - top)
       for (const p of [
@@ -1684,11 +1686,11 @@ export class LightweightChartAdapter implements ChartApi {
       const cy = (top + bottom) / 2
       const rx = Math.max(1, (right - left) / 2)
       const ry = Math.max(1, (bottom - top) / 2)
-      ctx.fillStyle = this.theme.yellow + '1f'
+      ctx.fillStyle = userColor + '1f'
       ctx.beginPath()
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
       ctx.fill()
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.beginPath()
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
@@ -1708,11 +1710,11 @@ export class LightweightChartAdapter implements ChartApi {
       // 圆：首锚点为圆心，次锚点定半径
       const r = Math.hypot(b.x - a.x, b.y - a.y)
       if (r > 0) {
-        ctx.fillStyle = this.theme.yellow + '1f'
+        ctx.fillStyle = userColor + '1f'
         ctx.beginPath()
         ctx.arc(a.x, a.y, r, 0, Math.PI * 2)
         ctx.fill()
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.beginPath()
         ctx.arc(a.x, a.y, r, 0, Math.PI * 2)
@@ -1733,7 +1735,7 @@ export class LightweightChartAdapter implements ChartApi {
       const r = Math.hypot(b.x - a.x, b.y - a.y) / 2
       if (r > 0) {
         const start = Math.atan2(b.y - a.y, b.x - a.x)
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor
         ctx.lineWidth = selected ? 1.6 : 1
         ctx.beginPath()
         ctx.arc(mx, my, r, start, start + Math.PI)
@@ -1925,14 +1927,14 @@ export class LightweightChartAdapter implements ChartApi {
         const dy = dirPt.y - a.y
         const len = Math.hypot(dx, dy)
         if (len === 0) continue
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'bb'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'bb'
         ctx.beginPath()
         ctx.moveTo(a.x, a.y)
         ctx.lineTo(a.x + (dx / len) * s2, a.y + (dy / len) * s2)
         ctx.stroke()
         this.drawLabel(ctx, dirPt.x, dirPt.y, level.toFixed(3), 'left')
       }
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.beginPath()
       ctx.moveTo(a.x, a.y)
@@ -1958,7 +1960,7 @@ export class LightweightChartAdapter implements ChartApi {
         const dy = dirPt.y - a.y
         const len = Math.hypot(dx, dy)
         if (len === 0) continue
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'bb'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'bb'
         // 双向延伸：A 两侧各画 s2 长（canvas 自动裁剪）
         ctx.beginPath()
         ctx.moveTo(a.x - (dx / len) * s2, a.y - (dy / len) * s2)
@@ -1966,7 +1968,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         this.drawLabel(ctx, dirPt.x, dirPt.y, label, 'left')
       }
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       // 1×1 主对角线加粗
       ctx.beginPath()
@@ -1993,7 +1995,7 @@ export class LightweightChartAdapter implements ChartApi {
       const diagIdx = new Set([0, 1])
       for (let i = 0; i < segs.length; i++) {
         const { from, to } = segs[i]
-        ctx.strokeStyle = diagIdx.has(i) ? (selected ? '#4e9cf5' : this.theme.yellow) : selected ? '#4e9cf5' : this.theme.yellow + 'aa'
+        ctx.strokeStyle = diagIdx.has(i) ? (selected ? '#4e9cf5' : userColor) : selected ? '#4e9cf5' : userColor + 'aa'
         ctx.lineWidth = diagIdx.has(i) ? (selected ? 1.8 : 1.3) : 1
         ctx.beginPath()
         ctx.moveTo(from.x, from.y)
@@ -2002,7 +2004,7 @@ export class LightweightChartAdapter implements ChartApi {
       }
       ctx.lineWidth = 1
       // 矩形边框（半透明，稍粗）
-      ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '88'
+      ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '88'
       ctx.lineWidth = selected ? 1.6 : 1.2
       ctx.strokeRect(rect.left, rect.top, w, h)
       ctx.lineWidth = 1
@@ -2013,7 +2015,7 @@ export class LightweightChartAdapter implements ChartApi {
         { x: rect.left, y: rect.top, dx: 3, dy: 12 },
         { x: rect.right, y: rect.top, dx: -20, dy: 12 },
       ]
-      ctx.fillStyle = selected ? '#4e9cf5' : this.theme.yellow
+      ctx.fillStyle = selected ? '#4e9cf5' : userColor
       for (const c of corners) {
         this.drawLabel(ctx, c.x, c.y, '1×1', c.dx < 0 ? 'right' : 'left')
         this.drawLabel(ctx, c.x, c.y + (c.dy < 0 ? 10 : -2), '1×2', c.dx < 0 ? 'right' : 'left')
@@ -2042,7 +2044,7 @@ export class LightweightChartAdapter implements ChartApi {
           const dy = ray.dir.y - ray.from.y
           const len = Math.hypot(dx, dy)
           if (len === 0) return
-          ctx.strokeStyle = i === 0 ? (selected ? '#4e9cf5' : this.theme.yellow) : selected ? '#4e9cf5' : this.theme.yellow + 'aa'
+          ctx.strokeStyle = i === 0 ? (selected ? '#4e9cf5' : userColor) : selected ? '#4e9cf5' : userColor + 'aa'
           ctx.lineWidth = i === 0 ? (selected ? 1.8 : 1.3) : 1
           ctx.beginPath()
           ctx.moveTo(ray.from.x, ray.from.y)
@@ -2052,7 +2054,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.lineWidth = 1
         // B→C 中点小记号（浅色虚线，指示叉心）
         const mid = { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 }
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + '55'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + '55'
         ctx.setLineDash([3, 3])
         ctx.beginPath()
         ctx.moveTo(b.x, b.y)
@@ -2086,7 +2088,7 @@ export class LightweightChartAdapter implements ChartApi {
       for (const p of prices) {
         const y = this.mainSeries.priceToCoordinate(p)
         if (y === null) continue
-        ctx.strokeStyle = selected ? '#4e9cf5' : this.theme.yellow + 'cc'
+        ctx.strokeStyle = selected ? '#4e9cf5' : userColor + 'cc'
         ctx.beginPath()
         ctx.moveTo(left, y)
         ctx.lineTo(right, y)
@@ -2094,7 +2096,7 @@ export class LightweightChartAdapter implements ChartApi {
         this.drawLabel(ctx, right, y, p.toFixed(2), 'right')
       }
       // 边框
-      ctx.strokeStyle = this.theme.yellow + '66'
+      ctx.strokeStyle = userColor + '66'
       ctx.strokeRect(left, Math.min(a.y, b.y), right - left, Math.abs(a.y - b.y))
       if (selected) {
         this.drawAnchor(ctx, a.x, a.y)

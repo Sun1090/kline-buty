@@ -6,6 +6,7 @@ import {
   type DrawingTool,
 } from '../drawings/logic'
 import { useI18n, type MessageKey } from '../i18n'
+import { DrawingColorRow } from './DrawingColorRow'
 import { DrawingLayers } from './DrawingLayers'
 import { DrawingToolPicker } from './DrawingToolPicker'
 import { PeriodBar } from './PeriodBar'
@@ -402,6 +403,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               setMenu(null)
             }}
           />
+          <DrawingColorRow testIdPrefix="desktop-drawing" value={props.drawingColor} onChange={props.onDrawingColor} />
           <button
             data-testid="drawing-layers-open"
             onClick={() => setMenu('layers')}
