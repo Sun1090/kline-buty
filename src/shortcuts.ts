@@ -9,6 +9,8 @@ export type ShortcutAction =
   | { type: 'period-prev' }
   | { type: 'period-next' }
   | { type: 'replay-toggle' }
+  | { type: 'replay-step'; dir: 1 | -1 }
+  | { type: 'replay-speed'; dir: 1 | -1 }
   | { type: 'delete-drawing' }
   | { type: 'escape' }
   | { type: 'open-search' }
@@ -76,6 +78,14 @@ export function shortcutFor(e: ShortcutEvent, inInput: boolean): ShortcutAction 
         return { type: 'cycle-sub', dir: 1 }
       case '?':
         return { type: 'toggle-shortcuts' }
+      case 'ArrowRight':
+        return { type: 'replay-step', dir: 1 }
+      case 'ArrowLeft':
+        return { type: 'replay-step', dir: -1 }
+      case 'ArrowUp':
+        return { type: 'replay-speed', dir: 1 }
+      case 'ArrowDown':
+        return { type: 'replay-speed', dir: -1 }
     }
   }
 

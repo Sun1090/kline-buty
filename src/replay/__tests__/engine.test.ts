@@ -5,6 +5,7 @@ import {
   seekReplay,
   setSpeed,
   DEFAULT_REPLAY_SPEED,
+  cycleSpeed,
 } from '../engine'
 
 describe('createReplay', () => {
@@ -53,5 +54,16 @@ describe('setSpeed', () => {
   it('仅接受合法档位', () => {
     expect(setSpeed(createReplay(100), 20).speed).toBe(20)
     expect(setSpeed(createReplay(100), 7).speed).toBe(DEFAULT_REPLAY_SPEED)
+  })
+})
+
+describe('cycleSpeed', () => {
+  it('在档位间循环：更快 / 更慢 / 首尾环绕', () => {
+    expect(cycleSpeed(createReplay(100), 1).speed).toBe(10) // 5 → 10
+    expect(cycleSpeed(createReplay(100), -1).speed).toBe(2) // 5 → 2
+    const fast = { ...createReplay(100), speed: 50 }
+    expect(cycleSpeed(fast, 1).speed).toBe(1) // 末尾环绕到最慢
+    const slow = { ...createReplay(100), speed: 1 }
+    expect(cycleSpeed(slow, -1).speed).toBe(50) // 首部环绕到最快
   })
 })
