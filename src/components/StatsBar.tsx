@@ -41,6 +41,8 @@ export function StatsBar({ stats, live }: StatsBarProps) {
     live && live.dir !== 0 ? (live.dir > 0 ? 'tick-flash-up' : 'tick-flash-down') : undefined
   return (
     <div
+      role="region"
+      aria-label={t('panel.statsTitle')}
       style={{
         display: 'flex',
         alignItems: 'center',

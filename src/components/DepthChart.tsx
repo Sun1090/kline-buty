@@ -89,6 +89,8 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
 
   return (
     <div
+      role="region"
+      aria-label={t('depth.title', { symbol: symbol.replace('USDT', '/USDT') })}
       style={{
         padding: '6px 16px',
         borderTop: '1px solid #2a2e39',
@@ -100,7 +102,7 @@ export function DepthChart({ symbol, depth }: DepthChartProps) {
       <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 2 }}>
         {t('depth.title', { symbol: symbol.replace('USDT', '/USDT') })}
       </div>
-      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: 0, width: '100%' }} data-testid="depth-chart" onMouseMove={onMove} onMouseLeave={() => { setHover(null); setHoverX(null) }}>
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('depth.title', { symbol: symbol.replace('USDT', '/USDT') })} style={{ display: 'block', minWidth: 0, width: '100%' }} data-testid="depth-chart" onMouseMove={onMove} onMouseLeave={() => { setHover(null); setHoverX(null) }}>
         <defs>
           <linearGradient id={`bidGrad-${gradId}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={BID} stopOpacity={0.4} />

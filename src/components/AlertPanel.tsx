@@ -31,6 +31,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
 
   return (
     <div
+      role="region"
+      aria-label={t('alert.title', { symbol: symbol.replace('USDT', '/USDT') })}
       style={{
         position: 'absolute',
         top: 52,

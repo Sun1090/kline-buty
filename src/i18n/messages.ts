@@ -106,6 +106,7 @@ export const zh = {
     settings: '参数',
     sentiment: '情绪',
     sentimentTitle: '衍生品情绪（多空比/主动买卖/未平仓）',
+    statsTitle: '行情概览（最新价/涨跌/资金费率/未平仓）',
   },
   sentiment: {
     globalRatio: '全账户多空比',
@@ -484,6 +485,7 @@ export const en: Messages = {
     settings: 'Settings',
     sentiment: 'Sentiment',
     sentimentTitle: 'Derivatives sentiment (long/short, taker, OI)',
+    statsTitle: 'Market overview (last price / change / funding / OI)',
   },
   sentiment: {
     globalRatio: 'Global long/short',
@@ -860,6 +862,7 @@ export const ja: Messages = {
     settings: '設定',
     sentiment: 'センチメント',
     sentimentTitle: 'デリバティブセンチメント（ロング/ショート、テイカー、OI）',
+    statsTitle: '市場概況（最新値/変動/資金費率/未決済）',
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -1237,6 +1240,7 @@ export const ko: Messages = {
     settings: '설정',
     sentiment: '심리',
     sentimentTitle: '파생 심리 (롱/숏, 테이커, 미청산)',
+    statsTitle: '시장 개요 (최근가/등락/자금비용/미청산)',
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -1625,6 +1629,7 @@ export const es: Messages = {
     settings: 'Ajustes',
     sentiment: 'Sentimiento',
     sentimentTitle: 'Sentimiento de derivados (largo/corto, taker, OI)',
+    statsTitle: 'Resumen de mercado (último / variación / fondeo / OI)',
   },
   sentiment: {
     globalRatio: 'Largo/corto global',

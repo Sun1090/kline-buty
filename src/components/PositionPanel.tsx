@@ -53,6 +53,8 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
 
   return (
     <div
+      role="region"
+      aria-label={t('position.title')}
       style={{
         position: 'absolute',
         top: 52,

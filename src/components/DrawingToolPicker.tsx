@@ -28,6 +28,7 @@ export function DrawingToolPicker({
     <>
       <input
         data-testid={testIdPrefix ? `${testIdPrefix}-search` : undefined}
+        aria-label={t('drawing.searchPlaceholder')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('drawing.searchPlaceholder')}

@@ -15,6 +15,8 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
   const { t, lang } = useI18n()
   return (
     <div
+      role="region"
+      aria-label={t('replay.title')}
       style={{
         display: 'flex',
         alignItems: 'center',

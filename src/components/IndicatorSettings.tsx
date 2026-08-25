@@ -96,6 +96,8 @@ export function IndicatorSettings({
 
   return (
     <div
+      role="region"
+      aria-label={t('indicator.settings')}
       style={{
         position: 'absolute',
         top: 52,
