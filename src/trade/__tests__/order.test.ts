@@ -45,3 +45,34 @@ describe('buildPositionFromOrder', () => {
     expect(p.stopLoss).toBeCloseTo(96)
   })
 })
+
+describe('estimateOrder 边界', () => {
+  it('qty=0 → 名义金额/手续费/合计均为 0', () => {
+    const e = estimateOrder(100, 0)
+    expect(e.notional).toBe(0)
+    expect(e.fee).toBe(0)
+    expect(e.total).toBe(0)
+  })
+
+  it('price=0 → 全为 0（不产生 NaN）', () => {
+    const e = estimateOrder(0, 5)
+    expect(Number.isFinite(e.notional)).toBe(true)
+    expect(e.notional).toBe(0)
+    expect(e.total).toBe(0)
+  })
+})
+
+describe('buildPositionFromOrder 边界', () => {
+  it('默认 tpPct=3 / slPct=2', () => {
+    const p = buildPositionFromOrder('buy', 200, 1)
+    expect(p.takeProfit).toBeCloseTo(206)
+    expect(p.stopLoss).toBeCloseTo(196)
+  })
+
+  it('卖单默认参数 → 做空', () => {
+    const p = buildPositionFromOrder('sell', 200, 1)
+    expect(p.direction).toBe('short')
+    expect(p.takeProfit).toBeCloseTo(194)
+    expect(p.stopLoss).toBeCloseTo(204)
+  })
+})
