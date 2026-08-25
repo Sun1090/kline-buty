@@ -135,6 +135,17 @@ See <a href="https://github.com/sun1090/kline-buty/releases" target="_blank">Git
 
 Commit convention follows [Angular Convention](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular).
 
+## Sponsor
+
+If you find this project helpful, consider buying the author a coffee to support ongoing development ☕
+
+<table>
+  <tr>
+    <td align="center"><img src="public/donate-alipay.jpg" width="200" alt="Alipay QR" /><br/>Alipay</td>
+    <td align="center"><img src="public/donate-wechat.jpg" width="200" alt="WeChat QR" /><br/>WeChat</td>
+  </tr>
+</table>
+
 ## License
 
 [MIT](LICENSE) © sun1090
