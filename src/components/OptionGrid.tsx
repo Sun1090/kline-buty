@@ -81,7 +81,6 @@ export function OptionGrid({
   return (
     <div
       ref={containerRef}
-      role="listbox"
       style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
       onKeyDown={handleKeyDown}
     >
@@ -90,8 +89,7 @@ export function OptionGrid({
         return (
           <button
             key={o.value}
-            role="option"
-            aria-selected={active}
+            aria-pressed={active}
             tabIndex={idx === focusIdx ? 0 : -1}
             onClick={() => onPick(o.value)}
             style={{
