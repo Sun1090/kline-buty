@@ -135,6 +135,17 @@ src/
 
 提交规范遵循 <a href="https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular" target="_blank">Angular Convention</a>。
 
+## 赞助
+
+如果这个项目对你有帮助，可以请作者喝杯咖啡，支持持续更新 ☕
+
+<table>
+  <tr>
+    <td align="center"><img src="public/donate-alipay.jpg" width="200" alt="支付宝赞赏码" /><br/>支付宝</td>
+    <td align="center"><img src="public/donate-wechat.jpg" width="200" alt="微信赞赏码" /><br/>微信</td>
+  </tr>
+</table>
+
 ## 许可
 
 [MIT](LICENSE) © sun1090
