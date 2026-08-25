@@ -67,3 +67,53 @@ describe('cycleSpeed', () => {
     expect(cycleSpeed(slow, -1).speed).toBe(50) // 首部环绕到最快
   })
 })
+
+describe('空序列与边界', () => {
+  it('total=0 时 tickReplay 原样返回（不推进、不报错）', () => {
+    const r = { ...createReplay(0), playing: true }
+    const ticked = tickReplay(r, 5)
+    // total=0 直接返回原 state（游标仍 0、playing 不变）
+    expect(ticked).toEqual(r)
+    expect(ticked.cursor).toBe(0)
+  })
+
+  it('total=0 时 seekReplay 游标钳制为 0', () => {
+    const r = createReplay(0)
+    expect(seekReplay(r, 10).cursor).toBe(0)
+    expect(seekReplay(r, -5).cursor).toBe(0)
+  })
+
+  it('total=1 时推进到末尾立即暂停', () => {
+    const r = { ...createReplay(1), playing: true }
+    const ticked = tickReplay(r, 1)
+    expect(ticked.cursor).toBe(0) // total-1=0
+    expect(ticked.playing).toBe(false)
+  })
+
+  it('游标恰好推进到 total-1 时 playing=false', () => {
+    const r = { ...createReplay(10), cursor: 5, playing: true }
+    const ticked = tickReplay(r, 4) // 5+4=9=total-1
+    expect(ticked.cursor).toBe(9)
+    expect(ticked.playing).toBe(false)
+  })
+
+  it('游标推进到 total-2 时仍播放', () => {
+    const r = { ...createReplay(10), cursor: 5, playing: true }
+    const ticked = tickReplay(r, 3) // 5+3=8=total-2
+    expect(ticked.playing).toBe(true)
+  })
+
+  it('setSpeed 非法值保持原速度', () => {
+    const r = { ...createReplay(100), speed: 20 }
+    expect(setSpeed(r, 0).speed).toBe(20)
+    expect(setSpeed(r, -1).speed).toBe(20)
+    expect(setSpeed(r, 100).speed).toBe(20)
+  })
+
+  it('tickReplay 步数为 0 → 游标不变、playing 不变', () => {
+    const r = { ...createReplay(100), cursor: 50, playing: true }
+    const ticked = tickReplay(r, 0)
+    expect(ticked.cursor).toBe(50)
+    expect(ticked.playing).toBe(true)
+  })
+})

@@ -45,3 +45,40 @@ describe('checkHit', () => {
   it('空头触达止损（价格上涨）', () => expect(checkHit(shortPos, 105)).toBe('stopLoss'))
   it('区间内未触发', () => expect(checkHit(longPos, 100)).toBeNull())
 })
+
+describe('calcPnl 边界', () => {
+  it('entry=0 → pnlPct 返回 0（避免除零）', () => {
+    const r = calcPnl({ entry: 0, quantity: 1, direction: 'long' }, 100)
+    expect(r.pnl).toBe(100)
+    expect(r.pnlPct).toBe(0)
+    expect(Number.isFinite(r.pnlPct)).toBe(true)
+  })
+
+  it('quantity=0 → pnl 与 pnlPct 均为 0', () => {
+    const r = calcPnl({ entry: 100, quantity: 0, direction: 'long' }, 110)
+    expect(r.pnl).toBe(0)
+  })
+})
+
+describe('checkHit 边界', () => {
+  it('无止盈止损 → 恒为 null', () => {
+    const noLevels: Position = { entry: 100, quantity: 1, direction: 'long' }
+    expect(checkHit(noLevels, 200)).toBeNull()
+    expect(checkHit(noLevels, 50)).toBeNull()
+  })
+
+  it('多头止盈止损同时触达 → 优先止盈', () => {
+    // 极端构造：止盈=止损=100，价格=100
+    const pos: Position = { entry: 100, quantity: 1, direction: 'long', takeProfit: 100, stopLoss: 100 }
+    expect(checkHit(pos, 100)).toBe('takeProfit')
+  })
+
+  it('空头止盈止损同时触达 → 优先止盈', () => {
+    const pos: Position = { entry: 100, quantity: 1, direction: 'short', takeProfit: 100, stopLoss: 100 }
+    expect(checkHit(pos, 100)).toBe('takeProfit')
+  })
+
+  it('空头区间内未触发', () => {
+    expect(checkHit(shortPos, 100)).toBeNull()
+  })
+})
