@@ -23,6 +23,8 @@ export function OfflineBanner() {
   if (online) return null
   return (
     <div
+      role="status"
+      aria-live="assertive"
       style={{
         padding: '4px 16px',
         background: 'rgba(239,83,80,0.15)',

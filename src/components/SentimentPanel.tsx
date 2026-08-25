@@ -113,7 +113,7 @@ function OiBlock({ title, points }: OiBlockProps) {
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 260px', minWidth: 240, maxWidth: '100%', padding: '6px 16px', borderRight: '1px solid var(--border)' }}>
+    <div role="group" aria-label={title} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 260px', minWidth: 240, maxWidth: '100%', padding: '6px 16px', borderRight: '1px solid var(--border)' }}>
       <span style={{ color: 'var(--text-faint)', fontSize: 12, whiteSpace: 'nowrap' }}>{title}</span>
       {children}
     </div>

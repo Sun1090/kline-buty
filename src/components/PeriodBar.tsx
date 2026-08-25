@@ -14,6 +14,8 @@ export function PeriodBar({ value, onChange, compact }: PeriodBarProps) {
   return (
     <div
       data-testid="period-bar"
+      role="toolbar"
+      aria-label={t('shortcuts.period')}
       style={{
         display: 'flex',
         flexWrap: 'wrap',

@@ -43,6 +43,8 @@ export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps)
 
   return (
     <div
+      role="region"
+      aria-label={t('volumeProfile.title', { symbol: symbol.replace('USDT', '/USDT') })}
       style={{
         padding: '6px 16px',
         borderTop: '1px solid #2a2e39',
