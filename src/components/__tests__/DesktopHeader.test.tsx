@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup } from '@testing-library/react'
-import { MobileHeader } from '../MobileHeader'
+import { DesktopHeader } from '../DesktopHeader'
 import type { Period } from '../../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from '../ChartView'
 import type { DrawingTool } from '../../drawings/logic'
 
 afterEach(cleanup)
 
-function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
+function setup() {
   const handlers = {
     onSymbol: vi.fn(),
     onPeriod: vi.fn(),
@@ -35,14 +35,19 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onExport: vi.fn(),
     onToggleScale: vi.fn(),
     onToggleWatermark: vi.fn(),
+    onTextDraftChange: vi.fn(),
+    onTextFontSizeChange: vi.fn(),
+    onTextColorChange: vi.fn(),
+    onConfirmText: vi.fn(),
+    onCancelText: vi.fn(),
   }
-  const props: Parameters<typeof MobileHeader>[0] = {
+  const props = {
     symbol: 'BTCUSDT',
     statusText: '实时',
     statusColor: 'var(--up)',
     period: '1m' as Period,
     chartType: 'candlestick' as ChartType,
-    priceScaleMode: 'linear',
+    priceScaleMode: 'linear' as const,
     mainIndicator: 'ma' as MainIndicatorKind,
     subIndicator: 'volume' as SubIndicatorKind,
     drawingTool: 'none' as DrawingTool,
@@ -56,9 +61,9 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onToggleDrawingLocked: vi.fn(),
     onDeleteDrawing: vi.fn(),
     onClearDrawings: vi.fn(),
-    layout: 'single',
-    themeMode: 'dark',
-    colorPreset: 'classic',
+    layout: 'single' as const,
+    themeMode: 'dark' as const,
+    colorPreset: 'classic' as const,
     showWatermark: true,
     positionActive: false,
     alertsActive: false,
@@ -74,82 +79,37 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     langLabel: '中文',
     copied: false,
     exported: false,
+    editingTextId: null,
+    textDraft: '',
+    textFontSize: 14,
+    textColor: '',
     ...handlers,
-    ...overrides,
   }
-  render(<MobileHeader {...props} />)
+  render(<DesktopHeader {...props} />)
   return handlers
 }
 
-describe('MobileHeader（移动端工具栏整合）', () => {
-  it('三行布局：symbol/周期/菜单行渲染，且周期按钮可直接点击', () => {
+describe('DesktopHeader（桌面顶栏）', () => {
+  it('画线弹层：点击展开 → 选择工具 → 回调', () => {
     const h = setup()
-    expect(screen.getByText(/BTC\/USDT/)).toBeDefined()
-    expect(screen.getByText('实时')).toBeDefined()
-    // 周期横滚保留：直接点「1分」
-    fireEvent.click(screen.getByText('1分'))
-    expect(h.onPeriod).toHaveBeenCalledWith('1m')
-  })
-
-  it('副图弹层：展开菜单选 MACD → 回调 + 面板收起', () => {
-    const h = setup()
-    fireEvent.click(screen.getByTestId('mobile-menu-sub'))
-    expect(screen.getByText('MACD')).toBeDefined()
-    fireEvent.click(screen.getByText('MACD'))
-    expect(h.onSubIndicator).toHaveBeenCalledWith('macd')
-    // 选择后面板收起
-    expect(screen.queryByTestId('mobile-menu-sub')).toBeDefined() // 触发按钮仍在
-    expect(screen.queryByTestId('mobile-menu-sub')).not.toBeNull()
-  })
-
-  it('画线弹层：展开选「矩形」→ 回调', () => {
-    const h = setup()
-    fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
-    fireEvent.click(screen.getByText('矩形'))
-    expect(h.onDrawingTool).toHaveBeenCalledWith('rect')
-  })
-
-  it('类型弹层：切折线', () => {
-    const h = setup()
-    fireEvent.click(screen.getByTestId('mobile-menu-type'))
-    fireEvent.click(screen.getByText('折线'))
-    expect(h.onChartType).toHaveBeenCalledWith('line')
-  })
-
-  it('更多弹层：面板开关项回调', () => {
-    const h = setup()
-    fireEvent.click(screen.getByTestId('mobile-more'))
-    fireEvent.click(screen.getByText('仓位'))
-    expect(h.onTogglePosition).toHaveBeenCalledTimes(1)
-  })
-
-  it('更多弹层：图表水印开关回调 + 激活态', () => {
-    const h = setup()
-    fireEvent.click(screen.getByTestId('mobile-more'))
-    fireEvent.click(screen.getByTestId('watermark-toggle'))
-    expect(h.onToggleWatermark).toHaveBeenCalledTimes(1)
-  })
-
-  it('外部点击收起弹层', () => {
-    setup()
-    fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
-    expect(screen.getByText('矩形')).toBeDefined()
-    fireEvent.mouseDown(document.body)
-    // 弹层内容不再渲染
-    expect(screen.queryByText('矩形')).toBeNull()
+    fireEvent.click(screen.getByTestId('drawing-toggle'))
+    expect(screen.getByTestId('desktop-drawing-panel')).toBeDefined()
+    // 选趋势线（DrawingToolPicker 内有「趋势线」文案）
+    fireEvent.click(screen.getByText('趋势线'))
+    expect(h.onDrawingTool).toHaveBeenCalledWith('trend')
   })
 
   it('弹层打开时 Esc 收起（一次只关一层，不冒泡到 App 全局 Esc）', () => {
     setup()
-    fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
-    expect(screen.getByText('矩形')).toBeDefined()
+    fireEvent.click(screen.getByTestId('drawing-toggle'))
+    expect(screen.getByTestId('desktop-drawing-panel')).toBeDefined()
     // 模拟 App 全局 Esc 监听：若收到事件说明冒泡冲突
     const appEscSpy = vi.fn()
     window.addEventListener('keydown', appEscSpy)
     try {
       fireEvent.keyDown(window, { key: 'Escape' })
       // 弹层收起
-      expect(screen.queryByText('矩形')).toBeNull()
+      expect(screen.queryByTestId('desktop-drawing-panel')).toBeNull()
       // App 全局 Esc 不应被触发（capture 阶段 stopImmediatePropagation）
       expect(appEscSpy).not.toHaveBeenCalled()
     } finally {
