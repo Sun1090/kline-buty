@@ -168,6 +168,19 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     }
   }, [])
 
+  // 弹层打开时 Esc 收起（stopImmediatePropagation 阻止同 window 上 App 全局 Esc 链路，一次只关一层）
+  useEffect(() => {
+    if (menu === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopImmediatePropagation()
+      e.preventDefault()
+      setMenu(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [menu])
+
   const toggleMenu = (m: Exclude<MenuId, null>) => setMenu((cur) => (cur === m ? null : m))
 
   const drawLabel =

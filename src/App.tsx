@@ -431,8 +431,11 @@ export function App() {
           setShortcutsOpen((v) => !v)
           break
         case 'escape':
-          // Esc：关闭快捷键浮层 → 退出文本编辑 → 取消画线进度 → 取消选中画线
-          if (shortcutsOpen) setShortcutsOpen(false)
+          // Esc：关闭模态/侧栏面板 → 关闭快捷键浮层 → 退出文本编辑 → 取消画线进度 → 取消选中画线
+          if (settingsOpen) setSettingsOpen(false)
+          else if (alertsOpen) setAlertsOpen(false)
+          else if (positionOpen) setPositionOpen(false)
+          else if (shortcutsOpen) setShortcutsOpen(false)
           else if (editingTextId) {
             setEditingTextId(null)
             setTextDraft('')
@@ -457,6 +460,9 @@ export function App() {
     editingTextId,
     textDraft,
     shortcutsOpen,
+    settingsOpen,
+    alertsOpen,
+    positionOpen,
     drawingTool,
     cancelDrawingProgress,
     mainIndicator,
