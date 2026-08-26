@@ -1,37 +1,37 @@
 # AGENTS.md
 
-本文件是 Agent 工作入口，负责路由到具体规则；不要把所有细则堆在这里。
+This file is the agent entry point: it routes to concrete rules. Don't pile every detail here; keep it scannable.
 
-## 项目一句话
+## Project
 
-Kline Buty 是对标 OKX / Binance / Bybit 的实时 K 线 Web 终端，同时同仓维护 `docs/knowledge/` 交易知识库与 VitePress 文档站。
+Kline Buty is a real-time K-line web terminal benchmarked against OKX / Binance / Bybit, while also maintaining the `docs/knowledge/` trading knowledge base and the VitePress docs site in the same repository.
 
-## 必读顺序
+## Required Reading
 
-1. [`README.md`](README.md)：产品能力、预览地址、技术栈与快速开始。
-2. [`docs/agents/project.md`](docs/agents/project.md)：架构边界与关键目录。
-3. 按任务读取：
-   - 改代码前：[`docs/agents/coding.md`](docs/agents/coding.md)
-   - 审查变更时：[`docs/agents/review.md`](docs/agents/review.md)
-   - 交付验收时：[`docs/agents/acceptance.md`](docs/agents/acceptance.md)
-   - 提交推送时：[`docs/agents/commit.md`](docs/agents/commit.md)
-   - 改知识库或文档站时：[`docs/agents/knowledge.md`](docs/agents/knowledge.md)
+1. [`README.md`](README.md) — product capabilities, preview URLs, tech stack, quick start.
+2. [`docs/agents/project.md`](docs/agents/project.md) — architectural boundaries and key directories.
+3. Read by task:
+   - Before coding: [`docs/agents/coding.md`](docs/agents/coding.md)
+   - When reviewing changes: [`docs/agents/review.md`](docs/agents/review.md)
+   - At delivery/acceptance: [`docs/agents/acceptance.md`](docs/agents/acceptance.md)
+   - When committing/pushing: [`docs/agents/commit.md`](docs/agents/commit.md)
+   - When editing the knowledge base or docs site: [`docs/agents/knowledge.md`](docs/agents/knowledge.md)
 
-## 当前不可回退的产品决策
+## Non-reversible Product Decisions
 
-- 顶栏保持折叠式布局；低频功能收进“更多”，不要为了展示全部入口而展开或引入横向滚动。
-- 移动端功能区域优先换行，不允许横向滚动条；320px 也要能直接看到关键操作。
-- 主应用默认英文 README，中文放在独立文档；外链集中分组并使用新标签页。
-- 知识库不是纯文字仓库，重要概念应有表格、流程图、SVG 或结构化导航。
-- 知识库正文必须有 frontmatter 与「⚠️ 风险提示」块；引用的图片/SVG 必须先落盘再引用，缺失会直接打挂文档站构建。
-- VitePress 锚点链接必须让页面内容真实滚动到目标标题，不能只改地址栏。
-- 部署不是“push 成功”就算完成，必须等到 CI / Pages / Vercel 结果并做线上抽查。
-- 构建命令一律在仓库根目录执行：`cd` 进子目录后相对路径会全部失锚，`docs:build` / `git` 会误报路径不存在。
-- 开发、测试、验收需要启动主应用时，在仓库根目录执行 `npm run dev`，固定访问 `http://localhost:5173/`；不要改端口或另起随机服务。
-- commit 不加 `Co-Authored-By` 等任何 AI 署名；署名只留 `sun1090`。
+- The top bar stays collapsed; low-frequency controls go under "More". Don't expand the bar or introduce horizontal scroll just to show every entry at once.
+- Mobile functional areas wrap to new rows; no horizontal scrollbars. At 320px width the key controls must be immediately visible.
+- The main app's README is English by default; Chinese lives in a separate file. External links are grouped and open in new tabs.
+- The knowledge base is not a plain-text repo: important concepts should have tables, flowcharts, SVG, or structured navigation.
+- Knowledge-base articles must have frontmatter and a "⚠️ Risk Warning" block; referenced images/SVG must be committed to the repo before being referenced — a missing asset breaks the docs-site build.
+- VitePress anchor links must scroll the page content to the real target heading, not just update the URL bar.
+- Deployment is not done when "push succeeds"; wait for CI / Pages / Vercel results and do a live spot-check.
+- Build commands run at the **repo root** only: `cd`-ing into a subdirectory loses relative-path anchors, and `docs:build` / `git` will misreport missing paths.
+- When dev/test/acceptance needs the main app running, run `npm run dev` at the repo root and access `http://localhost:5173/` — don't change the port or spawn a random service.
+- Commits add no `Co-Authored-By` or any AI sign-off; the author is `sun1090` only.
 
-## 任务分派原则
+## Task Dispatch
 
-- 按模块边界拆任务，不一次无关联大改；UI 改动必须说明桌面端 / 移动端验证方式。
-- 提交只含一个逻辑主题，不混入无关知识库批量改动。
-- 批量知识库操作用 subagent 时，单 agent 负责 ≤ 9 篇（用 grep 摘要），不通读全文。
+- Split tasks by module boundary; no large unrelated changes in one pass. UI changes must state how they were verified on desktop and mobile.
+- One commit = one logical topic; don't mix in unrelated knowledge-base batch changes.
+- For batched knowledge-base work via subagents: ≤ 9 files per agent (use grep summaries), don't read full files.
