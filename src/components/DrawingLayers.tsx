@@ -43,7 +43,12 @@ export function DrawingLayers({
 }: DrawingLayersProps) {
   const { t } = useI18n()
   return (
-    <div data-testid="drawing-layers" style={{ minWidth: 260 }}>
+    <div
+      data-testid="drawing-layers"
+      role="region"
+      aria-label={t('layers.title')}
+      style={{ minWidth: 260 }}
+    >
       {/* 头部：返回 + 标题（含数量）+ 全部清除 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <button
@@ -95,7 +100,11 @@ export function DrawingLayers({
           {t('layers.empty')}
         </div>
       ) : (
-        <div style={{ maxHeight: 'min(40vh, 320px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div
+          role="listbox"
+          aria-label={t('layers.title')}
+          style={{ maxHeight: 'min(40vh, 320px)', overflowY: 'auto', overscrollBehavior: 'contain' }}
+        >
           {drawings.map((d) => {
             const opt = DRAWING_TOOLS.find((o) => o.value === d.type)
             const label = opt ? optionLabel(opt, t) : d.type
@@ -104,6 +113,8 @@ export function DrawingLayers({
               <div
                 key={d.id}
                 data-testid="drawing-layer-row"
+                role="option"
+                aria-selected={selected}
                 data-selected={selected}
                 data-type={d.type}
                 onClick={() => onSelect(d.id)}
