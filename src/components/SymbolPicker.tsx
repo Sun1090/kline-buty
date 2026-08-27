@@ -65,6 +65,8 @@ function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, st
   const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
   return (
     <div
+      role="option"
+      aria-selected={selected}
       onClick={onSelect}
       style={{
         display: 'flex',
@@ -206,7 +208,11 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
               marginBottom: 6,
             }}
           />
-          <div style={{ maxHeight: 320, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+          <div
+            role="listbox"
+            aria-label={t('symbol.popular')}
+            style={{ maxHeight: 320, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+          >
             {query === '' && favorites.length > 0 && (
               <>
                 <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '2px 6px' }}>{t('symbol.favorites')}</div>
