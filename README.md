@@ -24,6 +24,7 @@
 - **Region screenshot** — Drag-select to export PNG
 - **Mobile touch** — Pinch zoom, crosshair with 2s linger, touch drawing editing
 - **Layer management** — Show/hide, lock/unlock, delete drawings
+- **Keyboard accessibility** — Full keyboard flow: after Tabbing into a panel, arrow keys move focus across tool/symbol/layer grids (wraps around), Enter/Space selects; Esc closes overlays one layer at a time (no global Esc leak); replay seek bar supports arrow-key stepping and click-to-jump; drawing/period/layout buttons use aria-pressed for selected state, lists expose role=listbox/option + aria-selected for screen readers
 
 ## Online Preview
 
