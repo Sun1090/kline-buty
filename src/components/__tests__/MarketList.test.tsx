@@ -87,6 +87,21 @@ describe('MarketList', () => {
     expect(inactive.style.borderLeft).toContain('transparent')
   })
 
+  it('涨跌着色：涨行最新价与涨跌幅列 var(--up)，跌行 var(--down)', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    // BTC 涨 +1.23%，ETH 跌 -0.45%
+    const btcRow = screen.getByTestId('market-row-BTCUSDT')
+    const ethRow = screen.getByTestId('market-row-ETHUSDT')
+    const btcSpans = btcRow.querySelectorAll('span')
+    const ethSpans = ethRow.querySelectorAll('span')
+    // 第 2 个 span 是最新价，第 3 个是涨跌幅
+    expect(btcSpans[1].style.color).toContain('var(--up)')
+    expect(btcSpans[2].style.color).toContain('var(--up)')
+    expect(ethSpans[1].style.color).toContain('var(--down)')
+    expect(ethSpans[2].style.color).toContain('var(--down)')
+  })
+
   it('点击列头 → setSortKey，并显示当前排序列箭头', () => {
     const state = stubHook()
     render(<MarketList {...baseProps} />)
