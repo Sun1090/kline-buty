@@ -53,7 +53,7 @@ function Row({
       <span style={{ flex: '0 0 84px', fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {row.symbol.replace('USDT', '')}
       </span>
-      <span style={{ flex: '0 0 76px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <span style={{ flex: '0 0 76px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: up ? 'var(--up)' : 'var(--down)' }}>
         {fmtPrice(row.price)}
       </span>
       <span style={{ flex: '0 0 56px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: up ? 'var(--up)' : 'var(--down)' }}>
