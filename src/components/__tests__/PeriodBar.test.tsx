@@ -41,4 +41,20 @@ describe('PeriodBar', () => {
     fireEvent.click(screen.getByText('1时'))
     expect(onChange).toHaveBeenCalledWith('1h')
   })
+
+  it('当前周期按钮 aria-pressed=true，其余 false', () => {
+    render(<PeriodBar value="1m" onChange={vi.fn()} />)
+    const active = screen.getByTestId('period-1m')
+    expect(active.getAttribute('aria-pressed')).toBe('true')
+    const inactive = screen.getByTestId('period-1h')
+    expect(inactive.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('每个周期按钮有 aria-label', () => {
+    render(<PeriodBar value="1m" onChange={vi.fn()} />)
+    const btns = screen.getByTestId('period-bar').querySelectorAll('button')
+    for (const b of btns) {
+      expect(b.getAttribute('aria-label')).toBeTruthy()
+    }
+  })
 })
