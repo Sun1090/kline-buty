@@ -60,6 +60,7 @@ function PanelButton({
   children,
   onClick,
   title,
+  ariaLabel,
   active,
   danger,
   disabled,
@@ -68,6 +69,7 @@ function PanelButton({
   children: ReactNode
   onClick: () => void
   title?: string
+  ariaLabel?: string
   active?: boolean
   danger?: boolean
   disabled?: boolean
@@ -78,6 +80,7 @@ function PanelButton({
       data-testid={testId}
       onClick={onClick}
       title={title}
+      aria-label={ariaLabel}
       disabled={disabled}
       aria-pressed={active}
       style={{
@@ -538,13 +541,29 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           </div>
           <SectionTitle>{t('layout.switchTitle')} · {t('scale.title')} · {t('theme.switchTitle')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-            <PanelButton onClick={props.onCycleLayout} title={t('layout.switchTitle')} active={props.layout !== 'single'} testId="layout-toggle">
+            <PanelButton
+              onClick={props.onCycleLayout}
+              title={t('layout.switchTitle')}
+              ariaLabel={`${t('layout.switchTitle')}: ${layoutLabel}`}
+              active={props.layout !== 'single'}
+              testId="layout-toggle"
+            >
               {layoutLabel}
             </PanelButton>
-            <PanelButton onClick={props.onToggleScale} title={t('scale.title')} active={props.priceScaleMode === 'log'} testId="scale-toggle">
+            <PanelButton
+              onClick={props.onToggleScale}
+              title={t('scale.title')}
+              ariaLabel={`${t('scale.title')}: ${props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}`}
+              active={props.priceScaleMode === 'log'}
+              testId="scale-toggle"
+            >
               {props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}
             </PanelButton>
-            <PanelButton onClick={props.onToggleTheme} title={t('theme.switchTitle')}>
+            <PanelButton
+              onClick={props.onToggleTheme}
+              title={t('theme.switchTitle')}
+              ariaLabel={`${t('theme.switchTitle')}: ${props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}
+            >
               {props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
             </PanelButton>
             <ThemePicker value={props.colorPreset} onChange={props.onColorPreset} />

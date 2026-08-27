@@ -8,7 +8,7 @@ import type { DrawingTool } from '../../drawings/logic'
 
 afterEach(cleanup)
 
-function setup() {
+function setup(overrides: Record<string, unknown> = {}) {
   const handlers = {
     onSymbol: vi.fn(),
     onPeriod: vi.fn(),
@@ -84,6 +84,7 @@ function setup() {
     textFontSize: 14,
     textColor: '',
     ...handlers,
+    ...overrides,
   }
   render(<DesktopHeader {...props} />)
   return handlers
@@ -115,6 +116,17 @@ describe('DesktopHeader（桌面顶栏）', () => {
     } finally {
       window.removeEventListener('keydown', appEscSpy)
     }
+  })
+
+  it('布局/坐标轴/主题切换按钮有 aria-label + aria-pressed', () => {
+    setup({ layout: 'pair' as const, priceScaleMode: 'log' as const })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const layout = screen.getByTestId('layout-toggle')
+    expect(layout.getAttribute('aria-label')).toBeTruthy()
+    expect(layout.getAttribute('aria-pressed')).toBe('true') // pair 非 single → 激活
+    const scale = screen.getByTestId('scale-toggle')
+    expect(scale.getAttribute('aria-label')).toBeTruthy()
+    expect(scale.getAttribute('aria-pressed')).toBe('true') // log → 激活
   })
 
   it('无弹层打开时 Esc 不拦截（App 全局 Esc 正常生效）', () => {
