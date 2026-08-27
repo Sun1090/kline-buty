@@ -57,4 +57,45 @@ describe('PositionPanel', () => {
     fireEvent.click(screen.getByText('平仓'))
     expect(onChange).toHaveBeenCalledWith(null)
   })
+
+  it('价位模式：手填止盈/止损价 → 开仓回调含手填价', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel position={null} currentPrice={63000} onChange={onChange} />)
+    // 切换到价位模式
+    fireEvent.click(screen.getByText('价位'))
+    // 入场价 + 数量
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: '100' } }) // entry
+    fireEvent.change(inputs[1], { target: { value: '2' } }) // quantity
+    // 止盈价 + 止损价（price 模式下的两个输入框）
+    fireEvent.change(inputs[2], { target: { value: '110' } }) // tpPrice
+    fireEvent.change(inputs[3], { target: { value: '95' } }) // slPrice
+    fireEvent.click(screen.getByText('开仓'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ entry: 100, quantity: 2, takeProfit: 110, stopLoss: 95 }),
+    )
+  })
+
+  it('价位模式：止盈/止损价未填 → 开仓按钮禁用', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel position={null} currentPrice={63000} onChange={onChange} />)
+    fireEvent.click(screen.getByText('价位'))
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: '100' } })
+    fireEvent.change(inputs[1], { target: { value: '2' } })
+    // 不填 tp/sl 价 → 按钮禁用
+    const btn = screen.getByText('开仓') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+  })
+
+  it('模式切换 aria-pressed：当前模式 true', () => {
+    render(<PositionPanel position={null} currentPrice={100} onChange={vi.fn()} />)
+    const pctBtn = screen.getByText('百分比')
+    const priceBtn = screen.getByText('价位')
+    expect(pctBtn.getAttribute('aria-pressed')).toBe('true') // 默认 pct
+    expect(priceBtn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(priceBtn)
+    expect(priceBtn.getAttribute('aria-pressed')).toBe('true')
+    expect(pctBtn.getAttribute('aria-pressed')).toBe('false')
+  })
 })

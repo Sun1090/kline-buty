@@ -26,6 +26,10 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
   const [direction, setDirection] = useState<'long' | 'short'>(position?.direction ?? 'long')
   const [tpPct, setTpPct] = useState('3')
   const [slPct, setSlPct] = useState('2')
+  // 止盈/止损模式：pct=百分比参考价，price=手动输入价位
+  const [levelMode, setLevelMode] = useState<'pct' | 'price'>('pct')
+  const [tpPrice, setTpPrice] = useState<string>(position?.takeProfit ? String(position.takeProfit) : '')
+  const [slPrice, setSlPrice] = useState<string>(position?.stopLoss ? String(position.stopLoss) : '')
 
   const entryNum = Number(entry)
   const qtyNum = Number(quantity)
@@ -34,14 +38,23 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
   const levels = valid ? suggestLevels(entryNum, direction, Number(tpPct) || 0, Number(slPct) || 0) : null
   const active = position && currentPrice !== null ? calcPnl(position, currentPrice) : null
 
+  // 价格模式下校验手动输入的止盈/止损价
+  const tpNum = Number(tpPrice)
+  const slNum = Number(slPrice)
+  const priceModeValid =
+    levelMode === 'price' &&
+    Number.isFinite(tpNum) && tpNum > 0 &&
+    Number.isFinite(slNum) && slNum > 0
+  const canApply = valid && (levelMode === 'pct' ? !!levels : priceModeValid)
+
   const apply = () => {
-    if (!valid || !levels) return
+    if (!valid || !canApply) return
     onChange({
       entry: entryNum,
       quantity: qtyNum,
       direction,
-      takeProfit: levels.takeProfit,
-      stopLoss: levels.stopLoss,
+      takeProfit: levelMode === 'pct' ? levels!.takeProfit : tpNum,
+      stopLoss: levelMode === 'pct' ? levels!.stopLoss : slNum,
     })
   }
 
@@ -116,16 +129,66 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
         <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.quantity')}</span>
         <input style={inputStyle} value={quantity} onChange={(e) => setQuantity(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPct')}</span>
-        <input style={inputStyle} type="number" value={tpPct} onChange={(e) => setTpPct(e.target.value)} />
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPct')}</span>
-        <input style={inputStyle} type="number" value={slPct} onChange={(e) => setSlPct(e.target.value)} />
+      {/* 止盈/止损模式切换：百分比参考价 vs 手动输入价位 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {(['pct', 'price'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setLevelMode(m)}
+            aria-pressed={levelMode === m}
+            style={{
+              flex: 1,
+              padding: '3px 0',
+              fontSize: 11,
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              background: levelMode === m ? 'rgba(41,98,255,0.18)' : 'transparent',
+              color: levelMode === m ? 'var(--accent)' : 'var(--text-dim)',
+            }}
+          >
+            {m === 'pct' ? t('position.levelModePct') : t('position.levelModePrice')}
+          </button>
+        ))}
       </div>
 
-      {levels && (
+      {levelMode === 'pct' ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPct')}</span>
+            <input style={inputStyle} type="number" value={tpPct} onChange={(e) => setTpPct(e.target.value)} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPct')}</span>
+            <input style={inputStyle} type="number" value={slPct} onChange={(e) => setSlPct(e.target.value)} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPrice')}</span>
+            <input
+              style={inputStyle}
+              type="number"
+              value={tpPrice}
+              placeholder={levels ? levels.takeProfit.toFixed(2) : t('common.price')}
+              onChange={(e) => setTpPrice(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPrice')}</span>
+            <input
+              style={inputStyle}
+              type="number"
+              value={slPrice}
+              placeholder={levels ? levels.stopLoss.toFixed(2) : t('common.price')}
+              onChange={(e) => setSlPrice(e.target.value)}
+            />
+          </div>
+        </>
+      )}
+
+      {levelMode === 'pct' && levels && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
           <span>{t('position.tpLine')} <b style={{ color: 'var(--up)' }}>{levels.takeProfit.toFixed(2)}</b></span>
           <span>{t('position.slLine')} <b style={{ color: 'var(--down)' }}>{levels.stopLoss.toFixed(2)}</b></span>
@@ -144,16 +207,16 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
       ) : (
         <button
           onClick={apply}
-          disabled={!valid}
+          disabled={!canApply}
           style={{
             width: '100%',
             padding: '6px 0',
             fontSize: 12,
             border: 'none',
             borderRadius: 4,
-            cursor: valid ? 'pointer' : 'not-allowed',
-            background: valid ? 'var(--accent)' : 'var(--border)',
-            color: valid ? '#fff' : 'var(--text-faint)',
+            cursor: canApply ? 'pointer' : 'not-allowed',
+            background: canApply ? 'var(--accent)' : 'var(--border)',
+            color: canApply ? '#fff' : 'var(--text-faint)',
           }}
         >
           {t('position.open')}
