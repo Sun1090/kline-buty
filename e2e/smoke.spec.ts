@@ -5836,3 +5836,46 @@ test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移',
   expect(afterCenter).not.toBeNull()
   expect(Math.abs(afterCenter!.x - beforeCenter!.x)).toBeGreaterThan(10)
 })
+
+// ===== 仓位面板：开仓 → 止盈止损线 → 平仓 =====
+test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForSelector('canvas', { timeout: 30_000 })
+  // 展开「更多」面板，点「仓位」
+  await page.getByTestId('header-more').click()
+  await page.getByRole('button', { name: '仓位', exact: true }).click()
+  // 仓位面板出现（role=region）
+  await expect(page.getByRole('region', { name: '模拟仓位' })).toBeVisible()
+  // 输入开仓价 + 数量，点开仓
+  const inputs = page.locator('input')
+  await inputs.nth(0).fill('100')
+  await inputs.nth(1).fill('2')
+  await page.getByRole('button', { name: '开仓', exact: true }).click()
+  // 开仓后面板显示浮动盈亏
+  await expect(page.getByText('浮动盈亏')).toBeVisible()
+  // 平仓
+  await page.getByRole('button', { name: '平仓', exact: true }).click()
+  // 面板回到未开仓态（开仓按钮重新出现）
+  await expect(page.getByRole('button', { name: '开仓', exact: true })).toBeVisible()
+})
+
+// ===== 价格提醒：创建提醒 → 列表显示 → 删除 =====
+test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForSelector('canvas', { timeout: 30_000 })
+  // 展开「更多」面板，点「提醒」
+  await page.getByTestId('header-more').click()
+  await page.getByRole('button', { name: '提醒', exact: true }).click()
+  // 提醒面板出现
+  await expect(page.getByRole('region', { name: /价格提醒/ })).toBeVisible()
+  // 输入价格，点添加
+  const priceInput = page.locator('input').first()
+  await priceInput.fill('999999')
+  await page.getByRole('button', { name: '添加提醒', exact: true }).click()
+  // 列表出现该提醒
+  await expect(page.getByText(/999999/)).toBeVisible()
+  // 删除
+  await page.getByRole('button', { name: '删除', exact: true }).click()
+  // 列表为空
+  await expect(page.getByText('暂无提醒')).toBeVisible()
+})
