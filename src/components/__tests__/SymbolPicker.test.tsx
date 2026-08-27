@@ -61,7 +61,7 @@ describe('SymbolPicker', () => {
     const onChange = vi.fn()
     render(<SymbolPicker value="BTCUSDT" onChange={onChange} />)
     fireEvent.click(screen.getByRole('button'))
-    const input = await screen.findByPlaceholderText(/搜索|Search/)
+    await screen.findByPlaceholderText(/搜索|Search/)
     // 点热门区某交易对行
     const rows = screen.getAllByText(/ETH\/USDT/)
     fireEvent.click(rows[0])

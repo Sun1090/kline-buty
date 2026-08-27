@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, afterEach } from 'vitest'
+import { describe, expect, it, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import { SentimentPanel } from '../SentimentPanel'
 import type { SentimentData } from '../../hooks/useSentiment'
-import type { OiPoint, RatioPoint, TakerPoint } from '../../data/binance/rest'
+import type { RatioPoint, TakerPoint } from '../../data/binance/rest'
 
 afterEach(cleanup)
 
@@ -14,9 +14,6 @@ function mkRatio(long: number, ratio: number): RatioPoint[] {
 }
 function mkTaker(buy: number, sell: number, ratio: number): TakerPoint[] {
   return [{ timestamp: 1, buyVol: buy, sellVol: sell, buySellRatio: ratio }]
-}
-function mkOi(oi: number): OiPoint[] {
-  return [{ timestamp: 1, oi, oiValue: oi }]
 }
 
 describe('SentimentPanel', () => {
