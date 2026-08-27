@@ -29,6 +29,8 @@ export function PeriodBar({ value, onChange, compact }: PeriodBarProps) {
           key={p.value}
           data-testid={`period-${p.value}`}
           onClick={() => onChange(p.value)}
+          aria-label={t(p.labelKey as MessageKey)}
+          aria-pressed={p.value === value}
           style={{
             padding: compact ? '3px 6px' : '4px 8px',
             fontSize: compact ? 11 : 12,
