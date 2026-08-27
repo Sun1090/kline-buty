@@ -76,6 +76,8 @@ export function ReplayBar({ replay, cursorTime, onToggle, onSpeed, onSeek, onExi
         min={0}
         max={Math.max(0, replay.total - 1)}
         value={replay.cursor}
+        aria-label={t('replay.title')}
+        data-testid="replay-seek"
         onChange={(e) => onSeek(Number(e.target.value))}
         style={{ flex: 1, accentColor: 'var(--accent)' }}
       />

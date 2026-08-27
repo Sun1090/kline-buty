@@ -48,6 +48,20 @@ describe('ReplayBar', () => {
     expect(h.onSeek).toHaveBeenCalledWith(50)
   })
 
+  it('进度条点击跳转：任意位置值触发 onSeek', () => {
+    const h = setup(createReplay(100, 10))
+    const range = screen.getByRole('slider') as HTMLInputElement
+    // 模拟点击轨道跳到 75% 位置
+    fireEvent.change(range, { target: { value: '75' } })
+    expect(h.onSeek).toHaveBeenCalledWith(75)
+  })
+
+  it('进度条有 aria-label + 键盘可操作（slider role）', () => {
+    setup()
+    const slider = screen.getByRole('slider')
+    expect(slider.getAttribute('aria-label')).toBeTruthy()
+  })
+
   it('退出回放回调', () => {
     const h = setup()
     fireEvent.click(screen.getByText('退出回放'))
