@@ -92,4 +92,18 @@ describe('DrawingLayers（图层管理面板）', () => {
     fireEvent.click(screen.getByTestId('drawing-layer-back'))
     expect(handlers.onBack).toHaveBeenCalled()
   })
+
+  it('面板有 role=region，列表 role=listbox，行 role=option + aria-selected', () => {
+    setup({ drawings: [h1, t1], selectedId: 'h1' })
+    const region = screen.getByTestId('drawing-layers')
+    expect(region.getAttribute('role')).toBe('region')
+    expect(region.getAttribute('aria-label')).toBeTruthy()
+    const listbox = region.querySelector('[role="listbox"]')
+    expect(listbox).toBeDefined()
+    const options = region.querySelectorAll('[role="option"]')
+    expect(options.length).toBe(2)
+    // h1 被选中 → 首行 aria-selected=true
+    expect(options[0].getAttribute('aria-selected')).toBe('true')
+    expect(options[1].getAttribute('aria-selected')).toBe('false')
+  })
 })
