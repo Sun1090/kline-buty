@@ -93,4 +93,28 @@ describe('OrderBook 移动端快捷下单', () => {
     expect(toggle.textContent).toContain('×1')
     expect(screen.getByText('99.50')).toBeDefined()
   })
+
+  it('买卖各自最大挂单量档位 data-max-qty=true 强调', () => {
+    const multiDepth: DepthSnapshot = {
+      bids: [
+        { price: 99, quantity: 2 },
+        { price: 98, quantity: 5 },
+        { price: 97, quantity: 1 },
+      ],
+      asks: [
+        { price: 101, quantity: 3 },
+        { price: 102, quantity: 8 },
+        { price: 103, quantity: 2 },
+      ],
+    }
+    render(<OrderBook symbol="BTCUSDT" depth={multiDepth} />)
+    const bids = screen.getAllByTestId('ob-bid')
+    const asks = screen.getAllByTestId('ob-ask')
+    // bid 最大量是 98（5）
+    expect(bids.find((b) => Number(b.dataset.price) === 98)?.dataset.maxQty).toBe('true')
+    expect(bids.find((b) => Number(b.dataset.price) === 99)?.dataset.maxQty).toBe('false')
+    // ask 最大量是 102（8）
+    expect(asks.find((a) => Number(a.dataset.price) === 102)?.dataset.maxQty).toBe('true')
+    expect(asks.find((a) => Number(a.dataset.price) === 101)?.dataset.maxQty).toBe('false')
+  })
 })

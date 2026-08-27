@@ -29,12 +29,14 @@ function fmtPrice(v: number) {
 function Row({
   row,
   side,
+  isMaxQty,
   onHoverPrice,
   onMarkPrice,
   onQuickOrder,
 }: {
   row: OrderBookRow
   side: 'bid' | 'ask'
+  isMaxQty?: boolean
   onHoverPrice?: (price: number | null) => void
   onMarkPrice?: (price: number) => void
   onQuickOrder?: (price: number, side: OrderSide) => void
@@ -46,6 +48,7 @@ function Row({
     <div
       data-testid={`ob-${side}`}
       data-price={row.price}
+      data-max-qty={isMaxQty ? 'true' : 'false'}
       onMouseEnter={() => onHoverPrice?.(row.price)}
       onMouseLeave={() => onHoverPrice?.(null)}
       onClick={() => onMarkPrice?.(row.price)}
@@ -58,6 +61,7 @@ function Row({
         gap: 4,
         padding: '1px 8px',
         fontSize: 11,
+        fontWeight: isMaxQty ? 700 : 400,
         fontVariantNumeric: 'tabular-nums',
         cursor: 'crosshair',
       }}
@@ -68,7 +72,7 @@ function Row({
           inset: '0 auto 0 0',
           width: `${(row.pct * 100).toFixed(1)}%`,
           background: color,
-          opacity: 0.14,
+          opacity: isMaxQty ? 0.26 : 0.14,
           pointerEvents: 'none',
         }}
       />
@@ -99,7 +103,9 @@ function Row({
         <span />
       )}
       <span style={{ color }}>{fmtPrice(row.price)}</span>
-      <span style={{ color: 'var(--text-dim)', textAlign: 'right', minWidth: 0 }}>{fmtCompact(row.quantity)}</span>
+      <span style={{ color: isMaxQty ? color : 'var(--text-dim)', textAlign: 'right', minWidth: 0 }}>
+        {fmtCompact(row.quantity)}
+      </span>
       <span style={{ color: 'var(--text-faint)', textAlign: 'right', minWidth: 0 }}>{fmtCompact(row.cumulative)}</span>
     </div>
   )
@@ -112,6 +118,9 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
   const groupSize = GROUP_STEPS[groupIdx]
   const data = useMemo(() => orderBookRows(depth ?? { bids: [], asks: [] }, LIMIT, groupSize), [depth, groupSize])
   const hasData = data.bids.length > 0 && data.asks.length > 0
+  // 买卖各自最大挂单量档位（强调：粗字重 + 高亮色 + 更亮背景条）
+  const maxBidQty = useMemo(() => data.bids.reduce((m, r) => Math.max(m, r.quantity), 0), [data.bids])
+  const maxAskQty = useMemo(() => data.asks.reduce((m, r) => Math.max(m, r.quantity), 0), [data.asks])
 
   return (
     <div
@@ -168,7 +177,15 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
       ) : (
         <>
           {data.asks.map((r) => (
-            <Row key={`a${r.price}`} row={r} side="ask" onHoverPrice={onHoverPrice} onMarkPrice={onMarkPrice} onQuickOrder={onQuickOrder} />
+            <Row
+              key={`a${r.price}`}
+              row={r}
+              side="ask"
+              isMaxQty={r.quantity === maxAskQty}
+              onHoverPrice={onHoverPrice}
+              onMarkPrice={onMarkPrice}
+              onQuickOrder={onQuickOrder}
+            />
           ))}
           <div
             data-testid="ob-spread"
@@ -187,7 +204,15 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
             <span />
           </div>
           {data.bids.map((r) => (
-            <Row key={`b${r.price}`} row={r} side="bid" onHoverPrice={onHoverPrice} onMarkPrice={onMarkPrice} onQuickOrder={onQuickOrder} />
+            <Row
+              key={`b${r.price}`}
+              row={r}
+              side="bid"
+              isMaxQty={r.quantity === maxBidQty}
+              onHoverPrice={onHoverPrice}
+              onMarkPrice={onMarkPrice}
+              onQuickOrder={onQuickOrder}
+            />
           ))}
         </>
       )}
