@@ -95,4 +95,17 @@ describe('SymbolPicker', () => {
     })
     void container
   })
+
+  it('下拉列表有 role=listbox，行有 role=option + aria-selected', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    const listbox = await screen.findByRole('listbox')
+    expect(listbox).toBeDefined()
+    // 至少有一行 option
+    const options = listbox.querySelectorAll('[role="option"]')
+    expect(options.length).toBeGreaterThan(0)
+    // 当前选中交易对的行 aria-selected=true
+    const selected = [...options].find((o) => o.getAttribute('aria-selected') === 'true')
+    expect(selected).toBeDefined()
+  })
 })
