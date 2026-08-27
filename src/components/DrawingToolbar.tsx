@@ -27,6 +27,8 @@ export function DrawingToolbar({
           key={o.value}
           onClick={() => onChange(o.value)}
           title={t(o.labelKey)}
+          aria-label={t(o.labelKey)}
+          aria-pressed={o.value === tool}
           style={{
             padding: '3px 8px',
             fontSize: 11,
