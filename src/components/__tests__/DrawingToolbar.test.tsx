@@ -67,4 +67,13 @@ describe('DrawingToolbar', () => {
     expect(toolbar).toBeDefined()
     expect(toolbar.getAttribute('aria-label')).toBeTruthy()
   })
+
+  it('当前工具按钮 aria-pressed=true，其余 false', () => {
+    render(<DrawingToolbar {...BASE} tool="none" />)
+    const btns = screen.getByRole('toolbar').querySelectorAll('button')
+    const active = btns[0] // none 是首项
+    expect(active.getAttribute('aria-pressed')).toBe('true')
+    const inactive = btns[1]
+    expect(inactive.getAttribute('aria-pressed')).toBe('false')
+  })
 })
