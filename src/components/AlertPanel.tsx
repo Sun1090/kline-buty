@@ -83,11 +83,12 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           </button>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
         <input
           style={inputStyle}
           placeholder={currentPrice ? String(currentPrice.toFixed(2)) : t('common.price')}
           value={price}
+          aria-invalid={!valid && price !== ''}
           onChange={(e) => setPrice(e.target.value)}
         />
         <button
@@ -112,6 +113,11 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           {t('alert.add')}
         </button>
       </div>
+      {price !== '' && !valid && (
+        <div style={{ color: 'var(--down)', fontSize: 11, marginBottom: 8 }} role="alert">
+          {t('alert.invalid')}
+        </div>
+      )}
 
       {symbolAlerts.length === 0 ? (
         <div style={{ color: 'var(--text-faint)' }}>{t('alert.none')}</div>

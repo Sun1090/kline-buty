@@ -90,4 +90,32 @@ describe('AlertPanel', () => {
     fireEvent.click(screen.getByText('清空记录'))
     expect(api.clearHistory).toHaveBeenCalledTimes(1)
   })
+
+  it('无效价格（0/负数/非数字）→ 按钮禁用 + 提示文案 + aria-invalid', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    const input = screen.getByPlaceholderText('63000.00') as HTMLInputElement
+    const btn = screen.getByText('添加提醒') as HTMLButtonElement
+
+    // 0
+    fireEvent.change(input, { target: { value: '0' } })
+    expect(btn.disabled).toBe(true)
+    expect(screen.getByText('请输入有效价格（正数）')).toBeDefined()
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+
+    // 负数
+    fireEvent.change(input, { target: { value: '-5' } })
+    expect(btn.disabled).toBe(true)
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+
+    // 非数字
+    fireEvent.change(input, { target: { value: 'abc' } })
+    expect(btn.disabled).toBe(true)
+
+    // 恢复有效
+    fireEvent.change(input, { target: { value: '65000' } })
+    expect(btn.disabled).toBe(false)
+    expect(input.getAttribute('aria-invalid')).toBe('false')
+    expect(screen.queryByText('请输入有效价格（正数）')).toBeNull()
+  })
 })
