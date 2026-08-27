@@ -6,6 +6,10 @@ This file is the agent entry point: it routes to concrete rules. Don't pile ever
 
 Kline Buty is a real-time K-line web terminal benchmarked against OKX / Binance / Bybit, while also maintaining the `docs/knowledge/` trading knowledge base and the VitePress docs site in the same repository.
 
+## Reuse First
+
+Prefer what's already installed over hand-rolled code: check `package.json` for a dependency that covers the need before writing your own, and grep `src/` for an existing util/hook/adapter before creating a new one. The codebase is layered (`chart/`, `data/`, `indicators/`, `drawings/`, `hooks/`) — extend those layers instead of forking them. Add a new dependency only when nothing installed or built-in fits, and state why in the PR.
+
 ## Required Reading
 
 1. [`README.md`](README.md) — product capabilities, preview URLs, tech stack, quick start.
