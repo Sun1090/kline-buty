@@ -197,6 +197,7 @@ export function App() {
     }
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once 订阅，setSymbol 引用稳定
   }, [])
 
   // 多图模式不支持回放（时间轴同步与游标冲突）
@@ -345,6 +346,7 @@ export function App() {
     if (s && SYMBOL_LIST.includes(s.toUpperCase())) setSymbol(s.toUpperCase())
     const p = params.get('period')
     if (p && PERIODS.some((x) => x.value === p)) setPeriod(p as Period)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL 参数解析，setState 引用稳定
   }, [])
 
   // 复制当前品种+周期的分享链接（clipboard 失败降级 execCommand）
@@ -454,6 +456,7 @@ export function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setLayout/setMainIndicator/setPeriod/setSubIndicator 为 stable setState，无需列入
   }, [
     period,
     selectedDrawingId,

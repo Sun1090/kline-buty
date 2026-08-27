@@ -32,7 +32,7 @@ export function QuickOrder({ symbol, side, price, onConfirm, onClose }: QuickOrd
   const valid = Number.isFinite(priceNum) && priceNum > 0 && Number.isFinite(qtyNum) && qtyNum > 0
   const est = useMemo(
     () => (valid ? estimateOrder(priceNum, qtyNum) : null),
-    [valid, side, priceNum, qtyNum],
+    [valid, priceNum, qtyNum],
   )
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'

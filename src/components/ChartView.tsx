@@ -291,6 +291,7 @@ export function ChartView({
       apiRef.current = null
       prevDataRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 初始化订阅+清理，mount-once 故意空依赖，回调通过 ref 读取
   }, [])
 
   // 语言切换 → 画线默认文案 / 仓位线标签随语言更新（adapter 内部重绘）
@@ -365,6 +366,7 @@ export function ChartView({
       }
     }
     return { lines: [] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
   }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
   const subData = useMemo(() => {
@@ -482,6 +484,7 @@ export function ChartView({
       }
     }
     return null
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
   }, [windowData, subIndicator, indicatorParams])
 
   // ---- 数据装载（窗口装载 / 增量 updateCandle + 指标重绘） ----
@@ -626,6 +629,7 @@ export function ChartView({
       }
     }
     return { ...tooltip, rows }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 已固化进 subData 颜色，无需重复依赖
   }, [tooltip, candleByTime, mainData, lineMaps, sarMap, subLineMaps, subData, t])
 
   return (
