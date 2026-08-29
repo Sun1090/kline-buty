@@ -18,6 +18,7 @@ import type { IndicatorParams } from '../indicators/params'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
+import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/format'
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
@@ -25,14 +26,6 @@ export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' 
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
-}
-
-function fmtVolume(v: number) {
-  return v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(2)}K` : v.toFixed(0)
-}
 
 /** hex 颜色转 rgba（Ichimoku 云带半透明填充用） */
 function withAlpha(hex: string, alpha: number): string {
