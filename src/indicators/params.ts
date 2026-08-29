@@ -29,6 +29,8 @@ export interface IndicatorParams {
   stochD: number
   rocPeriod: number
   momPeriod: number
+  bbwPeriod: number
+  bbwMult: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -62,4 +64,6 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   stochD: 3,
   rocPeriod: 12,
   momPeriod: 10,
+  bbwPeriod: 20,
+  bbwMult: 2,
 }

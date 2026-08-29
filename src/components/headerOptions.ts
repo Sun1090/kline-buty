@@ -38,6 +38,7 @@ export const SUB_OPTIONS: HeaderOption[] = [
   { value: 'stoch', label: 'STOCH' },
   { value: 'roc', label: 'ROC' },
   { value: 'mom', label: 'MOM' },
+  { value: 'bbw', label: 'BBW' },
   { value: 'none', labelKey: 'common.none' },
 ]
 

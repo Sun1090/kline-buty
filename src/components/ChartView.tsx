@@ -7,6 +7,7 @@ import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
+import { calcBBW } from '../indicators/bbw'
 import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
@@ -22,7 +23,7 @@ import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
-export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'none'
+export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'none'
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
@@ -364,6 +365,9 @@ export function ChartView({
   }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
   const subData = useMemo(() => {
+    if (subIndicator === 'bbw') {
+      return { kind: 'bbw' as const, lines: [{ id: 'BBW', points: calcBBW(windowData, indicatorParams.bbwPeriod, indicatorParams.bbwMult) }] }
+    }
     if (subIndicator === 'volume') {
       return {
         kind: 'volume' as const,
