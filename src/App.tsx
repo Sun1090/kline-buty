@@ -682,7 +682,7 @@ export function App() {
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <StatsBar stats={stats} live={state.live} />
+          <StatsBar stats={stats} live={state.live} period={period} lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null} />
       <OfflineBanner />
       {quickOrder && (
         <QuickOrder
