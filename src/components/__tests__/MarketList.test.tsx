@@ -22,8 +22,9 @@ interface HookState {
   error: boolean
   sortKey: TickerSortKey
   sortDir: SortDir
-  setSortKey: ReturnType<typeof vi.fn>
-  refresh: ReturnType<typeof vi.fn>
+  // 用具体函数签名而非 ReturnType<typeof vi.fn>：vitest 4 起 vi.fn() 泛型收严，后者不再可赋给 hook 返回类型
+  setSortKey: (k: TickerSortKey) => void
+  refresh: () => void
 }
 
 function stubHook(overrides?: Partial<HookState>): HookState {

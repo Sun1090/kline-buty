@@ -16,9 +16,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // lightweight-charts 拆为独立 vendor chunk，利用浏览器缓存减少重复下载
-          vendor: ['lightweight-charts'],
+        // vite 8（rolldown 内核）不再支持对象形式 manualChunks，改函数形式；
+        // lightweight-charts 拆为独立 vendor chunk，利用浏览器缓存减少重复下载
+        manualChunks(id: string) {
+          if (id.includes('lightweight-charts')) return 'vendor'
         },
       },
     },
