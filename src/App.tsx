@@ -37,6 +37,7 @@ import {
   type DrawingTool,
 } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
+import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { MobileHeader } from './components/MobileHeader'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MarketList } from './components/MarketList'
@@ -414,7 +415,9 @@ export function App() {
           setReplay((r) => (r ? { ...r, playing: !r.playing } : r))
           break
         case 'replay-step':
-          setReplay((r) => (r ? seekReplay(r, r.cursor + action.dir) : r))
+          // 回放中：步进回放；非回放：键盘微移十字光标
+          if (replay) setReplay((r) => (r ? seekReplay(r, r.cursor + action.dir) : r))
+          else nudgeAllCrosshairs(action.dir)
           break
         case 'replay-speed':
           setReplay((r) => (r ? cycleSpeed(r, action.dir) : r))
@@ -461,6 +464,8 @@ export function App() {
             setSelectedDrawingId(null)
           } else if (replay) {
             setReplay(null)
+          } else {
+            clearAllCrosshairs()
           }
           break
       }
