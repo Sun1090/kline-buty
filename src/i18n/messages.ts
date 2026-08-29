@@ -275,6 +275,8 @@ export const zh = {
     expand: '展开',
     sortTitle: '点击排序',
     stale: '刷新失败，展示缓存',
+    searchPlaceholder: '过滤交易对…',
+    noMatch: '无匹配交易对',
   },
 
   position: {
@@ -660,6 +662,8 @@ export const en: Messages = {
     expand: 'Expand',
     sortTitle: 'Click to sort',
     stale: 'Refresh failed, showing cache',
+    searchPlaceholder: 'Filter symbols…',
+    noMatch: 'No matching symbols',
   },
 
   position: {
@@ -1043,6 +1047,8 @@ export const ja: Messages = {
     expand: '開く',
     sortTitle: 'クリックで並べ替え',
     stale: '更新失敗、キャッシュ表示',
+    searchPlaceholder: '銘柄を絞り込み…',
+    noMatch: '一致する銘柄なし',
   },
 
   position: {
@@ -1427,6 +1433,8 @@ export const ko: Messages = {
     expand: '펼치기',
     sortTitle: '클릭하여 정렬',
     stale: '새로고침 실패, 캐시 표시',
+    searchPlaceholder: '심볼 필터링…',
+    noMatch: '일치하는 심볼 없음',
   },
 
   position: {
@@ -1822,6 +1830,8 @@ export const es: Messages = {
     expand: 'Expandir',
     sortTitle: 'Haz clic para ordenar',
     stale: 'Error al actualizar, mostrando caché',
+    searchPlaceholder: 'Filtrar símbolos…',
+    noMatch: 'Sin coincidencias',
   },
 
   position: {
