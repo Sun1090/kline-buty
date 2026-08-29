@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import type { TickerRow } from '../data/binance/rest'
@@ -75,6 +76,13 @@ interface MarketListProps {
 export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: MarketListProps) {
   const { t } = useI18n()
   const { rows, loading, error, sortKey, sortDir, setSortKey, refresh } = useTickerList()
+  const [query, setQuery] = useState('')
+  // 搜索过滤：大小写不敏感的子串匹配（作用于排序后的全量行，与排序共存）
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((r) => r.symbol.toLowerCase().includes(q))
+  }, [rows, query])
 
   // 折叠态：桌面窄条（仅按钮），点击展开
   if (!open && !overlay) {
@@ -173,6 +181,28 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           {overlay ? '✕' : '‹'}
         </button>
       </div>
+      <div style={{ padding: '4px 8px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <input
+          data-testid="market-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setQuery('')
+          }}
+          placeholder={t('marketList.searchPlaceholder')}
+          aria-label={t('marketList.searchPlaceholder')}
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '4px 8px',
+            fontSize: 12,
+            borderRadius: 4,
+            border: '1px solid var(--border)',
+            background: 'var(--bg)',
+            color: 'var(--text)',
+          }}
+        />
+      </div>
       <div
         style={{
           display: 'flex',
@@ -229,8 +259,12 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
             {error ? t('marketList.empty') : t('marketList.loading')}
           </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
+            {t('marketList.noMatch')}
+          </div>
         ) : (
-          rows.map((row) => (
+          filtered.map((row) => (
             <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} />
           ))
         )}
