@@ -567,9 +567,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             <PanelButton
               onClick={props.onToggleTheme}
               title={t('theme.switchTitle')}
-              ariaLabel={`${t('theme.switchTitle')}: ${props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}
+              ariaLabel={`${t('theme.switchTitle')}: ${(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}
             >
-              {props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+              {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
             </PanelButton>
             <ThemePicker value={props.colorPreset} onChange={props.onColorPreset} />
             <PanelButton onClick={props.onToggleWatermark} title={t('settings.watermarkTitle')} active={props.showWatermark} testId="watermark-toggle">

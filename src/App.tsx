@@ -77,7 +77,17 @@ export function App() {
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
   const [layout, setLayout] = usePersistedState<'single' | 'pair' | 'quad'>('layout', 'single')
-  const [themeMode, setThemeMode] = usePersistedState<ThemeMode>('theme', 'dark')
+  const [themeSetting, setThemeSetting] = usePersistedState<ThemeMode | 'auto'>('theme', 'dark')
+
+  // T5：自动档跟随系统 prefers-color-scheme（设置持久化为 auto/dark/light，图表用派生的有效模式）
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  const themeMode: ThemeMode = themeSetting === 'auto' ? (systemDark ? 'dark' : 'light') : themeSetting
   const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
   const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
@@ -496,6 +506,7 @@ export function App() {
         <MobileHeader
           headerRef={headerRef}
           escChainActive={escChainActive}
+          themeSetting={themeSetting}
           symbol={symbol}
           onSymbol={setSymbol}
           statusText={statusText}
@@ -527,7 +538,7 @@ export function App() {
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
-          onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+          onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
           showWatermark={showWatermark}
@@ -566,6 +577,7 @@ export function App() {
         <DesktopHeader
           headerRef={headerRef}
           escChainActive={escChainActive}
+          themeSetting={themeSetting}
           symbol={symbol}
           onSymbol={setSymbol}
           statusText={statusText}
@@ -597,7 +609,7 @@ export function App() {
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
-          onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+          onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
           showWatermark={showWatermark}

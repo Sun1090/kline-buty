@@ -87,6 +87,8 @@ export interface MobileHeaderProps {
   shortcutsActive: boolean
   onToggleShortcuts: () => void
   /** App 全局 Esc 链路上有更高层（面板/浮层/画线进度等）打开时为 true：顶栏弹层让路，不劫持 Esc */
+  /** 主题设置三态（auto/dark/light）：自动档按钮文案需区分有效模式与设置 */
+  themeSetting?: 'auto' | ThemeMode
   escChainActive?: boolean
   langLabel: string
   onCycleLang: () => void
@@ -533,7 +535,7 @@ export function MobileHeader(props: MobileHeaderProps) {
                     color: 'var(--text-dim)',
                   }}
                 >
-                  {props.themeMode === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+                  {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
                 </button>
                 <button
                   onClick={props.onToggleWatermark}
