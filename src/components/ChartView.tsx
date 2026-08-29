@@ -47,6 +47,8 @@ interface ChartViewProps {
   chartType: ChartType
   /** 价格坐标轴模式：线性 / 对数 */
   priceScaleMode?: 'linear' | 'log'
+  /** 时间轴时区（默认 utc，与交易所一致） */
+  timezoneMode?: 'utc' | 'local'
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -105,6 +107,7 @@ export function ChartView({
   status,
   chartType,
   priceScaleMode = 'linear',
+  timezoneMode = 'utc',
   mainIndicator,
   subIndicator,
   indicatorParams,
@@ -309,6 +312,10 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setPriceScaleMode(priceScaleMode)
   }, [priceScaleMode])
+  // T7：时间轴时区切换
+  useEffect(() => {
+    apiRef.current?.setTimezoneMode(timezoneMode)
+  }, [timezoneMode])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {
@@ -775,7 +782,9 @@ export function ChartView({
           }}
         >
           <div style={{ color: 'var(--text-dim)' }}>
-            {new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false })}
+            {timezoneMode === 'utc'
+              ? new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false, timeZone: 'UTC' })
+              : new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false })}
           </div>
           {tooltipInfo.rows.map((r, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>

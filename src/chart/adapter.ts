@@ -227,6 +227,8 @@ export interface ChartApi {
   setPeriodSeconds(sec: number): void
   /** 价格坐标轴模式：线性 / 对数（对标 TradingView/币安） */
   setPriceScaleMode(mode: 'linear' | 'log'): void
+  /** 时间轴时区：utc（默认，交易所基准）或 local（浏览器本地） */
+  setTimezoneMode(mode: 'utc' | 'local'): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -237,6 +239,19 @@ export interface ChartApi {
 }
 
 /** 主图指标线配色 */
+/** 时区感知的刻度/悬浮时间文本：整点归日显示 MM-DD，其余 HH:MM */
+function formatTickTime(timeSec: number, mode: 'utc' | 'local'): string {
+  const d = new Date(timeSec * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const y = mode === 'utc' ? d.getUTCFullYear() : d.getFullYear()
+  const mo = mode === 'utc' ? d.getUTCMonth() : d.getMonth()
+  const day = mode === 'utc' ? d.getUTCDate() : d.getDate()
+  const h = mode === 'utc' ? d.getUTCHours() : d.getHours()
+  const mi = mode === 'utc' ? d.getUTCMinutes() : d.getMinutes()
+  void y
+  return h === 0 && mi === 0 ? `${pad(mo + 1)}-${pad(day)}` : `${pad(h)}:${pad(mi)}`
+}
+
 const MAIN_LINE_COLORS: Record<string, string> = {
   MA5: '#f5c02f',
   MA10: '#4e9cf5',
@@ -564,6 +579,15 @@ export class LightweightChartAdapter implements ChartApi {
 
   setPeriodSeconds(sec: number) {
     this.periodSeconds = sec
+  }
+
+  setTimezoneMode(mode: 'utc' | 'local') {
+    const fmt = (time: never) => formatTickTime(Number(time), mode)
+    this.chart.applyOptions({
+      localization: { timeFormatter: fmt as never },
+      timeScale: { tickMarkFormatter: fmt as never },
+    })
+    this.draw()
   }
 
   setPriceScaleMode(mode: 'linear' | 'log') {

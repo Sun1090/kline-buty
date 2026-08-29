@@ -48,6 +48,8 @@ function setup(overrides: Record<string, unknown> = {}) {
     period: '1m' as Period,
     chartType: 'candlestick' as ChartType,
     priceScaleMode: 'linear' as const,
+    timezoneMode: 'utc' as const,
+    onToggleTimezone: vi.fn(),
     mainIndicator: 'ma' as MainIndicatorKind,
     subIndicator: 'volume' as SubIndicatorKind,
     drawingTool: 'none' as DrawingTool,

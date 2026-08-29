@@ -12,6 +12,7 @@ interface ChartPairProps {
   period: Period
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
+  timezoneMode?: 'utc' | 'local'
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams

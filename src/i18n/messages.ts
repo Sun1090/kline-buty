@@ -71,6 +71,7 @@ export const zh = {
   lang: {
     switchTo: '切换语言（中/EN/日/韩/西）',
   },
+  tz: { title: '时间轴时区', utc: 'UTC', local: '本地' },
   theme: {
     switchTitle: '切换主题',
     toLight: '浅色',
@@ -467,6 +468,7 @@ export const en: Messages = {
   lang: {
     switchTo: 'Switch language (5)',
   },
+  tz: { title: 'Time axis timezone', utc: 'UTC', local: 'Local' },
   theme: {
     switchTitle: 'Toggle theme',
     toLight: 'Light',
@@ -861,6 +863,7 @@ export const ja: Messages = {
   lang: {
     switchTo: '言語切替（5 言語）',
   },
+  tz: { title: '時間軸のタイムゾーン', utc: 'UTC', local: 'ローカル' },
   theme: {
     switchTitle: 'テーマ切替',
     toLight: 'ライト',
@@ -1256,6 +1259,7 @@ export const ko: Messages = {
   lang: {
     switchTo: '언어 전환 (5개 언어)',
   },
+  tz: { title: '시간축 시간대', utc: 'UTC', local: '현지' },
   theme: {
     switchTitle: '테마 전환',
     toLight: '라이트',
@@ -1663,6 +1667,7 @@ export const es: Messages = {
   lang: {
     switchTo: 'Cambiar idioma (5)',
   },
+  tz: { title: 'Zona horaria del eje', utc: 'UTC', local: 'Local' },
   theme: {
     switchTitle: 'Cambiar tema',
     toLight: 'Claro',
