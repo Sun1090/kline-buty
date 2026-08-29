@@ -89,7 +89,7 @@ export interface SubIndicatorData {
 
 /** 主图指标数据（UI 层计算，本层渲染） */
 export interface MainIndicatorData {
-  lines: { id: string; points: ValuePoint[] }[]
+  lines: { id: string; points: ValuePoint[]; color?: string }[]
   /** Ichimoku 云带：spanA/spanB 之间按点着色填充（颜色由 UI 层按涨跌给 rgba） */
   cloud?: { time: number; top: number; bottom: number; color: string }[]
   /** SAR 圆点（每点独立颜色：多头/空头） */
@@ -3085,7 +3085,7 @@ export class LightweightChartAdapter implements ChartApi {
       const series = this.chart.addSeries(
         LineSeries,
         {
-          color: MAIN_LINE_COLORS[l.id] ?? '#9aa7b5',
+          color: l.color ?? MAIN_LINE_COLORS[l.id] ?? '#9aa7b5',
           lineWidth: 1,
           priceLineVisible: false,
           lastValueVisible: false,
