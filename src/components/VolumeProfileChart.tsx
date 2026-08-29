@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { Candle } from '../chart/types'
 import { computeVolumeProfile, pointOfControl } from '../volumeProfile/calc'
 import { useI18n } from '../i18n/useI18n'
+import { fmtPriceMedium as fmtPrice } from '../utils/format'
 
 interface VolumeProfileChartProps {
   symbol: string
@@ -12,10 +13,6 @@ const W = 300
 const H = 260
 const BID = 'var(--up)'
 const ASK = 'var(--down)'
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(4)
-}
 
 /** 筹码分布（VPVR）：横向柱状图，绿=买量 红=卖量，标注密集区 */
 export function VolumeProfileChart({ symbol, candles }: VolumeProfileChartProps) {

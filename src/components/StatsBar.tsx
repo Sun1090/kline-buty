@@ -1,14 +1,7 @@
 import type { MarketStats } from '../hooks/useMarketStats'
 import type { LiveTick } from '../hooks/useKlineData'
 import { useI18n } from '../i18n/useI18n'
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
-}
-
-function fmtVolume(v: number) {
-  return v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v.toFixed(0)
-}
+import { fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
 
 interface StatsBarProps {
   stats: MarketStats

@@ -4,13 +4,10 @@ import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
 import { useFavorites } from '../hooks/useFavorites'
 import { useI18n } from '../i18n/useI18n'
 import { Sparkline } from './Sparkline'
+import { fmtPriceMedium as fmtPrice } from '../utils/format'
 
 const UP = 'var(--up)'
 const DOWN = 'var(--down)'
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(4)
-}
 
 interface SymbolPickerProps {
   value: string

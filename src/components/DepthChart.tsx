@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { aggregateDepth, maxTotal, bestPrice } from '../depth/aggregate'
 import { fmtCompact, sideTotals, spreadOf, depthHoverInfo, type DepthHoverInfo } from '../depth/format'
+import { fmtPriceCompact as fmtPrice } from '../utils/format'
 import { useI18n } from '../i18n/useI18n'
 
 interface DepthChartProps {
@@ -13,10 +14,6 @@ const W = 760
 const H = 170
 const BID = 'var(--up)'
 const ASK = 'var(--down)'
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
-}
 
 /** 深度图：买卖盘累计量曲线 + 渐变填充 + 最优价/价差/总量标注 */
 export function DepthChart({ symbol, depth }: DepthChartProps) {

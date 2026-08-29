@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { orderBookRows, type OrderBookRow } from '../depth/orderbook'
 import { fmtCompact } from '../depth/format'
+import { fmtPriceCompact as fmtPrice } from '../utils/format'
 import { useI18n } from '../i18n/useI18n'
 import type { OrderSide } from '../trade/order'
 
@@ -21,10 +22,6 @@ const ASK = 'var(--down)'
 const LIMIT = 8
 /** 聚合精度档位（价格宽度），循环切换；0 = 不聚合（显示 ×1） */
 const GROUP_STEPS = [0, 10, 100] as const
-
-function fmtPrice(v: number) {
-  return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
-}
 
 function Row({
   row,
