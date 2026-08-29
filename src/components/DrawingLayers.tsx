@@ -12,6 +12,8 @@ interface DrawingLayersProps {
   onToggleLocked: (id: string) => void
   onDelete: (id: string) => void
   onClearAll: () => void
+  /** 批量显示/隐藏全部画线 */
+  onSetAllHidden: (hidden: boolean) => void
   /** 返回画线工具选择视图 */
   onBack: () => void
 }
@@ -39,6 +41,7 @@ export function DrawingLayers({
   onToggleLocked,
   onDelete,
   onClearAll,
+  onSetAllHidden,
   onBack,
 }: DrawingLayersProps) {
   const { t } = useI18n()
@@ -71,6 +74,46 @@ export function DrawingLayers({
           {t('layers.title')}（{drawings.length}）
         </span>
         <div style={{ flex: 1 }} />
+        {drawings.length > 0 && (
+          <>
+            <button
+              data-testid="drawing-layer-show-all"
+              onClick={() => onSetAllHidden(false)}
+              title={t('layers.showAll')}
+              aria-label={t('layers.showAll')}
+              style={{
+                flex: '0 0 auto',
+                padding: '4px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text-dim)',
+              }}
+            >
+              👁
+            </button>
+            <button
+              data-testid="drawing-layer-hide-all"
+              onClick={() => onSetAllHidden(true)}
+              title={t('layers.hideAll')}
+              aria-label={t('layers.hideAll')}
+              style={{
+                flex: '0 0 auto',
+                padding: '4px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text-dim)',
+              }}
+            >
+              🚫
+            </button>
+          </>
+        )}
         {drawings.length > 0 && (
           <button
             data-testid="drawing-layer-clear"

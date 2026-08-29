@@ -13,6 +13,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onToggleLocked: vi.fn(),
     onDelete: vi.fn(),
     onClearAll: vi.fn(),
+    onSetAllHidden: vi.fn(),
     onBack: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
