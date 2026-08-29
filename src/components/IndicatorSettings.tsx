@@ -63,6 +63,10 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
     fields.push({ key: 'stochSmooth', label: t('indicator.stochSmooth'), kind: 'number' })
     fields.push({ key: 'stochD', label: t('indicator.stochD'), kind: 'number' })
   }
+  if (sub === 'bbw') {
+    fields.push({ key: 'bbwPeriod', label: t('indicator.bbwPeriod'), kind: 'number' })
+    fields.push({ key: 'bbwMult', label: t('indicator.bbwMult'), kind: 'number' })
+  }
   if (sub === 'roc') fields.push({ key: 'rocPeriod', label: t('indicator.rocPeriod'), kind: 'number' })
   if (sub === 'mom') fields.push({ key: 'momPeriod', label: t('indicator.momPeriod'), kind: 'number' })
   return fields

@@ -81,7 +81,7 @@ export interface DrawingCallbacks {
 
 /** 副图指标数据（UI 层计算，本层渲染） */
 export interface SubIndicatorData {
-  kind: 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom'
+  kind: 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw'
   hist?: { time: number; value: number; color?: string }[]
   lines?: { id: string; points: ValuePoint[] }[]
   markers?: { price: number; color: string }[]
