@@ -276,6 +276,9 @@ export const zh = {
     sortTitle: '点击排序',
     stale: '刷新失败，展示缓存',
     searchPlaceholder: '过滤交易对…',
+    tabAll: '全部',
+    tabFavorites: '自选',
+    favoritesEmpty: '暂无自选——在交易对下拉中点 ★ 收藏后在此展示',
     noMatch: '无匹配交易对',
   },
 
@@ -663,6 +666,9 @@ export const en: Messages = {
     sortTitle: 'Click to sort',
     stale: 'Refresh failed, showing cache',
     searchPlaceholder: 'Filter symbols…',
+    tabAll: 'All',
+    tabFavorites: 'Favorites',
+    favoritesEmpty: 'No favorites yet — tap ★ in the symbol picker to add some',
     noMatch: 'No matching symbols',
   },
 
@@ -1048,6 +1054,9 @@ export const ja: Messages = {
     sortTitle: 'クリックで並べ替え',
     stale: '更新失敗、キャッシュ表示',
     searchPlaceholder: '銘柄を絞り込み…',
+    tabAll: 'すべて',
+    tabFavorites: 'お気に入り',
+    favoritesEmpty: 'お気に入りなし——銘柄一覧で ★ で追加できます',
     noMatch: '一致する銘柄なし',
   },
 
@@ -1434,6 +1443,9 @@ export const ko: Messages = {
     sortTitle: '클릭하여 정렬',
     stale: '새로고침 실패, 캐시 표시',
     searchPlaceholder: '심볼 필터링…',
+    tabAll: '전체',
+    tabFavorites: '즐겨찾기',
+    favoritesEmpty: '즐겨찾기 없음——심볼 목록에서 ★로 추가하세요',
     noMatch: '일치하는 심볼 없음',
   },
 
@@ -1831,6 +1843,9 @@ export const es: Messages = {
     sortTitle: 'Haz clic para ordenar',
     stale: 'Error al actualizar, mostrando caché',
     searchPlaceholder: 'Filtrar símbolos…',
+    tabAll: 'Todos',
+    tabFavorites: 'Favoritos',
+    favoritesEmpty: 'Sin favoritos: toca ★ en el selector de símbolos para añadir',
     noMatch: 'Sin coincidencias',
   },
 
