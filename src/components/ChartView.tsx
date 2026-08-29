@@ -8,6 +8,7 @@ import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcBBW } from '../indicators/bbw'
+import { calcSupertrend } from '../indicators/supertrend'
 import { calcMACD } from '../indicators/macd'
 import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
@@ -22,7 +23,7 @@ import { clampTooltipPos } from './tooltipPos'
 import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/format'
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
-export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'none'
+export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'supertrend' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'none'
 export type { ChartType }
 
@@ -328,6 +329,15 @@ export function ChartView({
       }
     }
     if (mainIndicator === 'vwap') return { lines: [{ id: 'VWAP', points: calcVWAP(windowData) }] }
+    if (mainIndicator === 'supertrend') {
+      const st = calcSupertrend(windowData, indicatorParams.stPeriod, indicatorParams.stMult)
+      return {
+        lines: [
+          { id: 'ST_UP', points: st.up, color: UP },
+          { id: 'ST_DOWN', points: st.down, color: DOWN },
+        ],
+      }
+    }
     if (mainIndicator === 'sar') {
       // SAR 圆点：多头在价格下方（涨色），空头在价格上方（跌色）
       const sar = calcSAR(windowData, indicatorParams.sarAfStart, indicatorParams.sarAfStep, indicatorParams.sarAfMax)

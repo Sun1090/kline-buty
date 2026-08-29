@@ -31,6 +31,8 @@ export interface IndicatorParams {
   momPeriod: number
   bbwPeriod: number
   bbwMult: number
+  stPeriod: number
+  stMult: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -66,4 +68,6 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   momPeriod: 10,
   bbwPeriod: 20,
   bbwMult: 2,
+  stPeriod: 10,
+  stMult: 3,
 }

@@ -21,6 +21,7 @@ export const MAIN_OPTIONS: HeaderOption[] = [
   { value: 'vwap', label: 'VWAP' },
   { value: 'sar', labelKey: 'indicator.sar' },
   { value: 'ichimoku', labelKey: 'indicator.ichimoku' },
+  { value: 'supertrend', label: 'ST' },
   { value: 'none', labelKey: 'common.none' },
 ]
 

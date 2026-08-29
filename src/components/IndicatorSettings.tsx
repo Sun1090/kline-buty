@@ -63,6 +63,10 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
     fields.push({ key: 'stochSmooth', label: t('indicator.stochSmooth'), kind: 'number' })
     fields.push({ key: 'stochD', label: t('indicator.stochD'), kind: 'number' })
   }
+  if (main === 'supertrend') {
+    fields.push({ key: 'stPeriod', label: t('indicator.stPeriod'), kind: 'number' })
+    fields.push({ key: 'stMult', label: t('indicator.stMult'), kind: 'number' })
+  }
   if (sub === 'bbw') {
     fields.push({ key: 'bbwPeriod', label: t('indicator.bbwPeriod'), kind: 'number' })
     fields.push({ key: 'bbwMult', label: t('indicator.bbwMult'), kind: 'number' })
