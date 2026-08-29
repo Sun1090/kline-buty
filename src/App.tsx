@@ -19,7 +19,7 @@ import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { DepthChart } from './components/DepthChart'
 import { OrderBook } from './components/OrderBook'
-import { QuickOrder } from './components/QuickOrder'
+import { QuickOrderWithDepth } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
@@ -707,7 +707,7 @@ export function App() {
           <StatsBar stats={stats} live={state.live} period={period} lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null} />
       <OfflineBanner />
       {quickOrder && (
-        <QuickOrder
+        <QuickOrderWithDepth
           symbol={symbol}
           side={quickOrder.side}
           price={quickOrder.price}

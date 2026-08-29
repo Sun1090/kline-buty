@@ -354,6 +354,8 @@ export const zh = {
     sell: "卖出",
   },
   quickOrder: {
+    bid: '买一',
+    ask: '卖一',
     title: "快速下单",
     price: "价格",
     qty: "数量",
@@ -751,6 +753,8 @@ export const en: Messages = {
     sell: "Sell",
   },
   quickOrder: {
+    bid: 'Bid',
+    ask: 'Ask',
     title: "Quick order",
     price: "Price",
     qty: "Qty",
@@ -1146,6 +1150,8 @@ export const ja: Messages = {
     sell: "売り",
   },
   quickOrder: {
+    bid: '買値',
+    ask: '売値',
     title: "クイック注文",
     price: "価格",
     qty: "数量",
@@ -1542,6 +1548,8 @@ export const ko: Messages = {
     sell: "매도",
   },
   quickOrder: {
+    bid: '매수호가',
+    ask: '매도호가',
     title: "빠른 주문",
     price: "가격",
     qty: "수량",
@@ -1949,6 +1957,8 @@ export const es: Messages = {
     sell: "Vender",
   },
   quickOrder: {
+    bid: 'Compra',
+    ask: 'Venta',
     title: "Orden rápida",
     price: "Precio",
     qty: "Cantidad",
