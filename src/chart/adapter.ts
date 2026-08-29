@@ -177,6 +177,10 @@ export interface ChartApi {
   setCandles(candles: Candle[]): void
   /** 增量更新（WS 实时：追加新 K 线或替换最后一根） */
   updateCandle(candle: Candle): void
+  /** 键盘微移十字光标：dir=1 下一根 K 线 / -1 上一根（无光标时从最新 K 线开始） */
+  nudgeCrosshair(dir: 1 | -1): void
+  /** 清除十字光标 */
+  clearCrosshair(): void
   /** 切换图表类型（蜡烛/折线/面积），保留副图与视图位置 */
   setChartType(type: ChartType): void
   /** 视图适配全部数据 */
@@ -293,6 +297,19 @@ export function vibrateIfSupported(vibrate: ((ms: number) => boolean) | undefine
   }
 }
 
+/** 存活图表实例注册表：键盘十字光标等全局输入需要分发给所有已挂载图表 */
+const activeAdapters = new Set<LightweightChartAdapter>()
+
+/** 全部图表十字光标移动一根 K 线（多图布局时各图各自移动） */
+export function nudgeAllCrosshairs(dir: 1 | -1) {
+  for (const a of activeAdapters) a.nudgeCrosshair(dir)
+}
+
+/** 清除全部图表十字光标 */
+export function clearAllCrosshairs() {
+  for (const a of activeAdapters) a.clearCrosshair()
+}
+
 export class LightweightChartAdapter implements ChartApi {
   private chart: IChartApi
   private container: HTMLElement
@@ -303,6 +320,7 @@ export class LightweightChartAdapter implements ChartApi {
   private priceLine: IPriceLine | null = null
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
+  private crosshairTime: number | null = null
   private currentType: ChartType = 'candlestick'
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
@@ -407,6 +425,7 @@ export class LightweightChartAdapter implements ChartApi {
   private dragPreview: Drawing | null = null
 
   constructor(container: HTMLElement) {
+    activeAdapters.add(this)
     this.container = container
     this.chart = createChart(container, {
       autoSize: true,
@@ -2971,6 +2990,22 @@ export class LightweightChartAdapter implements ChartApi {
     }
   }
 
+  nudgeCrosshair(dir: 1 | -1) {
+    if (this.lastCandles.length === 0) return
+    const idx = this.crosshairTime != null
+      ? this.lastCandles.findIndex((c) => c.time === this.crosshairTime)
+      : this.lastCandles.length - 1
+    const nextIdx = Math.max(0, Math.min(this.lastCandles.length - 1, (idx < 0 ? this.lastCandles.length - 1 : idx) + dir))
+    const candle = this.lastCandles[nextIdx]
+    this.crosshairTime = candle.time
+    this.chart.setCrosshairPosition(candle.close, candle.time as UTCTimestamp, this.mainSeries)
+  }
+
+  clearCrosshair() {
+    this.crosshairTime = null
+    this.chart.clearCrosshairPosition()
+  }
+
   setCandles(candles: Candle[]) {
     this.lastCandles = candles
     this.mainSeries.setData(candles.map((c) => this.candleToBar(c)))
@@ -3185,8 +3220,10 @@ export class LightweightChartAdapter implements ChartApi {
     cb: (time: number | null, x: number | null, y: number | null) => void,
   ): () => void {
     const handler = (param: Parameters<Parameters<IChartApi['subscribeCrosshairMove']>[0]>[0]) => {
+      const time = param.time === undefined ? null : Number(param.time)
+      this.crosshairTime = time
       cb(
-        param.time === undefined ? null : Number(param.time),
+        time,
         param.point ? param.point.x : null,
         param.point ? param.point.y : null,
       )
@@ -3210,6 +3247,7 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   destroy() {
+    activeAdapters.delete(this)
     this.cancelTouchInertia()
     this.clearTouchLinger()
     this.container.removeEventListener('pointermove', this.onPointerMove)
