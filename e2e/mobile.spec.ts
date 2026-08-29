@@ -948,11 +948,19 @@ test('移动端：OHLC 十字光标浮层防溢出——长按底部区域翻转
   const probe = async (y: number) => {
     const x = box.x + box.width / 2
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
-    // 长按钉线阈值 250ms；等 500ms 覆盖 CI 中触摸事件调度抖动
-    await page.waitForTimeout(500)
-    const tip = await findTooltip()
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await page.waitForTimeout(2400) // 等松手保留期过期，避免串扰
+    // 长按钉线阈值 250ms；CI 触摸事件调度有抖动，轮询等浮层出现（最多 ~3s），
+    // 单次固定等待在事件延迟送达时会把「还没出现」误判为「不出现」（实测首轮失败率 80%）
+    let tip = await findTooltip()
+    try {
+      for (const ms of [250, 250, 500, 1000, 1000]) {
+        if (tip) break
+        await page.waitForTimeout(ms)
+        tip = await findTooltip()
+      }
+    } finally {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await page.waitForTimeout(2400) // 等松手保留期过期，避免串扰
+    }
     return tip
   }
 
