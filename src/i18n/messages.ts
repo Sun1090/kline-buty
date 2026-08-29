@@ -260,6 +260,7 @@ export const zh = {
     fundingRate: '资金费率',
     openInterest: '未平仓',
     markPrice: '标记价',
+    countdown: '收盘',
   },
   marketList: {
     title: '行情',
@@ -644,6 +645,7 @@ export const en: Messages = {
     fundingRate: 'Funding rate',
     openInterest: 'Open interest',
     markPrice: 'Mark price',
+    countdown: 'Close in',
   },
   marketList: {
     title: 'Markets',
@@ -1026,6 +1028,7 @@ export const ja: Messages = {
     fundingRate: '資金調達率',
     openInterest: '未決済建玉',
     markPrice: 'マーク価格',
+    countdown: '終了まで',
   },
   marketList: {
     title: '相場',
@@ -1409,6 +1412,7 @@ export const ko: Messages = {
     fundingRate: '펀딩 비율',
     openInterest: '미청산 계약',
     markPrice: '마크 가격',
+    countdown: '마감',
   },
   marketList: {
     title: '시세',
@@ -1803,6 +1807,7 @@ export const es: Messages = {
     fundingRate: 'Tasa de financiación',
     openInterest: 'Interés abierto',
     markPrice: 'Precio de marca',
+    countdown: 'Cierre en',
   },
   marketList: {
     title: 'Mercados',

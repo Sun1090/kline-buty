@@ -1,12 +1,20 @@
+import { useEffect, useState } from 'react'
 import type { MarketStats } from '../hooks/useMarketStats'
 import type { LiveTick } from '../hooks/useKlineData'
+import type { Period } from '../chart/types'
+import { PERIOD_MS } from '../chart/types'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
+import { formatRemaining } from '../utils/countdown'
 
 interface StatsBarProps {
   stats: MarketStats
   /** WS 实时帧（最新价 + 方向）：非空时覆盖轮询价并做跳动高亮 */
   live?: LiveTick | null
+  /** 当前周期：提供 lastCandleTime 时显示周期收盘倒计时 */
+  period?: Period
+  /** 最新 K 线开盘时间（秒级 UTC） */
+  lastCandleTime?: number | null
 }
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
@@ -18,8 +26,19 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export function StatsBar({ stats, live }: StatsBarProps) {
+export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps) {
   const { t } = useI18n()
+  // 收盘倒计时：每秒走一次本组件（面板小，重渲染开销可忽略）
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!period || lastCandleTime == null) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [period, lastCandleTime])
+  const remainingMs =
+    period && lastCandleTime != null
+      ? lastCandleTime * 1000 + PERIOD_MS[period] - now
+      : null
   const empty = stats.price === null && stats.fundingRate === null && stats.openInterest === null && !live
   if (empty) return null
   const changeColor = (stats.changePct ?? 0) >= 0 ? 'var(--up)' : 'var(--down)'
@@ -114,6 +133,13 @@ export function StatsBar({ stats, live }: StatsBarProps) {
       {stats.markPrice !== null && (
         <Item label={t('stats.markPrice')}>
           <span style={{ color: 'var(--text-dim)' }}>{fmtPrice(stats.markPrice)}</span>
+        </Item>
+      )}
+      {remainingMs != null && (
+        <Item label={t('stats.countdown')}>
+          <span data-testid="period-countdown" style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+            {formatRemaining(remainingMs)}
+          </span>
         </Item>
       )}
     </div>
