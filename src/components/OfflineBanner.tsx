@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 /** 网络在线/离线状态提示条 */
-export function useOnlineStatus(): boolean {
+function useOnlineStatus(): boolean {
   const [online, setOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
   useEffect(() => {
     const on = () => setOnline(true)

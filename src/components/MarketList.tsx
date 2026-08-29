@@ -1,15 +1,10 @@
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import type { TickerRow } from '../data/binance/rest'
 
 /** 价格格式化：≥1000 两位小数、≥1 四位、否则六位（与行情信息条一致） */
-export function fmtPrice(v: number): string {
+function fmtPrice(v: number): string {
   return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
-}
-
-/** 成交额缩写：B/M 单位 */
-export function fmtVolume(v: number): string {
-  return v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v.toFixed(0)
 }
 
 const COLS: { key: TickerSortKey; labelKey: 'pair' | 'lastPrice' | 'change24h'; align: 'left' | 'right' }[] = [

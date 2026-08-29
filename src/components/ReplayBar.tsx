@@ -1,6 +1,7 @@
 import type { ReplayState } from '../replay/engine'
 import { REPLAY_SPEEDS } from '../replay/engine'
-import { useI18n, localeFor } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import { localeFor } from '../i18n/messages'
 
 interface ReplayBarProps {
   replay: ReplayState

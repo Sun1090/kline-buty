@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PriceAlert } from '../alerts/engine'
 import { createAlert, shouldTrigger } from '../alerts/engine'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 const STORAGE_KEY = 'kline-buty:alerts'
 const HISTORY_KEY = 'kline-buty:alertHistory'

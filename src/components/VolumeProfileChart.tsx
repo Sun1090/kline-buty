@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Candle } from '../chart/types'
 import { computeVolumeProfile, pointOfControl } from '../volumeProfile/calc'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface VolumeProfileChartProps {
   symbol: string

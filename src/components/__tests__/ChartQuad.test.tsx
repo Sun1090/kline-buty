@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, cleanup } from '@testing-library/react'
-import { useChartSync } from '../ChartQuad'
+import { useChartSync } from '../../hooks/useChartSync'
 
 beforeEach(() => {})
 

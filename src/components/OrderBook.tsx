@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { orderBookRows, type OrderBookRow } from '../depth/orderbook'
 import { fmtCompact } from '../depth/format'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import type { OrderSide } from '../trade/order'
 
 interface OrderBookProps {

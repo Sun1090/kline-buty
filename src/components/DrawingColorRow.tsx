@@ -1,4 +1,4 @@
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { TEXT_COLOR_OPTIONS } from '../drawings/logic'
 
 /** 新建画线默认颜色偏好色板（桌面/移动端画线面板共用；'' = 跟随主题） */

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Drawing } from '../drawings/logic'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
 
 interface DrawingLayersProps {

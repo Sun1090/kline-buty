@@ -1,5 +1,5 @@
 import { COLOR_PRESETS, type ColorPresetId } from '../theme'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface ThemePickerProps {
   value: ColorPresetId

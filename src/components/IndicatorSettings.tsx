@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { IndicatorParams } from '../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from './ChartView'
-import { useI18n, type TFunction } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import type { TFunction } from '../i18n/translate'
 
 interface Field {
   key: keyof IndicatorParams

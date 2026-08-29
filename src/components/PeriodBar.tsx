@@ -1,5 +1,6 @@
 import { PERIODS, type Period } from '../chart/types'
-import { useI18n, type MessageKey } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import type { MessageKey } from '../i18n/messages'
 
 interface PeriodBarProps {
   value: Period
