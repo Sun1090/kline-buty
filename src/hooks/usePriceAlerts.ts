@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PriceAlert } from '../alerts/engine'
 import { createAlert, shouldTrigger } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
+import { usePersistedState } from './usePersistedState'
 
 const STORAGE_KEY = 'kline-buty:alerts'
 const HISTORY_KEY = 'kline-buty:alertHistory'
@@ -30,6 +31,9 @@ export interface AlertsApi {
   removeAlert: (id: string) => void
   resetAlert: (id: string) => void
   requestPermission: () => Promise<NotificationPermissionState>
+  /** 触发提示音开关（持久化） */
+  soundEnabled: boolean
+  setSoundEnabled: (v: boolean) => void
   /** 触发历史（新记录在前，上限 ALERT_HISTORY_MAX） */
   history: AlertTriggerEvent[]
   clearHistory: () => void
@@ -85,6 +89,7 @@ export function usePriceAlerts(
   latestPrice: { symbol: string; price: number } | null,
 ): AlertsApi {
   const { t } = useI18n()
+  const [soundEnabled, setSoundEnabled] = usePersistedState<boolean>('alertSound', true)
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
   const [history, setHistory] = useState<AlertTriggerEvent[]>(loadHistory)
   const [permission, setPermission] = useState<NotificationPermissionState>(() =>
@@ -131,6 +136,8 @@ export function usePriceAlerts(
   persistRef.current = persist
   const historyRef = useRef(history)
   historyRef.current = history
+  const soundOnRef = useRef(soundEnabled)
+  soundOnRef.current = soundEnabled
   const appendHistory = useCallback((events: AlertTriggerEvent[]) => {
     setHistory((prev) => {
       const next = [...events, ...prev].slice(0, ALERT_HISTORY_MAX)
@@ -173,7 +180,7 @@ export function usePriceAlerts(
         /* 通知失败不阻塞 */
       }
     }
-    playAlertBeep()
+    if (soundOnRef.current) playAlertBeep()
     const triggeredIds = new Set(due.map((a) => a.id))
     persistRef.current(
       alertsRef.current.map((a) => (triggeredIds.has(a.id) ? { ...a, triggered: true } : a)),
@@ -190,5 +197,5 @@ export function usePriceAlerts(
     )
   }, [latestPrice, permission, t, appendHistory])
 
-  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, history, clearHistory }
+  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, history, clearHistory }
 }

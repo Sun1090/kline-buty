@@ -15,6 +15,8 @@ function makeApi(overrides: Partial<AlertsApi> = {}): AlertsApi {
     addAlert: vi.fn(),
     removeAlert: vi.fn(),
     resetAlert: vi.fn(),
+    soundEnabled: true,
+    setSoundEnabled: vi.fn(),
     history: [],
     clearHistory: vi.fn(),
     requestPermission: vi.fn(async () => 'granted' as const),
