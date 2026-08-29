@@ -78,6 +78,18 @@ describe('SymbolPicker', () => {
     })
   })
 
+  it('开合状态经 onOpenChange 外报（供顶栏纳入 Esc 层进链路）', async () => {
+    const onOpenChange = vi.fn()
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} onOpenChange={onOpenChange} />)
+    fireEvent.click(screen.getByRole('button'))
+    await screen.findByPlaceholderText(/搜索|Search/)
+    expect(onOpenChange).toHaveBeenLastCalledWith(true)
+    fireEvent.keyDown(screen.getByPlaceholderText(/搜索|Search/), { key: 'Escape' })
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenLastCalledWith(false)
+    })
+  })
+
   it('点击外部关闭下拉', async () => {
     const { container } = render(
       <div>

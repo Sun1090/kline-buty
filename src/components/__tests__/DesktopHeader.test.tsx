@@ -140,4 +140,20 @@ describe('DesktopHeader（桌面顶栏）', () => {
       window.removeEventListener('keydown', appEscSpy, true)
     }
   })
+
+  it('escChainActive（App 更高层打开）时弹层不劫持 Esc，让路给全局链路', () => {
+    setup({ escChainActive: true })
+    fireEvent.click(screen.getByTestId('drawing-toggle'))
+    expect(screen.getByTestId('desktop-drawing-panel')).toBeDefined()
+    const appEscSpy = vi.fn()
+    window.addEventListener('keydown', appEscSpy)
+    try {
+      fireEvent.keyDown(window, { key: 'Escape' })
+      // 弹层保持打开：Esc 归 App 全局链路处理（快捷键浮层/画线进度等更高层）
+      expect(screen.queryByTestId('desktop-drawing-panel')).not.toBeNull()
+      expect(appEscSpy).toHaveBeenCalled()
+    } finally {
+      window.removeEventListener('keydown', appEscSpy)
+    }
+  })
 })
