@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { useTickerList, type TickerSortKey } from '../hooks/useTickerList'
+import { useFavorites } from '../hooks/useFavorites'
 import type { TickerRow } from '../data/binance/rest'
 
 /** 价格格式化：≥1000 两位小数、≥1 四位、否则六位（与行情信息条一致） */
@@ -76,13 +77,19 @@ interface MarketListProps {
 export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: MarketListProps) {
   const { t } = useI18n()
   const { rows, loading, error, sortKey, sortDir, setSortKey, refresh } = useTickerList()
+  const { favorites } = useFavorites()
   const [query, setQuery] = useState('')
-  // 搜索过滤：大小写不敏感的子串匹配（作用于排序后的全量行，与排序共存）
+  const [view, setView] = useState<'all' | 'favorites'>('all')
+  // 视图过滤（自选/全部）与搜索过滤串联：先视图后搜索，排序由 hook 内排序函数处理
+  const scoped = useMemo(
+    () => (view === 'favorites' ? rows.filter((r) => favorites.includes(r.symbol)) : rows),
+    [rows, view, favorites],
+  )
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((r) => r.symbol.toLowerCase().includes(q))
-  }, [rows, query])
+    if (!q) return scoped
+    return scoped.filter((r) => r.symbol.toLowerCase().includes(q))
+  }, [scoped, query])
 
   // 折叠态：桌面窄条（仅按钮），点击展开
   if (!open && !overlay) {
@@ -203,6 +210,33 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           }}
         />
       </div>
+      <div style={{ display: 'flex', gap: 6, padding: '4px 8px', flexShrink: 0 }}>
+        {(
+          [
+            ['all', 'marketList.tabAll', 'market-tab-all'],
+            ['favorites', 'marketList.tabFavorites', 'market-tab-favorites'],
+          ] as const
+        ).map(([key, labelKey, testId]) => (
+          <button
+            key={key}
+            data-testid={testId}
+            onClick={() => setView(key)}
+            aria-pressed={view === key}
+            style={{
+              border: 'none',
+              background: view === key ? 'rgba(41,98,255,0.15)' : 'transparent',
+              color: view === key ? 'var(--accent)' : 'var(--text-dim)',
+              fontSize: 12,
+              cursor: 'pointer',
+              padding: '2px 8px',
+              borderRadius: 10,
+            }}
+          >
+            {t(labelKey)}
+            {key === 'favorites' && favorites.length > 0 ? ` ${favorites.length}` : ''}
+          </button>
+        ))}
+      </div>
       <div
         style={{
           display: 'flex',
@@ -258,6 +292,10 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
         ) : rows.length === 0 ? (
           <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
             {error ? t('marketList.empty') : t('marketList.loading')}
+          </div>
+        ) : view === 'favorites' && scoped.length === 0 ? (
+          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
+            {t('marketList.favoritesEmpty')}
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
