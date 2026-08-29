@@ -21,16 +21,16 @@
   },
   "dependencies": {
     "lightweight-charts": "^5.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.3",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^10.9.1",
     "eslint-plugin-react-hooks": "^7.1.1",
