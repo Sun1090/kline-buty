@@ -86,6 +86,8 @@ export interface MobileHeaderProps {
   onToggleFullscreen: () => void
   shortcutsActive: boolean
   onToggleShortcuts: () => void
+  /** App 全局 Esc 链路上有更高层（面板/浮层/画线进度等）打开时为 true：顶栏弹层让路，不劫持 Esc */
+  escChainActive?: boolean
   langLabel: string
   onCycleLang: () => void
   copied: boolean
@@ -138,7 +140,7 @@ export function MobileHeader(props: MobileHeaderProps) {
 
   // 弹层打开时 Esc 收起（stopImmediatePropagation 阻止同 window 上 App 全局 Esc 链路，一次只关一层）
   useEffect(() => {
-    if (menu === null) return
+    if (menu === null || props.escChainActive) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.stopImmediatePropagation()
@@ -147,7 +149,7 @@ export function MobileHeader(props: MobileHeaderProps) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-  }, [menu])
+  }, [menu, props.escChainActive])
 
   const toggleMenu = (m: MenuId) => setMenu((cur) => (cur === m ? null : m))
   // 选中即收面板

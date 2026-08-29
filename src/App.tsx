@@ -479,12 +479,23 @@ export function App() {
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
   const sidePanelOpen = depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen
   const statusText = error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)
+  // 全局 Esc 链路上存在比顶栏弹层更高的层（与 keydown 'escape' 分支优先级一致）：此时顶栏不劫持 Esc
+  const escChainActive =
+    settingsOpen ||
+    alertsOpen ||
+    positionOpen ||
+    shortcutsOpen ||
+    editingTextId !== null ||
+    drawingTool !== 'none' ||
+    selectedDrawingId !== null ||
+    replay !== null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? 'min(380px, 88vw)' : '0px' }}>
       {isMobile ? (
         <MobileHeader
           headerRef={headerRef}
+          escChainActive={escChainActive}
           symbol={symbol}
           onSymbol={setSymbol}
           statusText={statusText}
@@ -554,6 +565,7 @@ export function App() {
       ) : (
         <DesktopHeader
           headerRef={headerRef}
+          escChainActive={escChainActive}
           symbol={symbol}
           onSymbol={setSymbol}
           statusText={statusText}

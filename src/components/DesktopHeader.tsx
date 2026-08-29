@@ -156,6 +156,8 @@ function RowButton({
 export function DesktopHeader(props: DesktopHeaderProps) {
   const { t } = useI18n()
   const [menu, setMenu] = useState<MenuId>(null)
+  // 交易对搜索下拉是否打开：它是顶栏最上层，Esc 层进链路里先于菜单关闭
+  const [searchOpen, setSearchOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   // 点击弹层外部 → 收起
@@ -172,9 +174,10 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     }
   }, [])
 
-  // 弹层打开时 Esc 收起（stopImmediatePropagation 阻止同 window 上 App 全局 Esc 链路，一次只关一层）
+  // 弹层打开时 Esc 收起（stopImmediatePropagation 阻止同 window 上 App 全局 Esc 链路，一次只关一层）。
+  // 搜索下拉或 App 更高层打开时不劫持：让 Esc 冒泡给真正的顶层（搜索输入框自身处理器 / App 全局链路）
   useEffect(() => {
-    if (menu === null) return
+    if (menu === null || searchOpen || props.escChainActive) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.stopImmediatePropagation()
@@ -183,7 +186,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-  }, [menu])
+  }, [menu, searchOpen, props.escChainActive])
 
   const toggleMenu = (m: Exclude<MenuId, null>) => setMenu((cur) => (cur === m ? null : m))
 
@@ -235,6 +238,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
       >
         <SymbolPicker
           value={props.symbol}
+          onOpenChange={setSearchOpen}
           onChange={(s) => {
             setMenu(null)
             props.onSymbol(s)

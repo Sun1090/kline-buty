@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
 import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
 import { useFavorites } from '../hooks/useFavorites'
@@ -15,6 +15,8 @@ function fmtPrice(v: number) {
 interface SymbolPickerProps {
   value: string
   onChange: (s: string) => void
+  /** 开合状态外报：让宿主（顶栏）把搜索下拉纳入 Esc 层进链路 */
+  onOpenChange?: (open: boolean) => void
 }
 
 function StarButton({
@@ -91,9 +93,16 @@ function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, st
   )
 }
 
-export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
+export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProps) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
+  const updateOpen = useCallback(
+    (v: boolean) => {
+      setOpen(v)
+      onOpenChange?.(v)
+    },
+    [onOpenChange],
+  )
   const [query, setQuery] = useState('')
   const [menuPos, setMenuPos] = useState<{ left: number; top: number } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -105,11 +114,11 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) updateOpen(false)
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
-  }, [])
+  }, [updateOpen])
 
   // 键盘快捷键 Ctrl/Cmd+K 或 / → 打开搜索并聚焦（App 派发 window 事件）
   useEffect(() => {
@@ -119,12 +128,12 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
       if (r) {
         setMenuPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 328)), top: r.bottom + 6 })
       }
-      setOpen(true)
+      updateOpen(true)
       requestAnimationFrame(() => searchRef.current?.focus())
     }
     window.addEventListener('open-symbol-picker', onOpen)
     return () => window.removeEventListener('open-symbol-picker', onOpen)
-  }, [])
+  }, [updateOpen])
 
   useEffect(() => {
     if (open) searchRef.current?.focus()
@@ -132,16 +141,16 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
 
   const select = (s: string) => {
     onChange(s)
-    setOpen(false)
+    updateOpen(false)
   }
 
   /** 打开下拉：fixed 定位，按按钮位置动态取 left，保证 320px 面板不超出视口 */
   const toggleOpen = () => {
     if (open) {
-      setOpen(false)
+      updateOpen(false)
       return
     }
-    setOpen(true)
+    updateOpen(true)
     const r = rootRef.current?.getBoundingClientRect()
     if (r) {
       const left = Math.min(r.left, window.innerWidth - 328)
@@ -192,7 +201,7 @@ export function SymbolPicker({ value, onChange }: SymbolPickerProps) {
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 e.stopPropagation()
-                setOpen(false)
+                updateOpen(false)
               }
             }}
             placeholder={t('symbol.searchPlaceholder')}
