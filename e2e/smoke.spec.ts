@@ -2445,12 +2445,19 @@ test.describe('K 线应用冒烟', () => {
       .getByRole('button', { name: 'MA', exact: true })
       .evaluate((el) => getComputedStyle(el).backgroundColor)
     expect(maBg).toBe('rgb(41, 98, 255)')
-    await page.keyboard.press('Escape')
-    await expect(page.getByPlaceholder('搜索交易对')).toHaveCount(0)
+    // Esc 关搜索：极低概率按键未送达聚焦输入框（快照示 input active 但浮层未关），
+    // 用 toPass 重按直到关闭；搜索开着时 Esc 走输入框处理器，不会误伤 App 链路
+    await expect(async () => {
+      await page.keyboard.press('Escape')
+      await expect(page.getByPlaceholder('搜索交易对')).toHaveCount(0, { timeout: 500 })
+    }).toPass({ timeout: 10_000 })
     // 独立 / 也打开搜索
     await page.keyboard.press('/')
     await expect(page.getByPlaceholder('搜索交易对')).toBeVisible({ timeout: 5000 })
-    await page.keyboard.press('Escape')
+    await expect(async () => {
+      await page.keyboard.press('Escape')
+      await expect(page.getByPlaceholder('搜索交易对')).toHaveCount(0, { timeout: 500 })
+    }).toPass({ timeout: 10_000 })
     // 布局 2/3/1（布局按钮在「更多」折叠内）
     await page.keyboard.press('2')
     await openMore(page)
@@ -2471,11 +2478,13 @@ test.describe('K 线应用冒烟', () => {
       'background-color',
       'rgb(41, 98, 255)',
     )
-    // ? → 帮助浮层；Esc 关闭
+    // ? → 帮助浮层；Esc 关闭（同样 toPass 重按防吞键）
     await page.keyboard.press('?')
     await expect(page.getByTestId('shortcuts-help')).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByTestId('shortcuts-help')).toHaveCount(0)
+    await expect(async () => {
+      await page.keyboard.press('Escape')
+      await expect(page.getByTestId('shortcuts-help')).toHaveCount(0, { timeout: 500 })
+    }).toPass({ timeout: 10_000 })
     // F → 进入全屏再退出
     await page.keyboard.press('f')
     await expect
@@ -4451,11 +4460,13 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     })
     expect(saved?.text).toBe('关键位备注')
 
-    // 刷新后画线恢复为未选中态；点击便签本体重新选中，再走桌面删除链路
-    const noteCenter = await findDrawnLineCenter(page)
-    expect(noteCenter).not.toBeNull()
-    await page.mouse.click(noteCenter!.x, noteCenter!.y)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    // 刷新后画线恢复为未选中态；点击便签本体重新选中，再走桌面删除链路。
+    // 单次点击可能落在 overlay 完全可交互前，重试点击直到选中态出现
+    await expect(async () => {
+      const c = await findDrawnLineCenter(page)
+      if (c) await page.mouse.click(c.x, c.y)
+      await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 1000 })
+    }).toPass({ timeout: 15_000 })
     await page.getByRole('button', { name: '删除' }).click()
     await expect
       .poll(
