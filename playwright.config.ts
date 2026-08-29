@@ -15,6 +15,7 @@ export default defineConfig({
     command: 'npm run build && node scripts/serve-static.mjs 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: false,
-    timeout: 120_000,
+    // tsc+vite+docs:build 总时长已随知识库扩容到 ~2 分钟（docs:build 单项 ~100s），120s 会把慢机上的构建误判为启动失败
+    timeout: 300_000,
   },
 })
