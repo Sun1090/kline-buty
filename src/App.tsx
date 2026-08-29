@@ -74,6 +74,7 @@ export function App() {
   const [period, setPeriod] = usePersistedState<Period>('period', '1m')
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
   const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
+  const [timezoneMode, setTimezoneMode] = usePersistedState<'utc' | 'local'>('timezone', 'utc')
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
@@ -522,6 +523,8 @@ export function App() {
           onChartType={setChartType}
           priceScaleMode={priceScaleMode}
           onToggleScale={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
+          timezoneMode={timezoneMode}
+          onToggleTimezone={() => setTimezoneMode((m) => (m === 'utc' ? 'local' : 'utc'))}
           mainIndicator={mainIndicator}
           onMainIndicator={setMainIndicator}
           subIndicator={subIndicator}
@@ -593,6 +596,8 @@ export function App() {
           onChartType={setChartType}
           priceScaleMode={priceScaleMode}
           onToggleScale={() => setPriceScaleMode((m) => (m === 'log' ? 'linear' : 'log'))}
+          timezoneMode={timezoneMode}
+          onToggleTimezone={() => setTimezoneMode((m) => (m === 'utc' ? 'local' : 'utc'))}
           mainIndicator={mainIndicator}
           onMainIndicator={setMainIndicator}
           subIndicator={subIndicator}
@@ -748,6 +753,7 @@ export function App() {
             period={period}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
+          timezoneMode={timezoneMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -763,6 +769,7 @@ export function App() {
             period={period}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
+          timezoneMode={timezoneMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -778,6 +785,7 @@ export function App() {
             showWatermark={showWatermark}
             chartType={chartType}
             priceScaleMode={priceScaleMode}
+          timezoneMode={timezoneMode}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

@@ -34,6 +34,8 @@ export interface MobileHeaderProps {
   chartType: ChartType
   onChartType: (t: ChartType) => void
   priceScaleMode: 'linear' | 'log'
+  timezoneMode: 'utc' | 'local'
+  onToggleTimezone: () => void
   onToggleScale: () => void
   mainIndicator: MainIndicatorKind
   onMainIndicator: (m: MainIndicatorKind) => void
@@ -207,6 +209,12 @@ export function MobileHeader(props: MobileHeaderProps) {
       active: props.priceScaleMode === 'log',
       onToggle: props.onToggleScale,
       title: t('scale.title'),
+    },
+    {
+      label: props.timezoneMode === 'local' ? t('tz.local') : t('tz.utc'),
+      active: props.timezoneMode === 'local',
+      onToggle: props.onToggleTimezone,
+      title: t('tz.title'),
     },
   ]
 

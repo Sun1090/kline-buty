@@ -565,6 +565,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               {props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}
             </PanelButton>
             <PanelButton
+              onClick={props.onToggleTimezone}
+              title={t('tz.title')}
+              ariaLabel={`${t('tz.title')}: ${props.timezoneMode === 'local' ? t('tz.local') : t('tz.utc')}`}
+              active={props.timezoneMode === 'local'}
+              testId="tz-toggle"
+            >
+              {props.timezoneMode === 'local' ? t('tz.local') : t('tz.utc')}
+            </PanelButton>
+            <PanelButton
               onClick={props.onToggleTheme}
               title={t('theme.switchTitle')}
               ariaLabel={`${t('theme.switchTitle')}: ${(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}

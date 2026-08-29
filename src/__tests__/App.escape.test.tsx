@@ -42,6 +42,7 @@ vi.mock('../chart/adapter', () => ({
     setPeriodSeconds() {}
     setWatermark() {}
     setPriceScaleMode() {}
+    setTimezoneMode() {}
     fitContent() {}
     scrollToRealTime() {}
     subscribeCrosshairMove() {

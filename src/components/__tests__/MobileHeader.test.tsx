@@ -43,6 +43,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     period: '1m' as Period,
     chartType: 'candlestick' as ChartType,
     priceScaleMode: 'linear',
+    timezoneMode: 'utc' as const,
+    onToggleTimezone: vi.fn(),
     mainIndicator: 'ma' as MainIndicatorKind,
     subIndicator: 'volume' as SubIndicatorKind,
     drawingTool: 'none' as DrawingTool,
