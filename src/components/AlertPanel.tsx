@@ -22,7 +22,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   const { t } = useI18n()
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
-  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, history, clearHistory } = alertsApi
+  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, history, clearHistory } = alertsApi
 
   const priceNum = Number(price)
   const valid = Number.isFinite(priceNum) && priceNum > 0
@@ -49,6 +49,23 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 600 }}>{t('alert.title', { symbol: symbol.replace('USDT', '/USDT') })}</span>
+        <button
+          data-testid="alert-sound-toggle"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          aria-pressed={soundEnabled}
+          title={t('alert.sound')}
+          aria-label={t('alert.sound')}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontSize: 13,
+            marginLeft: 6,
+            color: soundEnabled ? 'var(--up)' : 'var(--text-faint)',
+          }}
+        >
+          {soundEnabled ? '🔔' : '🔕'}
+        </button>
         {permission === 'granted' ? (
           <span style={{ color: 'var(--up)', fontSize: 11 }}>{t('alert.granted')}</span>
         ) : permission === 'unsupported' ? (

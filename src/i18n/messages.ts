@@ -311,6 +311,7 @@ export const zh = {
   },
   alert: {
     history: '触发历史',
+    sound: '触发提示音',
     clearHistory: '清空记录',
     title: '价格提醒 · {symbol}',
     granted: '通知已开启',
@@ -706,6 +707,7 @@ export const en: Messages = {
   },
   alert: {
     history: 'Trigger history',
+    sound: 'Alert sound',
     clearHistory: 'Clear history',
     title: 'Price alert · {symbol}',
     granted: 'Notifications on',
@@ -1099,6 +1101,7 @@ export const ja: Messages = {
   },
   alert: {
     history: '発火履歴',
+    sound: 'アラート音',
     clearHistory: '履歴を削除',
     title: '価格アラート · {symbol}',
     granted: '通知オン',
@@ -1493,6 +1496,7 @@ export const ko: Messages = {
   },
   alert: {
     history: '발동 기록',
+    sound: '알림 소리',
     clearHistory: '기록 지우기',
     title: '가격 알림 · {symbol}',
     granted: '알림 켜짐',
@@ -1898,6 +1902,7 @@ export const es: Messages = {
   },
   alert: {
     history: 'Historial de alertas',
+    sound: 'Sonido de alerta',
     clearHistory: 'Borrar historial',
     title: 'Alerta de precio · {symbol}',
     granted: 'Notificaciones activadas',
