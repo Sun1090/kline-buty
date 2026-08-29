@@ -57,6 +57,8 @@ export interface MobileHeaderProps {
   onToggleDrawingLocked: (id: string) => void
   onDeleteDrawing: (id: string) => void
   onClearDrawings: () => void
+  /** 批量显示/隐藏当前交易对全部画线 */
+  onSetAllDrawingsHidden: (hidden: boolean) => void
   layout: 'single' | 'pair' | 'quad'
   onCycleLayout: () => void
   themeMode: ThemeMode
@@ -500,6 +502,7 @@ export function MobileHeader(props: MobileHeaderProps) {
               onToggleLocked={props.onToggleDrawingLocked}
               onDelete={props.onDeleteDrawing}
               onClearAll={props.onClearDrawings}
+            onSetAllHidden={props.onSetAllDrawingsHidden}
               onBack={() => setMenu('drawing')}
             />
           )}

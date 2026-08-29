@@ -328,6 +328,12 @@ export function App() {
   }
 
   // 图层管理：按 id 切换隐藏/锁定、删除单条、清空当前交易对全部画线
+  const setAllDrawingsHidden = (hidden: boolean) => {
+    setDrawingsBySymbol((prev) => ({
+      ...prev,
+      [symbol]: (prev[symbol] ?? []).map((d) => ({ ...d, hidden })),
+    }))
+  }
   const toggleHidden = (id: string) => {
     setDrawingsBySymbol((prev) => ({
       ...prev,
@@ -543,6 +549,7 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
+          onSetAllDrawingsHidden={setAllDrawingsHidden}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -616,6 +623,7 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
+          onSetAllDrawingsHidden={setAllDrawingsHidden}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}

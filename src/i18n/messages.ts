@@ -208,6 +208,8 @@ export const zh = {
     lock: '锁定',
     unlock: '解锁',
     clearAll: '全部清除',
+    showAll: '全部显示',
+    hideAll: '全部隐藏',
     empty: '暂无画线',
   },
   symbol: {
@@ -607,6 +609,8 @@ export const en: Messages = {
     lock: 'Lock',
     unlock: 'Unlock',
     clearAll: 'Clear all',
+    showAll: 'Show all',
+    hideAll: 'Hide all',
     empty: 'No drawings',
   },
   symbol: {
@@ -1004,6 +1008,8 @@ export const ja: Messages = {
     lock: 'ロック',
     unlock: 'ロック解除',
     clearAll: 'すべて削除',
+    showAll: 'すべて表示',
+    hideAll: 'すべて非表示',
     empty: '画線なし',
   },
   symbol: {
@@ -1402,6 +1408,8 @@ export const ko: Messages = {
     lock: '잠금',
     unlock: '잠금 해제',
     clearAll: '전체 삭제',
+    showAll: '모두 표시',
+    hideAll: '모두 숨기기',
     empty: '도면 없음',
   },
   symbol: {
@@ -1811,6 +1819,8 @@ export const es: Messages = {
     lock: 'Bloquear',
     unlock: 'Desbloquear',
     clearAll: 'Borrar todo',
+    showAll: 'Mostrar todo',
+    hideAll: 'Ocultar todo',
     empty: 'Sin dibujos',
   },
   symbol: {

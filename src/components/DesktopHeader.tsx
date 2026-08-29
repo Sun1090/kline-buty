@@ -455,6 +455,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             onToggleLocked={props.onToggleDrawingLocked}
             onDelete={props.onDeleteDrawing}
             onClearAll={props.onClearDrawings}
+            onSetAllHidden={props.onSetAllDrawingsHidden}
             onBack={() => setMenu('drawing')}
           />
         </div>

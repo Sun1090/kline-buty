@@ -63,6 +63,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onToggleDrawingLocked: vi.fn(),
     onDeleteDrawing: vi.fn(),
     onClearDrawings: vi.fn(),
+    onSetAllDrawingsHidden: vi.fn(),
     layout: 'single' as const,
     themeMode: 'dark' as const,
     colorPreset: 'classic' as const,
