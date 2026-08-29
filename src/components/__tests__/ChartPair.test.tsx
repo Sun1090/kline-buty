@@ -52,6 +52,7 @@ vi.mock('../../chart/adapter', () => {
     setPeriodSeconds = vi.fn()
     setPriceScaleMode = vi.fn()
     setTimezoneMode = vi.fn()
+    setSnapEnabled = vi.fn()
     fitContent = vi.fn()
     scrollToRealTime = vi.fn()
     constructor() {

@@ -59,6 +59,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onDeleteDrawing: vi.fn(),
     onClearDrawings: vi.fn(),
     onSetAllDrawingsHidden: vi.fn(),
+    drawingSnap: false,
+    onToggleDrawingSnap: vi.fn(),
     layout: 'single',
     themeMode: 'dark',
     colorPreset: 'classic',

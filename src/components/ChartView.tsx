@@ -49,6 +49,8 @@ interface ChartViewProps {
   priceScaleMode?: 'linear' | 'log'
   /** 时间轴时区（默认 utc，与交易所一致） */
   timezoneMode?: 'utc' | 'local'
+  /** 画线锚点吸附 K 线 OHLC（默认关） */
+  drawingSnap?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -108,6 +110,7 @@ export function ChartView({
   chartType,
   priceScaleMode = 'linear',
   timezoneMode = 'utc',
+  drawingSnap = false,
   mainIndicator,
   subIndicator,
   indicatorParams,
@@ -316,6 +319,10 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setTimezoneMode(timezoneMode)
   }, [timezoneMode])
+  // T18：画线吸附开关
+  useEffect(() => {
+    apiRef.current?.setSnapEnabled(drawingSnap)
+  }, [drawingSnap])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {

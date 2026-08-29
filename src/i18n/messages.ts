@@ -135,6 +135,9 @@ export const zh = {
     exit: '退出回放',
   },
   drawing: {
+    snap: '吸附 K 线',
+    snapOn: '开',
+    snapOff: '关',
     group: '画线',
     mouse: '鼠标',
     horizontal: '水平线',
@@ -536,6 +539,9 @@ export const en: Messages = {
     exit: 'Exit replay',
   },
   drawing: {
+    snap: 'Snap to candles',
+    snapOn: 'On',
+    snapOff: 'Off',
     group: 'Draw',
     mouse: 'Mouse',
     horizontal: 'Horizontal',
@@ -935,6 +941,9 @@ export const ja: Messages = {
     exit: 'リプレイ終了',
   },
   drawing: {
+    snap: 'ローソクにスナップ',
+    snapOn: 'オン',
+    snapOff: 'オフ',
     group: '描画',
     mouse: 'マウス',
     horizontal: '水平線',
@@ -1335,6 +1344,9 @@ export const ko: Messages = {
     exit: '다시보기 종료',
   },
   drawing: {
+    snap: '캔들 스냅',
+    snapOn: '켜짐',
+    snapOff: '꺼짐',
     group: '그리기',
     mouse: '마우스',
     horizontal: '수평선',
@@ -1746,6 +1758,9 @@ export const es: Messages = {
     exit: 'Salir de la reproducción',
   },
   drawing: {
+    snap: 'Ajustar a velas',
+    snapOn: 'Sí',
+    snapOff: 'No',
     group: 'Dibujar',
     mouse: 'Ratón',
     horizontal: 'Horizontal',

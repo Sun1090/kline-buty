@@ -425,6 +425,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             }}
           />
           <DrawingColorRow testIdPrefix="desktop-drawing" value={props.drawingColor} onChange={props.onDrawingColor} />
+          <PanelButton
+            onClick={props.onToggleDrawingSnap}
+            title={t('drawing.snap')}
+            ariaLabel={`${t('drawing.snap')}: ${props.drawingSnap ? t('drawing.snapOn') : t('drawing.snapOff')}`}
+            active={props.drawingSnap}
+            testId="drawing-snap-toggle"
+          >
+            {t('drawing.snap')}
+          </PanelButton>
           <button
             data-testid="drawing-layers-open"
             onClick={() => setMenu('layers')}

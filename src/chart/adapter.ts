@@ -64,6 +64,7 @@ import {
   type Point,
   type SegmentLine,
 } from '../drawings/logic'
+import { snapToCandle } from '../drawings/snap'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
 
@@ -229,6 +230,8 @@ export interface ChartApi {
   setPriceScaleMode(mode: 'linear' | 'log'): void
   /** 时间轴时区：utc（默认，交易所基准）或 local（浏览器本地） */
   setTimezoneMode(mode: 'utc' | 'local'): void
+  /** 画线锚点吸附 K 线 OHLC 开关 */
+  setSnapEnabled(on: boolean): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -336,6 +339,7 @@ export class LightweightChartAdapter implements ChartApi {
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
   private crosshairTime: number | null = null
+  private snapEnabled = false
   private currentType: ChartType = 'candlestick'
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
@@ -579,6 +583,16 @@ export class LightweightChartAdapter implements ChartApi {
 
   setPeriodSeconds(sec: number) {
     this.periodSeconds = sec
+  }
+
+  setSnapEnabled(on: boolean) {
+    this.snapEnabled = on
+  }
+
+  /** 吸附包装：开关开启时把 (time, price) 吸附到最近 K 线的 OHLC */
+  private snapPoint(time: number, price: number): { time: number; price: number } {
+    if (!this.snapEnabled) return { time, price }
+    return snapToCandle(time, price, this.lastCandles)
   }
 
   setTimezoneMode(mode: 'utc' | 'local') {
@@ -2199,7 +2213,7 @@ export class LightweightChartAdapter implements ChartApi {
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
-        this.drawingDown = { time: Number(time), price: Number(price) }
+        this.drawingDown = this.snapPoint(Number(time), Number(price))
         this.drawingPreview = this.drawingDown
         this.container.setPointerCapture?.(e.pointerId)
         this.setPanEnabled(false)
@@ -2285,7 +2299,7 @@ export class LightweightChartAdapter implements ChartApi {
       const time = this.chart.timeScale().coordinateToTime(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
-        this.drawingPreview = { time: Number(time), price: Number(price) }
+        this.drawingPreview = this.snapPoint(Number(time), Number(price))
         this.draw()
       }
       return
@@ -2297,12 +2311,10 @@ export class LightweightChartAdapter implements ChartApi {
       const price = this.mainSeries.coordinateToPrice(y)
       const orig = this.dragEdit.orig
       if (time !== null && price !== null && orig) {
+        const snapped = this.snapPoint(Number(time), Number(price))
         this.dragPreview =
           this.dragEdit.kind === 'anchor'
-            ? moveAnchor(orig, this.dragEdit.anchorIdx ?? 0, {
-                time: Number(time),
-                price: Number(price),
-              })
+            ? moveAnchor(orig, this.dragEdit.anchorIdx ?? 0, snapped)
             : moveDrawing(
                 orig,
                 Number(time) - this.dragEdit.startTime,

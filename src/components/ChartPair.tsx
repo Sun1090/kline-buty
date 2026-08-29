@@ -13,6 +13,7 @@ interface ChartPairProps {
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
+  drawingSnap?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -26,7 +27,7 @@ interface ChartPairProps {
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
@@ -51,7 +52,7 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleM
     setRangeA(r)
   }
 
-  const base = { period, chartType, priceScaleMode, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode, colorPreset, showWatermark }
+  const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
