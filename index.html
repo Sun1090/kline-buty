@@ -54,6 +54,10 @@
       @keyframes tick-flash-up { 0% { background: rgba(38,166,154,0.45); } 100% { background: transparent; } }
       @keyframes tick-flash-down { 0% { background: rgba(239,83,80,0.45); } 100% { background: transparent; } }
       @keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+      /* T10 图表首屏骨架屏：K 线占位条 shimmer（仅 loading 且无数据时显示） */
+      .kb-skeleton { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+      .kb-skeleton span { width: 10px; border-radius: 2px; background: var(--border); animation: kb-shimmer 1.4s ease-in-out infinite; }
+      @keyframes kb-shimmer { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
     </style>
   </head>
   <body>

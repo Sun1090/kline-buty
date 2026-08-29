@@ -649,19 +649,30 @@ export function ChartView({
             position: 'absolute',
             inset: 0,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: 12,
             color: 'var(--text-faint)',
             fontSize: 13,
             zIndex: 4,
             pointerEvents: 'none',
           }}
         >
-          {status === 'loading'
-            ? t('status.loading')
-            : status === 'error'
-              ? t('status.chartError')
-              : t('status.noData')}
+          {status === 'loading' ? (
+            <>
+              <div className="kb-skeleton" aria-hidden="true">
+                {[40, 65, 50, 80, 58, 95, 70, 45, 88, 60, 75, 52, 68, 84, 48].map((h, i) => (
+                  <span key={i} style={{ height: h, animationDelay: `${(i % 5) * 0.18}s` }} />
+                ))}
+              </div>
+              <div>{t('status.loading')}</div>
+            </>
+          ) : status === 'error' ? (
+            t('status.chartError')
+          ) : (
+            t('status.noData')
+          )}
         </div>
       )}
       <button
