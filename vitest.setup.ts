@@ -30,3 +30,21 @@ if (!('ResizeObserver' in globalThis)) {
     configurable: true,
   })
 }
+
+/** jsdom 无 matchMedia 实现（属性存在但非函数；主题自动档监听 prefers-color-scheme 用），默认浅色 */
+if (typeof globalThis.matchMedia !== 'function') {
+  Object.defineProperty(globalThis, 'matchMedia', {
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+    configurable: true,
+    writable: true,
+  })
+}
