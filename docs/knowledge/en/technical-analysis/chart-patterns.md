@@ -116,29 +116,7 @@ Bullish engulfing (at a low)      Bearish engulfing (at a high)
 
 ### 1.5 Long Upper Wick / Long Lower Wick
 
-**Pattern**: A modest body with an abnormally long wick on one side. Long upper wick = upper wick ≥ 2× the body; long lower wick = lower wick ≥ 2× the body.
-
-```text
-Long upper wick (shooting)     Long lower wick (hammer-like)
-      │                       ┌────────┐
-      │   ← long upper wick   │ body   │
-   ┌──┴──┐                    └───┬────┘
-   │ body│                        │
-   └─────┘                         │ ← long lower wick
-```
-
-**Where it appears**: Long upper wicks often appear at the end of rallies; long lower wicks at the end of declines (but the shape itself does not decide the location — location decides the meaning).
-
-**Implication**:
-- Long upper wick at highs: heavy overhead selling pressure; the rally was smashed back (the failed version of the so-called "immortal pointing the way") — bearish.
-- Long lower wick at lows: solid buying support below — bullish (i.e., the hammer).
-- Difference from the hammer/shooting star: the wick ratio and body position are more extreme, but the meaning is the same.
-
-**Confirmation**: The direction of the next day's candle + volume. A long upper wick on expanding volume = real selling pressure; a long upper wick on shrinking volume may be a bear trap.
-
-**Failure scenarios**:
-- Wicks created by "wick-hunt" moves (instantaneous price spikes in extreme conditions) leave false signals.
-- In strong trends, a long upper wick is often simply covered by the next day's bullish candle — late shorts get trapped.
+The non-extreme version of 1.1 (Hammer) and 1.6 (Shooting Star): a modest body with one wick ≥ 2× the body — a long upper wick at highs is bearish (heavy overhead selling pressure), a long lower wick at lows is bullish (solid buying support below); the meaning matches the two extreme patterns, only with a milder wick ratio. Confirmation and failure scenarios are consistent too: the next day's direction + volume; but be extra careful with **wick-hunt moves** — instantaneous price spikes in extreme conditions leave false wicks, and in strong trends a long upper wick is often simply covered by the next day's bullish candle (late shorts get trapped).
 
 ### 1.6 Shooting Star
 
@@ -474,9 +452,9 @@ Breakaway gap → Runaway gap → Exhaustion gap
 5. **Volume confirmation is indispensable.** Without volume, patterns routinely fail outright on illiquid instruments or in thin sessions.
 
 ::: tip 🧭 Patterns answer "maybe an opportunity"; a trading system answers "how to participate"
-**A head and shoulders bottom with a 55% win rate will still wipe you out if there is no stop-loss and no position control.** Patterns only answer "maybe an opportunity"; the [07 · Trading Systems](../trading-system/) chapter answers "how to participate" — treat patterns as entry permits, not entry orders. That is the correct usage.
+**However beautiful a pattern, without a stop-loss and position control it will still wipe you out.** Patterns only answer "maybe an opportunity"; the [07 · Trading Systems](../trading-system/) chapter answers "how to participate" — treat patterns as entry permits, not entry orders. That is the correct usage.
 :::
 
 ::: warning ⚠️ Risk Warning
-**Statistical success rates of patterns run only 50%–65% and depend on volume and location confirmation. No pattern is by itself a reason to enter — confirm your stop-loss level and position size before entering.**
+Pattern recognition depends heavily on subjective judgment; no pattern is by itself a reason to enter — confirm your stop-loss level and position size before entering.
 :::

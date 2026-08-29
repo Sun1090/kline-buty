@@ -279,10 +279,6 @@ China's short-term legends jointly prove that "**fast money has a shelf life**":
 **They all had rules, respected risk, and accepted losses as part of trading; the masters' shared cause of death was — rules broken by their own hands.** Hold these two lines in mind and this article has paid for itself.
 :::
 
-::: tip 💡 What the Masters Share, and How They Died
-Their common ground: **rules, respect for risk, and acceptance that losses are part of trading**. Their common death: **breaking their own rules with their own hands**. Remember these two lines and this article pays for itself.
-:::
-
 ---
 
 ::: warning ⚠️ Risk Warning

@@ -13,7 +13,7 @@ description: "A deep dive into DeFi and the on-chain ecosystem — the concrete 
 
 > **⚠️ Risk Warning**
 >
-> **DeFi's risk level is materially higher than that of centralized exchanges.** A centralized exchange at least has an operating entity, customer service, and compliance constraints (though none of that is absolute safety); once deployed, a DeFi protocol is "no one's responsibility" code: contract bugs, hacks, de-pegs, oracle manipulation, and rug pulls can all mean **principal **<mark>zeroed out</mark>** with no recourse whatsoever**. All rates, APYs, TVL figures, and security-incident amounts here are generic teaching-basis descriptions — **defer to the latest on-chain data/project status**. Before touching DeFi, be sure you can withstand the total loss of your principal.
+> **DeFi's risk level is materially higher than that of centralized exchanges**: once deployed, a protocol is "no one's responsibility" code, and incidents of every kind can mean **principal **<mark>zeroed out</mark>** with no recourse whatsoever**. Before touching DeFi, read the full Risk Warning at the end of this article and be sure you can withstand the total loss of your principal.
 
 ---
 
@@ -61,7 +61,7 @@ description: "A deep dive into DeFi and the on-chain ecosystem — the concrete 
 | **Liquid staking (Lido stETH, etc.)** | Any amount | Deposit ETH into Lido and receive stETH, a token representing "staked ETH" | No operations needed, any size works; stETH trades freely on-chain, **also resolving the "staked-locked, can't liquidate" conflict**; but you bear the protocol's own risk |
 | **CEX staking** | Varies by platform | The exchange stakes on your behalf (per latest products) | The easiest, but your assets sit at the exchange — "not your keys, not your coins" |
 
-- **Annualized common sense**: ETH staking yield has mostly fluctuated in the **3%-5% range** (per latest on-chain data) — **note: the real annualized yield on major-coin staking is nowhere near the "20%, 50% in the ads"; those high figures are either incentive-token emissions (unsustainable) or high-risk assets**.
+- **Annualized common sense**: ETH staking yield has mostly fluctuated in the **3%-5% range** (per latest on-chain data) — far below the numbers in the ads; see the risk box below.
 
 ::: danger 💀 Advertised 20% and 50% annualized yields are either bait or a landmine
 **The real annualized yield on major-coin staking is nowhere near the "20%, 50% in the ads".** Those high figures are either incentive-token emissions (unsustainable, cliff-falling when they end) or high-risk assets — a "stable yield" above 20% almost certainly comes with money-printing incentives, protocol risk, or zero-out risk, in some combination or all at once.
@@ -219,11 +219,8 @@ description: "A deep dive into DeFi and the on-chain ecosystem — the concrete 
 >
 > **Conclusion: however pretty DeFi's "long-term annualized yield", it cannot survive "one blow-up zeroing the principal"**. That is why the DeFi **<mark>position</mark>** must be small, the protocol must be top-tier, and the principal must be money whose total loss you can shrug off.
 
-- **The realistic ceiling on yields**: the "stable yield" of mainstream protocols mostly runs in the **1%-10% range** (per latest on-chain data); **a "stable annualized yield" above 20% almost certainly comes with some or all of "money-printing incentives + protocol risk + zero-out risk"**.
+- **The realistic ceiling on yields**: the "stable yield" of mainstream protocols mostly runs in the **1%-10% range** (per latest on-chain data) — for anything above 20%, see the risk box in §2a; not repeated here.
 
-::: danger 💀 No long-term APY survives one blow-up zeroing the principal
-**However pretty DeFi's "long-term annualized yield", it cannot survive "one blow-up zeroing the principal".** If the protocol's 3-year zero-out probability is 30%, the expected return is only about one-third of the nominal profit; at a 50% zero-out probability the expectation turns negative. That is why the DeFi position must be small, the protocol must be top-tier, and the principal must be money whose total loss you can shrug off.
-:::
 - A unified skepticism checklist for "high yields": **where does the high APY come from? who is paying it? until when?** If you can't answer the three questions, treat it as a nicely wrapped landmine.
 
 ---
