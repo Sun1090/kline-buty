@@ -31,6 +31,8 @@ There are hundreds of drawing tools in technical analysis, but every tool essent
 2. **Presuppose** (middle): have a view before drawing ("this is resistance at the prior high"); the line is just the visualization of that view;
 3. **Trigger** (highest): the line gives explicit **trigger conditions** — breakout/breakdown/retest confirmation, executed together with the risk control of the [07 · Trading Systems](../trading-system/) chapter.
 
+**Interaction conventions (common to all tools; not repeated below)**: every anchor is draggable for fine-tuning; a selected drawing can be dragged as a whole; hit-testing differs by shape — segment-type tools hit by distance to the segment, band/channel/range-type tools hit by area (any point inside the band is clickable), and once hit the object is selected and editable. Layer organization (hide/lock/delete) is covered in 5.10.
+
 ::: danger ⚠️ Red Line
 **The vast majority of beginners die from "drawing first, finding reasons after".** The correct order is always: **form a hypothesis first → mark its key levels with drawings → wait for price to verify or falsify it**.
 :::
@@ -153,7 +155,6 @@ These two tools serve the same need: **after drawing one trend line, quickly rep
 
 - **Parallel ray = slope transfer**: define the slope on a clear impulse A→B, then shift it to the key level you care about (prior high/low, round-number gate). Do **not** keep re-transferring a slope in markets where it has already failed — trend-line slope itself changes across markup/markdown legs;
 - **Width channel = edge hugging**: C should sit on "the high/low of another real swing", letting the rails hug real action — not a casually dragged width; the channel's reference value depends entirely on whether C hugs real structure;
-- **Hit and editing**: both tools use 3 anchors (A/B/C all draggable); the parallel ray's direction reference, both parallel lines of the width channel, and the width connector are all within hit range, so you can click to select and drag the whole object or fine-tune anchors.
 
 **Honest assessment**: parallel tools are natural extensions of the "trend line" and generate no new information — they only replicate **the slope of existing structure**. The genuinely effective use: A→B defines a **large-degree reliable trend**, C lands on a **small-degree key level**, forming a "big slope + small location" combined observation — not doodling two parallel lines on a 5-minute chart for self-amusement.
 
@@ -167,15 +168,13 @@ These two tools make "slope" and "time window" explicit — **auxiliary observat
 **Usage**:
 
 - **Angle for comparing slope changes**: the angle difference between markup legs and pullback legs quantifies quickly — e.g., "this rally runs at 38° versus 52° for the last one, a clear slowdown" — more objective than eyeballing two lines. Note: the chart's horizontal axis (time) and vertical axis (price) have different dimensions; the angle is a **screen-space** value that changes with chart width/zoom — compare only within the same view;
-- **Time range as "time anchors" for the chart**: make the borders land on **key time points** (pattern start/end, major news moments), not a casual drag — a range's value lies in "what happened during this window";
-- **Hit and editing**: the angle tool hits by segment; the time range hits by **area** (anywhere inside the band is clickable; outside, by distance to the border), so you can drag the whole band or adjust the left/right anchors.
+- **Time range as "time anchors" for the chart**: make the borders land on **key time points** (pattern start/end, major news moments), not a casual drag — a range's value lies in "what happened during this window".
 
 ### 5.8 Price Band
 
 The price band is the **horizontal twin of the time range**: the time range paints "a period" as a vertical band; the price band paints "a price span" as a **horizontal band** across the whole chart.
 
 - **Dragging**: drag A→B (vertical span); the system normalizes the two points by **price order** (lower price on top edge, higher price on bottom edge) and draws a semi-transparent horizontal band — two border lines spanning the full width, each with a price label on the left (`toFixed(2)`);
-- **Hit**: anywhere inside the band (any x, y between the edges) is selectable; outside, hits are judged by **vertical distance** to the nearest border, so you can drag the whole band or fine-tune the upper/lower anchors;
 - **Typical use**: marking **high-volume zones / support-resistance bands / target-price zones** — e.g., "64_000~64_300 below is the last two weeks' high-volume band; losing the lower edge means the bulls' line has failed". It expresses "a zone" better than a single horizontal line, and fits "care only about price, not the time window" better than a rectangle.
 
 **Honest assessment**: the price band is the **zonal expression of support/resistance** and predicts nothing. Its value is correcting the "one line misread as an exact value" trap into "this is a fuzzy zone" — price weaving inside the band is normal; what carries signal meaning is the **break/loss of the band edges** (read together with volume and the [volume profile](volume-price.md#5-volume-profile-vpvr-and-high-volume-nodes)).
@@ -186,7 +185,6 @@ Fib time zones are the **Fibonacci version of cycle lines**: drag A→B to set t
 
 - **Dragging**: drag A→B (horizontal span); A is the origin and B only fixes the base length; boundaries fall at 1×, 2×, 3×, 5×, 8×, 13×, 21×, 34×, 55× the base from A (the first n=1 line solid, the rest dashed), with multiple labels on top;
 - **Direction-sensitive**: like cycle lines, the two points are **order-preserving** — A on the left extends right, A on the right extends left; flipping the drag direction mirrors the zones and won't auto-normalize away your intent;
-- **Hit**: the **vertical band areas** between any adjacent boundaries are clickable (anywhere inside the band); outside, hits are judged by **horizontal distance** to the nearest boundary, so you can drag the whole set or adjust the origin/base via anchors;
 - **Typical use**: marking **Fibonacci time windows** — set A at the start of a significant trend and the base as "one complete swing"; the subsequent boundaries are the theoretical time nodes prone to **regime changes/turns**. Good for reviewing "did the last few highs/lows land near boundaries" and for pre-marking "where the next time window is" while a trend runs.
 
 ### 5.10 Layer Management: Hide, Lock, and Clear
@@ -207,7 +205,6 @@ As drawings accumulate, the chart fills with "old stale lines" — not every lin
 
 - **Drawing**: click three points in sequence — **A entry → B stop → C target** (the order is the semantics; the system preserves order and never re-sorts); three horizontal lines **spanning the full width** appear: entry solid, stop/target dashed (all turn blue when selected), each with a price label on the left, and a **payoff-ratio label** (`1:{ratio}`) near the entry line on the right;
 - **Algorithm**: `risk = |A − B|` (entry to stop distance), `reward = |A − C|` (entry to target distance), `ratio = reward / risk`; when the stop equals the entry (risk=0), ratio records 0 without crashing — also a reminder that "a trade without a stop has no payoff ratio to speak of";
-- **Hit**: any of the three horizontal lines hits by vertical distance, so you can select and drag the whole set, or drag any anchor to fine-tune entry/stop/target;
 - **Typical use**: before placing the order, lay out on the chart "where I exit if wrong, where I exit if right" and see at a glance **whether R:R ≥ 2** (usually at least 1:2 to justify the risk); also good for review — losing trades are often not wrong on direction but on an **inverted payoff ratio** (taking trades where reward is far smaller than risk).
 
 **Honest assessment**: R:R is a **risk-control-first** tool, not a prediction tool — it doesn't tell you "will it rise"; it puts "how much if wrong, how much if right" on the table. **A pretty payoff ratio still loses if the win rate is too low**; real position decisions combine R:R with the [win rate](../trading-system/) to compute expectancy (EV = win rate × reward − loss rate × risk). No stop, or a carelessly tight stop (swept by normal volatility), are the most common misuses of the R:R tool.
@@ -261,7 +258,6 @@ The Gann box is the "zonal" version of the fan: drag A→B to frame a rectangle,
 
 - **Usage**: after framing a consolidation range, watch price's "angle rhythm" inside the box — riding 1×1 = equilibrium; losing it and switching to 2×1 support = deceleration; steep climb along 2×1 = acceleration leg (beware the emotional climax);
 - **Resonance**: spots where the box's 1×1 diagonal / upper edge overlaps Fibonacci 0.5/0.618 or channel boundaries carry more reference value;
-- **Hit and editing**: click anywhere inside the box to select (area hit); the A/B corner anchors are separately draggable; the invalidation condition is the same as 7.3 — **an explicit close-through break that fails to recover = invalidated**;
 - For the full practice (including time-price balance and common mistakes), see [08 · Gann Box and Angles in Practice](gann-box-angles.md).
 
 ---
@@ -313,53 +309,14 @@ After drawing any line, ask yourself three questions:
 - ❌ Treating retracement/target levels as exact prices: they are **zones**, not **points**;
 - ❌ Replacing risk control with drawing signals: however good the structural call, the stops/position rules of the [07 · Trading Systems](../trading-system/) chapter are the backstop.
 
-### 9.4 Mobile Touch Editing: Drawing at Your Fingertips
+### 9.4 Mobile & Touch Interaction Differences
 
-- **Touch drag drawing**: all drawing tools are pointer-event driven — finger down → drag (or point-by-point tap) → lift to finish anchoring; multi-point tools (wedge/Pitchfork/XABCD etc.) anchor point by point, same as desktop clicks;
-- **Tap to select**: a light touch landing inside a drawing's hit area selects it (anchor dots shown), the same hit-testing logic as desktop clicks (`hitTestDrawings` / `nearestAnchor`);
-- **Whole-line dragging**: after selection, dragging on the line translates the whole object — all anchors keep their relative offsets with identical increments (E2E verifies all anchors of the same id moved by the same delta);
-- **Anchor dragging**: after selection, grabbing an anchor dot directly moves only that anchor (others stay put) for local shape adjustment;
-- **Long-press pinning and editing don't interfere**: touching an already-selected drawing or its anchors routes the gesture to editing (whole-line/anchor drag) and won't start the long-press crosshair pin; during touch-edit drags the crosshair doesn't follow the finger either (to avoid visual noise). Long-press pinning only fires on empty areas;
-- **Haptic feedback**: long-press pinning and key operations carry haptic feedback (navigator.vibrate; effective on Android).
+Touch has no hover state, so the interaction mindset differs from desktop — four differences worth knowing:
 
-> **The mental-model gap between touch and mouse**: desktop distinguishes select vs. edit via "hover + click"; touch has no hover state, hence the two-step interaction "tap to select → drag to edit" — avoiding accidental touches while keeping anchor-editing parity with desktop.
-
-### 9.5 Mobile Auto-Switch Back to "Mouse" After Completing a Drawing
-
-On mobile, after each drawing is completed (including text confirmation), the tool **automatically switches back to the "mouse" read-only mode** — deliberately different from desktop's "keep the tool for continuous drawing":
-
-- **Avoid accidental creation**: right after a drawing completes with its anchors still on screen, the most likely next finger move is fine-tuning, not drawing another one; if the tool stayed active, a casual tap on empty space would **accidentally create a new drawing** (text would even pop the editor);
-- **Immediately editable**: after the auto-switch there's no need to manually pick "mouse"; the selection persists, and you can directly touch-drag the whole line/anchors/text body to fine-tune (dovetails with the two-step interaction of 9.4);
-- **Implementation**: `App.commitDrawing` calls `setDrawingTool('none')` on mobile (`isMobile`) after a successful commit; desktop logic is unchanged (continuous drawing stays smoother).
-
-### 9.6 Text Annotation Quick Edit: Double-Click / Long-Press to Rewrite
-
-Rewriting a text annotation no longer requires selecting the drawing first and hunting for the "edit text" button in the panel — **launch quick editing directly on the text body**:
-
-- **Desktop**: **double-click** the text body → the text editor opens immediately with content/font size/color all restored; confirm to persist;
-- **Mobile**: **long-press** the text body (~250ms without moving) → the mobile text editor opens directly, same restore-then-edit flow;
-- **Precondition**: quick editing only works in the "mouse" read-only mode (mobile auto-switches back after drawing; desktop requires a manual switch); in drawing mode, double-click/long-press remain drawing gestures and won't accidentally pop the editor;
-- **Implementation**: the adapter adds an `onEditText` callback + container `dblclick` listener (desktop); touch `touchstart` hitting the text starts a 250ms long-press timer (mobile); when the text is hit, even if pointer handling has already taken over dragging (text freshly created and selected), long-press takes priority to open the editor — dragging and pinning don't interfere;
-- **Interaction rationale**: text annotations are a "write first, adjust later" artifact; quick editing cuts the cost of rewriting from three steps (select → open panel → click edit) to one (double-click/long-press), encouraging continuous revision as the market evolves rather than abandonment.
-
-### 9.7 Mobile Crosshair "Lingers on Release": Finish Reading OHLC Before Letting Go
-
-Mobile has no hover state, so "drag and read OHLC" was always a pain point: the old behavior was **crosshair follows the drag and vanishes the moment you lift** — the numbers disappeared with your finger, impossible to memorize. Now it **lingers 2 seconds on release**:
-
-- **After dragging / long-press pinning, on lift**: the crosshair lingers 2s (`TOUCH_LINGER_MS = 2000`), giving ample time to read OHLC + indicator values; just don't touch the screen during the linger;
-- **Tap clears instantly**: one light tap during the linger → it disappears at once, no need to wait out the 2s; any new gesture (another drag / pinch / tap) first clears the previous gesture's lingering crosshair, then re-shows as needed;
-- **Auto-clear on timeout**: after 2s it clears automatically, leaving nothing to obstruct further viewing;
-- **Deliberately non-lingering paths**: pinch-end, drawing/anchor editing drags (a lingering crosshair would occlude or interfere with editing) — still cleared immediately;
-- **Implementation**: the adapter adds `touchHoldFired` / `touchLingerTimer` / `touchLingering`; `onTouchEnd` routes by gesture type — drag / long-press pin → `startTouchLinger()` (auto-clear after 2s), pinch / edit → clear directly; `onTouchStart` clears the previous gesture's lingering crosshair first; `destroy()` cleans up the timers too;
-- **Verification**: mobile E2E rewritten as "500ms after lift the crosshair still shows → auto-clears at 2.7s → a tap during the linger clears instantly", plus real-device testing (trusted CDP touch, 390×844) measured 371px linger / 0 cleared.
-
-### 9.8 OHLC Tooltip Overflow Protection: Read Data Without Viewport Clipping
-
-Mobile screens are narrow; when the crosshair follows the finger, the OHLC tooltip defaults to "+12px right, +8px down" — fingers usually drag in the **mid-lower chart**, so the tooltip easily overflowed the bottom edge, truncating the last rows (volume etc.).
-
-- **Horizontal**: clamp to the container's right edge (`min(x+12, width−180)`), preventing the tooltip from sticking out at the right edge;
-- **Vertical**: estimate the tooltip height from row count (date row + data rows × row height + padding); if "no room below the finger" and "room above" → **flip above the finger**; if above is also short, keep it below. Guarantees that long-press/drag anywhere keeps the tooltip fully inside the viewport;
-- **Implementation**: the positioning logic is extracted into a pure function `clampTooltipPos(x, y, rowCount, containerWidth, containerHeight)` (`src/components/tooltipPos.ts`), giving stable decisions without DOM measurement; unit tests cover the five branches (middle / bottom-flip / top-no-flip / right edge / ultra-narrow container).
+- **Two-step editing**: desktop separates select vs. edit via "hover + click"; touch switches to "tap to select → drag to edit" to avoid accidental touches;
+- **Auto-return to "mouse" after each drawing**: on mobile, every completed drawing (including text confirmation) switches the tool back to "mouse" — right after drawing, the finger most likely wants to fine-tune, not draw another; leaving the tool active invites accidental creation; desktop keeps continuous drawing;
+- **Double-click / long-press to rewrite text**: desktop double-clicks the text body, mobile long-presses it (~250ms) to open the editor directly — no panel needed; works only in "mouse" read-only mode, so it never clashes with drawing gestures;
+- **Reading data in comfort**: after dragging or long-press pinning, the crosshair **lingers about 2 seconds on release** (a tap or any new gesture clears it at once), and the OHLC tooltip flips at container edges to stay fully inside the viewport — even drags in the mid-lower chart can read the last row.
 
 ---
 
@@ -372,10 +329,6 @@ Mobile screens are narrow; when the crosshair follows the finger, the OHLC toolt
 | Dao (why) | Drawing is the visualization of thinking, not a prediction grail | All tools |
 
 Read this chapter's discipline together with [07 · Trading Systems](../trading-system/) and [08 · Pitfalls](../pitfalls/); only then does drawing graduate from "decoration" to "decision".
-
-::: warning 🚨 Hypothesis First, Then Draw; Trigger First, Then Execute
-**The vast majority of beginners die from "drawing first, finding reasons after". The correct order is always: hypothesis first → mark its key levels with drawings → wait for price to verify or falsify.** After drawing any line you must be able to answer "what view does this line represent", "what do I do when price hits it", "what price action proves it wrong" — no answers to these three, and the line is decoration.
-:::
 
 ---
 

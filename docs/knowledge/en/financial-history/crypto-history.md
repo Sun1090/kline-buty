@@ -182,11 +182,7 @@ description: "Eight key milestones of cryptocurrency history, distilling the ope
 
 - **A stablecoin's "stability" is propped up by other people's confidence**: a risk-free 20% yield means someone somewhere carries outsized risk — your interest income is someone else's principal.
 - Centralized platforms' "segregated custody" is a promise, not a fact: **if you can't withdraw, it isn't yours** — FTX's misappropriation was the model, not an accident.
-- Bears kill leverage, not prices: how much you made in the bull and on what leverage determines how badly you die in the bear — **survive one bear market before talking about the next bull**.
-
-::: danger 💀 Survive One Bear Before Talking About the Next Bull
-**Bears kill leverage, not prices: how much you made in the bull and on what leverage determines how badly the bear kills you — survive one bear market before talking about the next.** 3AC, Celsius, and FTX all died by this law.
-:::
+- Bears kill leverage, not prices: how much you made in the bull and on what leverage determines how badly you die in the bear — **survive one bear market before talking about the next bull**. 3AC, Celsius, and FTX all died by this law.
 
 ---
 
