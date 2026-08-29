@@ -43,6 +43,7 @@ vi.mock('../chart/adapter', () => ({
     setWatermark() {}
     setPriceScaleMode() {}
     setTimezoneMode() {}
+    setSnapEnabled() {}
     fitContent() {}
     scrollToRealTime() {}
     subscribeCrosshairMove() {

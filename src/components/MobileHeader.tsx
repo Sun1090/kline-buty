@@ -59,6 +59,9 @@ export interface MobileHeaderProps {
   onClearDrawings: () => void
   /** 批量显示/隐藏当前交易对全部画线 */
   onSetAllDrawingsHidden: (hidden: boolean) => void
+  /** 画线吸附开关 + 回调 */
+  drawingSnap: boolean
+  onToggleDrawingSnap: () => void
   layout: 'single' | 'pair' | 'quad'
   onCycleLayout: () => void
   themeMode: ThemeMode
@@ -474,6 +477,23 @@ export function MobileHeader(props: MobileHeaderProps) {
                 }}
               />
               <DrawingColorRow testIdPrefix="mobile-drawing" value={props.drawingColor} onChange={props.onDrawingColor} />
+              <button
+                data-testid="mobile-drawing-snap-toggle"
+                onClick={props.onToggleDrawingSnap}
+                aria-pressed={props.drawingSnap}
+                title={t('drawing.snap')}
+                style={{
+                  padding: '10px 8px',
+                  fontSize: 12,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  background: props.drawingSnap ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.05)',
+                  color: props.drawingSnap ? '#4e9cf5' : 'var(--text-dim)',
+                }}
+              >
+                {t('drawing.snap')}
+              </button>
               <button
                 data-testid="drawing-layers-open"
                 onClick={() => setMenu('layers')}

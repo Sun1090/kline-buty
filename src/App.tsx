@@ -75,6 +75,7 @@ export function App() {
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
   const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
   const [timezoneMode, setTimezoneMode] = usePersistedState<'utc' | 'local'>('timezone', 'utc')
+  const [drawingSnap, setDrawingSnap] = usePersistedState<boolean>('drawingSnap', false)
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
@@ -550,6 +551,8 @@ export function App() {
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
+          drawingSnap={drawingSnap}
+          onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -624,6 +627,8 @@ export function App() {
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
+          drawingSnap={drawingSnap}
+          onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -762,6 +767,7 @@ export function App() {
             chartType={chartType}
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
+          drawingSnap={drawingSnap}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -778,6 +784,7 @@ export function App() {
             chartType={chartType}
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
+          drawingSnap={drawingSnap}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -794,6 +801,7 @@ export function App() {
             chartType={chartType}
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
+          drawingSnap={drawingSnap}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

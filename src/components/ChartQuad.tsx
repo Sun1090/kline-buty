@@ -12,6 +12,7 @@ interface CellProps {
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
+  drawingSnap?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -51,6 +52,7 @@ interface QuadChartProps {
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
+  drawingSnap?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
