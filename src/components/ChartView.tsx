@@ -15,7 +15,8 @@ import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
-import { useI18n, localeFor, chartLabelsFor, type MessageKey } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 

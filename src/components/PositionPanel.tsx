@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, suggestLevels } from '../position/pnl'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface PositionPanelProps {
   position: Position | null

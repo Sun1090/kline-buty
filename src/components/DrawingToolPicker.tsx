@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
 import { OptionGrid } from './OptionGrid'
 

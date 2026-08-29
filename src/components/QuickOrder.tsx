@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { estimateOrder, type OrderSide } from '../trade/order'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface QuickOrderProps {
   symbol: string

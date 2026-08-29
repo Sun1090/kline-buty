@@ -2,7 +2,10 @@
 import { describe, expect, it, afterEach } from 'vitest'
 import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import { zh, en, ja, ko, es, localeFor, chartLabelsFor, titleFor, type Lang, type MessageKey } from '../messages'
-import { I18nProvider, useI18n, DEFAULT_LANG, translate, makeT } from '../index'
+import { I18nProvider } from '../I18nProvider'
+import { useI18n } from '../useI18n'
+import { DEFAULT_LANG } from '../messages'
+import { translate, makeT } from '../translate'
 import type { ReactNode } from 'react'
 
 afterEach(() => {

@@ -1,5 +1,5 @@
 import type { DrawingTool } from '../drawings/logic'
-import type { MessageKey } from '../i18n'
+import type { MessageKey } from '../i18n/messages'
 
 /** 工具栏选项：固定缩写走 label（MA/VOL…），否则走 labelKey 字典（SAR/无…） */
 export interface HeaderOption {

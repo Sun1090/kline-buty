@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
-import { makeT, DICTIONARIES, type Lang } from '../i18n'
+import { makeT } from '../i18n/translate'
+import { DICTIONARIES, type Lang } from '../i18n/messages'
 
 function readLang(): Lang {
   try {

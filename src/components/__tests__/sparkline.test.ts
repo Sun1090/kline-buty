@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSparkPath } from '../Sparkline'
+import { buildSparkPath } from '../../utils/sparkPath'
 
 describe('buildSparkPath', () => {
   it('两点平线：起点到终点直线', () => {

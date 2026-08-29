@@ -1,6 +1,6 @@
 import type { MarketStats } from '../hooks/useMarketStats'
 import type { LiveTick } from '../hooks/useKlineData'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 function fmtPrice(v: number) {
   return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)

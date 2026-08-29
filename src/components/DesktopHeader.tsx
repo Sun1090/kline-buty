@@ -5,7 +5,8 @@ import {
   TEXT_FONT_SIZE_MIN,
   type DrawingTool,
 } from '../drawings/logic'
-import { useI18n, type MessageKey } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import type { MessageKey } from '../i18n/messages'
 import { DrawingColorRow } from './DrawingColorRow'
 import { DrawingLayers } from './DrawingLayers'
 import { DrawingToolPicker } from './DrawingToolPicker'

@@ -1,6 +1,7 @@
 import type { OiPoint, RatioPoint, TakerPoint } from '../data/binance/rest'
 import type { SentimentData } from '../hooks/useSentiment'
-import { useI18n, localeFor, type Lang } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
+import { localeFor, type Lang } from '../i18n/messages'
 import { Sparkline } from './Sparkline'
 
 function last<T>(arr: T[]): T | undefined {

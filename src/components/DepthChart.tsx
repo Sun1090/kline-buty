@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
 import { aggregateDepth, maxTotal, bestPrice } from '../depth/aggregate'
 import { fmtCompact, sideTotals, spreadOf, depthHoverInfo, type DepthHoverInfo } from '../depth/format'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface DepthChartProps {
   symbol: string

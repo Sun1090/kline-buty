@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { AlertsApi } from '../hooks/usePriceAlerts'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 
 interface AlertPanelProps {
   symbol: string

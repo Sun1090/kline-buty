@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMarketSnapshots } from '../hooks/useMarketSnapshots'
 import { POPULAR_SYMBOLS, useFilteredSymbols } from '../hooks/useSymbolList'
 import { useFavorites } from '../hooks/useFavorites'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/useI18n'
 import { Sparkline } from './Sparkline'
 
 const UP = 'var(--up)'
