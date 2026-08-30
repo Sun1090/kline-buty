@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { estimateOrder, type OrderSide } from '../trade/order'
+import { estimateOrder, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 
@@ -123,6 +123,26 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
         <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.qty')}</span>
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
       </div>
+      {balance != null && priceNum > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+          <span style={{ color: 'var(--text-dim)', width: 70 }} />
+          {[25, 50, 75, 100].map((pct) => (
+            <button
+              key={pct}
+              data-testid={`qo-pct-${pct}`}
+              onClick={() => {
+                // 仓位 = 余额 × pct ÷ (价格 × (1 + 费率))：预留开仓手续费
+                const maxQty = (balance * (pct / 100)) / (priceNum * (1 + TAKER_FEE_RATE))
+                const step = maxQty >= 1 ? 0.001 : 0.000001
+                setQtyStr(String(Math.floor(maxQty / step) * step))
+              }}
+              style={fillBtnStyle('var(--accent)')}
+            >
+              {pct}%
+            </button>
+          ))}
+        </div>
+      )}
 
       {balance != null && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
