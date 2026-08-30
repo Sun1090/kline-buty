@@ -40,6 +40,7 @@ import {
 } from './drawings/logic'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
+import { parseDrawingsFile, serializeDrawings } from './drawings/io'
 import { MobileHeader } from './components/MobileHeader'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MarketList } from './components/MarketList'
@@ -353,6 +354,37 @@ export function App() {
   }
 
   // 图层管理：按 id 切换隐藏/锁定、删除单条、清空当前交易对全部画线
+  // T19：画线 JSON 导出/导入
+  const [drawingImportError, setDrawingImportError] = useState<string | null>(null)
+  const exportDrawings = () => {
+    const list = drawingsBySymbol[symbol] ?? []
+    if (list.length === 0) return
+    const blob = new Blob([serializeDrawings(symbol, list)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${symbol}-drawings.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  const importDrawings = (file: File) => {
+    const mismatchMsg = t('layers.importSymbolMismatch')
+    const badMsg = t('layers.importBad')
+    void file.text().then((text) => {
+      const existing = new Set((drawingsBySymbol[symbol] ?? []).map((d) => d.id))
+      const r = parseDrawingsFile(text, symbol, existing)
+      if (!r.ok) {
+        setDrawingImportError(r.error === 'symbol' ? mismatchMsg : badMsg)
+        window.setTimeout(() => setDrawingImportError(null), 3000)
+        return
+      }
+      if (r.imported > 0) {
+        setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: [...(prev[symbol] ?? []), ...r.drawings] }))
+      }
+    })
+  }
   const setAllDrawingsHidden = (hidden: boolean) => {
     setDrawingsBySymbol((prev) => ({
       ...prev,
@@ -579,6 +611,9 @@ export function App() {
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => !v)}
+          onExportDrawings={exportDrawings}
+          onImportDrawings={importDrawings}
+          drawingImportError={drawingImportError}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -657,6 +692,9 @@ export function App() {
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => !v)}
+          onExportDrawings={exportDrawings}
+          onImportDrawings={importDrawings}
+          drawingImportError={drawingImportError}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
