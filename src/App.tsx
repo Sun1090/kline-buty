@@ -80,6 +80,8 @@ export function App() {
   const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
   const [timezoneMode, setTimezoneMode] = usePersistedState<'utc' | 'local'>('timezone', 'utc')
   const [drawingSnap, setDrawingSnap] = usePersistedState<boolean>('drawingSnap', false)
+  // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
+  const [quadPeriods, setQuadPeriods] = useState<[Period, Period, Period, Period] | null>(null)
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
@@ -878,6 +880,8 @@ export function App() {
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
+          periods={quadPeriods ?? undefined}
+          onCellPeriod={(i, p) => setQuadPeriods((prev) => { const next = (prev ?? [period, period, period, period]) as [Period, Period, Period, Period]; next[i] = p; return [...next] })}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

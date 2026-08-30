@@ -1,5 +1,5 @@
 import { ChartView, type MainIndicatorKind, type SubIndicatorKind } from './ChartView'
-import type { Period } from '../chart/types'
+import { PERIODS, type Period } from '../chart/types'
 import type { ChartType } from '../chart/adapter'
 import type { IndicatorParams } from '../indicators/params'
 import type { ColorPresetId } from '../theme'
@@ -20,35 +20,67 @@ interface CellProps {
   showWatermark: boolean
   externalRange: Range2 | null
   onViewRangeChange: (r: Range2) => void
+  onCellPeriod: (p: Period) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCellPeriod }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
-    <ChartView
-      symbol={symbol}
-      period={period}
-      candles={data.state.candles}
-      chartType={chartType}
-      priceScaleMode={priceScaleMode}
-      timezoneMode={timezoneMode}
-      mainIndicator={mainIndicator}
-      subIndicator={subIndicator}
-      indicatorParams={indicatorParams}
-      colorPreset={colorPreset}
-      replay={null}
-      hasMore={data.hasMore}
-      onLoadMore={data.loadMore}
-      onViewRangeChange={onViewRangeChange}
-      showWatermark={showWatermark}
-      externalRange={externalRange}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <ChartView
+        symbol={symbol}
+        period={period}
+        candles={data.state.candles}
+        chartType={chartType}
+        priceScaleMode={priceScaleMode}
+        timezoneMode={timezoneMode}
+        drawingSnap={drawingSnap}
+        mainIndicator={mainIndicator}
+        subIndicator={subIndicator}
+        indicatorParams={indicatorParams}
+        colorPreset={colorPreset}
+        replay={null}
+        hasMore={data.hasMore}
+        onLoadMore={data.loadMore}
+        onViewRangeChange={onViewRangeChange}
+        showWatermark={showWatermark}
+        externalRange={externalRange}
+      />
+      <select
+        data-testid={`quad-period-${symbol}`}
+        aria-label={`period: ${symbol}`}
+        value={period}
+        onChange={(e) => onCellPeriod(e.target.value as Period)}
+        style={{
+          position: 'absolute',
+          top: 4,
+          left: 6,
+          zIndex: 6,
+          padding: '1px 4px',
+          fontSize: 11,
+          border: '1px solid var(--border)',
+          borderRadius: 4,
+          background: 'var(--panel)',
+          color: 'var(--text-dim)',
+          cursor: 'pointer',
+        }}
+      >
+        {PERIODS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.value}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
 interface QuadChartProps {
   symbols: string[]
   period: Period
+  /** 每格独立周期（长度 4，缺省全部用 period） */
+  periods?: Period[]
+  onCellPeriod?: (index: number, period: Period) => void
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
@@ -61,10 +93,11 @@ interface QuadChartProps {
   showWatermark?: boolean
 }
 
-/** 四图联动：2×2 网格，时间轴全联动 */
-export function ChartQuad({ symbols, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
+/** 四图联动：2×2 网格，时间轴全联动；每格可独立切换周期（T21） */
+export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
   const { ranges, broadcast } = useChartSync(4)
-  const base = { period, chartType, priceScaleMode, timezoneMode, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
+  const cellPeriods = periods ?? [period, period, period, period]
+  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>
@@ -80,6 +113,8 @@ export function ChartQuad({ symbols, period, chartType, priceScaleMode = 'linear
           <QuadCell
             {...base}
             symbol={symbol}
+            period={cellPeriods[i] ?? period}
+            onCellPeriod={(p) => onCellPeriod?.(i, p)}
             externalRange={ranges[i]}
             onViewRangeChange={(r) => broadcast(i, r)}
           />
