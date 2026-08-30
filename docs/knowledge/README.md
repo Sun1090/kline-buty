@@ -89,6 +89,7 @@
 | [spot-strategies.md](zh/spot/spot-strategies.md) | 现货没有<mark>杠杆</mark>、没有<mark>强平</mark>，是最适合普通人长期参与的战场。 |
 | [wallet-security.md](zh/spot/wallet-security.md) | 「不是你的钥匙，就不是你的币。」加密货币的去中心化特性把安全责任从银行转移到了你自己身上。一次助记词泄露、一次钓鱼签名… |
 | [portfolio-rebalancing.md](zh/spot/portfolio-rebalancing.md) | 买币不难，难的是拿着不慌、亏了不跑、赚了不飘。组合管理解决的不是「买什么」，而是「买多少、什么时候调整」。本篇讲的是让加… |
+| [dca-methodology.md](zh/spot/dca-methodology.md) | 定投解决的不是「买什么」，而是「怎么承认自己判断不了何时买」。它用时间上的分散，把「何时买」这个千古难题直接从你的清单上… |
 
 ### 03 · 期货篇
 
@@ -113,6 +114,7 @@
 | [adr-cross-listing.md](zh/stocks/adr-cross-listing.md) | 中概股（在美国上市的中国公司）是很多中国投资者既熟悉又陌生的品种：BABA、PDD、JD 的代码天天见，但它们到底以什么… |
 | [us-stock-options.md](zh/stocks/us-stock-options.md) | 期权的基础概念（权利与义务、四要素、实值/虚值、希腊字母）请先读 09-市场与品种专题篇/04-期权基础.md。 |
 | [etf-portfolio.md](zh/stocks/etf-portfolio.md) | 普通人的全球资产配置，美股 ETF 是成本最低、纪律最强的载体：宽基费率低至 0.03%、1 股起买、全球资产一篮子搞定… |
+| [adjusted-price-dividends.md](zh/stocks/adjusted-price-dividends.md) | 你盯着一只「从 30 元跌到 27 元」的股票准备抄底，可能根本没有跌——那 3 元的「跌幅」，只是今天分红除息留下的记… |
 
 ### 05 · 加密合约篇
 
@@ -139,6 +141,9 @@
 | [gann-box-angles.md](zh/technical-analysis/gann-box-angles.md) | 江恩（W.D. Gann）留给交易者的最大遗产，不是「预测点位」，而是一套<mark>用角度与正方形把时间-价格关系画出… |
 | [order-flow-microstructure.md](zh/technical-analysis/order-flow-microstructure.md) | K 线是「结果」，<mark>订单流</mark>是「过程」。K 线告诉你这一分钟/这一小时发生了什么，订单流告诉你它是… |
 | [orderbook-depth.md](zh/technical-analysis/orderbook-depth.md) | 订单簿（Order Book）是市场上「正在排队等待成交」的订单集合。K 线告诉你价格去了哪里，订单簿告诉你价格为什么能… |
+| [replay-training.md](zh/technical-analysis/replay-training.md) | <mark>回放</mark>（Replay）是把一段历史 K 线从头「重演」一遍：逐根推进、每次只显示当前时点之前的数… |
+| [indicators-advanced.md](zh/technical-analysis/indicators-advanced.md) | 本篇承接技术指标详解的常用指标，补上三类进阶工具：<mark>DMI/ADX</mark>（趋势强度滤网）、<mark>… |
+| [multi-timeframe.md](zh/technical-analysis/multi-timeframe.md) | 同一段行情，1 分钟图上是「放量突破」，4 小时图上可能只是震荡区里的一根普通 K 线。价格没有骗你，是单一周期骗了你… |
 
 ### 07 · 交易系统篇
 
@@ -150,6 +155,8 @@
 | [equity-curve-attribution.md](zh/trading-system/equity-curve-attribution.md) | 交易系统篇前面三篇解决了「怎么写计划、怎么控制风险、怎么管住心理」，本篇进入验收环节：你的系统到底行不行，不看某几笔交易… |
 | [trade-review.md](zh/trading-system/trade-review.md) | 交易计划篇给出了基础日志模板和三层复盘框架，本篇在此之上做两件事：一是把「复盘」从「记流水账」升级为「数据化复盘」——让… |
 | [journaling-checklists.md](zh/trading-system/journaling-checklists.md) | 交易计划篇给了你「进场前」的规则，复盘进阶篇给了你「平仓后」的统计，本篇补上中间那段最容易被跳过、却最能稳定执行的部分… |
+| [paper-to-live.md](zh/trading-system/paper-to-live.md) | 模拟盘是驾校，实盘是马路。驾校教的是流程和规则，但没有任何一个驾校能模拟「对面大货车贴过来时你的心跳」。本篇讲清楚：模拟… |
+| [alert-discipline.md](zh/trading-system/alert-discipline.md) | <mark>价格提醒</mark>（Price Alert）是行情工具里最便宜、也最被低估的纪律工具：设定一个价格条件… |
 
 ### 08 · 入土篇
 
@@ -178,6 +185,7 @@
 | [volatility-vix.md](zh/markets-instruments/volatility-vix.md) | 大多数交易者只盯着价格涨跌，却忽略了第二个维度：价格变动有多剧烈。波动率就是这个维度——它不告诉你方向，只告诉你「会动多… |
 | [commodity-indices-cycles.md](zh/markets-instruments/commodity-indices-cycles.md) | 「商品牛市来了吗？」——2020-2022 年的能源危机、2024 年可可/铜的历史新高，把大宗商品重新带回大众视野。但… |
 | [defi-deep-dive.md](zh/markets-instruments/defi-deep-dive.md) | 里讲过 DeFi 的框架性认知（CEX vs DEX、四种玩法、合约风险），本篇把它做一次深潜实操：不满足于「DeFi… |
+| [sentiment-indicators.md](zh/markets-instruments/sentiment-indicators.md) | 情绪指标度量的不是「价格会涨还是会跌」，而是「别人现在有多冲动」。当所有人都冲动的时候，冲动本身就不再值钱。 本篇讲三个… |
 
 ### 10 · 系统对接篇
 
@@ -379,7 +387,7 @@
 
 ## 知识库规模
 
-> 共 **27 个篇章 / 174 篇文档 / 约 42,971 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
+> 共 **27 个篇章 / 182 篇文档 / 约 43,951 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
 
 ## 内容约定
 
