@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
 import { useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import { useFavorites } from '../hooks/useFavorites'
@@ -286,21 +287,17 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
         }}
       >
         {loading && rows.length === 0 ? (
-          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
-            {t('marketList.loading')}
-          </div>
+          <PanelState status="loading" message={t('marketList.loading')} />
         ) : rows.length === 0 ? (
-          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
-            {error ? t('marketList.empty') : t('marketList.loading')}
-          </div>
+          error ? (
+            <PanelState status="error" message={t('marketList.empty')} onRetry={refresh} />
+          ) : (
+            <PanelState status="loading" message={t('marketList.loading')} />
+          )
         ) : view === 'favorites' && scoped.length === 0 ? (
-          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
-            {t('marketList.favoritesEmpty')}
-          </div>
+          <PanelState status="empty" message={t('marketList.favoritesEmpty')} />
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '16px 8px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>
-            {t('marketList.noMatch')}
-          </div>
+          <PanelState status="empty" message={t('marketList.noMatch')} />
         ) : (
           filtered.map((row) => (
             <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} />
