@@ -176,6 +176,15 @@ export function ChartView({
   const onEditTextRef = useRef(onEditText)
   onEditTextRef.current = onEditText
   const [regionSelecting, setRegionSelecting] = useState(false)
+  // T27：右键菜单（复制价格 / 添加提醒 / 清空画线）；触屏为主设备时不启用
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number } | null>(null)
+  const [ctxCopied, setCtxCopied] = useState(false)
+  useEffect(() => {
+    if (!ctxMenu) return
+    const close = () => setCtxMenu(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [ctxMenu])
   const regionCaptureRef = useRef<(rect: { x: number; y: number; w: number; h: number }) => void>(
     () => {},
   )
@@ -655,7 +664,17 @@ export function ChartView({
   }, [tooltip, candleByTime, mainData, lineMaps, sarMap, subLineMaps, subData, t])
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div
+      style={{ position: 'relative', width: '100%', height: '100%' }}
+      onContextMenu={(e) => {
+        if (window.matchMedia('(pointer: coarse)').matches) return
+        const pt = apiRef.current?.priceAt(e.clientX, e.clientY)
+        if (!pt) return
+        e.preventDefault()
+        setCtxCopied(false)
+        setCtxMenu({ x: e.clientX, y: e.clientY, price: pt.price })
+      }}
+    >
       <div ref={containerRef} className="chart-container" style={{ width: '100%', height: '100%' }} />
       {candles.length === 0 && (
         <div
@@ -849,6 +868,71 @@ export function ChartView({
         {symbol.replace('USDT', '/USDT')} ·{' '}
         {t((PERIODS.find((pp) => pp.value === period)?.labelKey ?? 'period.1m') as MessageKey)}
       </div>
+      {ctxMenu && (
+        <div
+          data-testid="chart-ctx-menu"
+          role="menu"
+          style={{
+            position: 'fixed',
+            left: ctxMenu.x,
+            top: ctxMenu.y,
+            zIndex: 210,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: 4,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            minWidth: 140,
+          }}
+        >
+          {ctxCopied ? (
+            <div style={{ padding: '6px 10px', fontSize: 12, color: 'var(--up)' }}>{t('ctx.copied')}</div>
+          ) : (
+            <>
+              <button
+                role="menuitem"
+                data-testid="ctx-copy-price"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(String(ctxMenu.price)).catch(() => {})
+                  setCtxCopied(true)
+                  window.setTimeout(() => {
+                    setCtxCopied(false)
+                    setCtxMenu(null)
+                  }, 900)
+                }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
+              >
+                {t('ctx.copyPrice')} {fmtPrice(ctxMenu.price)}
+              </button>
+              <button
+                role="menuitem"
+                data-testid="ctx-add-alert"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('chart-request-alert', { detail: { symbol, price: ctxMenu.price } }))
+                  setCtxMenu(null)
+                }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
+              >
+                {t('ctx.addAlert')}
+              </button>
+              <button
+                role="menuitem"
+                data-testid="ctx-clear-drawings"
+                onClick={() => {
+                  if (window.confirm(t('ctx.confirmClear'))) {
+                    window.dispatchEvent(new CustomEvent('chart-clear-drawings'))
+                  }
+                  setCtxMenu(null)
+                }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: 'var(--down)', fontSize: 12, cursor: 'pointer' }}
+              >
+                {t('ctx.clearDrawings')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
     </div>
   )
 }

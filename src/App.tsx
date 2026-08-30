@@ -114,6 +114,25 @@ export function App() {
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
   const prevPositionRef = useRef<Position | null>(null)
+  // T27：图表右键菜单动作（提醒/清空画线）
+  useEffect(() => {
+    const onRequestAlert = (e: Event) => {
+      const detail = (e as CustomEvent<{ symbol: string; price: number }>).detail
+      if (!detail || typeof detail.price !== 'number') return
+      const ref = candles[candles.length - 1]?.close ?? null
+      const direction = ref != null && detail.price < ref ? 'below' : 'above'
+      alertsApi.addAlert(detail.symbol ?? symbol, direction, detail.price)
+      setAlertsOpen(true)
+    }
+    const onClearDrawings = () => clearDrawings()
+    window.addEventListener('chart-request-alert', onRequestAlert)
+    window.addEventListener('chart-clear-drawings', onClearDrawings)
+    return () => {
+      window.removeEventListener('chart-request-alert', onRequestAlert)
+      window.removeEventListener('chart-clear-drawings', onClearDrawings)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- alertsApi/candles 取最新渲染闭包即可，事件监听只挂一次
+  }, [])
   useEffect(() => {
     const prev = prevPositionRef.current
     const price = candles[candles.length - 1]?.close ?? null
