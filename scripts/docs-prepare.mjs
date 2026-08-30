@@ -56,4 +56,51 @@ function syncLocale(sub) {
 
 const en = syncLocale('en')
 const zh = syncLocale('zh')
-console.log(`[docs] 已同步 en/${en} 章 + zh/${zh} 章 -> ${DEST}`)
+
+// T25：篇尾「相关阅读」——按章内阅读序取邻居 3 篇（构建产物内追加，源树不受影响，重跑天然幂等）
+import { readFileSync, writeFileSync } from 'node:fs'
+
+function docNo(text) {
+  const m = text.match(/^#\s*(\d+)\s*·/m)
+  return m ? Number(m[1]) : Number.POSITIVE_INFINITY
+}
+
+function docTitle(text) {
+  const fm = text.match(/^title:\s*"?([^"\n]+)"?\s*$/m)
+  if (fm) return fm[1].trim()
+  const h1 = text.match(/^#\s*.+?·\s*(.+)$/m)
+  return h1 ? h1[1].trim() : ''
+}
+
+function appendRelated(localeDir, sectionTitle) {
+  const base = sub === 'en' ? DEST : join(DEST, 'zh')
+  const root = join(base, localeDir)
+  if (!existsSync(root)) return
+  for (const ch of readdirSync(root)) {
+    const dir = join(root, ch)
+    if (!statSync(dir).isDirectory() || ch.startsWith('_')) continue
+    const files = readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'index.md')
+    const docs = files
+      .map((f) => ({ file: f, text: readFileSync(join(dir, f), 'utf8') }))
+      .map((d) => ({ ...d, no: docNo(d.text), title: docTitle(d.text) }))
+      .sort((a, b) => a.no - b.no)
+    if (docs.length < 2) continue
+    for (let i = 0; i < docs.length; i++) {
+      const d = docs[i]
+      if (!d.title) continue
+      const picks = [docs[(i + 1) % docs.length], docs[(i + 2) % docs.length], docs[(i - 1 + docs.length) % docs.length]]
+        .filter((p, idx, arr) => p.file !== d.file && arr.findIndex((x) => x.file === p.file) === idx)
+        .slice(0, 3)
+      const lines = picks.map((p) => `- [${p.title}](./${p.file.replace(/\.md$/, '.md')})`)
+      d.text = d.text.replace(/\s*$/, '') + `\n\n## ${sectionTitle}\n\n` + lines.join('\n') + '\n'
+      writeFileSync(join(dir, d.file), d.text)
+    }
+  }
+}
+
+let sub = 'zh'
+appendRelated('.', '相关阅读')
+sub = 'en'
+appendRelated('.', 'Further Reading')
+
+console.log(`[docs] 已同步 en/${en} 章 + zh/${zh} 章 -> ${DEST}（含相关阅读）`)
