@@ -22,8 +22,11 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
   const startRef = useRef<{ x: number; y: number } | null>(null)
   const armedRef = useRef(false)
   const pullingRef = useRef(false)
+  const pullDistanceRef = useRef(0)
   const refreshingRef = useRef(false)
+  const onRefreshRef = useRef(onRefresh)
   refreshingRef.current = refreshing
+  onRefreshRef.current = onRefresh
 
   useEffect(() => {
     const el = wrapRef.current
@@ -35,6 +38,7 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
       startRef.current = { x: t0.clientX, y: t0.clientY }
       armedRef.current = false
       pullingRef.current = false
+      pullDistanceRef.current = 0
     }
 
     const onMove = (e: TouchEvent) => {
@@ -49,6 +53,7 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
         else return
       }
       if (dy > 0) {
+        pullDistanceRef.current = dy
         e.preventDefault()
         const p = Math.min(1, dy / TRIGGER_PX)
         setProgress(p)
@@ -63,10 +68,10 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
     const onEnd = () => {
       const s = startRef.current
       if (!s) return
-      if (pullingRef.current && armedRef.current && !refreshingRef.current) {
+      if (pullingRef.current && pullDistanceRef.current >= TRIGGER_PX && !refreshingRef.current) {
         setRefreshing(true)
         setProgress(0)
-        onRefresh()
+        onRefreshRef.current()
         window.setTimeout(() => setRefreshing(false), 800)
       } else {
         setProgress(0)
@@ -74,6 +79,7 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
       startRef.current = null
       pullingRef.current = false
       armedRef.current = false
+      pullDistanceRef.current = 0
     }
 
     el.addEventListener('touchstart', onStart, { passive: true })
@@ -86,12 +92,12 @@ export function PullToRefresh({ onRefresh, enabled, children }: PullToRefreshPro
       el.removeEventListener('touchend', onEnd)
       el.removeEventListener('touchcancel', onEnd)
     }
-  }, [enabled, onRefresh])
+  }, [enabled])
 
   const label = refreshing ? t('pull.refreshing') : progress >= 1 ? t('pull.release') : t('pull.pull')
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div ref={wrapRef} data-testid="pull-to-refresh" style={{ position: 'relative', width: '100%', height: '100%' }}>
       {(enabled && (progress > 0 || refreshing)) && (
         <div
           data-testid="pull-indicator"

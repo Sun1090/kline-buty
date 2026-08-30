@@ -1,6 +1,6 @@
 ---
 title: "03 · Compliance and Taxes"
-description: "Trading compliance and taxes — platform regulation, deposit and withdrawal channels, bank account freeze risk, tax filing, and asset classification: a summary of regulatory and legal essentials"
+description: "Focuses on trading channels, cross-border funding, account freezes, and AML risk, then shows when tax filing requires verification or professional advice."
 ---
 
 # 03 · Compliance and Taxes
@@ -125,55 +125,19 @@ This article is an objective summary of regulatory and tax common knowledge, int
 
 ---
 
-## 5. Crypto Tax Overview by Country
+## 5. Tax Boundary: This Article Only Answers “When Should You Stop and Verify?”
 
-> Countries differ enormously — and change frequently — in how they classify crypto assets (property / commodity / security / currency) and how they tax them; **the following is only a summary — defer to each tax authority's current official documents**.
+Instrument-by-instrument rules and rates for A-shares, HK stocks, US stocks, and crypto are maintained in [Tax Planning Basics](../wealth-allocation/tax-planning.md). Keeping one factual home avoids two articles drifting into conflicting, outdated numbers. This compliance article retains only three action-level judgments:
 
-| Country / region | Tax overview (summary) |
-|---|---|
-| Mainland China | Currently **no** explicit income-tax filing regime for individuals holding or selling virtual currency, but the field is policy-gray with unsettled treatment, and trading activity as a whole is restricted — **"no filing duty" does not mean "legal income", still less that no rules will ever come** |
-| United States | Crypto is treated as **property**; gains on disposal are filed as capital gains (short-term / long-term rates differ), and transfers or payments can also trigger taxable events; the IRS keeps tightening filing requirements |
-| Japan | Profits from crypto trading are filed as **miscellaneous income** and taxed at progressive rates; exchanges must report large trades to the tax authority |
-| Germany | Gains on crypto assets held for more than 1 year are generally tax-free; sales within 1 year are taxed as personal income (subject to the annual gain allowance) |
-| United Kingdom | Treated as an asset; capital gains tax is levied on disposal gains, with an annual exempt amount |
-| Singapore | Personal long-term holding / trading is currently generally not subject to capital gains tax, but gains **as income** (frequent / professional trading) may be taxed |
-| Hong Kong | Individuals are generally not taxed on capital gains, but trading of a **business nature** may be taxable |
+1. **Restricted trading does not mean tax-exempt proceeds**: regulatory classification and income filing are separate questions; the absence of a clear tax category does not prove permanent exemption.
+2. **Account location does not determine tax residence**: an overseas broker, exchange, or bank account does not erase residence-country filing duties. Multiple residence, double taxation, and credits require professional judgment.
+3. **Evidence comes before calculation**: retain onboarding records, funding trails, trades, fees, and withholding certificates. A precise rate cannot cure an unexplained source of funds.
 
-**A reminder for cross-border participants**: if you are a tax resident of more than one country at the same time, you may owe filing obligations in several places; tax-residency determination, double taxation, and similar matters **must absolutely be discussed with a qualified tax professional**.
+For specific instrument taxes, withholding, CRS, legitimate planning, and filing steps, continue to [07 · Tax Planning Basics](../wealth-allocation/tax-planning.md). Current laws, tax-authority guidance, and licensed professional advice always prevail.
 
 ---
 
-## 6. Taxes on A-Share / HK / US Stock Trading
-
-### 6.1 A-shares
-
-| Tax type | Current summary (defer to the latest rules) |
-|---|---|
-| Stamp duty | Levied on the **sell** side of stock trades (the rate has been adjusted several times; currently 0.05% of transaction value); buys are not taxed |
-| Capital gains tax | Gains from individuals transferring A-shares are **currently exempt** from individual income tax |
-| Dividend tax | Exempt if held for more than 1 year; 10% for 1 month ~ 1 year; **20% if held for less than 1 month** (differentiated by holding period) |
-
-### 6.2 HK stocks (via Stock Connect / an HK account)
-
-| Tax type | Summary |
-|---|---|
-| Stamp duty | Paid by both the buy and sell sides (currently about 0.1% of transaction value per side; defer to the latest rules) |
-| Capital gains tax | Hong Kong itself levies no capital gains tax; mainland investors via Stock Connect should note the relevant arrangements |
-| Dividend tax | Withheld at a set ratio under Stock Connect (e.g., 20% withheld for mainland individuals; defer to the latest rules); varies for overseas accounts |
-
-### 6.3 US stocks
-
-| Tax type | Summary |
-|---|---|
-| Capital gains tax | Non-US tax residents generally do **not** pay tax on US stock capital gains (the US generally does not tax non-residents' capital gains) |
-| Dividend withholding tax | Non-resident dividends are usually withheld at **30%**; the tax treaty with China can lower it (usually 10% after filing a W-8BEN) |
-| Gift / estate tax | US stocks held by non-residents may implicate US estate tax; large holdings need advance planning |
-
-**Note**: the table above is a general summary; specific rates (stamp duty, dividend withholding, etc.) change as policies are adjusted — **verify the latest official rules before trading**. Tax rules are complex across countries; consult professionals for large amounts.
-
----
-
-## 7. Compliance Survival Checklist
+## 6. Compliance Survival Checklist
 
 1. **Trade stocks and futures only through legitimate licensed channels**; for overseas trading, accept only licensed platforms, with domain and license verified on official websites.
 2. **Treat virtual-currency trading as "gray" by default**: don't promote it, don't recruit people, don't make it your business; participate only in small size and with your own money, prepared for total loss.

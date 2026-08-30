@@ -635,7 +635,10 @@ export function App() {
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           tradesActive={tradesOpen}
-          onToggleTrades={() => setTradesOpen((v) => !v)}
+          onToggleTrades={() => setTradesOpen((v) => {
+            if (!v) setPositionOpen(false)
+            return !v
+          })}
           onExportDrawings={exportDrawings}
           onImportDrawings={importDrawings}
           drawingImportError={drawingImportError}
@@ -648,7 +651,10 @@ export function App() {
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position !== null}
-          onTogglePosition={() => setPositionOpen((v) => !v)}
+          onTogglePosition={() => setPositionOpen((v) => {
+            if (!v) setTradesOpen(false)
+            return !v
+          })}
           alertsActive={alertsOpen}
           onToggleAlerts={() => setAlertsOpen((v) => !v)}
           depthActive={depthOpen}
@@ -716,7 +722,10 @@ export function App() {
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
           tradesActive={tradesOpen}
-          onToggleTrades={() => setTradesOpen((v) => !v)}
+          onToggleTrades={() => setTradesOpen((v) => {
+            if (!v) setPositionOpen(false)
+            return !v
+          })}
           onExportDrawings={exportDrawings}
           onImportDrawings={importDrawings}
           drawingImportError={drawingImportError}
@@ -729,7 +738,10 @@ export function App() {
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position !== null}
-          onTogglePosition={() => setPositionOpen((v) => !v)}
+          onTogglePosition={() => setPositionOpen((v) => {
+            if (!v) setTradesOpen(false)
+            return !v
+          })}
           alertsActive={alertsOpen}
           onToggleAlerts={() => setAlertsOpen((v) => !v)}
           depthActive={depthOpen}
@@ -823,6 +835,7 @@ export function App() {
             paper.recordOpen({ symbol, side: order.side, price: order.price, qty: order.qty, fee: est.fee })
             setPosition(buildPositionFromOrder(order.side, order.price, order.qty))
             setPositionOpen(true)
+            setTradesOpen(false)
             setQuickOrder(null)
           }}
         />
