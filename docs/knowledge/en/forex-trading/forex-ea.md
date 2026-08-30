@@ -149,6 +149,18 @@ Copy trading: the platform replicates a "star trader"'s signals into your accoun
 
 **Key insight: spreads and swaps are neutral market structure, but a market maker can simultaneously be "your counterparty" and "your fee collector"** — which is why regulatory licensing and order-routing model must be verified together.
 
+### The Full Picture of Forex Market Participants
+
+| Participant | Role | Trading purpose |
+|---|---|---|
+| **Central banks** | The ultimate heavyweights | Exchange-rate policy, reserve management, market intervention |
+| **Commercial banks** | **<mark>Market makers</mark>** | Quote for clients, earn the spread, manage their own exposure |
+| **Hedge funds / asset managers** | The speculative main force | Macro bets, **<mark>arbitrage</mark>**, volatility trading |
+| **Multinationals** | Hedgers | Settle payments, hedge FX risk |
+| **Retail traders (you)** | The weak side | Speculation — mostly losing money under high leverage |
+
+Key insight: **retail traders are at a comprehensive disadvantage in information, speed, cost, and capital size**. Banks see client order flow; hedge funds employ teams of PhDs — the retail trader's only edge is "flexibility", and leverage turns that flexibility into a disadvantage too. **In this market, 9 out of 10 retail traders ultimately losing is not a joke, it is data (public figures differ across platforms; this is a common-sense conclusion only).**
+
 ---
 
 ## 6. Red-Line Checklist for Choosing a Platform

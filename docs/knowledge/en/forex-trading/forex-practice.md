@@ -225,6 +225,39 @@ Classic example: the Fed's aggressive hikes in 2022–2023 drove the dollar inde
 
 > Data note: historical prices are teaching references; latest rates and decision schedules defer **to official announcements**.
 
+### The US Dollar Index DXY: The Ruler of Global Assets
+
+**The US Dollar Index (ticker DXY)** measures the dollar's overall strength against a basket of major currencies, compiled and published by ICE (Intercontinental Exchange). Global commodities are priced in dollars, so **a rising DXY tends to pressure gold/oil/non-US assets**; it is the "steering wheel" for cross-border investors and macro traders.
+
+| Currency | Weight (historical reference) |
+|---|---|
+| Euro EUR | ~57.6% |
+| Japanese yen JPY | ~13.6% |
+| British pound GBP | ~11.9% |
+| Canadian dollar CAD | ~9.1% |
+| Swedish krona SEK | ~4.2% |
+| Swiss franc CHF | ~3.6% |
+
+> The basket weights were set after the 1973 collapse of the Bretton Woods system and are updated rarely; the renminbi is not yet in the DXY basket (other baskets such as the CNH index exist). **Defer to ICE's latest methodology for exact weights.** How to read it: DXY up = dollar stronger, usually corresponding to weaker non-US currencies (EUR/USD down, USD/JPY up); and vice versa.
+
+### Dollar Strength: The Linkage with Gold/Oil/Crypto
+
+The dollar is the "anchor currency" of global asset pricing, and its strength transmits directly to other assets:
+
+| Asset | Linkage logic | Common pattern |
+|---|---|---|
+| **Gold** | Priced in dollars + gold as the dollar's "substitute" | **Strong dollar → gold pressured; weak dollar → gold stronger** (negative correlation, not absolute) |
+| **Crude oil** | Priced in dollars; a stronger dollar raises other countries' purchase cost | Strong dollar → oil tends to be pressured (still dominated by supply-demand) |
+| **EM stocks and bonds** | Strong dollar → EM dollar-debt stress, capital flows back to the US | A strong dollar often suppresses emerging-market assets |
+| **Crypto (BTC etc.)** | Some funds treat it as "digital gold" with high volatility | Crypto often benefits when dollar liquidity is loose (the Fed cutting); pressured when liquidity is tight |
+
+> These are **statistical correlations, not causal laws** — in 2020-2021 the dollar and BTC even rose together. In practice, treat the dollar index as "background music", not "the only signal".
+
+### Risk Sentiment and Geopolitics
+
+- **Risk sentiment switches**: when the regime flips between "risk-off" and "risk-on", money rushes into the dollar, yen, franc, and gold (safe assets) and out of the AUD, NZD, and emerging-market currencies (risk assets). When geopolitical conflict escalates (war, sanctions), the dollar and gold rising together is a familiar picture.
+- **Geopolitics and politics**: trade wars, sanctions, elections, and energy crises can all reset a currency's long-term valuation anchor. Examples: the ruble's violent depreciation during sanctions on Russia; sterling's long pressure during Brexit.
+
 ---
 
 ## 6. A Beginner Workflow for Forex

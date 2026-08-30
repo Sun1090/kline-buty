@@ -79,6 +79,16 @@ Mainstream regulators validated leverage's harm with real money: EU ESMA caps re
 
 > Leverage caps defer to the latest regulations. The first criterion for judging a broker is always its license (see [Chapter 03, Section 6](forex-ea.md#6-red-line-checklist-for-choosing-a-platform)) — never "how generous the leverage is".
 
+### 4. Cross-Market Comparison: Retail Forex Leverage Is an Outlier
+
+| Market | Typical leverage | Notes |
+|---|---|---|
+| Domestic A-shares | None (margin financing ~1x, i.e., 2x cap, threshold CNY 500k) | Strictly limited by regulation |
+| Domestic futures | ~6–20x (margin system) | Set by the exchanges |
+| Offshore retail forex | **Commonly 1:100 – 1:500**, some platforms higher | Broker-determined; caps vary by regulator |
+
+With the same USD 10,000 of capital: domestic futures can control at most about USD 200,000 notional, while a 1:500 platform can control 5 million — **one 0.2% adverse move and the account is gone**. Retail forex leverage sits far above any legitimate domestic market, which by itself shows it is not a "benefit" but part of the betting structure described at the start of this section.
+
 ---
 
 ## 3. Blow-Ups and Margin Calls: The Margin Level Lifeline

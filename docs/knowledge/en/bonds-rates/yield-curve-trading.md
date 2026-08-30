@@ -206,6 +206,59 @@ This workflow exists not to "forecast recessions" but to **make the rate cycle t
 
 ---
 
+## VIII. Hiking and Cutting Cycles: Transmission Paths by Asset
+
+| Phase | Central-bank action | Asset performance (historical experience, not guaranteed) |
+|---|---|---|
+| **Cutting cycle** | Rate cuts, balance-sheet expansion | Bond bull (rates fall, prices rise), stock rebound, gold stronger, property benefits, dollar softer, EM benefits |
+| **Hiking cycle** | Rate hikes, balance-sheet contraction | Bonds pressured, stocks (especially growth) correct, gold pressured, dollar stronger, high rates suppress property and credit |
+| **Late hiking** | After the final hike | Stocks often see a "final drop then reversal"; gold rebounds first; bonds front-run cut expectations |
+| **Late cutting** | Recovery after cuts | Yield curve re-steepens; stocks enter their main advancing leg |
+
+### Expected Hikes Hurt More Than Delivered Ones
+
+- Markets trade **expectations**, not facts: **the expectation phase of "the central bank will hike" does far more damage than hike day itself** (when it lands, it is "bad news fully priced")
+- Stocks are the "leading indicator", bonds the "coincident indicator", gold "the mirror of expectations" — grasp this timing gap and you understand why in September 2024, before the Fed had even cut, gold and US stocks had already rallied a round
+
+::: danger 💀 Iron Law: Expected Hikes Hurt More Than the Hike Itself
+**The expectation phase of "the central bank will hike" does far more damage than the hike's landing day** — because markets trade expectations, not facts. During the expectation phase, asset prices keep getting discounted and **<mark>positions</mark>** get passively trimmed; once the hike lands, it is often "bad news fully priced" and assets may even rebound. Making decisions from facts guarantees you are a beat late.
+:::
+
+### The Full-Market Transmission Chain of the US 10Y
+
+```text
+US 10Y yield moves
+    ├─→ Gold: yield up → opportunity cost of holding gold up → gold down (clearest negative correlation)
+    ├─→ US stocks: risk-free rate up → equity discount rate up → high-valuation growth pressured
+    │        (tech most sensitive, future cash flows concentrated far out)
+    ├─→ Global bonds: every country's yields follow (spread transmission)
+    ├─→ Emerging markets: capital flows back to dollar assets; stocks, bonds, FX hit together
+    └─→ Crypto: risk-asset sympathy; pressured when liquidity tightens
+```
+
+### Real-World Confirmation: 2022 Hikes and 2024 Cut Expectations (teaching cases, per latest data)
+
+- In 2022 the Fed hiked aggressively and the US 10Y soared from 1.5% to 4%+: **US stocks fell, gold fell, BTC dropped from 60k+ to near 15k** — indiscriminate selling across all markets, a textbook case of rates dominating everything
+- From 2024, cut expectations warmed and the US 10Y pulled back: gold hit all-time highs, BTC returned to 60k+, US stocks set repeated highs — **an easing liquidity cycle opened, risk assets led**
+
+> Linkage patterns are "statistical correlations" with lags and exceptions. **Watching the marginal change in the US 10Y (rising/falling direction) is more useful than the absolute level.**
+
+### The China-US Spread: The External Anchor for Domestic Assets
+
+Domestic assets (A-shares, CNY bonds) are influenced by both **domestic rates** and **US Treasury yields**:
+
+| Scenario | Impact |
+|---|---|
+| China-US spread (CNY − USD) narrows/inverts | Depreciation pressure on the renminbi; foreign outflows from A-shares and domestic bonds |
+| China-US spread widens | Renminbi appreciation, foreign inflows; positive for domestic assets |
+| US yields spike independently | Even with domestic cuts, A-shares and the renminbi can still be "drained" by the offshore market |
+
+> The China-US treasury spread is a key gauge of cross-border capital flows (in recent years it has hovered around 0 or even inverted, **per the latest data**). Don't watch only domestic policy for A-shares — **the US 10Y is the anchor of global liquidity.**
+
+> The above is a teaching summary of historical statistical patterns and **does not constitute a forecast for any cycle phase**.
+
+---
+
 ## Risk Warning
 
 ::: warning ⚠️ Risk Warning

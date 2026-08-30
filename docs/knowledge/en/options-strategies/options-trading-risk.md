@@ -325,6 +325,60 @@ All eight answered in writing before ordering. **Any item you can't answer = you
 
 ---
 
+## 13. Who Trades Options: Whom You Are Betting Against
+
+> This section is migrated from [Chapter 09 · Options Basics Quick Start](../markets-instruments/options-basics.md).
+
+| Participant | Role | Typical behavior |
+|---|---|---|
+| **Institutions (hedge funds/asset managers)** | Most active | Use options to hedge (insure), manage portfolio volatility, **<mark>arbitrage</mark>** |
+| **<mark>Market makers</mark>** | **<mark>Liquidity</mark>** providers | Quote both sides for the spread; hedge finely with the Greeks (mechanism in [02 · The Greeks in Practice](greeks-in-practice.md), Delta-neutral hedging) |
+| **Listed companies / industrial clients** | Hedgers | Lock prices, lock in M&A costs |
+| **Retail traders** | Tiny share | Mostly buying-side speculation — and the main prey of Theta and IV |
+
+**The brutal reality**: retail option buyers are betting against "institutions + market makers + statistical edge" at once. Institutions trade options to **manage risk**; retail traders mostly trade options to **gamble for amplified returns** — same instrument, two destinies.
+
+::: danger 💀 The Double Trap of Buyers and Sellers
+**Most buyers hold a limited premium while buying an extremely low probability — expiring worthless is the norm; the seller's income drips steadily, but one extreme move can wipe out years of premiums and leave debt.** Neither side has it easy — options are not a retail playground.
+:::
+
+---
+
+## 14. How to Participate in China: Access and Account Thresholds
+
+> This section is migrated from [Chapter 09 · Options Basics Quick Start](../markets-instruments/options-basics.md).
+
+| Market | Representative products | Account requirements (per latest rules) |
+|---|---|---|
+| **SSE 50 ETF options** (SSE) | Underlying: 510050 | CNY 500k threshold + options knowledge test + simulated trading experience |
+| **CSI 300 ETF options** (SSE/SZSE) | Underlying: 510300 / 159919 | Same as above |
+| **CSI 500/1000 ETF options, STAR 50 ETF options** | Newer products | Same as above (per the latest list) |
+| **Index options** (CFFEX) | CSI 300 index options etc. | Higher threshold (CNY 500k + index futures experience) |
+| **Commodity options** (commodity exchanges) | Soybean meal, sugar, gold, crude oil options etc. | Relatively low threshold; linked to commodity futures |
+| **US stock options** | Single-stock/index options (e.g., SPY) | Needs a US account and options permission (tiered approval) |
+| **Crypto options** | Offered by major exchanges (BTC/ETH options) | High **<mark>leverage</mark>**, round-the-clock, no regulatory protection — **extremely risky** |
+
+> Crypto options have thin liquidity, extreme volatility, and heavy platform risk — **not recommended as a starting point for learning options**. Domestic ETF options have the most standardized rules and the fullest documentation — the **only recommended entry channel for beginners**. Permissions and capital requirements for each product **follow the exchanges' latest announcements**.
+
+---
+
+## 15. Expiry and Exercise Rules at a Glance
+
+> This section is migrated from [Chapter 09 · Options Basics Quick Start](../markets-instruments/options-basics.md).
+
+| Rule item | Description (domestic ETF options for illustration; latest exchange rules prevail) |
+|---|---|
+| Expiry | Fourth Wednesday of each month (postponed for holidays) |
+| Exercise style | **European**: exercisable only on the expiry date (domestic ETF options) |
+| After exercise | Receive/deliver the underlying ETF (T+1); most retail traders close before expiry |
+| Closing | Sell the held option contract (like a stock); no need to wait for exercise |
+| Margin | Only the **seller** posts it, per the exchange's formula |
+| Total loss | OTM options expire worthless at expiry; premium goes to zero |
+
+**Practical advice**: the vast majority of retail traders never need to "exercise" — **closing before expiry is the mainstream**. A buyer holding to expiry must be clear that "strike + premium = true cost"; if you cannot run that arithmetic, use a debit spread or stay out.
+
+---
+
 ## Risk Warning
 
 ::: warning ⚠️ Risk Warning
@@ -350,4 +404,5 @@ All figures in this article (premiums, margins, percentages, cases) are fictiona
 - Option costs (spreads/fees/liquidity) are widely underestimated; **be careful with OTM far months**
 - Sizing: buyers ≤ 1-2% per trade; seller margin ≤ 30-50%; single underlying ≤ 20%
 - Backtests must cover IV data, non-linear simulation, roll paths, and tail scenarios
+- You are betting against "institutions + market makers + statistical edge"; domestic ETF options are the only recommended entry channel for beginners; **closing before expiry is the mainstream, exercise is the exception**
 - **Run the 8-item checklist before entry; if you can't write it down, don't order**

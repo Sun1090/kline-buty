@@ -16,7 +16,7 @@
 
 ## 前置阅读
 
-- **必读**：[09-市场与品种专题篇/04-期权基础.md](../markets-instruments/options-basics.md)——Call/Put、四要素、实值虚值、权利金、希腊字母入门。本篇默认你已掌握这些概念，直接做系统深潜。
+- **必读**：[09-市场与品种专题篇/04-期权基础.md](../markets-instruments/options-basics.md)——Call/Put、四要素、实值虚值、权利金（最短路径导读）。本篇默认你已掌握这些概念，直接做系统深潜。
 - 实操背景可搭配：[04-股票篇/06-美股期权入门.md](../stocks/us-stock-options.md)（美股期权实操）、[03-期货篇/07-期货期权与商品期权.md](../futures/commodity-options.md)（商品期权）。
 - 想看 VIX 与波动率指数全景的可搭配：[09-市场与品种专题篇/13-波动率与VIX.md](../markets-instruments/volatility-vix.md)。
 

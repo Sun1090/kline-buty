@@ -5,6 +5,8 @@ description: "Commodity panorama — the global pricing centers, participation t
 
 # 06 · Commodity Panorama: Understanding Commodities Through Their Global Pricing Centers
 
+> **This article is an asset map**: panorama and core concepts only. For a deep dive into the futures mechanics, see [Chapter 3 · Futures](../futures/).
+
 > The previous article, [03 - Futures / 04 - Futures Products](../futures/futures-products.md), covered **domestic contract specifications** (codes, units, **<mark>margin</mark>**). This one switches perspective: for each commodity, **where is its global pricing center, what tools can you use to participate, who sets its price, and how does it relate to your daily food, fuel, and housing**.
 >
 > Reading the "pricing centers" matters: copper is priced in London and Shanghai, oil in New York and Brent, soybeans in Chicago, palm oil in Malaysia — **the world's commodity price battles are not in the quote app on your desk, but in the order books of those exchanges.**

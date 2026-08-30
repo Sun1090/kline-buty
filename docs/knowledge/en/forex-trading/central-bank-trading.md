@@ -110,6 +110,7 @@ The dot plot is an anonymous collection of FOMC participants' projections for **
 
 - PMI (manufacturing/services) is the earliest monthly forward-looking indicator; only surprises beyond ~3 points carry tradable value.
 - Second-tier data (jobless claims, retail sales, consumer confidence) is mostly **noise**: unless it deviates wildly (±2 standard deviations), it's not worth betting on.
+- **GDP**: a quarterly confirmation of the economic baseline; low frequency and lagging — useful for calibrating medium-term direction, not as an event-trading vehicle.
 
 ---
 

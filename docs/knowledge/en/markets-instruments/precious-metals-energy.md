@@ -5,6 +5,8 @@ description: "Participation routes for precious metals and energy spot — gold 
 
 # 09 · Precious Metals and Energy Spot: How to Participate in Gold, Silver, and Crude Oil
 
+> **This article is an asset map**: panorama and core concepts only. For a deep dive into the futures mechanics, see [Chapter 3 · Futures](../futures/).
+
 > The previous article, [06 - Commodity Panorama](commodities-overview.md), covered the **global pricing centers** and core drivers of commodities; this one answers a more practical question: **gold, silver, crude oil — what can you actually buy?**
 >
 > There are at least ten thousand ways to "buy gold": bars from a jewelry store, bank paper gold, gold ETFs in a securities account, gold T+D on the exchange, London gold on an offshore platform... They all have "gold" in the name, but their thresholds, **<mark>leverage</mark>**, and risks differ wildly. Crude oil is even more so — **you can hardly ever buy "a barrel of spot crude"; you can only buy a pile of its derivatives.** This article lays these forms out side by side, plus how to spot the most dangerous scams in history.
