@@ -23,8 +23,9 @@ import { QuickOrderWithDepth } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
-import type { Position } from './position/pnl'
-import { buildPositionFromOrder, type OrderSide } from './trade/order'
+import { buildPositionFromOrder, estimateOrder, TAKER_FEE_RATE, type OrderSide } from './trade/order'
+import { calcPnl, type Position } from './position/pnl'
+import { usePaperAccount } from './hooks/usePaperAccount'
 import {
   createDrawing,
   DEFAULT_TEXT_FONT_SIZE,
@@ -107,6 +108,27 @@ export function App() {
   const [replay, setReplay] = useState<ReplayState | null>(null)
   const [position, setPosition] = useState<Position | null>(null)
   const [positionOpen, setPositionOpen] = useState(false)
+  // T15：模拟交易账户（余额 + 成交流水）
+  const paper = usePaperAccount()
+  const prevPositionRef = useRef<Position | null>(null)
+  useEffect(() => {
+    const prev = prevPositionRef.current
+    const price = candles[candles.length - 1]?.close ?? null
+    if (prev && position === null && price != null) {
+      const fee = prev.entry * prev.quantity * TAKER_FEE_RATE
+      const { pnl } = calcPnl(prev, price)
+      paper.recordClose({
+        symbol,
+        side: prev.direction === 'long' ? 'buy' : 'sell',
+        price,
+        qty: prev.quantity,
+        fee,
+        pnl,
+      })
+    }
+    prevPositionRef.current = position
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在 position 翻转时结算；paper/candles 变化不应重触发
+  }, [position])
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [depthOpen, setDepthOpen] = useState(false)
   const [orderBookOpen, setOrderBookOpen] = useState(false)
@@ -724,8 +746,12 @@ export function App() {
           symbol={symbol}
           side={quickOrder.side}
           price={quickOrder.price}
+          balance={paper.balance}
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
+            const est = estimateOrder(order.price, order.qty)
+            if (!paper.canOpen(est.notional, est.fee)) return
+            paper.recordOpen({ symbol, side: order.side, price: order.price, qty: order.qty, fee: est.fee })
             setPosition(buildPositionFromOrder(order.side, order.price, order.qty))
             setPositionOpen(true)
             setQuickOrder(null)

@@ -10,6 +10,8 @@ interface QuickOrderProps {
   /** 盘口买一/卖一价（可选）：一键填入价格输入框 */
   bid?: number | null
   ask?: number | null
+  /** 模拟账户可用余额（USDT）：传入时显示并拦截保证金不足 */
+  balance?: number | null
   onConfirm: (order: { side: OrderSide; price: number; qty: number }) => void
   onClose: () => void
 }
@@ -37,7 +39,7 @@ const fillBtnStyle = (color: string): React.CSSProperties => ({
   fontVariantNumeric: 'tabular-nums',
 })
 
-export function QuickOrder({ symbol, side, price, bid, ask, onConfirm, onClose }: QuickOrderProps) {
+export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, onClose }: QuickOrderProps) {
   const { t } = useI18n()
   const [priceStr, setPriceStr] = useState(String(price))
   const [qtyStr, setQtyStr] = useState('1')
@@ -49,6 +51,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, onConfirm, onClose }
     () => (valid ? estimateOrder(priceNum, qtyNum) : null),
     [valid, priceNum, qtyNum],
   )
+  const insufficient = est != null && balance != null && est.notional + est.fee > balance
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
 
@@ -121,6 +124,19 @@ export function QuickOrder({ symbol, side, price, bid, ask, onConfirm, onClose }
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
       </div>
 
+      {balance != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.balance')}</span>
+          <b data-testid="qo-balance" style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+            {balance.toFixed(2)} USDT
+          </b>
+        </div>
+      )}
+      {insufficient && (
+        <div data-testid="qo-insufficient" style={{ color: 'var(--down)', fontSize: 11, marginBottom: 8 }}>
+          {t('quickOrder.insufficient')}
+        </div>
+      )}
       {est && (
         <div
           style={{
@@ -149,7 +165,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, onConfirm, onClose }
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           data-testid="qo-confirm"
-          disabled={!valid}
+          disabled={!valid || insufficient}
           onClick={() => valid && onConfirm({ side, price: priceNum, qty: qtyNum })}
           style={{
             flex: 1,
