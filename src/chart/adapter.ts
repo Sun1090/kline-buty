@@ -180,6 +180,8 @@ export interface ChartApi {
   updateCandle(candle: Candle): void
   /** 键盘微移十字光标：dir=1 下一根 K 线 / -1 上一根（无光标时从最新 K 线开始） */
   nudgeCrosshair(dir: 1 | -1): void
+  /** 屏幕坐标 → 图表 (time, price)；越界/映射失败返回 null（右键菜单用） */
+  priceAt(clientX: number, clientY: number): { time: number; price: number } | null
   /** 清除十字光标 */
   clearCrosshair(): void
   /** 切换图表类型（蜡烛/折线/面积），保留副图与视图位置 */
@@ -3024,6 +3026,16 @@ export class LightweightChartAdapter implements ChartApi {
     } else {
       this.markerPriceLine.applyOptions({ price })
     }
+  }
+
+  priceAt(clientX: number, clientY: number): { time: number; price: number } | null {
+    const rect = this.container.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    const time = this.chart.timeScale().coordinateToTime(x)
+    const price = this.mainSeries.coordinateToPrice(y)
+    if (time === null || price === null) return null
+    return { time: Number(time), price: Number(price) }
   }
 
   nudgeCrosshair(dir: 1 | -1) {
