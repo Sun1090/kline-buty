@@ -1,5 +1,6 @@
 import type { OiPoint, RatioPoint, TakerPoint } from '../data/binance/rest'
 import type { SentimentData } from '../hooks/useSentiment'
+import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, type Lang } from '../i18n/messages'
 import { Sparkline } from './Sparkline'
@@ -32,7 +33,7 @@ function RatioBlock({ title, points }: RatioBlockProps) {
   if (!cur) {
     return (
       <Block title={title}>
-        <span style={{ color: 'var(--text-faint)' }}>{t('sentiment.loading')}</span>
+        <PanelState status="loading" message={t('sentiment.loading')} />
       </Block>
     )
   }
@@ -64,7 +65,7 @@ function TakerBlock({ title, points }: TakerBlockProps) {
   if (!cur) {
     return (
       <Block title={title}>
-        <span style={{ color: 'var(--text-faint)' }}>{t('sentiment.loading')}</span>
+        <PanelState status="loading" message={t('sentiment.loading')} />
       </Block>
     )
   }
@@ -97,7 +98,7 @@ function OiBlock({ title, points }: OiBlockProps) {
   if (!cur) {
     return (
       <Block title={title}>
-        <span style={{ color: 'var(--text-faint)' }}>{t('sentiment.loading')}</span>
+        <PanelState status="loading" message={t('sentiment.loading')} />
       </Block>
     )
   }
