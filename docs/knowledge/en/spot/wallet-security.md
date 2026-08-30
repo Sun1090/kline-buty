@@ -63,6 +63,16 @@ Private key generation, storage, and signing all happen on an offline chip that 
 - **Signing process**: the transaction is built on the computer/phone → sent to the hardware wallet → the hardware wallet's screen shows the transaction details → you physically press a button to confirm → the signature is sent back and broadcast
 - **Even if the computer is infected**: the private key never leaves the hardware device; the attacker sees at most the address and balance
 
+### 2.3 From Unboxing to Self-Custody: The Full Hardware-Wallet Procedure
+
+The first time you move serious money onto a hardware wallet, what kills you is rarely a hack — it is **skipping steps yourself**. Five steps, none optional:
+
+1. **Buy from the official channel only**: use the vendor's own store or an authorized reseller — **never second-hand, never a "cheaper" third-party listing**. A tampered device ships with a seed phrase the attacker already knows; your assets belong to someone else from day one;
+2. **Inspect the seals**: check the packaging seal and device shell. Reputable vendors use tamper-evident packaging and firmware self-checks; **a printed seed phrase card inside the box = 100% fake** — no real vendor ever generates your seed for you;
+3. **Initialize on the device**: generate the seed **on the device itself** (never "import an existing seed"), write it down **offline** onto steel or paper;
+4. **Verify the backup with a small amount**: transfer only an amount you can afford to lose (say 50 USDT equivalent), then **deliberately factory-reset the device → restore from your written seed → confirm the addresses and balances match**. Until this test passes, your backup is not a backup;
+5. **Then move the real amount in**, and store backups in separate locations (see §3).
+
 ---
 
 ## 3. Seed Phrase Management: Backing Up a Lifeline
@@ -120,11 +130,45 @@ Moral risk: founder exit scam, Ponzi schemes
 | 10,000–100,000 CNY | Withdraw to a hardware wallet |
 | > 100,000 CNY | Hardware wallet + multi-sig + multi-location backups |
 
+### 4.4 Withdrawing to Self-Custody: Four Common Failure Points
+
+Once you decide to withdraw, mistakes concentrate in the transfer itself:
+
+- **Pick the right network**: the same asset often exists on several chains (USDT on Omni/ERC-20/TRC-20, etc.). **Choose only a network the receiving end supports** — funds sent over an unsupported network are usually unrecoverable (recovery requires manual exchange intervention, with luck as the cost);
+- **Memo/tag**: some chains (XRP/ATOM between exchanges) require a memo — omit it and the funds arrive but cannot be attributed, forcing a manual recovery process;
+- **Small test first**: before a large withdrawal, send the minimum amount, confirm it arrives at the right address, then send the rest — those few minutes of fees are the cheapest insurance available;
+- **Verify the address**: check the first 6 and last 6 characters of the full address (see the §7 checklist), and beware clipboard-hijacking malware that swaps the address you copied for the attacker's — **the address on the hardware wallet's screen outranks the address on your monitor**.
+
 ---
 
-## 5. Advanced Security: Multi-Sig and Social Recovery
+## 5. Token Approvals and On-Chain Scams
 
-### 5.1 Multi-Signature (Multi-Sig)
+### 5.1 Token Approvals: DeFi's Invisible Backdoor
+
+On EVM chains (Ethereum, L2s, BNB Chain, etc.), "approval" is unavoidable when interacting with a dApp: **you are asking your wallet to let a contract spend tokens from your wallet**. The key facts:
+
+- What you approve is **the ERC-20 token itself**, not your private key — once approved, the contract can move that token within the granted limit **without any further confirmation**;
+- The most dangerous signature is an **unlimited approval**: the price of saving one gas fee is "this contract can spend as much as it wants" until you revoke;
+- **Revoke approvals you no longer use**: connect your wallet to a tool like revoke.cash to see every historical approval and its allowance, and revoke item by item (each revocation is an on-chain transaction costing a little gas);
+- Deciding whether to approve: stick to battle-tested mainstream protocols; read what you sign — **"SET APPROVAL FOR ALL" (all NFTs) and "unlimited" are default-refuse signals**.
+
+### 5.2 Three On-Chain Scams: Your Address Doesn't Expire, the Trap Waits for Your Mistake
+
+| Scam | How it works | Defense |
+|---|---|---|
+| **Address poisoning** | The attacker sends a zero-value transfer from an address matching your usual counterparty on the first/last characters but differing in the middle, polluting your transaction history — later you copy the fake address from that history | Keep an address book verified through official channels; verify first-6/last-6 characters; use exchange whitelists |
+| **Dust attack** | Many tiny transfers from unknown addresses, luring you to trace them, click the attached phishing link, or interact with the token | Ignore, don't interact, don't scan links; never try to "sell" an unknown token from your wallet (that step is the malicious contract's approval trap) |
+| **Fake token** | An airdropped token with the same name and icon as your real holdings (fake USDT) creating an illusion of windfall gains, inducing you to approve and sell | Verify the contract address against the official site and block explorers; treat any "money that appears out of nowhere" as a scam first |
+
+::: danger ⚠️ One-Line Anti-Scam Rule
+There is no "free money" on-chain — only traps waiting for your signature. **Don't interact with what you don't recognize, don't sign what you don't understand, don't transfer to what you haven't verified.**
+:::
+
+---
+
+## 6. Advanced Security: Multi-Sig and Social Recovery
+
+### 6.1 Multi-Signature (Multi-Sig)
 
 Moving funds requires N of M private keys (e.g. 2/3, 3/5). Any single stolen key cannot move assets on its own.
 
@@ -138,13 +182,13 @@ A transfer requires any 2 keys to sign together
 Lose any 1 key, and the remaining 2 still recover the funds
 ```
 
-### 5.2 Social Recovery
+### 6.2 Social Recovery
 
 No traditional private key; instead you designate multiple "guardians". If access is lost, a majority of guardians vote to restore it. Suited to users who do not want to manage keys.
 
 ---
 
-## 6. Anti-Theft, Anti-Loss Checklist
+## 7. Anti-Theft, Anti-Loss Checklist
 
 Run through this before every asset operation:
 
@@ -154,6 +198,8 @@ Run through this before every asset operation:
 - [ ] Has my seed phrase ever appeared on any internet-connected device?
 - [ ] Are my large assets on a hardware wallet?
 - [ ] Do I have at least two physically separated seed phrase backups?
+- [ ] Do I periodically clean up unused contract approvals with an allowance checker?
+- [ ] Before a large withdrawal, have I walked the full flow on that network with a small amount?
 
 ::: tip 💡 One iron rule
 Anyone (including people claiming to be exchange support, the police, or a project team) asking for your seed phrase, or asking you to click a link and enter it — **is 100% a scammer**. No exceptions.
