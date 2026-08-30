@@ -61,6 +61,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onSetAllDrawingsHidden: vi.fn(),
     drawingSnap: false,
     onToggleDrawingSnap: vi.fn(),
+    tradesActive: false,
+    onToggleTrades: vi.fn(),
     layout: 'single',
     themeMode: 'dark',
     colorPreset: 'classic',

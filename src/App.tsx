@@ -26,6 +26,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { buildPositionFromOrder, estimateOrder, TAKER_FEE_RATE, type OrderSide } from './trade/order'
 import { calcPnl, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
+import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import {
   createDrawing,
   DEFAULT_TEXT_FONT_SIZE,
@@ -108,6 +109,7 @@ export function App() {
   const [replay, setReplay] = useState<ReplayState | null>(null)
   const [position, setPosition] = useState<Position | null>(null)
   const [positionOpen, setPositionOpen] = useState(false)
+  const [tradesOpen, setTradesOpen] = useState(false)
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
   const prevPositionRef = useRef<Position | null>(null)
@@ -575,6 +577,8 @@ export function App() {
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          tradesActive={tradesOpen}
+          onToggleTrades={() => setTradesOpen((v) => !v)}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -651,6 +655,8 @@ export function App() {
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          tradesActive={tradesOpen}
+          onToggleTrades={() => setTradesOpen((v) => !v)}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -757,6 +763,9 @@ export function App() {
             setQuickOrder(null)
           }}
         />
+      )}
+      {tradesOpen && (
+        <TradeHistoryPanel trades={paper.trades} onClose={() => setTradesOpen(false)} onClear={paper.clearTrades} />
       )}
       {positionOpen && (
         <PositionPanel

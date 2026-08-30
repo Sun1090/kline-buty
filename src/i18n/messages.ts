@@ -358,6 +358,7 @@ export const zh = {
     buy: "买入",
     sell: "卖出",
   },
+  paper: { title: '交易流水', empty: '暂无成交——开仓后此处记录成交流水', open: '开仓', close: '平仓', long: '多', short: '空', clear: '清空' },
   quickOrder: {
     balance: '可用余额',
     insufficient: '余额不足：需要名义金额 + 手续费作为保证金',
@@ -764,6 +765,7 @@ export const en: Messages = {
     buy: "Buy",
     sell: "Sell",
   },
+  paper: { title: 'Trade History', empty: 'No trades yet — open a position and fills will be logged here', open: 'Open', close: 'Close', long: 'Long', short: 'Short', clear: 'Clear' },
   quickOrder: {
     balance: 'Available balance',
     insufficient: 'Insufficient balance: notional + fee is required as margin',
@@ -1168,6 +1170,7 @@ export const ja: Messages = {
     buy: "買い",
     sell: "売り",
   },
+  paper: { title: '取引履歴', empty: '取引なし——ポジションを建てるとここに記録されます', open: '新規', close: '決済', long: 'ロング', short: 'ショート', clear: '消去' },
   quickOrder: {
     balance: '利用可能残高',
     insufficient: '残高不足：名義金額＋手数料が証拠金として必要です',
@@ -1573,6 +1576,7 @@ export const ko: Messages = {
     buy: "매수",
     sell: "매도",
   },
+  paper: { title: '거래 내역', empty: '거래 없음——포지션을 열면 여기에 기록됩니다', open: '진입', close: '청산', long: '롱', short: '숏', clear: '지우기' },
   quickOrder: {
     balance: '가능 잔고',
     insufficient: '잔고 부족：명목금액＋수수료가 증거금으로 필요합니다',
@@ -1989,6 +1993,7 @@ export const es: Messages = {
     buy: "Comprar",
     sell: "Vender",
   },
+  paper: { title: 'Historial de operaciones', empty: 'Sin operaciones: abre una posición y se registrará aquí', open: 'Abrir', close: 'Cerrar', long: 'Largo', short: 'Corto', clear: 'Borrar' },
   quickOrder: {
     balance: 'Saldo disponible',
     insufficient: 'Saldo insuficiente: se requiere nominal + comisión como margen',

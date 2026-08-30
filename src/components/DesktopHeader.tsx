@@ -217,6 +217,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     { label: t('panel.vp'), active: props.vpActive, onToggle: closeMore(props.onToggleVp), title: t('panel.vpTitle') },
     { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: closeMore(props.onToggleSentiment), title: t('panel.sentimentTitle') },
     { label: t('replay.start'), active: props.replayActive, onToggle: closeMore(props.onReplay), title: t('replay.title'), disabled: props.replayDisabled },
+    { label: t('paper.title'), active: props.tradesActive, onToggle: closeMore(props.onToggleTrades), title: t('paper.title') },
     { label: t('panel.settings'), active: props.settingsActive, onToggle: closeMore(props.onToggleSettings) },
   ]
 
