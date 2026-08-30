@@ -62,6 +62,8 @@ export interface MobileHeaderProps {
   /** 画线吸附开关 + 回调 */
   drawingSnap: boolean
   onToggleDrawingSnap: () => void
+  tradesActive: boolean
+  onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
   onCycleLayout: () => void
   themeMode: ThemeMode
@@ -209,6 +211,7 @@ export function MobileHeader(props: MobileHeaderProps) {
       ? [{ label: t('marketList.title'), active: !!props.marketListActive, onToggle: props.onToggleMarketList, title: t('marketList.title') }]
       : []),
     { label: t('panel.settings'), active: props.settingsActive, onToggle: props.onToggleSettings },
+    { label: t('paper.title'), active: props.tradesActive, onToggle: props.onToggleTrades, title: t('paper.title') },
     {
       label: props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear'),
       active: props.priceScaleMode === 'log',
