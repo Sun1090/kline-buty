@@ -359,6 +359,8 @@ export const zh = {
     sell: "卖出",
   },
   quickOrder: {
+    balance: '可用余额',
+    insufficient: '余额不足：需要名义金额 + 手续费作为保证金',
     bid: '买一',
     ask: '卖一',
     title: "快速下单",
@@ -763,6 +765,8 @@ export const en: Messages = {
     sell: "Sell",
   },
   quickOrder: {
+    balance: 'Available balance',
+    insufficient: 'Insufficient balance: notional + fee is required as margin',
     bid: 'Bid',
     ask: 'Ask',
     title: "Quick order",
@@ -1165,6 +1169,8 @@ export const ja: Messages = {
     sell: "売り",
   },
   quickOrder: {
+    balance: '利用可能残高',
+    insufficient: '残高不足：名義金額＋手数料が証拠金として必要です',
     bid: '買値',
     ask: '売値',
     title: "クイック注文",
@@ -1568,6 +1574,8 @@ export const ko: Messages = {
     sell: "매도",
   },
   quickOrder: {
+    balance: '가능 잔고',
+    insufficient: '잔고 부족：명목금액＋수수료가 증거금으로 필요합니다',
     bid: '매수호가',
     ask: '매도호가',
     title: "빠른 주문",
@@ -1982,6 +1990,8 @@ export const es: Messages = {
     sell: "Vender",
   },
   quickOrder: {
+    balance: 'Saldo disponible',
+    insufficient: 'Saldo insuficiente: se requiere nominal + comisión como margen',
     bid: 'Compra',
     ask: 'Venta',
     title: "Orden rápida",
