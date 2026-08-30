@@ -364,6 +364,7 @@ export const zh = {
   },
   paper: { title: '交易流水', empty: '暂无成交——开仓后此处记录成交流水', open: '开仓', close: '平仓', long: '多', short: '空', clear: '清空' },
   ctx: { copyPrice: '复制价格', addAlert: '添加提醒', clearDrawings: '清空画线', confirmClear: '确认清空当前品种的全部画线？', copied: '已复制' },
+  pull: { pull: '下拉刷新', release: '松开刷新', refreshing: '刷新中…' },
   panelState: { loading: '加载中…', error: '加载失败', empty: '暂无数据', retry: '重试' },
   quickOrder: {
     balance: '可用余额',
@@ -783,6 +784,7 @@ export const en: Messages = {
   },
   paper: { title: 'Trade History', empty: 'No trades yet — open a position and fills will be logged here', open: 'Open', close: 'Close', long: 'Long', short: 'Short', clear: 'Clear' },
   ctx: { copyPrice: 'Copy price', addAlert: 'Add alert', clearDrawings: 'Clear drawings', confirmClear: 'Clear all drawings for this symbol?', copied: 'Copied' },
+  pull: { pull: 'Pull to refresh', release: 'Release to refresh', refreshing: 'Refreshing…' },
   panelState: { loading: 'Loading…', error: 'Failed to load', empty: 'No data', retry: 'Retry' },
   quickOrder: {
     balance: 'Available balance',
@@ -1200,6 +1202,7 @@ export const ja: Messages = {
   },
   paper: { title: '取引履歴', empty: '取引なし——ポジションを建てるとここに記録されます', open: '新規', close: '決済', long: 'ロング', short: 'ショート', clear: '消去' },
   ctx: { copyPrice: '価格をコピー', addAlert: 'アラートを追加', clearDrawings: '描画を消去', confirmClear: 'この銘柄の描画をすべて消去しますか？', copied: 'コピーしました' },
+  pull: { pull: '引き下げて更新', release: '指を離して更新', refreshing: '更新中…' },
   panelState: { loading: '読み込み中…', error: '読み込み失敗', empty: 'データなし', retry: '再試行' },
   quickOrder: {
     balance: '利用可能残高',
@@ -1618,6 +1621,7 @@ export const ko: Messages = {
   },
   paper: { title: '거래 내역', empty: '거래 없음——포지션을 열면 여기에 기록됩니다', open: '진입', close: '청산', long: '롱', short: '숏', clear: '지우기' },
   ctx: { copyPrice: '가격 복사', addAlert: '알림 추가', clearDrawings: '선 모두 지우기', confirmClear: '이 심볼의 모든 선을 지울까요?', copied: '복사됨' },
+  pull: { pull: '당겨서 새로고침', release: '놓아서 새로고침', refreshing: '새로고침 중…' },
   panelState: { loading: '로딩 중…', error: '로드 실패', empty: '데이터 없음', retry: '재시도' },
   quickOrder: {
     balance: '가능 잔고',
@@ -2047,6 +2051,7 @@ export const es: Messages = {
   },
   paper: { title: 'Historial de operaciones', empty: 'Sin operaciones: abre una posición y se registrará aquí', open: 'Abrir', close: 'Cerrar', long: 'Largo', short: 'Corto', clear: 'Borrar' },
   ctx: { copyPrice: 'Copiar precio', addAlert: 'Añadir alerta', clearDrawings: 'Borrar dibujos', confirmClear: '¿Borrar todos los dibujos de este símbolo?', copied: 'Copiado' },
+  pull: { pull: 'Tira para actualizar', release: 'Suelta para actualizar', refreshing: 'Actualizando…' },
   panelState: { loading: 'Cargando…', error: 'Error al cargar', empty: 'Sin datos', retry: 'Reintentar' },
   quickOrder: {
     balance: 'Saldo disponible',

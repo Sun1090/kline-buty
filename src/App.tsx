@@ -28,6 +28,7 @@ import { calcPnl, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
+import { PullToRefresh } from './components/PullToRefresh'
 import {
   createDrawing,
   DEFAULT_TEXT_FONT_SIZE,
@@ -82,6 +83,8 @@ export function App() {
   const [drawingSnap, setDrawingSnap] = usePersistedState<boolean>('drawingSnap', false)
   // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
   const [quadPeriods, setQuadPeriods] = useState<[Period, Period, Period, Period] | null>(null)
+  // T22：下拉刷新重挂载键
+  const [reloadKey, setReloadKey] = useState(0)
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
@@ -850,7 +853,8 @@ export function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
-      <main style={{ flex: 1, minHeight: 0, marginRight: 'var(--side-panel-w)' }}>
+      <main key={`chart-${reloadKey}`} style={{ flex: 1, minHeight: 0, marginRight: 'var(--side-panel-w)' }}>
+        <PullToRefresh enabled={isMobile} onRefresh={() => setReloadKey((k) => k + 1)}>
         {layout === 'pair' ? (
           <ChartPair
             symbol={symbol}
@@ -922,7 +926,8 @@ export function App() {
             onCancelDrawingProgressRef={cancelDrawingRef}
           />
         )}
-        </main>
+          </PullToRefresh>
+      </main>
         </div>
       </div>
       {sidePanelOpen && (
