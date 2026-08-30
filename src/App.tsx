@@ -27,6 +27,7 @@ import { buildPositionFromOrder, estimateOrder, TAKER_FEE_RATE, type OrderSide }
 import { calcPnl, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
+import { ShortcutsHelp } from './components/ShortcutsHelp'
 import {
   createDrawing,
   DEFAULT_TEXT_FONT_SIZE,
@@ -959,43 +960,7 @@ export function App() {
           onExit={() => setReplay(null)}
         />
       )}
-      {shortcutsOpen && (
-        <div
-          data-testid="shortcuts-help"
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 64,
-            zIndex: 999,
-            minWidth: 280,
-            padding: '12px 16px',
-            background: 'var(--panel)',
-            border: '1px solid #2a2e39',
-            borderRadius: 8,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-            fontSize: 12,
-            lineHeight: 1.9,
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text)' }}>
-            {t('shortcuts.title')}
-          </div>
-          <div style={{ color: 'var(--text-dim)' }}>
-            <div>{t('shortcuts.openSearch', { key: /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K' })}</div>
-            <div>{t('shortcuts.period')}</div>
-            <div>{t('shortcuts.layout')}</div>
-            <div>{t('shortcuts.cycleMain')}</div>
-            <div>{t('shortcuts.cycleSub')}</div>
-            <div>{t('shortcuts.fullscreen')}</div>
-            <div>{t('shortcuts.replay')}</div>
-            <div>{t('shortcuts.replayStep')}</div>
-            <div>{t('shortcuts.replaySpeed')}</div>
-            <div>{t('shortcuts.deleteDrawing')}</div>
-            <div>{t('shortcuts.escape')}</div>
-            <div>{t('shortcuts.hint')}</div>
-          </div>
-        </div>
-      )}
+      {shortcutsOpen && <ShortcutsHelp />}
       {editingTextId && isMobile && (
         <div
           data-testid="mobile-text-editor"
