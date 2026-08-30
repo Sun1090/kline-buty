@@ -100,7 +100,7 @@ f* = (1.5 × 0.55 - 0.45) / 1.5
 ```
 
 ::: warning ⚠️ The Kelly Trap
-Kelly assumes you know your win rate and payoff ratio **exactly** — in reality both are estimates that drift as markets change. Full Kelly (25%) with misestimated parameters can cause severe drawdowns. In practice, traders use **half Kelly** (f*/2 = 12.5%) or even **quarter Kelly**.
+Kelly assumes you know your win rate and payoff ratio **exactly** — in reality both are estimates, and under parameter error full Kelly's drawdown can be catastrophic. In practice, traders use **half Kelly or even quarter Kelly**. For the full discussion of "why almost nobody runs full Kelly" (drawdowns, black swans, and a live-comparison table), see the risk-management section of [Chapter 07 · Trading Systems](../trading-system/).
 :::
 
 ---

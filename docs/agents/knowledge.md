@@ -37,7 +37,7 @@
 
 - 站点根 locale = English（`/knowledge/…`），`/knowledge/zh/…` = 简体中文；导航栏自动出现语言切换下拉。
 - `scripts/docs-prepare.mjs` 把 `en/` 与 `zh/` 两树分别同步到 `docs-site/docs/` 与 `docs-site/docs/zh/`，章节 README 拷贝时改名为 index.md。
-- 中文是全量基准；英文按阅读顺序渐进翻译（已完成：getting-started）。翻译时保留 `<mark>`、表格、SVG 引用、交互组件标签与 slug 相对链接。
+- 中文是全量基准；**英文树已全量翻译（2026-08 起 zh 与 en 同步维护：改 zh 必须同步改 en 对应篇目）**。翻译时保留 `<mark>`、表格、SVG 引用、交互组件标签与 slug 相对链接。
 
 ## 改动后的必跑命令
 

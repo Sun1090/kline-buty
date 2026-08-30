@@ -5,6 +5,8 @@ description: "Options basics — Call and Put, the four elements, ITM/ATM/OTM, b
 
 # 04 · Options Basics: The Most Sophisticated Financial Instrument
 
+> **This article is an instrument map**: it covers only the big picture and the core concepts. To dig deeper, go straight to [Chapter 27 · Options Strategies](../options-strategies/) — that is the main course on this topic.
+
 > Options are the "smartest" contracts in the financial world: they let you **buy a future right at limited cost** — right direction, you profit from the move; wrong direction, you lose at most the **<mark>premium</mark>**. Sounds wonderful?
 
 ::: danger 💀 Options are one of the fastest ways retail traders lose money
