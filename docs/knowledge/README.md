@@ -170,10 +170,10 @@
 
 | 文档 | 内容 |
 |---|---|
-| [forex-market.md](zh/markets-instruments/forex-market.md) | 外汇（FX / Forex）市场是全球规模最大、<mark>流动性</mark>最强、交易时间最长的金融市场。它没有中央… |
-| [bonds-interest-rates.md](zh/markets-instruments/bonds-interest-rates.md) | 股票、外汇、加密都有人炒，但真正决定「钱值多少钱」的，是债券与利率。美联储一加息，全球股市颤抖、黄金下跌、加密货币崩盘—… |
+| [forex-market.md](zh/markets-instruments/forex-market.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 外汇交易篇——那是这个主题的「正篇」。 |
+| [bonds-interest-rates.md](zh/markets-instruments/bonds-interest-rates.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 债券与利率深潜篇——那是这个主题的「正篇」。 |
 | [funds-etf.md](zh/markets-instruments/funds-etf.md) | 对大多数人来说，直接买股票、玩期货并不是最优解——基金才是普通人参与市场的顺手的工具：门槛低、分散风险、省时省力。 |
-| [options-basics.md](zh/markets-instruments/options-basics.md) | 期权是金融世界里最「聪明」的合约：它让你用有限成本买一个未来的权利——方向对了赚差价，方向错了最多亏掉<mark>权利金… |
+| [options-basics.md](zh/markets-instruments/options-basics.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 期权策略篇——那是这个主题的「正篇」。 |
 | [indices-sectors.md](zh/markets-instruments/indices-sectors.md) | 你常听到「今天大盘涨了 2%」「沪深 300 跌了」，这里的「大盘」不是某只股票，而是指数。指数把几百只股票的涨跌加权平… |
 | [commodities-overview.md](zh/markets-instruments/commodities-overview.md) | 上一篇 03-期货篇/04-期货品种百科.md 讲的是国内合约规格（代码、单位、<mark>保证金</mark>），本篇… |
 | [crypto-landscape.md](zh/markets-instruments/crypto-landscape.md) | 加密货币是 09 篇里最年轻、波动最大、争议也最大的市场。它没有交易所年报，没有 PE 估值，没有央行背书——有的只是代… |
@@ -387,7 +387,7 @@
 
 ## 知识库规模
 
-> 共 **27 个篇章 / 182 篇文档 / 约 43,951 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
+> 共 **27 个篇章 / 182 篇文档 / 约 43,945 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
 
 ## 内容约定
 

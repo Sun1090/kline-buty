@@ -5,6 +5,8 @@ description: "Forex market explained — currency pairs, the US Dollar Index DXY
 
 # 01 · Forex Market: The World's Largest Financial Battlefield
 
+> **This article is an instrument map**: it covers only the big picture and the core concepts. To dig deeper, go straight to [Chapter 23 · Forex Trading in Practice](../forex-trading/) — that is the main course on this topic.
+
 > The foreign exchange (FX / Forex) market is the world's **largest, most **<mark>liquid</mark>**, and longest-trading** financial market. It has no central exchange and no price limits, and it never stops from Monday to Friday, 24 hours a day — you have to wait for the evening session to buy US stocks, but forex always has a counterparty.
 >
 > But large scale does not mean easy money: this is the **institutions' home ground**, and retail traders who enter with high **<mark>leverage</mark>** mostly end up eaten alive by time, the **<mark>spread</mark>**, and rogue platforms. This article explains the rules and the traps.

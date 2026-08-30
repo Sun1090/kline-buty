@@ -176,21 +176,9 @@ A calendar spread = buy the far-month option + sell the near-month option (or th
 
 ---
 
-## 7. Option Pricing and the Greeks
+## 7. Option Pricing and the Greeks: The Commodity Angle
 
-Premium = intrinsic value + time value. **Intrinsic value** is what you get exercising now (the in-the-money portion); **time value** is the market's premium for "future uncertainty". The core determinant of time value is implied volatility (IV) — it comes not from financial statements but from backing out the option's own price.
-
-To read an option T-quote is to read five Greeks:
-
-| Greek | Meaning | Buyer's view | Seller's view |
-|---|---|---|---|
-| **Delta** | Option price change per 1-unit underlying move | Call rises with the underlying, Put falls | Exactly the reverse of the buyer |
-| **Gamma** | The speed of Delta's own change (convexity) | Gamma peaks near the strike — most sensitive to movement | Risk exposure accelerates in fast markets |
-| **Theta** | Option price lost per day of time passing | Always negative: time is your enemy | Positive: collect time value by waiting |
-| **Vega** | Option price change per 1-point IV move | IV up = profit (bought at low IV) | IV up = loss (selling at high IV is steadier) |
-| **Rho** | Impact per 1-point rate change | Negligible for short-dated options | Same as left |
-
-Commodity option application notes:
+Premium = intrinsic value + time value. For the full definitions of the five Greeks (Delta/Gamma/Theta/Vega/Rho) and the buyer-vs-seller comparison table, see the Greeks-in-practice article in [Chapter 27 · Options Strategies](../options-strategies/) — this article does not repeat them here, and covers only the **application points specific to commodity options**:
 
 - **At-the-money (strike ≈ underlying)**: maximum Gamma and Theta — the zone of fiercest time decay; sellers love it, buyers fear it;
 - **Deep ITM/OTM**: Delta approaches ±1 or 0; the option increasingly "behaves like futures" or "like waste paper";

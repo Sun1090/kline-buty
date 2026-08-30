@@ -5,6 +5,8 @@ description: "Bonds and interest rates explained — bond pricing, the yield cur
 
 # 02 · Bonds and Interest Rates: The Pricing Anchor of Assets
 
+> **This article is an instrument map**: it covers only the big picture and the core concepts. To dig deeper, go straight to [Chapter 22 · Bonds & Rates Deep Dive](../bonds-rates/) — that is the main course on this topic.
+
 > Stocks, forex, and crypto all have their speculators, but **what truly determines "how much money is worth" are bonds and interest rates**. When the Fed hikes, global stocks tremble, gold falls, crypto crashes — the starting point of the transmission chain is always the bond market.
 >
 > This article clarifies three things: how bonds are priced, what the <mark>yield</mark> curve is saying, and how interest rates rule all assets. This is not proprietary knowledge for "bond people" — it is foundational common sense every trader should own.
