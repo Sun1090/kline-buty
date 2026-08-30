@@ -181,7 +181,11 @@ export function ChartView({
   const [ctxCopied, setCtxCopied] = useState(false)
   useEffect(() => {
     if (!ctxMenu) return
-    const close = () => setCtxMenu(null)
+    const close = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('[data-testid="chart-ctx-menu"]')) return
+      setCtxMenu(null)
+    }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [ctxMenu])

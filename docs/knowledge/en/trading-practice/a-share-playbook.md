@@ -7,6 +7,8 @@ description: "Seven signature A-share plays dissected one by one — limit-up ch
 
 > The reason A-shares feel "hard to understand" is that the market has many plays unique to it: price limits, T+1, limit-up chasing, IPO subscriptions, convertible bond T+0, ST delisting, theme speculation... These plays are both wealth amplifiers and meat grinders. This article dissects all seven: **the logic of each play, its operational essentials, and its risk points**, ending with a beginner pitfall-avoidance checklist.
 
+> **Scope boundary:** This is the A-share tactics and behavioral-risk casebook. Opening hours, call auction, T+1, price limits, accounts, and fees are maintained in [A-share Trading Rules](../stocks/a-share-rules.md); this article does not duplicate the full rule tables.
+
 ---
 
 ## 1. Limit-Up Chasing (The Limit-Up Play)

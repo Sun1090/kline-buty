@@ -4,6 +4,8 @@
 >
 > This chapter switches dimension — **filling in "instruments and markets" horizontally**: forex, bonds, funds, and options. These four markets differ from the earlier focus (stocks/futures/crypto): they are larger, more mechanically complex, and their entry barriers vary enormously. Forex is the largest financial arena in the world, bonds are the "master switch" of interest rates, funds are the most accessible asset tool for ordinary people, and options are the most sophisticated "financial instrument". **Only by understanding them do you understand the skeleton of the entire financial world.**
 
+> **Cross-chapter ownership:** This chapter owns the horizontal market map and the mechanism deep dives for non-stock instruments. Stock rules and analysis belong in [04 · Stocks](../stocks/), futures margin and contract mechanics in [03 · Futures](../futures/), and crypto spot/contract foundations in [01 · Spot](../spot/) and [05 · Crypto Perpetuals](../crypto-perpetuals/). This chapter repeats only the minimum background needed for comparison, not full rule tables maintained elsewhere.
+
 ---
 
 > ⚠️ Risk Warning

@@ -9,6 +9,8 @@ description: "HK and US IPO subscription — new-issue mechanism comparison, the
 >
 > This article covers three things: how new shares get issued (the offering mechanisms), how retail investors participate (the full HK subscription workflow / the US reality), and the games and traps around IPOs beyond subscription itself.
 
+> **Scope boundary:** This article focuses on IPO issuance, prospectus checks, and subscription workflows. Secondary-market rules belong in [Hong Kong and US Stocks](../stocks/hk-us-stocks.md), while A-share IPO rules belong in [A-share Trading Rules](../stocks/a-share-rules.md); full rule tables are not duplicated here.
+
 ---
 
 > **⚠️ Risk Warning**

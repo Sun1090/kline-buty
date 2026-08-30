@@ -9,6 +9,8 @@ description: "A deep dive into DeFi and the on-chain ecosystem — the concrete 
 >
 > The stance here is explicit: **DeFi is not a "no-threshold, high-yield cash machine" but a parallel financial system where "code is law and risk carries built-in **<mark>leverage</mark>**"**. Understand it, and you neither miss the cognitive upgrade the on-chain ecosystem offers nor get harvested by "200% APY" ads.
 
+> **Scope boundary:** This is the mechanism-and-risk deep dive for DeFi—staking, lending, liquidity mining, yield aggregation, bridges, and on-chain verification. Introductory CEX/DEX, wallet, stablecoin, and market-map material belongs in [07 - Crypto Landscape](crypto-landscape.md) and [03 - Crypto Spot](../spot/crypto-spot.md); it is not repeated here.
+
 ---
 
 > **⚠️ Risk Warning**
