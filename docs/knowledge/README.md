@@ -173,17 +173,17 @@
 | [forex-market.md](zh/markets-instruments/forex-market.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 外汇交易篇——那是这个主题的「正篇」。 |
 | [bonds-interest-rates.md](zh/markets-instruments/bonds-interest-rates.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 债券与利率深潜篇——那是这个主题的「正篇」。 |
 | [funds-etf.md](zh/markets-instruments/funds-etf.md) | 对大多数人来说，直接买股票、玩期货并不是最优解——基金才是普通人参与市场的顺手的工具：门槛低、分散风险、省时省力。 |
-| [options-basics.md](zh/markets-instruments/options-basics.md) | 本篇是品种地图：只讲全景与核心概念。要深挖，请直接去 期权策略篇——那是这个主题的「正篇」。 |
+| [options-basics.md](zh/markets-instruments/options-basics.md) | 本篇是导读卡：用最短路径回答「期权是什么」。吃透概念后请直接进入 27 章 · 期权策略篇——定价与波动率、希腊字母、策… |
 | [indices-sectors.md](zh/markets-instruments/indices-sectors.md) | 你常听到「今天大盘涨了 2%」「沪深 300 跌了」，这里的「大盘」不是某只股票，而是指数。指数把几百只股票的涨跌加权平… |
-| [commodities-overview.md](zh/markets-instruments/commodities-overview.md) | 上一篇 03-期货篇/04-期货品种百科.md 讲的是国内合约规格（代码、单位、<mark>保证金</mark>），本篇… |
-| [crypto-landscape.md](zh/markets-instruments/crypto-landscape.md) | 加密货币是 09 篇里最年轻、波动最大、争议也最大的市场。它没有交易所年报，没有 PE 估值，没有央行背书——有的只是代… |
+| [commodities-overview.md](zh/markets-instruments/commodities-overview.md) | 本篇是品种地图：只讲全景与核心概念。期货相关机制的深挖请去 03-期货篇。 |
+| [crypto-landscape.md](zh/markets-instruments/crypto-landscape.md) | 本篇是品种地图：只讲全景与核心概念。期货相关机制的深挖请去 05-加密合约篇。 |
 | [macro-markets.md](zh/markets-instruments/macro-markets.md) | 个股看公司，商品看供需，但所有资产的价格终点都指向同一个变量：宏观。利率一动，全球资产重新定价；非农一出，美元与黄金直接… |
-| [precious-metals-energy.md](zh/markets-instruments/precious-metals-energy.md) | 上一篇 06-商品品种全景.md 讲了商品的全球定价中心与核心驱动；本篇回答更实际的问题：黄金、白银、原油，你手里到底能… |
+| [precious-metals-energy.md](zh/markets-instruments/precious-metals-energy.md) | 本篇是品种地图：只讲全景与核心概念。期货相关机制的深挖请去 03-期货篇。 |
 | [hk-us-ipo.md](zh/markets-instruments/hk-us-ipo.md) | A 股打新曾被视为「免费彩票」：中签即吃肉，上市首日几乎必涨。但那是核准制时代的神话。在注册制与港美股市场，打新是一门需… |
 | [reits-real-estate.md](zh/markets-instruments/reits-real-estate.md) | 「买房」是多数中国人最有执念的资产配置方式——但房子本身不是资产，能产生租金现金流的房子才是资产。当一线城市一套房动辄数… |
 | [alternative-assets.md](zh/markets-instruments/alternative-assets.md) | 茅台酒、劳力士、威士忌桶、手办潮玩、数字藏品……「爱好变现」是近几年最有蛊惑力的叙事之一：既享受收藏乐趣，又指望升值赚钱… |
 | [volatility-vix.md](zh/markets-instruments/volatility-vix.md) | 大多数交易者只盯着价格涨跌，却忽略了第二个维度：价格变动有多剧烈。波动率就是这个维度——它不告诉你方向，只告诉你「会动多… |
-| [commodity-indices-cycles.md](zh/markets-instruments/commodity-indices-cycles.md) | 「商品牛市来了吗？」——2020-2022 年的能源危机、2024 年可可/铜的历史新高，把大宗商品重新带回大众视野。但… |
+| [commodity-indices-cycles.md](zh/markets-instruments/commodity-indices-cycles.md) | 本篇是品种地图：只讲全景与核心概念。期货相关机制的深挖请去 03-期货篇。 |
 | [defi-deep-dive.md](zh/markets-instruments/defi-deep-dive.md) | 里讲过 DeFi 的框架性认知（CEX vs DEX、四种玩法、合约风险），本篇把它做一次深潜实操：不满足于「DeFi… |
 | [sentiment-indicators.md](zh/markets-instruments/sentiment-indicators.md) | 情绪指标度量的不是「价格会涨还是会跌」，而是「别人现在有多冲动」。当所有人都冲动的时候，冲动本身就不再值钱。 本篇讲三个… |
 
@@ -387,7 +387,7 @@
 
 ## 知识库规模
 
-> 共 **27 个篇章 / 182 篇文档 / 约 43,945 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
+> 共 **27 个篇章 / 182 篇文档 / 约 43,603 行**（zh 全量；英文版持续翻译中）。 索引由 `docs/knowledge/scripts/sync-index.py` 自动生成，新增文档后请运行该脚本保持同步。
 
 ## 内容约定
 

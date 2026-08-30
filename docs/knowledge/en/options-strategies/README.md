@@ -16,7 +16,7 @@
 
 ## Prerequisites
 
-- **Required**: [Options Basics](../markets-instruments/options-basics.md) — Call/Put, the four elements, ITM/OTM, premium, an introduction to the Greeks. This chapter assumes you already know these concepts and dives straight into a systematic deep dive.
+- **Required**: [Options Basics](../markets-instruments/options-basics.md) — Call/Put, the four elements, ITM/OTM, premium (the shortest-path primer). This chapter assumes you already know these concepts and dives straight into a systematic deep dive.
 - For practical context, pair with: [US Stock Options Primer](../stocks/us-stock-options.md) (US equity options in practice) and [Commodity Options](../futures/commodity-options.md) (futures and commodity options).
 - For a full picture of VIX and volatility indices, pair with: [Volatility and VIX](../markets-instruments/volatility-vix.md).
 

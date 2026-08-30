@@ -219,6 +219,23 @@ Reading institutional games isn't about imitation — it's about **finding low p
 
 ---
 
+## VIII. Quick Reference: How Ordinary Investors Access Bonds
+
+The earlier sections dissected each retail tool in turn; here is a "threshold × investor type" cheat sheet:
+
+| Route | Threshold | Suits | Characteristics |
+|---|---|---|---|
+| **Savings treasuries** | From 100 yuan (per latest rules) | Conservative | Certificate/electronic; hold to maturity for principal + interest; not transferable |
+| **Exchange treasuries** | ~1,000 yuan face value | Those with a securities account | Real-time trading; price moves with rates |
+| **Treasury reverse repo** | Shenzhen from 1,000 yuan | Idle-cash holders | Nearly risk-free; big pre-holiday yield pops |
+| **Pure/short bond funds** | From 10 yuan | Steady type | Low threshold, good liquidity, small swings |
+| **Convertible bonds** | ~100 yuan face value per bond (one lot of 10 ≈ 1,000 yuan, per latest rules) | Advanced | Debt floor below, equity upside above; must learn the terms |
+| **Bond ETFs** | On-exchange | Liquidity seekers | E.g., treasury ETFs, corporate bond ETFs (codes per latest) |
+
+**Suggested beginner path**: treasury reverse repo (learn the mechanics) → savings treasuries (lock the risk-free return) → pure bond funds (delegate to professionals) → convertibles (only after advancing).
+
+---
+
 ## Risk Warning
 
 ::: warning ⚠️ Risk Warning

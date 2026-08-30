@@ -5,6 +5,8 @@ description: "Crypto landscape — major coin positioning, market-cap distributi
 
 # 07 · Crypto Landscape: From Digital Gold to the Map of Crypto
 
+> **This article is an asset map**: panorama and core concepts only. For a deep dive into the futures mechanics, see [Chapter 5 · Crypto Perpetuals](../crypto-perpetuals/).
+
 > Crypto is the youngest, most volatile, and most contested market of chapter 09. It has no exchange annual reports, no PE valuation, no central-bank backing — only code, consensus, and sentiment.
 >
 > This article does not teach you to "trade coins"; it helps you **build the full map**: what each major coin is positioned as, how the crypto landscape is divided, the exchange landscape and compliance differences, how to read on-chain data and market sentiment (echoing [05 - Crypto Perpetuals](../crypto-perpetuals/)), the risks of DeFi/NFT/Meme, and the first checklist for beginners entering the market.

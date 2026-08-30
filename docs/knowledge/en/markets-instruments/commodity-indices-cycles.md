@@ -5,6 +5,8 @@ description: "Commodity indices and cycles — CRB, S&P GSCI and the Nanhua inde
 
 # 14 · Commodity Indices and Cycles: Reading the Rhythm of an Era of Rising Prices
 
+> **This article is an asset map**: panorama and core concepts only. For a deep dive into the futures mechanics, see [Chapter 3 · Futures](../futures/).
+
 > "Is the commodity bull here?" — the 2020-2022 energy crisis and the 2024 record highs in cocoa/copper pulled commodities back into public view. But commodity moves are not random noise: **they are the stack of three rhythms — decadal "supercycles", 3-5 year "macro cycles", and multi-month "inventory cycles"**.
 >
 > This article covers how commodity indices are built (CRB / S&P GSCI / Nanhua), the lead-lag relationship between commodity prices and inflation, the anatomy of two supercycles, the macro linkages of commodities with the dollar/PMI/geopolitics, and the right way — and the common mistakes — for ordinary investors to participate.
