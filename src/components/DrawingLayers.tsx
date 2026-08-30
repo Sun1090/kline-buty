@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Drawing } from '../drawings/logic'
+import { useRef } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
 
@@ -14,6 +15,11 @@ interface DrawingLayersProps {
   onClearAll: () => void
   /** 批量显示/隐藏全部画线 */
   onSetAllHidden: (hidden: boolean) => void
+  /** 画线 JSON 导出/导入（T19） */
+  onExport: () => void
+  onImportFile: (f: File) => void
+  /** 导入错误信息（i18n 文本），null=无 */
+  importError?: string | null
   /** 返回画线工具选择视图 */
   onBack: () => void
 }
@@ -42,9 +48,13 @@ export function DrawingLayers({
   onDelete,
   onClearAll,
   onSetAllHidden,
+  onExport,
+  onImportFile,
+  importError,
   onBack,
 }: DrawingLayersProps) {
   const { t } = useI18n()
+  const fileRef = useRef<HTMLInputElement>(null)
   return (
     <div
       data-testid="drawing-layers"
@@ -76,6 +86,53 @@ export function DrawingLayers({
         <div style={{ flex: 1 }} />
         {drawings.length > 0 && (
           <>
+            <button
+              data-testid="drawing-layer-export"
+              onClick={onExport}
+              title={t('layers.export')}
+              aria-label={t('layers.export')}
+              style={{
+                flex: '0 0 auto',
+                padding: '4px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text-dim)',
+              }}
+            >
+              ⬇
+            </button>
+            <button
+              data-testid="drawing-layer-import"
+              onClick={() => fileRef.current?.click()}
+              title={t('layers.import')}
+              aria-label={t('layers.import')}
+              style={{
+                flex: '0 0 auto',
+                padding: '4px 8px',
+                fontSize: 11,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text-dim)',
+              }}
+            >
+              ⬆
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) onImportFile(f)
+                e.target.value = ''
+              }}
+            />
             <button
               data-testid="drawing-layer-show-all"
               onClick={() => onSetAllHidden(false)}
@@ -135,6 +192,11 @@ export function DrawingLayers({
       </div>
 
       {/* 列表 / 空状态 */}
+      {importError && (
+        <div data-testid="drawing-import-error" style={{ padding: '4px 8px', fontSize: 11, color: 'var(--down)' }}>
+          {importError}
+        </div>
+      )}
       {drawings.length === 0 ? (
         <div
           data-testid="drawing-layer-empty"

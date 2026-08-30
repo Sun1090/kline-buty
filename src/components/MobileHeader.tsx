@@ -59,6 +59,10 @@ export interface MobileHeaderProps {
   onClearDrawings: () => void
   /** 批量显示/隐藏当前交易对全部画线 */
   onSetAllDrawingsHidden: (hidden: boolean) => void
+  /** 画线 JSON 导出/导入 */
+  onExportDrawings: () => void
+  onImportDrawings: (f: File) => void
+  drawingImportError: string | null
   /** 画线吸附开关 + 回调 */
   drawingSnap: boolean
   onToggleDrawingSnap: () => void
@@ -526,6 +530,9 @@ export function MobileHeader(props: MobileHeaderProps) {
               onDelete={props.onDeleteDrawing}
               onClearAll={props.onClearDrawings}
             onSetAllHidden={props.onSetAllDrawingsHidden}
+            onExport={props.onExportDrawings}
+            onImportFile={props.onImportDrawings}
+            importError={props.drawingImportError}
               onBack={() => setMenu('drawing')}
             />
           )}

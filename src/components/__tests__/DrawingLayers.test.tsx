@@ -14,6 +14,9 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onDelete: vi.fn(),
     onClearAll: vi.fn(),
     onSetAllHidden: vi.fn(),
+    onExport: vi.fn(),
+    onImportFile: vi.fn(),
+    importError: null,
     onBack: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
