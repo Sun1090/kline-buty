@@ -82,7 +82,7 @@ export interface DrawingCallbacks {
 
 /** 副图指标数据（UI 层计算，本层渲染） */
 export interface SubIndicatorData {
-  kind: 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw'
+  kind: 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon'
   hist?: { time: number; value: number; color?: string }[]
   lines?: { id: string; points: ValuePoint[] }[]
   markers?: { price: number; color: string }[]
@@ -293,6 +293,13 @@ const SUB_LINE_COLORS: Record<string, string> = {
   PSY: '#4e9cf5',
   ROC: '#f5c02f',
   MOM: '#4e9cf5',
+  MFI: '#f5c02f',
+  CMF: '#4e9cf5',
+  'DC-U': '#26a69a',
+  'DC-L': '#ef5350',
+  'DC-BC': '#f5c02f',
+  'A-U': '#26a69a',
+  'A-D': '#ef5350',
 }
 
 const SUB_PANE_HEIGHT = 90

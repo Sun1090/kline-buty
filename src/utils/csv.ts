@@ -21,6 +21,11 @@ import {
   calcROC,
   calcMOM,
 } from '../indicators/extras'
+import { calcMFI } from '../indicators/mfi'
+import { calcAO } from '../indicators/ao'
+import { calcCMF } from '../indicators/cmf'
+import { calcDonchian } from '../indicators/donchian'
+import { calcAroon } from '../indicators/aroon'
 
 /** 导出列：header + 与 K 线逐根对齐的数值（缺省为 null） */
 export interface CsvColumn {
@@ -141,6 +146,20 @@ export function indicatorColumns(candles: Candle[], opts: CsvExportOptions): Csv
     cols.push(columnFromPoints(candles, 'ROC', calcROC(candles, params.rocPeriod)))
   } else if (subIndicator === 'mom') {
     cols.push(columnFromPoints(candles, 'MOM', calcMOM(candles, params.momPeriod)))
+  } else if (subIndicator === 'mfi') {
+    cols.push(columnFromPoints(candles, 'MFI', calcMFI(candles, params.mfiPeriod)))
+  } else if (subIndicator === 'ao') {
+    cols.push(columnFromPoints(candles, 'AO', calcAO(candles, params.aoFast, params.aoSlow)))
+  } else if (subIndicator === 'cmf') {
+    cols.push(columnFromPoints(candles, 'CMF', calcCMF(candles, params.cmfPeriod)))
+  } else if (subIndicator === 'donchian') {
+    const dc = calcDonchian(candles, params.donchianPeriod)
+    cols.push(columnFromPoints(candles, 'DC_U', dc.map((p) => ({ time: p.time, value: p.upper }))))
+    cols.push(columnFromPoints(candles, 'DC_L', dc.map((p) => ({ time: p.time, value: p.lower }))))
+  } else if (subIndicator === 'aroon') {
+    const aroon = calcAroon(candles, params.aroonPeriod)
+    cols.push(columnFromPoints(candles, 'AROON_U', aroon.map((p) => ({ time: p.time, value: p.up }))))
+    cols.push(columnFromPoints(candles, 'AROON_D', aroon.map((p) => ({ time: p.time, value: p.down }))))
   }
 
   return cols

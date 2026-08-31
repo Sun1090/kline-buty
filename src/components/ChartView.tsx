@@ -14,6 +14,11 @@ import { calcKDJ } from '../indicators/kdj'
 import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
 import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC, calcMOM } from '../indicators/extras'
+import { calcMFI } from '../indicators/mfi'
+import { calcAO } from '../indicators/ao'
+import { calcCMF } from '../indicators/cmf'
+import { calcDonchian } from '../indicators/donchian'
+import { calcAroon } from '../indicators/aroon'
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import type { IndicatorParams } from '../indicators/params'
@@ -24,7 +29,7 @@ import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'supertrend' | 'none'
-export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'none'
+export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon' | 'none'
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
@@ -516,6 +521,55 @@ export function ChartView({
         kind: 'mom' as const,
         lines: [{ id: 'MOM', points: calcMOM(windowData, indicatorParams.momPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
+      }
+    }
+    if (subIndicator === 'mfi') {
+      return {
+        kind: 'mfi' as const,
+        lines: [{ id: 'MFI', points: calcMFI(windowData, indicatorParams.mfiPeriod) }],
+        markers: [
+          { price: 80, color: DOWN },
+          { price: 20, color: UP },
+        ],
+      }
+    }
+    if (subIndicator === 'ao') {
+      const ao = calcAO(windowData, indicatorParams.aoFast, indicatorParams.aoSlow)
+      return {
+        kind: 'ao' as const,
+        hist: ao.map((p) => ({ time: p.time, value: p.value, color: p.value >= 0 ? UP : DOWN })),
+      }
+    }
+    if (subIndicator === 'cmf') {
+      return {
+        kind: 'cmf' as const,
+        lines: [{ id: 'CMF', points: calcCMF(windowData, indicatorParams.cmfPeriod) }],
+        markers: [{ price: 0, color: '#2a2e39' }],
+      }
+    }
+    if (subIndicator === 'donchian') {
+      const dc = calcDonchian(windowData, indicatorParams.donchianPeriod)
+      return {
+        kind: 'donchian' as const,
+        lines: [
+          { id: 'DC-U', points: dc.map((p) => ({ time: p.time, value: p.upper })) },
+          { id: 'DC-L', points: dc.map((p) => ({ time: p.time, value: p.lower })) },
+          { id: 'DC-BC', points: dc.map((p) => ({ time: p.time, value: p.middle })) },
+        ],
+      }
+    }
+    if (subIndicator === 'aroon') {
+      const aroon = calcAroon(windowData, indicatorParams.aroonPeriod)
+      return {
+        kind: 'aroon' as const,
+        lines: [
+          { id: 'A-U', points: aroon.map((p) => ({ time: p.time, value: p.up })) },
+          { id: 'A-D', points: aroon.map((p) => ({ time: p.time, value: p.down })) },
+        ],
+        markers: [
+          { price: 70, color: DOWN },
+          { price: 30, color: UP },
+        ],
       }
     }
     return null

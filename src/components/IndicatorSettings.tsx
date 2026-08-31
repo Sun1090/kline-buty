@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { IndicatorParams } from '../indicators/params'
+import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from '../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from './ChartView'
 import { useI18n } from '../i18n/useI18n'
 import type { TFunction } from '../i18n/translate'
@@ -73,6 +73,14 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
   }
   if (sub === 'roc') fields.push({ key: 'rocPeriod', label: t('indicator.rocPeriod'), kind: 'number' })
   if (sub === 'mom') fields.push({ key: 'momPeriod', label: t('indicator.momPeriod'), kind: 'number' })
+  if (sub === 'mfi') fields.push({ key: 'mfiPeriod', label: t('indicator.mfiPeriod'), kind: 'number' })
+  if (sub === 'ao') {
+    fields.push({ key: 'aoFast', label: t('indicator.aoFast'), kind: 'number' })
+    fields.push({ key: 'aoSlow', label: t('indicator.aoSlow'), kind: 'number' })
+  }
+  if (sub === 'cmf') fields.push({ key: 'cmfPeriod', label: t('indicator.cmfPeriod'), kind: 'number' })
+  if (sub === 'donchian') fields.push({ key: 'donchianPeriod', label: t('indicator.donchianPeriod'), kind: 'number' })
+  if (sub === 'aroon') fields.push({ key: 'aroonPeriod', label: t('indicator.aroonPeriod'), kind: 'number' })
   return fields
 }
 
@@ -157,6 +165,26 @@ export function IndicatorSettings({
           )}
         </div>
       ))}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+        <button
+          onClick={() => {
+            const next = { ...DEFAULT_INDICATOR_PARAMS }
+            setDraft(next)
+            onChange(next)
+          }}
+          style={{
+            background: 'none',
+            border: '1px solid #2a2e39',
+            color: 'var(--text-dim)',
+            cursor: 'pointer',
+            fontSize: 12,
+            borderRadius: 4,
+            padding: '4px 10px',
+          }}
+        >
+          {t('indicator.reset')}
+        </button>
+      </div>
     </div>
   )
 }

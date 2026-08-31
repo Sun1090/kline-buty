@@ -33,6 +33,12 @@ export interface IndicatorParams {
   bbwMult: number
   stPeriod: number
   stMult: number
+  mfiPeriod: number
+  aoFast: number
+  aoSlow: number
+  cmfPeriod: number
+  donchianPeriod: number
+  aroonPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -70,4 +76,10 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   bbwMult: 2,
   stPeriod: 10,
   stMult: 3,
+  mfiPeriod: 14,
+  aoFast: 5,
+  aoSlow: 34,
+  cmfPeriod: 20,
+  donchianPeriod: 20,
+  aroonPeriod: 25,
 }
