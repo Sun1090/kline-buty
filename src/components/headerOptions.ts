@@ -40,6 +40,11 @@ export const SUB_OPTIONS: HeaderOption[] = [
   { value: 'roc', label: 'ROC' },
   { value: 'mom', label: 'MOM' },
   { value: 'bbw', label: 'BBW' },
+  { value: 'mfi', label: 'MFI' },
+  { value: 'ao', label: 'AO' },
+  { value: 'cmf', label: 'CMF' },
+  { value: 'donchian', label: 'DC' },
+  { value: 'aroon', labelKey: 'indicator.aroon' },
   { value: 'none', labelKey: 'common.none' },
 ]
 
