@@ -344,8 +344,15 @@ export function ChartView({
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
   const mainData = useMemo<MainIndicatorData>(() => {
-    if (mainIndicator === 'ma')
-      return { lines: indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(windowData, p) })) }
+    if (mainIndicator === 'ma') {
+      const lines = indicatorParams.maPeriods.map((p) => ({ id: `MA${p}`, points: calcMA(windowData, p) }))
+      // 主图叠加：MA 之上同时显示 EMA（复合均线），可参数面板开关
+      if (indicatorParams.maOverlayEma) {
+        const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
+        lines.push(...indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })))
+      }
+      return { lines }
+    }
     if (mainIndicator === 'ema') {
       const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
       return { lines: indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })) }
