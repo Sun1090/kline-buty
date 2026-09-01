@@ -22,6 +22,9 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     canRedo: false,
     onUndo: vi.fn(),
     onRedo: vi.fn(),
+    canPaste: false,
+    onCopy: vi.fn(),
+    onPaste: vi.fn(),
     templates: [],
     onSaveTemplate: vi.fn(),
     onApplyTemplate: vi.fn(),
@@ -124,6 +127,33 @@ describe('DrawingLayers（图层管理面板）', () => {
     expect(handlers.onRedo).not.toHaveBeenCalled()
     expect(screen.getByTestId('drawing-layer-undo').getAttribute('aria-disabled')).toBe('true')
     expect(screen.getByTestId('drawing-layer-redo').getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('复制按钮：选中画线时可复制，未选中时禁用', () => {
+    const handlers = setup({ drawings: [h1, t1], selectedId: 'h1' })
+    fireEvent.click(screen.getByTestId('drawing-layer-copy'))
+    expect(handlers.onCopy).toHaveBeenCalled()
+    const copyBtn = screen.getByTestId('drawing-layer-copy') as HTMLButtonElement
+    expect(copyBtn.disabled).toBe(false)
+    // 未选中 → 禁用
+    cleanup()
+    const h2 = setup({ drawings: [h1, t1], selectedId: null })
+    const btn = screen.getByTestId('drawing-layer-copy') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+    fireEvent.click(btn)
+    expect(h2.onCopy).not.toHaveBeenCalled()
+  })
+
+  it('粘贴按钮：剪贴板有画线时可粘贴，否则禁用', () => {
+    const handlers = setup({ drawings: [h1], canPaste: true })
+    fireEvent.click(screen.getByTestId('drawing-layer-paste'))
+    expect(handlers.onPaste).toHaveBeenCalled()
+    cleanup()
+    const h2 = setup({ drawings: [h1], canPaste: false })
+    const btn = screen.getByTestId('drawing-layer-paste') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+    fireEvent.click(btn)
+    expect(h2.onPaste).not.toHaveBeenCalled()
   })
 
   it('保存模板：输入名 + 有画线 → onSaveTemplate(名)', () => {

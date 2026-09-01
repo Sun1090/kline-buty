@@ -19,6 +19,8 @@ export type ShortcutAction =
   | { type: 'cycle-main'; dir: 1 | -1 }
   | { type: 'cycle-sub'; dir: 1 | -1 }
   | { type: 'toggle-shortcuts' }
+  | { type: 'copy-drawing' }
+  | { type: 'paste-drawing' }
 
 export interface ShortcutEvent {
   key: string
@@ -50,6 +52,9 @@ export function shortcutFor(e: ShortcutEvent, inInput: boolean): ShortcutAction 
 
   if (mod && (key === 'k' || key === 'K')) return { type: 'open-search' }
   if (mod && e.shiftKey && (key === 'f' || key === 'F')) return { type: 'toggle-fullscreen' }
+  // C7 画线复制/粘贴：Ctrl/Cmd+C 复制选中画线，Ctrl/Cmd+V 粘贴（输入态已在上面短路）
+  if (mod && !e.shiftKey && (key === 'c' || key === 'C')) return { type: 'copy-drawing' }
+  if (mod && !e.shiftKey && (key === 'v' || key === 'V')) return { type: 'paste-drawing' }
 
   if (!mod && !e.altKey) {
     switch (key) {

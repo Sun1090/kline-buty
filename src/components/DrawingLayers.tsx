@@ -26,6 +26,10 @@ interface DrawingLayersProps {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  /** C7 画线复制/粘贴（跨品种）；可粘贴表示剪贴板已有画线 */
+  canPaste: boolean
+  onCopy: () => void
+  onPaste: () => void
   /** 画线模板（C6）：命名保存常用组合，一键套用到任意品种 */
   templates: DrawingTemplate[]
   onSaveTemplate: (name: string) => void
@@ -66,6 +70,9 @@ export function DrawingLayers({
   canRedo,
   onUndo,
   onRedo,
+  canPaste,
+  onCopy,
+  onPaste,
   templates,
   onSaveTemplate,
   onApplyTemplate,
@@ -145,6 +152,47 @@ export function DrawingLayers({
           }}
         >
           ↪
+        </button>
+        {/* C7 画线复制/粘贴（跨品种） */}
+        <button
+          data-testid="drawing-layer-copy"
+          onClick={onCopy}
+          disabled={!selectedId}
+          title={t('layers.copy')}
+          aria-label={t('layers.copy')}
+          aria-disabled={!selectedId}
+          style={{
+            flex: '0 0 auto',
+            padding: '4px 8px',
+            fontSize: 11,
+            border: 'none',
+            borderRadius: 6,
+            cursor: selectedId ? 'pointer' : 'not-allowed',
+            background: selectedId ? 'rgba(41,98,255,0.15)' : 'rgba(255,255,255,0.03)',
+            color: selectedId ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
+          📋
+        </button>
+        <button
+          data-testid="drawing-layer-paste"
+          onClick={onPaste}
+          disabled={!canPaste}
+          title={t('layers.paste')}
+          aria-label={t('layers.paste')}
+          aria-disabled={!canPaste}
+          style={{
+            flex: '0 0 auto',
+            padding: '4px 8px',
+            fontSize: 11,
+            border: 'none',
+            borderRadius: 6,
+            cursor: canPaste ? 'pointer' : 'not-allowed',
+            background: canPaste ? 'rgba(41,98,255,0.15)' : 'rgba(255,255,255,0.03)',
+            color: canPaste ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
+          📌
         </button>
         <div style={{ flex: 1 }} />
         {drawings.length > 0 && (

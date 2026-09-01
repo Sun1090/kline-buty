@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { PERIODS, type Period } from './chart/types'
+import { PERIODS, PERIOD_MS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
 import { ChartQuad } from './components/ChartQuad'
@@ -121,6 +121,9 @@ export function App() {
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   /** 撤销/重做：按交易对隔离的会话内历史栈（不持久化）；按钮态在渲染期由 canUndo/canRedo 派生 */
   const drawingHistoryRef = useRef<Record<string, DrawingHistory>>({})
+  /** C7 画线复制剪贴板：保存被复制的画线，跨品种/跨面板粘贴；state 驱动粘贴按钮可用态 */
+  const clipboardDrawingRef = useRef<Drawing | null>(null)
+  const [hasClipboardDrawing, setHasClipboardDrawing] = useState(false)
   /** 最新快照镜像：供异步回调（导入画线 JSON）读取变更前状态 */
   const drawingsRef = useRef(drawingsBySymbol)
   drawingsRef.current = drawingsBySymbol
@@ -499,6 +502,29 @@ export function App() {
     })
   }
 
+  // C7 画线复制/粘贴：复制选中画线到剪贴板，粘贴生成新 id 并按一个周期柱距右移（避免与原件重叠不可见）
+  const copySelectedDrawing = () => {
+    const sel = drawings.find((d) => d.id === selectedDrawingId)
+    if (sel) {
+      clipboardDrawingRef.current = sel
+      setHasClipboardDrawing(true)
+    }
+  }
+  const pasteClipboardDrawing = () => {
+    const src = clipboardDrawingRef.current
+    if (!src) return
+    const shift = PERIOD_MS[period] / 1000 || 60 // 秒级偏移，默认 1m
+    mutateDrawings((prev) => [
+      ...prev,
+      {
+        ...src,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        points: src.points.map((p) => ({ time: p.time + shift, price: p.price })),
+      },
+    ])
+    setSelectedDrawingId(null)
+  }
+
   // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -572,6 +598,14 @@ export function App() {
           break
         case 'delete-drawing':
           if (selectedDrawingId) deleteSelectedDrawing()
+          break
+        case 'copy-drawing':
+          e.preventDefault()
+          copySelectedDrawing()
+          break
+        case 'paste-drawing':
+          e.preventDefault()
+          pasteClipboardDrawing()
           break
         case 'open-search':
           e.preventDefault()
@@ -709,6 +743,9 @@ export function App() {
           onSaveDrawingTemplate={saveDrawingTemplate}
           onApplyDrawingTemplate={applyDrawingTemplate}
           onDeleteDrawingTemplate={deleteDrawingTemplate}
+          drawingCanPaste={hasClipboardDrawing}
+          onCopyDrawing={copySelectedDrawing}
+          onPasteDrawing={pasteClipboardDrawing}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -804,6 +841,9 @@ export function App() {
           onSaveDrawingTemplate={saveDrawingTemplate}
           onApplyDrawingTemplate={applyDrawingTemplate}
           onDeleteDrawingTemplate={deleteDrawingTemplate}
+          drawingCanPaste={hasClipboardDrawing}
+          onCopyDrawing={copySelectedDrawing}
+          onPasteDrawing={pasteClipboardDrawing}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
