@@ -63,6 +63,10 @@ export interface MobileHeaderProps {
   drawingCanRedo: boolean
   onUndoDrawing: () => void
   onRedoDrawing: () => void
+  /** C7 画线复制/粘贴（跨品种） */
+  drawingCanPaste: boolean
+  onCopyDrawing: () => void
+  onPasteDrawing: () => void
   /** 画线模板（C6）：命名保存/套用/删除 */
   drawingTemplates: DrawingTemplate[]
   onSaveDrawingTemplate: (name: string) => void
@@ -548,6 +552,9 @@ export function MobileHeader(props: MobileHeaderProps) {
             canRedo={props.drawingCanRedo}
             onUndo={props.onUndoDrawing}
             onRedo={props.onRedoDrawing}
+            canPaste={props.drawingCanPaste}
+            onCopy={props.onCopyDrawing}
+            onPaste={props.onPasteDrawing}
             templates={props.drawingTemplates}
             onSaveTemplate={props.onSaveDrawingTemplate}
             onApplyTemplate={props.onApplyDrawingTemplate}

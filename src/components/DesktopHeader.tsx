@@ -473,6 +473,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             canRedo={props.drawingCanRedo}
             onUndo={props.onUndoDrawing}
             onRedo={props.onRedoDrawing}
+            canPaste={props.drawingCanPaste}
+            onCopy={props.onCopyDrawing}
+            onPaste={props.onPasteDrawing}
             templates={props.drawingTemplates}
             onSaveTemplate={props.onSaveDrawingTemplate}
             onApplyTemplate={props.onApplyDrawingTemplate}

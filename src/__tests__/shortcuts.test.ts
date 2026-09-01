@@ -36,6 +36,18 @@ describe('shortcutFor', () => {
     expect(shortcutFor(ev('Backspace'), false)).toEqual({ type: 'delete-drawing' })
   })
 
+  it('Ctrl/Cmd+C 复制画线、Ctrl/Cmd+V 粘贴画线（大小写兼容）', () => {
+    expect(shortcutFor(ev('c', { ctrlKey: true }), false)).toEqual({ type: 'copy-drawing' })
+    expect(shortcutFor(ev('C', { metaKey: true }), false)).toEqual({ type: 'copy-drawing' })
+    expect(shortcutFor(ev('v', { ctrlKey: true }), false)).toEqual({ type: 'paste-drawing' })
+    expect(shortcutFor(ev('V', { metaKey: true }), false)).toEqual({ type: 'paste-drawing' })
+  })
+
+  it('Shift+Ctrl/Cmd+C 不触发复制（保留系统文本复制语义保护）', () => {
+    expect(shortcutFor(ev('c', { ctrlKey: true, shiftKey: true }), false).type).toBe('none')
+    expect(shortcutFor(ev('v', { metaKey: true, shiftKey: true }), false).type).toBe('none')
+  })
+
   it('Esc 取消', () => {
     expect(shortcutFor(ev('Escape'), false)).toEqual({ type: 'escape' })
   })
