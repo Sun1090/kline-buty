@@ -27,6 +27,7 @@ import { buildPositionFromOrder, estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FE
 import { calcPnl, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
+import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { PullToRefresh } from './components/PullToRefresh'
 import {
@@ -569,6 +570,21 @@ export function App() {
     window.setTimeout(() => setExported(false), 1500)
   }
 
+  // D14 导出交易流水 CSV（纯函数生成文本，BOM + <a download> 触发下载）
+  const exportTradesCsv = () => {
+    if (paper.trades.length === 0) return
+    const csv = tradesToCsv(paper.trades)
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = tradesCsvFileName()
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   // 键盘快捷键（纯逻辑见 src/shortcuts.ts）：[ ] 周期、Space 回放、Delete 删画线、Esc 取消、
   // ⌘K / 打开搜索、F 全屏、1/2/3 布局、M/N 循环指标、? 帮助
   useEffect(() => {
@@ -957,7 +973,13 @@ export function App() {
         />
       )}
       {tradesOpen && (
-        <TradeHistoryPanel trades={paper.trades} onClose={() => setTradesOpen(false)} onClear={paper.clearTrades} />
+        <TradeHistoryPanel
+          trades={paper.trades}
+          onClose={() => setTradesOpen(false)}
+          onClear={paper.clearTrades}
+          onExport={exportTradesCsv}
+          onReset={paper.reset}
+        />
       )}
       {positionOpen && (
         <PositionPanel

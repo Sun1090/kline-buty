@@ -38,6 +38,8 @@ export interface PaperAccountApi {
   /** 成交流水（新记录在前） */
   trades: TradeRecord[]
   clearTrades: () => void
+  /** D15 模拟账户重置：余额回初始 10,000 并清空流水 */
+  reset: () => void
   /** 余额是否足够开仓：需要保证金（名义金额）+ 开仓手续费 */
   canOpen: (notional: number, fee: number) => boolean
   /** 开仓记账：扣手续费，写流水 */
@@ -122,5 +124,16 @@ export function usePaperAccount(): PaperAccountApi {
     }
   }, [persistTrades])
 
-  return { balance, trades, clearTrades, canOpen, recordOpen, recordClose }
+  /** D15 模拟账户重置：恢复初始资金 10,000 并清空全部流水 */
+  const reset = useCallback(() => {
+    setBalance(10_000)
+    persistTrades([])
+    try {
+      localStorage.removeItem('kline-buty:' + TRADES_KEY)
+    } catch {
+      /* noop */
+    }
+  }, [persistTrades, setBalance])
+
+  return { balance, trades, clearTrades, reset, canOpen, recordOpen, recordClose }
 }

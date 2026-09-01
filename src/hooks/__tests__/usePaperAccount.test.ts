@@ -55,4 +55,19 @@ describe('usePaperAccount（模拟交易账户）', () => {
     })
     expect(result.current.trades).toHaveLength(100)
   })
+
+  it('reset 恢复初始资金 10,000 并清空流水（余额与流水均复位）', () => {
+    const { result } = renderHook(() => usePaperAccount())
+    act(() => {
+      result.current.recordOpen({ symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, fee: 0.1 })
+      result.current.recordClose({ symbol: 'BTCUSDT', side: 'sell', price: 110, qty: 1, fee: 0.11, pnl: 10 })
+    })
+    expect(result.current.trades).toHaveLength(2)
+    expect(result.current.balance).not.toBe(10_000)
+    act(() => result.current.reset())
+    expect(result.current.balance).toBe(10_000)
+    expect(result.current.trades).toHaveLength(0)
+    // reset 会 removeItem：localStorage 中流水键应被移除
+    expect(localStorage.getItem('kline-buty:paperTrades')).toBeNull()
+  })
 })
