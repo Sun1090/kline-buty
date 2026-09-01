@@ -6,6 +6,7 @@ import { fetchKlines } from '../data/binance/rest'
 import { createKlineWs, type WsStatus } from '../data/binance/ws'
 import { detectMode } from '../data/binance/endpoints'
 import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
+import { readCachedCandles, writeCachedCandles } from '../data/cache'
 
 const PAGE_SIZE = 500
 /** 压测模式模拟实时帧的间隔（ms） */
@@ -87,10 +88,19 @@ export function useKlineData(symbol: string, period: Period) {
       }
     }
 
+    // A13：冷启动先读本地缓存秒开（校验失败/过期自动返回 null，静默降级）
+    const cached = readCachedCandles(symbol, period)
+    if (cached && cached.length > 0) {
+      store.upsertAll(cached)
+      publish()
+    }
+
     fetchKlines(symbol, period, 800)
       .then((hist) => {
         store.upsertAll(hist)
         publish()
+        // REST 首次成功：回写缓存供下次冷启动加速
+        writeCachedCandles(symbol, period, hist)
       })
       .catch((e: unknown) => {
         if (aliveRef.current && storeRef.current === store) {
