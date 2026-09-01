@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fmtPriceCompact, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK } from '../format'
+import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK } from '../format'
 
 describe('fmtPricePrecise（高精度：十字光标/信息条）', () => {
   it('≥1000 两位小数', () => {
@@ -55,5 +55,23 @@ describe('fmtVolumeMK（M/K：十字光标成交量）', () => {
   })
   it('<1e3 整数', () => {
     expect(fmtVolumeMK(999)).toBe('999')
+  })
+})
+
+describe('fmtPriceLocale（E8 千分位国际化）', () => {
+  it('en-US：≥1000 加逗号千分位 + 两位小数', () => {
+    expect(fmtPriceLocale(65432.1, 'en-US')).toBe('65,432.1')
+  })
+  it('de-DE：千分位用点、小数用逗号', () => {
+    expect(fmtPriceLocale(65432.1, 'de-DE')).toBe('65.432,1')
+  })
+  it('≥1 四位小数（去尾零）', () => {
+    expect(fmtPriceLocale(3.5, 'en-US')).toBe('3.5')
+  })
+  it('<1 六位小数', () => {
+    expect(fmtPriceLocale(0.123456789, 'en-US')).toBe('0.123457')
+  })
+  it('整数无小数部分不强制补零', () => {
+    expect(fmtPriceLocale(5000, 'en-US')).toBe('5,000')
   })
 })
