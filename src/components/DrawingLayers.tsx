@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Drawing } from '../drawings/logic'
-import { useRef } from 'react'
+import type { DrawingTemplate } from '../drawings/templates'
+import { useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
 
@@ -25,6 +26,11 @@ interface DrawingLayersProps {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  /** 画线模板（C6）：命名保存常用组合，一键套用到任意品种 */
+  templates: DrawingTemplate[]
+  onSaveTemplate: (name: string) => void
+  onApplyTemplate: (name: string) => void
+  onDeleteTemplate: (name: string) => void
   /** 返回画线工具选择视图 */
   onBack: () => void
 }
@@ -60,10 +66,17 @@ export function DrawingLayers({
   canRedo,
   onUndo,
   onRedo,
+  templates,
+  onSaveTemplate,
+  onApplyTemplate,
+  onDeleteTemplate,
   onBack,
 }: DrawingLayersProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
+  // 模板保存输入（C6）：回车或按钮提交
+  const [templateName, setTemplateName] = useState('')
+  const [templateSavedFlash, setTemplateSavedFlash] = useState(false)
   return (
     <div
       data-testid="drawing-layers"
@@ -335,6 +348,116 @@ export function DrawingLayers({
           })}
         </div>
       )}
+
+      {/* 画线模板（C6）：命名保存常用组合，一键套用 */}
+      <div style={{ borderTop: '1px solid var(--border)', marginTop: 10, paddingTop: 8 }}>
+        <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 6 }}>
+          {t('layers.templateTitle')}
+          {templateSavedFlash && (
+            <span style={{ color: 'var(--up)', marginLeft: 8 }}>{t('layers.templateSaved')}</span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+          <input
+            data-testid="drawing-template-name"
+            value={templateName}
+            placeholder={t('layers.templateNamePlaceholder')}
+            onChange={(e) => setTemplateName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && templateName.trim() && drawings.length > 0) {
+                onSaveTemplate(templateName.trim())
+                setTemplateName('')
+                setTemplateSavedFlash(true)
+                window.setTimeout(() => setTemplateSavedFlash(false), 1600)
+              }
+            }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '5px 8px',
+              fontSize: 12,
+              borderRadius: 6,
+              border: '1px solid #2a2e39',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <button
+            data-testid="drawing-template-save"
+            disabled={!templateName.trim() || drawings.length === 0}
+            onClick={() => {
+              onSaveTemplate(templateName.trim())
+              setTemplateName('')
+              setTemplateSavedFlash(true)
+              window.setTimeout(() => setTemplateSavedFlash(false), 1600)
+            }}
+            style={{
+              flex: '0 0 auto',
+              padding: '5px 10px',
+              fontSize: 12,
+              border: 'none',
+              borderRadius: 6,
+              cursor: templateName.trim() && drawings.length > 0 ? 'pointer' : 'not-allowed',
+              background: templateName.trim() && drawings.length > 0 ? 'rgba(41,98,255,0.18)' : 'rgba(255,255,255,0.04)',
+              color: templateName.trim() && drawings.length > 0 ? 'var(--accent)' : 'var(--text-faint)',
+            }}
+          >
+            {t('layers.templateSave')}
+          </button>
+        </div>
+        {templates.length === 0 ? (
+          <div data-testid="drawing-template-empty" style={{ fontSize: 11, color: 'var(--text-faint)', padding: '4px 2px' }}>
+            {t('layers.templateEmpty')}
+          </div>
+        ) : (
+          <div data-testid="drawing-template-list" style={{ maxHeight: 'min(24vh, 180px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+            {templates.map((tmpl) => (
+              <div
+                key={tmpl.name}
+                data-testid="drawing-template-row"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 2px', marginBottom: 2 }}
+              >
+                <span style={{ flex: 1, fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {tmpl.name}（{tmpl.drawings.length}）
+                </span>
+                <button
+                  data-testid="drawing-template-apply"
+                  onClick={() => onApplyTemplate(tmpl.name)}
+                  style={{
+                    flex: '0 0 auto',
+                    padding: '3px 8px',
+                    fontSize: 11,
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: 'rgba(41,98,255,0.15)',
+                    color: 'var(--accent)',
+                  }}
+                >
+                  {t('layers.templateApply')}
+                </button>
+                <button
+                  data-testid="drawing-template-delete"
+                  onClick={() => onDeleteTemplate(tmpl.name)}
+                  aria-label={t('common.delete')}
+                  style={{
+                    flex: '0 0 auto',
+                    padding: '3px 6px',
+                    fontSize: 11,
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: 'rgba(239,83,80,0.12)',
+                    color: 'var(--down)',
+                  }}
+                >
+                  🗑
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

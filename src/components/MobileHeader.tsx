@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import type { Period } from '../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from './ChartView'
 import type { Drawing, DrawingTool } from '../drawings/logic'
+import type { DrawingTemplate } from '../drawings/templates'
 import type { ColorPresetId, ThemeMode } from '../theme'
 import { useI18n } from '../i18n/useI18n'
 import type { MessageKey } from '../i18n/messages'
@@ -62,6 +63,11 @@ export interface MobileHeaderProps {
   drawingCanRedo: boolean
   onUndoDrawing: () => void
   onRedoDrawing: () => void
+  /** 画线模板（C6）：命名保存/套用/删除 */
+  drawingTemplates: DrawingTemplate[]
+  onSaveDrawingTemplate: (name: string) => void
+  onApplyDrawingTemplate: (name: string) => void
+  onDeleteDrawingTemplate: (name: string) => void
   /** 批量显示/隐藏当前交易对全部画线 */
   onSetAllDrawingsHidden: (hidden: boolean) => void
   /** 画线 JSON 导出/导入 */
@@ -542,6 +548,10 @@ export function MobileHeader(props: MobileHeaderProps) {
             canRedo={props.drawingCanRedo}
             onUndo={props.onUndoDrawing}
             onRedo={props.onRedoDrawing}
+            templates={props.drawingTemplates}
+            onSaveTemplate={props.onSaveDrawingTemplate}
+            onApplyTemplate={props.onApplyDrawingTemplate}
+            onDeleteTemplate={props.onDeleteDrawingTemplate}
               onBack={() => setMenu('drawing')}
             />
           )}

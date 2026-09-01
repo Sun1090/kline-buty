@@ -44,6 +44,13 @@ import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { parseDrawingsFile, serializeDrawings } from './drawings/io'
 import {
+  applyTemplate,
+  createTemplate,
+  sortTemplates,
+  uniqueTemplateName,
+  type DrawingTemplate,
+} from './drawings/templates'
+import {
   canRedo as drawingCanRedo,
   canUndo as drawingCanUndo,
   createHistory,
@@ -120,6 +127,8 @@ export function App() {
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
   /** 新建画线默认颜色偏好（'' = 跟随主题），跨会话持久化 */
   const [drawingColor, setDrawingColor] = usePersistedState<string>('drawingColor', '')
+  /** 画线模板（C6）：命名保存常用组合，跨品种一键套用；持久化，按名索引 */
+  const [drawingTemplates, setDrawingTemplates] = usePersistedState<Record<string, DrawingTemplate>>('drawingTemplates', {})
   const cancelDrawingRef = useRef<(() => void) | null>(null)
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
@@ -470,6 +479,26 @@ export function App() {
     setSelectedDrawingId(null)
   }
 
+  // 画线模板（C6）：保存当前组合为命名模板、一键套用、删除模板
+  const saveDrawingTemplate = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed || drawings.length === 0) return
+    const unique = uniqueTemplateName(trimmed, new Set(Object.keys(drawingTemplates)))
+    setDrawingTemplates((prev) => ({ ...prev, [unique]: createTemplate(unique, drawings) }))
+  }
+  const applyDrawingTemplate = (name: string) => {
+    const tmpl = drawingTemplates[name]
+    if (!tmpl) return
+    mutateDrawings((prev) => applyTemplate(prev, tmpl))
+  }
+  const deleteDrawingTemplate = (name: string) => {
+    setDrawingTemplates((prev) => {
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }
+
   // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -676,6 +705,10 @@ export function App() {
           drawingCanRedo={canRedoDrawings}
           onUndoDrawing={undoDrawings}
           onRedoDrawing={redoDrawings}
+          drawingTemplates={sortTemplates(drawingTemplates)}
+          onSaveDrawingTemplate={saveDrawingTemplate}
+          onApplyDrawingTemplate={applyDrawingTemplate}
+          onDeleteDrawingTemplate={deleteDrawingTemplate}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -767,6 +800,10 @@ export function App() {
           drawingCanRedo={canRedoDrawings}
           onUndoDrawing={undoDrawings}
           onRedoDrawing={redoDrawings}
+          drawingTemplates={sortTemplates(drawingTemplates)}
+          onSaveDrawingTemplate={saveDrawingTemplate}
+          onApplyDrawingTemplate={applyDrawingTemplate}
+          onDeleteDrawingTemplate={deleteDrawingTemplate}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
