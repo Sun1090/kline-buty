@@ -27,3 +27,21 @@ export function fmtVolumeBM(v: number): string {
 export function fmtVolumeMK(v: number): string {
   return v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(2)}K` : v.toFixed(0)
 }
+
+/**
+ * E8 数字格式国际化（千分位）：按 locale 对价格加千分位分隔，精度策略与 fmtPricePrecise 一致。
+ * 用于大数字展示场景（行情列表/信息条成交额等），locale 由调用方传入（localeFor(lang)）。
+ * Intl 在窄环境下可能抛异常（极旧引擎），回退为纯 toFixed。
+ */
+export function fmtPriceLocale(v: number, locale: string): string {
+  const digits = v >= 1000 ? 2 : v >= 1 ? 4 : 6
+  try {
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: digits,
+      useGrouping: true,
+    }).format(v)
+  } catch {
+    return v.toFixed(digits)
+  }
+}

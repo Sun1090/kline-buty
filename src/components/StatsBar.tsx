@@ -4,7 +4,8 @@ import type { LiveTick } from '../hooks/useKlineData'
 import type { Period } from '../chart/types'
 import { PERIOD_MS } from '../chart/types'
 import { useI18n } from '../i18n/useI18n'
-import { fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
+import { localeFor } from '../i18n/messages'
+import { fmtPriceLocale, fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
 import { formatRemaining } from '../utils/countdown'
 
 interface StatsBarProps {
@@ -27,7 +28,9 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
+  const locale = localeFor(lang)
   // 收盘倒计时：每秒走一次本组件（面板小，重渲染开销可忽略）
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -127,7 +130,7 @@ export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps)
       )}
       {stats.openInterest !== null && (
         <Item label={t('stats.openInterest')}>
-          <span style={{ color: 'var(--text)' }}>{stats.openInterest.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+          <span style={{ color: 'var(--text)' }}>{fmtPriceLocale(stats.openInterest, locale)}</span>
         </Item>
       )}
       {stats.markPrice !== null && (
