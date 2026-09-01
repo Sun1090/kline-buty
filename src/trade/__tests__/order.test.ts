@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estimateOrder, buildPositionFromOrder, TAKER_FEE_RATE } from '../order'
+import { estimateOrder, buildPositionFromOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE } from '../order'
 
 describe('estimateOrder', () => {
   it('名义金额 = price × qty', () => {
@@ -59,6 +59,26 @@ describe('estimateOrder 边界', () => {
     expect(Number.isFinite(e.notional)).toBe(true)
     expect(e.notional).toBe(0)
     expect(e.total).toBe(0)
+  })
+})
+
+describe('estimateOrder 滑点模型（D7）', () => {
+  it('默认不滑点：fillPrice === price', () => {
+    expect(estimateOrder(100, 2).fillPrice).toBe(100)
+    expect(estimateOrder(100, 2).total).toBeCloseTo(200.2)
+  })
+  it('买盘正向滑点：fillPrice 高于盘口', () => {
+    const e = estimateOrder(100, 2, 'buy', DEFAULT_SLIPPAGE_RATIO)
+    expect(e.fillPrice).toBeCloseTo(100.02)
+    expect(e.notional).toBeCloseTo(200.04)
+  })
+  it('卖盘负向滑点：fillPrice 低于盘口', () => {
+    const e = estimateOrder(100, 2, 'sell', DEFAULT_SLIPPAGE_RATIO)
+    expect(e.fillPrice).toBeCloseTo(99.98)
+  })
+  it('滑点 0 时与旧契约一致（纯函数回归）', () => {
+    expect(estimateOrder(100, 2.5, 'buy', 0).notional).toBe(250)
+    expect(estimateOrder(100, 2.5, 'buy', 0).fee).toBeCloseTo(0.25)
   })
 })
 

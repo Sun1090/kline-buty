@@ -23,7 +23,7 @@ import { QuickOrderWithDepth } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
-import { buildPositionFromOrder, estimateOrder, TAKER_FEE_RATE, type OrderSide } from './trade/order'
+import { buildPositionFromOrder, estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
 import { calcPnl, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
@@ -830,10 +830,11 @@ export function App() {
           balance={paper.balance}
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
-            const est = estimateOrder(order.price, order.qty)
+            // 市价单含模拟滑点：成交价相对盘口小幅偏移
+            const est = estimateOrder(order.price, order.qty, order.side, DEFAULT_SLIPPAGE_RATIO)
             if (!paper.canOpen(est.notional, est.fee)) return
-            paper.recordOpen({ symbol, side: order.side, price: order.price, qty: order.qty, fee: est.fee })
-            setPosition(buildPositionFromOrder(order.side, order.price, order.qty))
+            paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee })
+            setPosition(buildPositionFromOrder(order.side, est.fillPrice, order.qty))
             setPositionOpen(true)
             setTradesOpen(false)
             setQuickOrder(null)

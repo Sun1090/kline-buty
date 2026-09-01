@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcPnl, suggestLevels, checkHit, type Position } from '../pnl'
+import { calcPnl, suggestLevels, checkHit, calcLiquidationPrice, calcMargin, type Position } from '../pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 110, stopLoss: 95 }
 const shortPos: Position = { entry: 100, quantity: 2, direction: 'short', takeProfit: 90, stopLoss: 105 }
@@ -80,5 +80,44 @@ describe('checkHit 边界', () => {
 
   it('空头区间内未触发', () => {
     expect(checkHit(shortPos, 100)).toBeNull()
+  })
+})
+
+describe('calcLiquidationPrice', () => {
+  it('10x 多头：强平价 = entry×(1−1/10)', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'long' }
+    expect(calcLiquidationPrice(p, 10)).toBe(90)
+  })
+  it('10x 空头：强平价 = entry×(1+1/10)', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'short' }
+    expect(calcLiquidationPrice(p, 10)).toBeCloseTo(110)
+  })
+  it('5x 多头：强平价低于 1x（亏损 20% 触发）', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'long' }
+    expect(calcLiquidationPrice(p, 5)).toBe(80)
+  })
+  it('杠杆 ≤1 返回 null（无效杠杆）', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'long' }
+    expect(calcLiquidationPrice(p, 1)).toBeNull()
+    expect(calcLiquidationPrice(p, 0.5)).toBeNull()
+    expect(calcLiquidationPrice(p, NaN)).toBeNull()
+  })
+  it('杠杆越高强平价越贴近入场价', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'long' }
+    expect(calcLiquidationPrice(p, 100) as number).toBeGreaterThan(90)
+  })
+})
+
+describe('calcMargin', () => {
+  it('10x 杠杆：保证金 = 名义/10', () => {
+    expect(calcMargin(10_000, 10)).toBe(1000)
+  })
+  it('1x 杠杆：保证金 = 全额名义', () => {
+    expect(calcMargin(5000, 1)).toBe(5000)
+  })
+  it('0/负数/NaN 杠杆回退全额', () => {
+    expect(calcMargin(1000, 0)).toBe(1000)
+    expect(calcMargin(1000, -3)).toBe(1000)
+    expect(calcMargin(1000, NaN)).toBe(1000)
   })
 })

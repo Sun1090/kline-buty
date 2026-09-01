@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { estimateOrder, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
+import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 
@@ -48,8 +48,8 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
   const qtyNum = Number(qtyStr)
   const valid = Number.isFinite(priceNum) && priceNum > 0 && Number.isFinite(qtyNum) && qtyNum > 0
   const est = useMemo(
-    () => (valid ? estimateOrder(priceNum, qtyNum) : null),
-    [valid, priceNum, qtyNum],
+    () => (valid ? estimateOrder(priceNum, qtyNum, side, DEFAULT_SLIPPAGE_RATIO) : null),
+    [valid, priceNum, qtyNum, side],
   )
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
 
@@ -170,6 +170,9 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
             fontVariantNumeric: 'tabular-nums',
           }}
         >
+          <span>
+            {t('quickOrder.fill')} <b style={{ color: 'var(--text)' }}>{est.fillPrice.toFixed(priceNum >= 1 ? 2 : 6)}</b>
+          </span>
           <span>
             {t('quickOrder.notional')} <b style={{ color: 'var(--text)' }}>{est.notional.toFixed(2)}</b>
           </span>

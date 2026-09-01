@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
-import { calcPnl, suggestLevels } from '../position/pnl'
+import { calcPnl, calcLiquidationPrice, calcMargin, suggestLevels } from '../position/pnl'
 import { useI18n } from '../i18n/useI18n'
 
 interface PositionPanelProps {
@@ -8,6 +8,9 @@ interface PositionPanelProps {
   currentPrice: number | null
   onChange: (p: Position | null) => void
 }
+
+/** 杠杆档位速选（D1：模拟交易杠杆选择） */
+const LEVERAGE_OPTIONS = [1, 2, 5, 10, 20, 50, 100]
 
 const inputStyle: React.CSSProperties = {
   width: 88,
@@ -24,6 +27,7 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
   const [entry, setEntry] = useState<string>(position ? String(position.entry) : '')
   const [quantity, setQuantity] = useState<string>(position ? String(position.quantity) : '')
   const [direction, setDirection] = useState<'long' | 'short'>(position?.direction ?? 'long')
+  const [leverage, setLeverage] = useState(10)
   const [tpPct, setTpPct] = useState('3')
   const [slPct, setSlPct] = useState('2')
   // 止盈/止损模式：pct=百分比参考价，price=手动输入价位
@@ -37,6 +41,9 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
 
   const levels = valid ? suggestLevels(entryNum, direction, Number(tpPct) || 0, Number(slPct) || 0) : null
   const active = position && currentPrice !== null ? calcPnl(position, currentPrice) : null
+  // D2/D3：保证金与强平价（当前仓位在仓位视角展示）
+  const margin = valid ? calcMargin(entryNum * qtyNum, leverage) : null
+  const liqPrice = position && valid ? calcLiquidationPrice(position, leverage) : null
 
   // 价格模式下校验手动输入的止盈/止损价
   const tpNum = Number(tpPrice)
@@ -111,6 +118,29 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
             }}
           >
             {d === 'long' ? t('position.long') : t('position.short')}
+          </button>
+        ))}
+      </div>
+
+      {/* 杠杆档位（D1）：全仓保证金随杠杆缩小，影响强平价 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {LEVERAGE_OPTIONS.map((l) => (
+          <button
+            key={l}
+            onClick={() => setLeverage(l)}
+            aria-pressed={leverage === l}
+            style={{
+              flex: 1,
+              padding: '3px 0',
+              fontSize: 11,
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              background: leverage === l ? 'rgba(41,98,255,0.18)' : 'transparent',
+              color: leverage === l ? 'var(--accent)' : 'var(--text-dim)',
+            }}
+          >
+            {l === 1 ? '1x' : `${l}x`}
           </button>
         ))}
       </div>
@@ -192,6 +222,18 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
           <span>{t('position.tpLine')} <b style={{ color: 'var(--up)' }}>{levels.takeProfit.toFixed(2)}</b></span>
           <span>{t('position.slLine')} <b style={{ color: 'var(--down)' }}>{levels.stopLoss.toFixed(2)}</b></span>
+        </div>
+      )}
+
+      {valid && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
+          <span>{t('position.margin')} <b style={{ color: 'var(--text)' }}>{margin!.toFixed(2)} USDT</b> · {t('position.leverage')} <b style={{ color: 'var(--text)' }}>{leverage}x</b></span>
+          {liqPrice !== null && (
+            <span>
+              {t('position.liqPrice')}{' '}
+              <b style={{ color: direction === 'long' ? 'var(--down)' : 'var(--up)' }}>{liqPrice.toFixed(2)}</b>
+            </span>
+          )}
         </div>
       )}
 
