@@ -3,6 +3,7 @@ import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup } from '@testing-library/react'
 import { DrawingLayers } from '../DrawingLayers'
 import { createDrawing, type Drawing } from '../../drawings/logic'
+import { createTemplate } from '../../drawings/templates'
 
 afterEach(cleanup)
 
@@ -21,6 +22,10 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     canRedo: false,
     onUndo: vi.fn(),
     onRedo: vi.fn(),
+    templates: [],
+    onSaveTemplate: vi.fn(),
+    onApplyTemplate: vi.fn(),
+    onDeleteTemplate: vi.fn(),
     onBack: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
@@ -119,6 +124,41 @@ describe('DrawingLayers（图层管理面板）', () => {
     expect(handlers.onRedo).not.toHaveBeenCalled()
     expect(screen.getByTestId('drawing-layer-undo').getAttribute('aria-disabled')).toBe('true')
     expect(screen.getByTestId('drawing-layer-redo').getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('保存模板：输入名 + 有画线 → onSaveTemplate(名)', () => {
+    const handlers = setup({ drawings: [h1, t1] })
+    fireEvent.change(screen.getByTestId('drawing-template-name'), { target: { value: '趋势组合' } })
+    fireEvent.click(screen.getByTestId('drawing-template-save'))
+    expect(handlers.onSaveTemplate).toHaveBeenCalledWith('趋势组合')
+  })
+
+  it('无画线时保存按钮禁用，点击不触发', () => {
+    const handlers = setup()
+    fireEvent.change(screen.getByTestId('drawing-template-name'), { target: { value: 'x' } })
+    const btn = screen.getByTestId('drawing-template-save') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+    fireEvent.click(btn)
+    expect(handlers.onSaveTemplate).not.toHaveBeenCalled()
+  })
+
+  it('空模板列表：显示空态提示，无模板行', () => {
+    setup()
+    expect(screen.getByTestId('drawing-template-empty')).toBeTruthy()
+    expect(screen.queryAllByTestId('drawing-template-row')).toHaveLength(0)
+  })
+
+  it('模板列表：套用/删除按钮触发对应回调', () => {
+    const tpl = createTemplate('支撑趋势', [h1, t1])
+    const handlers = setup({ drawings: [h1], templates: [tpl] })
+    expect(screen.queryByTestId('drawing-template-empty')).toBeNull()
+    const rows = screen.getAllByTestId('drawing-template-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].textContent).toContain('支撑趋势')
+    fireEvent.click(rows[0].querySelector('[data-testid="drawing-template-apply"]')!)
+    expect(handlers.onApplyTemplate).toHaveBeenCalledWith('支撑趋势')
+    fireEvent.click(rows[0].querySelector('[data-testid="drawing-template-delete"]')!)
+    expect(handlers.onDeleteTemplate).toHaveBeenCalledWith('支撑趋势')
   })
 
   it('面板有 role=region，列表 role=listbox，行 role=option + aria-selected', () => {

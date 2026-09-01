@@ -473,6 +473,10 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             canRedo={props.drawingCanRedo}
             onUndo={props.onUndoDrawing}
             onRedo={props.onRedoDrawing}
+            templates={props.drawingTemplates}
+            onSaveTemplate={props.onSaveDrawingTemplate}
+            onApplyTemplate={props.onApplyDrawingTemplate}
+            onDeleteTemplate={props.onDeleteDrawingTemplate}
             onBack={() => setMenu('drawing')}
           />
         </div>
