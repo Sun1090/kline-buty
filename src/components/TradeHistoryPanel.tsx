@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { TradeRecord } from '../hooks/usePaperAccount'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
@@ -6,11 +7,26 @@ interface TradeHistoryPanelProps {
   trades: TradeRecord[]
   onClose: () => void
   onClear: () => void
+  /** D14 导出流水 CSV */
+  onExport: () => void
+  /** D15 重置模拟账户（两步确认在面板内） */
+  onReset: () => void
 }
 
-/** 交易流水面板：模拟成交记录（新在前），含清空；空态引导 */
-export function TradeHistoryPanel({ trades, onClose, onClear }: TradeHistoryPanelProps) {
+/** 交易流水面板：模拟成交记录（新在前），含清空/导出/重置；空态引导 */
+export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onReset }: TradeHistoryPanelProps) {
   const { t } = useI18n()
+  // D15 重置两步确认：首次点击进入确认态，3s 未二次确认自动复位
+  const [confirmingReset, setConfirmingReset] = useState(false)
+  const handleReset = () => {
+    if (!confirmingReset) {
+      setConfirmingReset(true)
+      window.setTimeout(() => setConfirmingReset(false), 3000)
+      return
+    }
+    setConfirmingReset(false)
+    onReset()
+  }
   const timeOf = (at: number) => {
     const d = new Date(at)
     const pad = (n: number) => String(n).padStart(2, '0')
@@ -40,14 +56,41 @@ export function TradeHistoryPanel({ trades, onClose, onClear }: TradeHistoryPane
         <span style={{ fontWeight: 600 }}>{t('paper.title')}</span>
         <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {trades.length > 0 && (
-            <button
-              data-testid="trade-history-clear"
-              onClick={onClear}
-              style={{ border: 'none', background: 'transparent', color: 'var(--down)', fontSize: 11, cursor: 'pointer', padding: 0 }}
-            >
-              {t('paper.clear')}
-            </button>
+            <>
+              <button
+                data-testid="trade-history-export"
+                onClick={onExport}
+                title={t('paper.export')}
+                style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+              >
+                {t('paper.export')}
+              </button>
+              <button
+                data-testid="trade-history-clear"
+                onClick={onClear}
+                style={{ border: 'none', background: 'transparent', color: 'var(--down)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+              >
+                {t('paper.clear')}
+              </button>
+            </>
           )}
+          <button
+            data-testid="trade-history-reset"
+            onClick={handleReset}
+            title={t('paper.reset')}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: confirmingReset ? '#fff' : 'var(--text-faint)',
+              backgroundColor: confirmingReset ? 'var(--down)' : 'transparent',
+              borderRadius: 4,
+              padding: '1px 5px',
+              fontSize: 11,
+              cursor: 'pointer',
+            }}
+          >
+            {confirmingReset ? t('paper.resetConfirm') : t('paper.reset')}
+          </button>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
