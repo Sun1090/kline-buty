@@ -43,6 +43,15 @@ import {
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { parseDrawingsFile, serializeDrawings } from './drawings/io'
+import {
+  canRedo as drawingCanRedo,
+  canUndo as drawingCanUndo,
+  createHistory,
+  pushSnapshot,
+  redoSnapshot,
+  undoSnapshot,
+  type DrawingHistory,
+} from './drawings/history'
 import { MobileHeader } from './components/MobileHeader'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MarketList } from './components/MarketList'
@@ -103,6 +112,11 @@ export function App() {
   const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
   const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
+  /** 撤销/重做：按交易对隔离的会话内历史栈（不持久化）；按钮态在渲染期由 canUndo/canRedo 派生 */
+  const drawingHistoryRef = useRef<Record<string, DrawingHistory>>({})
+  /** 最新快照镜像：供异步回调（导入画线 JSON）读取变更前状态 */
+  const drawingsRef = useRef(drawingsBySymbol)
+  drawingsRef.current = drawingsBySymbol
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none')
   /** 新建画线默认颜色偏好（'' = 跟随主题），跨会话持久化 */
   const [drawingColor, setDrawingColor] = usePersistedState<string>('drawingColor', '')
@@ -316,6 +330,44 @@ export function App() {
   const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
 
+  /**
+   * 统一的画线变更入口：先记录变更前快照到 undo 栈（会话内，不持久化），
+   * 再应用变更。撤销栈按交易对隔离，切换品种互不污染。
+   */
+  const mutateDrawings = useCallback((mutator: (prev: Drawing[]) => Drawing[]) => {
+    // 快照读自镜像 ref，确保异步回调（导入）场景也拿到「变更前」最新值
+    const before = drawingsRef.current[symbol] ?? []
+    const hist = drawingHistoryRef.current[symbol] ?? createHistory()
+    drawingHistoryRef.current[symbol] = pushSnapshot(hist, before)
+    setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: mutator(prev[symbol] ?? []) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setter 引用稳定，加入会破坏回调稳定性
+  }, [symbol])
+
+  /** 撤销画线编辑：恢复历史快照，当前状态入 redo 栈 */
+  const undoDrawings = useCallback(() => {
+    const hist = drawingHistoryRef.current[symbol] ?? createHistory()
+    if (!drawingCanUndo(hist)) return
+    const { history, state } = undoSnapshot(hist, drawingsBySymbol[symbol] ?? [])
+    drawingHistoryRef.current[symbol] = history
+    setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: state }))
+    setSelectedDrawingId(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setter 引用稳定，加入会破坏回调稳定性
+  }, [symbol, drawingsBySymbol])
+
+  /** 重做画线编辑：从 redo 栈恢复，当前状态入 undo 栈 */
+  const redoDrawings = useCallback(() => {
+    const hist = drawingHistoryRef.current[symbol] ?? createHistory()
+    if (!drawingCanRedo(hist)) return
+    const { history, state } = redoSnapshot(hist, drawingsBySymbol[symbol] ?? [])
+    drawingHistoryRef.current[symbol] = history
+    setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: state }))
+    setSelectedDrawingId(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setter 引用稳定，加入会破坏回调稳定性
+  }, [symbol, drawingsBySymbol])
+
+  const canUndoDrawings = drawingCanUndo(drawingHistoryRef.current[symbol] ?? createHistory())
+  const canRedoDrawings = drawingCanRedo(drawingHistoryRef.current[symbol] ?? createHistory())
+
   /** 取消进行中的多锚点画线进度（由 ChartView 转发到 adapter） */
   const cancelDrawingProgress = useCallback(() => {
     cancelDrawingRef.current?.()
@@ -323,10 +375,7 @@ export function App() {
 
   const commitDrawing = (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => {
     const created = { ...createDrawing(d.type, d.points), color: drawingColor || undefined }
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: [...(prev[symbol] ?? []), created],
-    }))
+    mutateDrawings((prev) => [...prev, created])
     setSelectedDrawingId(created.id)
     // 移动端画线完成自动切回「鼠标」只读模式：避免再次轻点误建画线，
     // 且可直接触屏拖拽编辑（桌面端保持工具不切，连续画线）
@@ -339,22 +388,18 @@ export function App() {
   const confirmTextDrawing = () => {
     if (!editingTextId) return
     const text = textDraft.trim()
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) =>
+    mutateDrawings((prev) =>
+      prev.map((d) =>
         d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined } : d,
       ),
-    }))
+    )
     setEditingTextId(null)
     setTextDraft('')
     setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
     setTextColor('')
   }
   const updateDrawing = (id: string, points: { time: number; price: number }[]) => {
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? { ...d, points } : d)),
-    }))
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, points } : d)))
   }
   const selectedDrawing = drawings.find((d) => d.id === selectedDrawingId)
   const startEditingText = (id: string) => {
@@ -371,10 +416,7 @@ export function App() {
   }
   const deleteSelectedDrawing = () => {
     if (!selectedDrawingId) return
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).filter((d) => d.id !== selectedDrawingId),
-    }))
+    mutateDrawings((prev) => prev.filter((d) => d.id !== selectedDrawingId))
     setSelectedDrawingId(null)
   }
 
@@ -406,37 +448,25 @@ export function App() {
         return
       }
       if (r.imported > 0) {
-        setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: [...(prev[symbol] ?? []), ...r.drawings] }))
+        mutateDrawings((prev) => [...prev, ...r.drawings])
       }
     })
   }
   const setAllDrawingsHidden = (hidden: boolean) => {
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) => ({ ...d, hidden })),
-    }))
+    mutateDrawings((prev) => prev.map((d) => ({ ...d, hidden })))
   }
   const toggleHidden = (id: string) => {
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? toggleDrawingHidden(d) : d)),
-    }))
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? toggleDrawingHidden(d) : d)))
   }
   const toggleLocked = (id: string) => {
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).map((d) => (d.id === id ? toggleDrawingLocked(d) : d)),
-    }))
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? toggleDrawingLocked(d) : d)))
   }
   const deleteDrawing = (id: string) => {
-    setDrawingsBySymbol((prev) => ({
-      ...prev,
-      [symbol]: (prev[symbol] ?? []).filter((d) => d.id !== id),
-    }))
+    mutateDrawings((prev) => prev.filter((d) => d.id !== id))
     if (selectedDrawingId === id) setSelectedDrawingId(null)
   }
   const clearDrawings = () => {
-    setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: [] }))
+    mutateDrawings(() => [])
     setSelectedDrawingId(null)
   }
 
@@ -642,6 +672,10 @@ export function App() {
           onExportDrawings={exportDrawings}
           onImportDrawings={importDrawings}
           drawingImportError={drawingImportError}
+          drawingCanUndo={canUndoDrawings}
+          drawingCanRedo={canRedoDrawings}
+          onUndoDrawing={undoDrawings}
+          onRedoDrawing={redoDrawings}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}
@@ -729,6 +763,10 @@ export function App() {
           onExportDrawings={exportDrawings}
           onImportDrawings={importDrawings}
           drawingImportError={drawingImportError}
+          drawingCanUndo={canUndoDrawings}
+          drawingCanRedo={canRedoDrawings}
+          onUndoDrawing={undoDrawings}
+          onRedoDrawing={redoDrawings}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           themeMode={themeMode}

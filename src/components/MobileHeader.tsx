@@ -57,6 +57,11 @@ export interface MobileHeaderProps {
   onToggleDrawingLocked: (id: string) => void
   onDeleteDrawing: (id: string) => void
   onClearDrawings: () => void
+  /** 画线撤销/重做（会话内历史栈） */
+  drawingCanUndo: boolean
+  drawingCanRedo: boolean
+  onUndoDrawing: () => void
+  onRedoDrawing: () => void
   /** 批量显示/隐藏当前交易对全部画线 */
   onSetAllDrawingsHidden: (hidden: boolean) => void
   /** 画线 JSON 导出/导入 */
@@ -533,6 +538,10 @@ export function MobileHeader(props: MobileHeaderProps) {
             onExport={props.onExportDrawings}
             onImportFile={props.onImportDrawings}
             importError={props.drawingImportError}
+            canUndo={props.drawingCanUndo}
+            canRedo={props.drawingCanRedo}
+            onUndo={props.onUndoDrawing}
+            onRedo={props.onRedoDrawing}
               onBack={() => setMenu('drawing')}
             />
           )}

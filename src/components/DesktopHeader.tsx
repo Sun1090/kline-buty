@@ -469,6 +469,10 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             onExport={props.onExportDrawings}
             onImportFile={props.onImportDrawings}
             importError={props.drawingImportError}
+            canUndo={props.drawingCanUndo}
+            canRedo={props.drawingCanRedo}
+            onUndo={props.onUndoDrawing}
+            onRedo={props.onRedoDrawing}
             onBack={() => setMenu('drawing')}
           />
         </div>

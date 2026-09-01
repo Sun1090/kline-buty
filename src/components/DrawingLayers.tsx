@@ -20,6 +20,11 @@ interface DrawingLayersProps {
   onImportFile: (f: File) => void
   /** 导入错误信息（i18n 文本），null=无 */
   importError?: string | null
+  /** 撤销/重做（P3：画线编辑历史栈，会话内有效） */
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
   /** 返回画线工具选择视图 */
   onBack: () => void
 }
@@ -51,6 +56,10 @@ export function DrawingLayers({
   onExport,
   onImportFile,
   importError,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   onBack,
 }: DrawingLayersProps) {
   const { t } = useI18n()
@@ -83,6 +92,47 @@ export function DrawingLayers({
         <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
           {t('layers.title')}（{drawings.length}）
         </span>
+        {/* 撤销/重做：画线编辑历史栈（会话内） */}
+        <button
+          data-testid="drawing-layer-undo"
+          onClick={onUndo}
+          disabled={!canUndo}
+          title={t('layers.undo')}
+          aria-label={t('layers.undo')}
+          aria-disabled={!canUndo}
+          style={{
+            flex: '0 0 auto',
+            padding: '4px 8px',
+            fontSize: 11,
+            border: 'none',
+            borderRadius: 6,
+            cursor: canUndo ? 'pointer' : 'not-allowed',
+            background: canUndo ? 'rgba(41,98,255,0.15)' : 'rgba(255,255,255,0.03)',
+            color: canUndo ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
+          ↩
+        </button>
+        <button
+          data-testid="drawing-layer-redo"
+          onClick={onRedo}
+          disabled={!canRedo}
+          title={t('layers.redo')}
+          aria-label={t('layers.redo')}
+          aria-disabled={!canRedo}
+          style={{
+            flex: '0 0 auto',
+            padding: '4px 8px',
+            fontSize: 11,
+            border: 'none',
+            borderRadius: 6,
+            cursor: canRedo ? 'pointer' : 'not-allowed',
+            background: canRedo ? 'rgba(41,98,255,0.15)' : 'rgba(255,255,255,0.03)',
+            color: canRedo ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
+          ↪
+        </button>
         <div style={{ flex: 1 }} />
         {drawings.length > 0 && (
           <>
