@@ -205,6 +205,8 @@ export const zh = {
   },
   layers: {
     title: '图层管理',
+    undo: '撤销',
+    redo: '重做',
     back: '返回画线',
     show: '显示',
     hide: '隐藏',
@@ -643,6 +645,8 @@ export const en: Messages = {
   },
   layers: {
     title: 'Drawing Layers',
+    undo: 'Undo',
+    redo: 'Redo',
     back: 'Back to tools',
     show: 'Show',
     hide: 'Hide',
@@ -1079,6 +1083,8 @@ export const ja: Messages = {
   },
   layers: {
     title: '画層管理',
+    undo: '元に戻す',
+    redo: 'やり直す',
     back: 'ツールに戻る',
     show: '表示',
     hide: '非表示',
@@ -1516,6 +1522,8 @@ export const ko: Messages = {
   },
   layers: {
     title: '레이어 관리',
+    undo: '실행 취소',
+    redo: '다시 실행',
     back: '도구로 돌아가기',
     show: '표시',
     hide: '숨기기',
@@ -1964,6 +1972,8 @@ export const es: Messages = {
   },
   layers: {
     title: 'Capas de dibujo',
+    undo: 'Deshacer',
+    redo: 'Rehacer',
     back: 'Volver a herramientas',
     show: 'Mostrar',
     hide: 'Ocultar',

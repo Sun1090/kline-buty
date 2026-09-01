@@ -17,6 +17,10 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onExport: vi.fn(),
     onImportFile: vi.fn(),
     importError: null,
+    canUndo: false,
+    canRedo: false,
+    onUndo: vi.fn(),
+    onRedo: vi.fn(),
     onBack: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
@@ -95,6 +99,26 @@ describe('DrawingLayers（图层管理面板）', () => {
     expect(handlers.onClearAll).toHaveBeenCalled()
     fireEvent.click(screen.getByTestId('drawing-layer-back'))
     expect(handlers.onBack).toHaveBeenCalled()
+  })
+
+  it('撤销/重做按钮：可操作时触发回调，不可用时不触发', () => {
+    const handlers = setup({ drawings: [h1, t1], canUndo: true, canRedo: true })
+    fireEvent.click(screen.getByTestId('drawing-layer-undo'))
+    expect(handlers.onUndo).toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('drawing-layer-redo'))
+    expect(handlers.onRedo).toHaveBeenCalled()
+    expect(screen.getByTestId('drawing-layer-undo').getAttribute('aria-disabled')).toBe('false')
+    expect(screen.getByTestId('drawing-layer-redo').getAttribute('aria-disabled')).toBe('false')
+  })
+
+  it('撤销/重做按钮不可用时：disabled + aria-disabled=true，点击不触发', () => {
+    const handlers = setup({ drawings: [h1, t1], canUndo: false, canRedo: false })
+    fireEvent.click(screen.getByTestId('drawing-layer-undo'))
+    fireEvent.click(screen.getByTestId('drawing-layer-redo'))
+    expect(handlers.onUndo).not.toHaveBeenCalled()
+    expect(handlers.onRedo).not.toHaveBeenCalled()
+    expect(screen.getByTestId('drawing-layer-undo').getAttribute('aria-disabled')).toBe('true')
+    expect(screen.getByTestId('drawing-layer-redo').getAttribute('aria-disabled')).toBe('true')
   })
 
   it('面板有 role=region，列表 role=listbox，行 role=option + aria-selected', () => {
