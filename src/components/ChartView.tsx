@@ -43,6 +43,25 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
+/** A11 可视范围时间短格式：UTC 或本地时区，MM-DD HH:MM（跨年纪年） */
+function fmtRangeTime(time: number, tz: 'utc' | 'local', locale: string): string {
+  const d = new Date(time * 1000)
+  const opts: Intl.DateTimeFormatOptions = {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    year: d.getUTCFullYear() < new Date().getUTCFullYear() ? '2-digit' : undefined,
+    timeZone: tz === 'utc' ? 'UTC' : undefined,
+  }
+  try {
+    return new Intl.DateTimeFormat(locale, opts).format(d)
+  } catch {
+    return d.toLocaleString(locale, { hour12: false, timeZone: tz === 'utc' ? 'UTC' : undefined })
+  }
+}
+
 interface ChartViewProps {
   symbol: string
   period: Period
@@ -151,6 +170,8 @@ export function ChartView({
   const containerRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<ChartApi | null>(null)
   const prevDataRef = useRef<Candle[] | null>(null)
+  /** 当前品种全量 K 线快照镜像（A11 时间戳换算：subscribe 回调只挂一次，读 ref 取最新） */
+  const allCandlesRef = useRef<Candle[]>([])
   const keyRef = useRef('')
   /** 大数据量窗口裁剪状态（全量坐标 [start,end)），null = 不裁剪 */
   const [cull, setCull] = useState<CullWindow | null>(null)
@@ -158,6 +179,8 @@ export function ChartView({
   cullRef.current = cull
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
+  /** A11 可视起止时间戳（随缩放/平移更新），用于图表角落显示 */
+  const [visibleRange, setVisibleRange] = useState<{ from: number | null; to: number | null }>({ from: null, to: null })
   /** 装载窗口生成时的全量数据长度：窗口贴尾沿时实时新帧自然流入 */
   const fullLenAtCullRef = useRef(0)
   /** 当前全量数据长度（渲染期同步，供可见区间回调读取） */
@@ -242,6 +265,7 @@ export function ChartView({
     return replayData.slice(start, Math.max(start, end))
   }, [replayData, cull])
   dataLenRef.current = replayData.length
+  allCandlesRef.current = replayData
 
   // ---- 图表实例与事件订阅（一次创建） ----
   useEffect(() => {
@@ -284,6 +308,11 @@ export function ChartView({
       const gFrom = base + from
       const gTo = base + to
       lastVisibleRef.current = { from: gFrom, to: gTo }
+      // A11 可视起止时间戳（索引 → 时间，数据不足时显示 null）
+      setVisibleRange({
+        from: allCandlesRef.current[gFrom]?.time ?? null,
+        to: allCandlesRef.current[gTo]?.time ?? null,
+      })
       const len = dataLenRef.current
       setAtLatest(!isAwayFromLatest(gTo, len))
       // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
@@ -942,6 +971,27 @@ export function ChartView({
         {symbol.replace('USDT', '/USDT')} ·{' '}
         {t((PERIODS.find((pp) => pp.value === period)?.labelKey ?? 'period.1m') as MessageKey)}
       </div>
+      {/* A11 图表可视时间范围（随缩放/平移更新；UTC 按配置） */}
+      {visibleRange.from != null && visibleRange.to != null && (
+        <div
+          data-testid="chart-visible-range"
+          style={{
+            position: 'absolute',
+            left: 10,
+            bottom: 22,
+            fontSize: 11,
+            color: 'var(--text-faint)',
+            opacity: 0.7,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            fontVariantNumeric: 'tabular-nums',
+            zIndex: 3,
+          }}
+        >
+          {fmtRangeTime(visibleRange.from, timezoneMode, localeFor(lang))} —{' '}
+          {fmtRangeTime(visibleRange.to, timezoneMode, localeFor(lang))}
+        </div>
+      )}
       {ctxMenu && (
         <div
           data-testid="chart-ctx-menu"
