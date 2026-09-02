@@ -64,6 +64,8 @@ export interface Drawing {
   hidden?: boolean
   /** 图层管理：锁定（仍渲染但不可选中/拖拽编辑） */
   locked?: boolean
+  /** C10 画线透明度（0.15–1，缺省 1 = 不透明） */
+  opacity?: number
 }
 
 export interface Point {

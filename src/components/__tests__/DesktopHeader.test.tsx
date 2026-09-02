@@ -61,6 +61,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onSelectDrawing: vi.fn(),
     onToggleDrawingHidden: vi.fn(),
     onToggleDrawingLocked: vi.fn(),
+    onSetDrawingOpacity: vi.fn(),
     onDeleteDrawing: vi.fn(),
     onClearDrawings: vi.fn(),
     onSetAllDrawingsHidden: vi.fn(),
