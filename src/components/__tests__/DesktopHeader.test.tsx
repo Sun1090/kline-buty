@@ -65,7 +65,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onDeleteDrawing: vi.fn(),
     onClearDrawings: vi.fn(),
     onSetAllDrawingsHidden: vi.fn(),
-    drawingSnap: false,
+    drawingSnap: 'off' as const,
     onToggleDrawingSnap: vi.fn(),
     tradesActive: false,
     onToggleTrades: vi.fn(),

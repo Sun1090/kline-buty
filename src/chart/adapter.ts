@@ -64,7 +64,7 @@ import {
   type Point,
   type SegmentLine,
 } from '../drawings/logic'
-import { snapToCandle } from '../drawings/snap'
+import { snapToCandle, type SnapMode } from '../drawings/snap'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
 
@@ -234,8 +234,8 @@ export interface ChartApi {
   setPriceScaleMode(mode: 'linear' | 'log'): void
   /** 时间轴时区：utc（默认，交易所基准）或 local（浏览器本地） */
   setTimezoneMode(mode: 'utc' | 'local'): void
-  /** 画线锚点吸附 K 线 OHLC 开关 */
-  setSnapEnabled(on: boolean): void
+  /** 画线锚点吸附模式（off/time/ohlc，C3） */
+  setSnapMode(mode: SnapMode): void
   /** 十字光标移动回调（离开图表区域时 time 为 null） */
   subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
@@ -350,7 +350,8 @@ export class LightweightChartAdapter implements ChartApi {
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
   private crosshairTime: number | null = null
-  private snapEnabled = false
+  /** C3 吸附对齐模式（默认 ohlc，兼容旧 behavior） */
+  private snapMode: SnapMode = 'ohlc'
   private currentType: ChartType = 'candlestick'
   private positionLines: PositionLines | null = null
   private positionPriceLines = new Map<string, IPriceLine>()
@@ -607,14 +608,13 @@ export class LightweightChartAdapter implements ChartApi {
     this.periodSeconds = sec
   }
 
-  setSnapEnabled(on: boolean) {
-    this.snapEnabled = on
+  setSnapMode(mode: SnapMode) {
+    this.snapMode = mode
   }
 
-  /** 吸附包装：开关开启时把 (time, price) 吸附到最近 K 线的 OHLC */
+  /** 吸附包装：按对齐模式把 (time, price) 吸附到最近 K 线（off 原样返回） */
   private snapPoint(time: number, price: number): { time: number; price: number } {
-    if (!this.snapEnabled) return { time, price }
-    return snapToCandle(time, price, this.lastCandles)
+    return snapToCandle(time, price, this.lastCandles, this.snapMode)
   }
 
   setTimezoneMode(mode: 'utc' | 'local') {

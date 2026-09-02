@@ -41,6 +41,7 @@ import {
   type Drawing,
   type DrawingTool,
 } from './drawings/logic'
+import { normalizeSnapMode, type SnapMode } from './drawings/snap'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { parseDrawingsFile, serializeDrawings } from './drawings/io'
@@ -97,7 +98,11 @@ export function App() {
   const [chartType, setChartType] = usePersistedState<ChartType>('chartType', 'candlestick')
   const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
   const [timezoneMode, setTimezoneMode] = usePersistedState<'utc' | 'local'>('timezone', 'utc')
-  const [drawingSnap, setDrawingSnap] = usePersistedState<boolean>('drawingSnap', false)
+  // C3 吸附对齐模式（三态：off/time/ohlc）；持久化值兼容旧 boolean（true→ohlc/false→off），
+  // 用 unknown 读取 + normalizeSnapMode 归一，setter 直接写新枚举值
+  const [drawingSnapRaw, setDrawingSnapRaw] = usePersistedState<unknown>('drawingSnap', 'ohlc')
+  const drawingSnap = normalizeSnapMode(drawingSnapRaw)
+  const setDrawingSnap = (v: SnapMode) => setDrawingSnapRaw(v)
   // C12 便签全局显隐（持久化；隐藏不渲染 note，数据保留）
   const [notesHidden, setNotesHidden] = usePersistedState<boolean>('notesHidden', false)
   // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
@@ -755,7 +760,7 @@ export function App() {
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
-          onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           tradesActive={tradesOpen}
@@ -856,7 +861,7 @@ export function App() {
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
-          onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           tradesActive={tradesOpen}

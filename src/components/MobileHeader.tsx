@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import type { Period } from '../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from './ChartView'
 import type { Drawing, DrawingTool } from '../drawings/logic'
+import type { SnapMode } from '../drawings/snap'
 import type { DrawingTemplate } from '../drawings/templates'
 import type { ColorPresetId, ThemeMode } from '../theme'
 import { useI18n } from '../i18n/useI18n'
@@ -22,6 +23,11 @@ import {
 } from './headerOptions'
 
 type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more' | 'layers'
+
+/** C3 吸附对齐模式 → 显示文案 */
+function snapModeLabel(mode: SnapMode, t: (key: MessageKey) => string): string {
+  return mode === 'time' ? t('drawing.snapTime') : mode === 'ohlc' ? t('drawing.snapOhlc') : t('drawing.snapOff')
+}
 
 export interface MobileHeaderProps {
   /** 由 App 注入，供 ResizeObserver 测 header 高度（右侧抽屉/面板定位依赖） */
@@ -80,8 +86,8 @@ export interface MobileHeaderProps {
   onExportDrawings: () => void
   onImportDrawings: (f: File) => void
   drawingImportError: string | null
-  /** 画线吸附开关 + 回调 */
-  drawingSnap: boolean
+  /** 画线吸附对齐模式（off/time/ohlc）+ 循环切换回调 */
+  drawingSnap: SnapMode
   onToggleDrawingSnap: () => void
   /** C12 便签全局显隐 + 回调 */
   notesHidden: boolean
@@ -507,7 +513,7 @@ export function MobileHeader(props: MobileHeaderProps) {
               <button
                 data-testid="mobile-drawing-snap-toggle"
                 onClick={props.onToggleDrawingSnap}
-                aria-pressed={props.drawingSnap}
+                aria-pressed={props.drawingSnap !== 'off'}
                 title={t('drawing.snap')}
                 style={{
                   padding: '10px 8px',
@@ -515,11 +521,11 @@ export function MobileHeader(props: MobileHeaderProps) {
                   border: 'none',
                   borderRadius: 6,
                   cursor: 'pointer',
-                  background: props.drawingSnap ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.05)',
-                  color: props.drawingSnap ? '#4e9cf5' : 'var(--text-dim)',
+                  background: props.drawingSnap !== 'off' ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.05)',
+                  color: props.drawingSnap !== 'off' ? '#4e9cf5' : 'var(--text-dim)',
                 }}
               >
-                {t('drawing.snap')}
+                {t('drawing.snap')} · {snapModeLabel(props.drawingSnap, t)}
               </button>
               <button
                 data-testid="mobile-drawing-note-toggle"

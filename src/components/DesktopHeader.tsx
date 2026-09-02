@@ -429,11 +429,11 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           <PanelButton
             onClick={props.onToggleDrawingSnap}
             title={t('drawing.snap')}
-            ariaLabel={`${t('drawing.snap')}: ${props.drawingSnap ? t('drawing.snapOn') : t('drawing.snapOff')}`}
-            active={props.drawingSnap}
+            ariaLabel={`${t('drawing.snap')}: ${props.drawingSnap === 'off' ? t('drawing.snapOff') : props.drawingSnap === 'time' ? t('drawing.snapTime') : t('drawing.snapOhlc')}`}
+            active={props.drawingSnap !== 'off'}
             testId="drawing-snap-toggle"
           >
-            {t('drawing.snap')}
+            {t('drawing.snap')} · {props.drawingSnap === 'off' ? t('drawing.snapOff') : props.drawingSnap === 'time' ? t('drawing.snapTime') : t('drawing.snapOhlc')}
           </PanelButton>
           <PanelButton
             onClick={props.onToggleNotesHidden}

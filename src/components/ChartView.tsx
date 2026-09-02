@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
+import type { SnapMode } from '../drawings/snap'
 import { cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
@@ -74,7 +75,7 @@ interface ChartViewProps {
   /** 时间轴时区（默认 utc，与交易所一致） */
   timezoneMode?: 'utc' | 'local'
   /** 画线锚点吸附 K 线 OHLC（默认关） */
-  drawingSnap?: boolean
+  drawingSnap?: SnapMode
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -136,7 +137,7 @@ export function ChartView({
   chartType,
   priceScaleMode = 'linear',
   timezoneMode = 'utc',
-  drawingSnap = false,
+  drawingSnap = 'ohlc',
   mainIndicator,
   subIndicator,
   indicatorParams,
@@ -371,7 +372,7 @@ export function ChartView({
   }, [timezoneMode])
   // T18：画线吸附开关
   useEffect(() => {
-    apiRef.current?.setSnapEnabled(drawingSnap)
+    apiRef.current?.setSnapMode?.(drawingSnap)
   }, [drawingSnap])
 
   // ---- 指标计算（纯函数，随回放/实时数据变化全量重算） ----
