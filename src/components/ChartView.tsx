@@ -77,6 +77,8 @@ interface ChartViewProps {
   onPositionDrag?: (key: 'entry' | 'takeProfit' | 'stopLoss', price: number) => void
   /** 画线数据（已按当前品种过滤） */
   drawings?: Drawing[]
+  /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
+  notesHidden?: boolean
   /** 画线工具 */
   drawingTool?: DrawingTool
   /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
@@ -129,6 +131,7 @@ export function ChartView({
   markerPrice,
   onPositionDrag,
   drawings,
+  notesHidden,
   drawingTool,
   selectedDrawingId,
   onDrawingCommit,
@@ -662,6 +665,12 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setDrawings(drawings ?? [])
   }, [drawings])
+
+  // C12 便签全局显隐 effect：隐藏时不渲染 note（数据保留，可再显示）
+  // 双可选链：apiRef 可能为部分 mock（测试环境），方法缺失时静默跳过
+  useEffect(() => {
+    apiRef.current?.setNotesHidden?.(notesHidden ?? false)
+  }, [notesHidden])
 
   // 画线工具 effect：工具变化时切换（切换非 none 工具会清空选中，符合预期）
   useEffect(() => {
