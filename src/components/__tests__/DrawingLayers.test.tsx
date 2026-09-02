@@ -12,6 +12,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onSelect: vi.fn(),
     onToggleHidden: vi.fn(),
     onToggleLocked: vi.fn(),
+    onSetOpacity: vi.fn(),
     onDelete: vi.fn(),
     onClearAll: vi.fn(),
     onSetAllHidden: vi.fn(),
@@ -176,6 +177,17 @@ describe('DrawingLayers（图层管理面板）', () => {
     setup()
     expect(screen.getByTestId('drawing-template-empty')).toBeTruthy()
     expect(screen.queryAllByTestId('drawing-template-row')).toHaveLength(0)
+  })
+
+  it('C10 透明度：选中画线显示滑杆，调节触发 onSetOpacity；未选中不显示', () => {
+    const handlers = setup({ drawings: [h1, t1], selectedId: 'h1' })
+    const slider = screen.getByTestId('drawing-opacity-slider') as HTMLInputElement
+    expect(slider).toBeTruthy()
+    fireEvent.change(slider, { target: { value: '0.5' } })
+    expect(handlers.onSetOpacity).toHaveBeenCalledWith('h1', 0.5)
+    cleanup()
+    setup({ drawings: [h1, t1], selectedId: null })
+    expect(screen.queryByTestId('drawing-opacity-slider')).toBeNull()
   })
 
   it('模板列表：套用/删除按钮触发对应回调', () => {

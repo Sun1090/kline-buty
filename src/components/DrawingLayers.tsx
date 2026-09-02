@@ -12,6 +12,8 @@ interface DrawingLayersProps {
   onSelect: (id: string) => void
   onToggleHidden: (id: string) => void
   onToggleLocked: (id: string) => void
+  /** C10 单条透明度调节（0.15–1） */
+  onSetOpacity: (id: string, opacity: number) => void
   onDelete: (id: string) => void
   onClearAll: () => void
   /** 批量显示/隐藏全部画线 */
@@ -60,6 +62,7 @@ export function DrawingLayers({
   onSelect,
   onToggleHidden,
   onToggleLocked,
+  onSetOpacity,
   onDelete,
   onClearAll,
   onSetAllHidden,
@@ -396,6 +399,35 @@ export function DrawingLayers({
           })}
         </div>
       )}
+
+      {/* C10 单条透明度：选中画线时显示滑杆调节（0.15–1） */}
+      {(() => {
+        const sel = drawings.find((d) => d.id === selectedId)
+        if (!sel) return null
+        const value = sel.opacity ?? 1
+        return (
+          <div
+            data-testid="drawing-opacity-row"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px', borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6 }}
+          >
+            <span style={{ fontSize: 11, color: 'var(--text-faint)', width: 52, flexShrink: 0 }}>{t('layers.opacity')}</span>
+            <input
+              data-testid="drawing-opacity-slider"
+              type="range"
+              min={0.15}
+              max={1}
+              step={0.05}
+              value={value}
+              onChange={(e) => onSetOpacity(sel.id, Number(e.target.value))}
+              aria-label={`${t('layers.opacity')} ${Math.round(value * 100)}%`}
+              style={{ flex: 1, accentColor: 'var(--accent)' }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 38, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+              {Math.round(value * 100)}%
+            </span>
+          </div>
+        )
+      })()}
 
       {/* 画线模板（C6）：命名保存常用组合，一键套用 */}
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 10, paddingTop: 8 }}>

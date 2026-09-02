@@ -476,6 +476,11 @@ export function App() {
   const toggleLocked = (id: string) => {
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? toggleDrawingLocked(d) : d)))
   }
+  // C10 单条透明度：0.15–1 范围调节（可撤销）
+  const setDrawingOpacity = (id: string, opacity: number) => {
+    const v = Math.min(1, Math.max(0.15, opacity))
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, opacity: v } : d)))
+  }
   const deleteDrawing = (id: string) => {
     mutateDrawings((prev) => prev.filter((d) => d.id !== id))
     if (selectedDrawingId === id) setSelectedDrawingId(null)
@@ -740,6 +745,7 @@ export function App() {
           onSelectDrawing={setSelectedDrawingId}
           onToggleDrawingHidden={toggleHidden}
           onToggleDrawingLocked={toggleLocked}
+          onSetDrawingOpacity={setDrawingOpacity}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
@@ -840,6 +846,7 @@ export function App() {
           onSelectDrawing={setSelectedDrawingId}
           onToggleDrawingHidden={toggleHidden}
           onToggleDrawingLocked={toggleLocked}
+          onSetDrawingOpacity={setDrawingOpacity}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}

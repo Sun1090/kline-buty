@@ -720,7 +720,15 @@ export class LightweightChartAdapter implements ChartApi {
       if (this.notesHidden && d.type === 'note') continue
       // 拖拽中的画线由预览态绘制（实时跟随指针）
       if (this.dragEdit && d.id === this.dragEdit.id) continue
-      this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+      // C10 单条透明度：drawOne 内有多处提前 return，故用 save/restore 包裹避免 globalAlpha 泄漏
+      if (d.opacity !== undefined && d.opacity !== 1) {
+        ctx.save()
+        ctx.globalAlpha = Math.min(1, Math.max(0.15, d.opacity))
+        this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+        ctx.restore()
+      } else {
+        this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+      }
     }
     if (this.dragPreview) this.drawOne(ctx, this.dragPreview, true)
 

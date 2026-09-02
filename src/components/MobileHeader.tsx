@@ -56,6 +56,8 @@ export interface MobileHeaderProps {
   onSelectDrawing: (id: string) => void
   onToggleDrawingHidden: (id: string) => void
   onToggleDrawingLocked: (id: string) => void
+  /** C10 单条透明度调节（0.15–1） */
+  onSetDrawingOpacity: (id: string, opacity: number) => void
   onDeleteDrawing: (id: string) => void
   onClearDrawings: () => void
   /** 画线撤销/重做（会话内历史栈） */
@@ -562,6 +564,7 @@ export function MobileHeader(props: MobileHeaderProps) {
               onSelect={props.onSelectDrawing}
               onToggleHidden={props.onToggleDrawingHidden}
               onToggleLocked={props.onToggleDrawingLocked}
+              onSetOpacity={props.onSetDrawingOpacity}
               onDelete={props.onDeleteDrawing}
               onClearAll={props.onClearDrawings}
             onSetAllHidden={props.onSetAllDrawingsHidden}
