@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { Period } from '../chart/types'
 import type { ChartType } from '../chart/adapter'
 import { ChartView, type MainIndicatorKind, type SubIndicatorKind } from './ChartView'
+import type { SnapMode } from '../drawings/snap'
 import type { ColorPresetId } from '../theme'
 import { useKlineData } from '../hooks/useKlineData'
 import type { IndicatorParams } from '../indicators/params'
@@ -13,7 +14,7 @@ interface ChartPairProps {
   chartType: ChartType
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
-  drawingSnap?: boolean
+  drawingSnap?: SnapMode
   /** C12 便签全局显隐（透传给内部 ChartView） */
   notesHidden?: boolean
   mainIndicator: MainIndicatorKind
@@ -29,7 +30,7 @@ interface ChartPairProps {
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
