@@ -49,6 +49,7 @@ import {
   trendAngleDeg,
   measureInfo,
   moveAnchor,
+  followLatestEntry,
   parallelRaySpec,
   pitchforkRays,
   widthChannelSpec,
@@ -722,14 +723,19 @@ export class LightweightChartAdapter implements ChartApi {
       if (this.notesHidden && d.type === 'note') continue
       // 拖拽中的画线由预览态绘制（实时跟随指针）
       if (this.dragEdit && d.id === this.dragEdit.id) continue
+      // C15 position 工具贴附最新价：入场锚点随最新收盘价移动（渲染期派生，不写回数据）
+      const latestCandle = this.lastCandles[this.lastCandles.length - 1]
+      const renderDraw = latestCandle
+        ? followLatestEntry(d, { time: latestCandle.time, price: latestCandle.close })
+        : d
       // C10 单条透明度：drawOne 内有多处提前 return，故用 save/restore 包裹避免 globalAlpha 泄漏
-      if (d.opacity !== undefined && d.opacity !== 1) {
+      if (renderDraw.opacity !== undefined && renderDraw.opacity !== 1) {
         ctx.save()
-        ctx.globalAlpha = Math.min(1, Math.max(0.15, d.opacity))
-        this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+        ctx.globalAlpha = Math.min(1, Math.max(0.15, renderDraw.opacity))
+        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId)
         ctx.restore()
       } else {
-        this.drawOne(ctx, d, d.id === this.selectedDrawingId)
+        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId)
       }
     }
     if (this.dragPreview) {

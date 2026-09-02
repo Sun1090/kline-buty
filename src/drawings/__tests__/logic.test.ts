@@ -21,6 +21,7 @@ import {
   fibTimeZones,
   fibTimeZoneXs,
   FIB_TIME_ZONE_NUMS,
+  followLatestEntry,
   hitTestDrawings,
   linearRegression,
   parallelRaySpec,
@@ -1873,5 +1874,34 @@ describe('图层管理（hidden/locked/patch）', () => {
     const hidden = { ...createDrawing('horizontal', [{ time: 10, price: 100 }], 'h1'), hidden: true }
     const visible = createDrawing('horizontal', [{ time: 10, price: 100 }], 'h2')
     expect(hitTestDrawings([hidden, visible], 50, 200, project)).toBe('h2')
+  })
+})
+
+describe('followLatestEntry（C15 position 工具贴附最新价）', () => {
+  const pos = createDrawing('position', [
+    { time: 100, price: 100 },
+    { time: 100, price: 90 },
+    { time: 100, price: 110 },
+  ])
+
+  it('非 position 类型或未开启 → 原样返回（引用不变）', () => {
+    const trend = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }])
+    expect(followLatestEntry(trend, { time: 999, price: 42 })).toBe(trend)
+    expect(followLatestEntry(pos, { time: 999, price: 42 })).toBe(pos)
+  })
+
+  it('开启跟随 → 仅入场锚点（点 0）移动到最新价，其余锚点不变', () => {
+    const on = { ...pos, followLatest: true }
+    const out = followLatestEntry(on, { time: 200, price: 105 })
+    expect(out.points[0]).toEqual({ time: 200, price: 105 })
+    expect(out.points[1]).toEqual({ time: 100, price: 90 })
+    expect(out.points[2]).toEqual({ time: 100, price: 110 })
+  })
+
+  it('开启跟随 → 返回新对象，不修改原画线', () => {
+    const on = { ...pos, followLatest: true }
+    const out = followLatestEntry(on, { time: 200, price: 105 })
+    expect(out).not.toBe(on)
+    expect(on.points[0]).toEqual({ time: 100, price: 100 })
   })
 })

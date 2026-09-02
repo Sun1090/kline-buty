@@ -13,6 +13,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onToggleHidden: vi.fn(),
     onToggleLocked: vi.fn(),
     onSetOpacity: vi.fn(),
+    onSetFollowLatest: vi.fn(),
     onDelete: vi.fn(),
     onClearAll: vi.fn(),
     onSetAllHidden: vi.fn(),

@@ -66,6 +66,8 @@ export interface Drawing {
   locked?: boolean
   /** C10 画线透明度（0.15–1，缺省 1 = 不透明） */
   opacity?: number
+  /** C15 position 工具跟随最新价：入场锚点（点 0）随最新收盘价自动贴附 */
+  followLatest?: boolean
 }
 
 export interface Point {
@@ -609,6 +611,13 @@ export function patchDrawing<T extends Drawing>(list: T[], id: string, patch: Pa
 /** 拖动单个锚点到新位置（射线保持锚点顺序，其余按时间重排） */
 export function moveAnchor(d: Drawing, idx: number, point: { time: number; price: number }): Drawing {
   const points = d.points.map((p, i) => (i === idx ? point : p))
+  return { ...d, points: normalizePoints(d.type, points) }
+}
+
+/** C15 position 工具贴附最新价：入场锚点（点 0）移动到最新价/时间；非 position 或无标记原样返回 */
+export function followLatestEntry(d: Drawing, latest: { time: number; price: number }): Drawing {
+  if (d.type !== 'position' || !d.followLatest) return d
+  const points = d.points.map((p, i) => (i === 0 ? latest : p))
   return { ...d, points: normalizePoints(d.type, points) }
 }
 
