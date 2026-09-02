@@ -186,16 +186,17 @@ export function App() {
     prevPositionRef.current = position
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在 position 翻转时结算；paper/candles 变化不应重触发
   }, [position])
-  const [alertsOpen, setAlertsOpen] = useState(false)
-  const [depthOpen, setDepthOpen] = useState(false)
-  const [orderBookOpen, setOrderBookOpen] = useState(false)
+  // E4 面板折叠/展开记忆：市场数据面板状态持久化（刷新后恢复上次开合）
+  const [alertsOpen, setAlertsOpen] = usePersistedState('alertsOpen', false)
+  const [depthOpen, setDepthOpen] = usePersistedState('depthOpen', false)
+  const [orderBookOpen, setOrderBookOpen] = usePersistedState('orderBookOpen', false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
   const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
   const [marketListOpen, setMarketListOpen] = usePersistedState('marketListOpen', true)
   const [marketListMobileOpen, setMarketListMobileOpen] = useState(false)
   const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
-  const [volumeProfileOpen, setVolumeProfileOpen] = useState(false)
-  const [sentimentOpen, setSentimentOpen] = useState(false)
+  const [volumeProfileOpen, setVolumeProfileOpen] = usePersistedState('volumeProfileOpen', false)
+  const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
   const [copied, setCopied] = useState(false)
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -260,6 +261,10 @@ export function App() {
     orderBookOpen,
     volumeProfileOpen,
     sentimentOpen,
+    setDepthOpen,
+    setOrderBookOpen,
+    setVolumeProfileOpen,
+    setSentimentOpen,
     replay,
     selectedDrawingId,
   ])
