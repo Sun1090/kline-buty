@@ -50,3 +50,36 @@ export function buildPositionFromOrder(
     stopLoss: levels.stopLoss,
   }
 }
+
+/**
+ * D6 持仓成本加权合并（加仓/减仓）。
+ * - 同方向加仓：new entry = 加权平均成交价，quantity 相加
+ * - 反方向下单：净减仓（quantity 相减）；若反手量超过原仓，生成反向新仓（entry 为新单价格，
+ *   剩余量 = 超出的部分），TP/SL 参考新价格档
+ * - 减至恰好平仓 → 返回 null（由调用方触发平仓结算）
+ */
+export function mergePosition(
+  existing: Position,
+  side: OrderSide,
+  price: number,
+  qty: number,
+  tpPct = 3,
+  slPct = 2,
+): Position | null {
+  const buy = side === 'buy'
+  const sameDir = (existing.direction === 'long') === buy
+  if (sameDir) {
+    const newQty = existing.quantity + qty
+    const newEntry =
+      newQty <= 0 ? price : (existing.entry * existing.quantity + price * qty) / newQty
+    const levels = suggestLevels(newEntry, existing.direction, tpPct, slPct)
+    return { ...existing, entry: newEntry, quantity: newQty, takeProfit: levels.takeProfit, stopLoss: levels.stopLoss }
+  }
+  const remain = existing.quantity - qty
+  if (remain === 0) return null
+  if (remain > 0) return { ...existing, quantity: remain }
+  // 反手：超出部分形成反向仓
+  const dir = existing.direction === 'long' ? 'short' : 'long'
+  const levels = suggestLevels(price, dir, tpPct, slPct)
+  return { entry: price, quantity: -remain, direction: dir, takeProfit: levels.takeProfit, stopLoss: levels.stopLoss }
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { estimateOrder, buildPositionFromOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE } from '../order'
+import { estimateOrder, buildPositionFromOrder, mergePosition, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE } from '../order'
+import type { Position } from '../../position/pnl'
 
 describe('estimateOrder', () => {
   it('名义金额 = price × qty', () => {
@@ -94,5 +95,48 @@ describe('buildPositionFromOrder 边界', () => {
     expect(p.direction).toBe('short')
     expect(p.takeProfit).toBeCloseTo(194)
     expect(p.stopLoss).toBeCloseTo(204)
+  })
+})
+
+describe('mergePosition（D6 加权均价加仓/减仓）', () => {
+  const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
+  const shortPos: Position = { entry: 100, quantity: 2, direction: 'short', takeProfit: 97, stopLoss: 102 }
+
+  it('同方向加仓：新入口 = 加权均价，数量相加', () => {
+    const merged = mergePosition(longPos, 'buy', 200, 2)!
+    expect(merged.quantity).toBe(4)
+    expect(merged.entry).toBeCloseTo(150) // (100×2 + 200×2) / 4
+    expect(merged.direction).toBe('long')
+  })
+
+  it('空头同方向加仓：加权均价（空头新价高于原价抬升成本）', () => {
+    const merged = mergePosition(shortPos, 'sell', 200, 2)!
+    expect(merged.quantity).toBe(4)
+    expect(merged.entry).toBeCloseTo(150)
+    expect(merged.direction).toBe('short')
+  })
+
+  it('反方向部分减仓：数量相减', () => {
+    const merged = mergePosition(longPos, 'sell', 100, 1)!
+    expect(merged.quantity).toBe(1)
+    expect(merged.entry).toBe(100)
+    expect(merged.direction).toBe('long')
+  })
+
+  it('反方向恰好平仓 → null', () => {
+    expect(mergePosition(longPos, 'sell', 100, 2)).toBeNull()
+  })
+
+  it('反手超量：剩余形成反向新仓（新单价格为准）', () => {
+    const reversed = mergePosition(longPos, 'sell', 110, 5)!
+    expect(reversed.direction).toBe('short')
+    expect(reversed.quantity).toBe(3) // 5 − 2
+    expect(reversed.entry).toBe(110)
+  })
+
+  it('加仓后 TP/SL 按新加权均价重算', () => {
+    const merged = mergePosition(longPos, 'buy', 200, 2)!
+    expect(merged.takeProfit).toBeCloseTo(150 * 1.03)
+    expect(merged.stopLoss).toBeCloseTo(150 * 0.98)
   })
 })

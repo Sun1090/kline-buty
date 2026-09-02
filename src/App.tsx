@@ -23,7 +23,7 @@ import { QuickOrderWithDepth } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
-import { buildPositionFromOrder, estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
+import { buildPositionFromOrder, estimateOrder, mergePosition, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
 import { calcPnl, checkHit, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
@@ -1007,7 +1007,8 @@ export function App() {
             const est = estimateOrder(order.price, order.qty, order.side, DEFAULT_SLIPPAGE_RATIO)
             if (!paper.canOpen(est.notional, est.fee)) return
             paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee })
-            setPosition(buildPositionFromOrder(order.side, est.fillPrice, order.qty))
+            // D6 持仓成本合并：已有仓同向加权加仓 / 反向减仓；null=恰好平仓清仓
+            setPosition((prev) => (prev ? mergePosition(prev, order.side, est.fillPrice, order.qty) : buildPositionFromOrder(order.side, est.fillPrice, order.qty)))
             setPositionOpen(true)
             setTradesOpen(false)
             setQuickOrder(null)
