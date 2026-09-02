@@ -24,7 +24,7 @@ import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
 import { buildPositionFromOrder, estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
-import { calcPnl, type Position } from './position/pnl'
+import { calcPnl, checkHit, type Position } from './position/pnl'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
@@ -176,6 +176,25 @@ export function App() {
   useEffect(() => {
     const prev = prevPositionRef.current
     const price = candles[candles.length - 1]?.close ?? null
+    if (prev && price != null) {
+      // D5 止盈/止损单模拟触发：最新价触达 TP/SL → 立即在本次记账平仓并重置仓位
+      const hit = checkHit(prev, price)
+      if (hit) {
+        const fee = prev.entry * prev.quantity * TAKER_FEE_RATE
+        const { pnl } = calcPnl(prev, price)
+        paper.recordClose({
+          symbol,
+          side: prev.direction === 'long' ? 'buy' : 'sell',
+          price,
+          qty: prev.quantity,
+          fee,
+          pnl,
+        })
+        setPosition(null)
+        prevPositionRef.current = null
+        return
+      }
+    }
     if (prev && position === null && price != null) {
       const fee = prev.entry * prev.quantity * TAKER_FEE_RATE
       const { pnl } = calcPnl(prev, price)
