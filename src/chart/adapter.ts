@@ -1673,7 +1673,11 @@ export class LightweightChartAdapter implements ChartApi {
       const info = measureInfo(d.points[0], d.points[1])
       const bars = Math.max(1, Math.round(Math.abs(d.points[1].time - d.points[0].time) / this.periodSeconds))
       const sign = info.diff >= 0 ? '+' : ''
-      const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${this.labels.measureBars.replace('{bars}', String(bars))}`
+      // C14 测量增强：追加屏幕角度（°）与矩形面积（|Δprice × Δtime| 的视觉近似）
+      // C14 测量增强：追加屏幕角度（°）与矩形面积（|Δx × Δy| 像素²）
+      const deg = trendAngleDeg(a, b)
+      const area = Math.abs(a.x - b.x) * Math.abs(a.y - b.y)
+      const label = `${sign}${info.diff.toFixed(2)} (${sign}${info.pct.toFixed(2)}%) · ${this.labels.measureBars.replace('{bars}', String(bars))} · ∠${deg.toFixed(1)}° ${Math.round(area)}px²`
       this.drawLabel(ctx, (a.x + b.x) / 2, (a.y + b.y) / 2 - 8, label, 'left')
       return
     }
