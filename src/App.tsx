@@ -98,6 +98,8 @@ export function App() {
   const [priceScaleMode, setPriceScaleMode] = usePersistedState<'linear' | 'log'>('priceScale', 'linear')
   const [timezoneMode, setTimezoneMode] = usePersistedState<'utc' | 'local'>('timezone', 'utc')
   const [drawingSnap, setDrawingSnap] = usePersistedState<boolean>('drawingSnap', false)
+  // C12 便签全局显隐（持久化；隐藏不渲染 note，数据保留）
+  const [notesHidden, setNotesHidden] = usePersistedState<boolean>('notesHidden', false)
   // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
   const [quadPeriods, setQuadPeriods] = useState<[Period, Period, Period, Period] | null>(null)
   // T22：下拉刷新重挂载键
@@ -743,6 +745,8 @@ export function App() {
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          notesHidden={notesHidden}
+          onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -841,6 +845,8 @@ export function App() {
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
           onToggleDrawingSnap={() => setDrawingSnap((v) => !v)}
+          notesHidden={notesHidden}
+          onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -1018,6 +1024,7 @@ export function App() {
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
+          notesHidden={notesHidden}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -1035,6 +1042,7 @@ export function App() {
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
+          notesHidden={notesHidden}
           periods={quadPeriods ?? undefined}
           onCellPeriod={(i, p) => setQuadPeriods((prev) => { const next = (prev ?? [period, period, period, period]) as [Period, Period, Period, Period]; next[i] = p; return [...next] })}
             mainIndicator={mainIndicator}
@@ -1054,6 +1062,7 @@ export function App() {
             priceScaleMode={priceScaleMode}
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
+          notesHidden={notesHidden}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

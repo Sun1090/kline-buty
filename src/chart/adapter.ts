@@ -204,6 +204,8 @@ export interface ChartApi {
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
   setDrawings(drawings: Drawing[]): void
+  /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
+  setNotesHidden(hidden: boolean): void
   /** 画线工具模式（none 为只读/选中） */
   setDrawingTool(tool: DrawingTool): void
   /** 同步外部选中画线（用于只读模式拖拽判定） */
@@ -369,6 +371,8 @@ export class LightweightChartAdapter implements ChartApi {
   private overlayCtx: CanvasRenderingContext2D
   private resizeObserver: ResizeObserver | null = null
   private drawings: Drawing[] = []
+  /** C12 便签全局显隐（默认显示） */
+  private notesHidden = false
   private drawingTool: DrawingTool = 'none'
   private drawingCallbacks: DrawingCallbacks | null = null
   private selectedDrawingId: string | null = null
@@ -516,6 +520,13 @@ export class LightweightChartAdapter implements ChartApi {
 
   setDrawings(drawings: Drawing[]) {
     this.drawings = drawings
+    this.draw()
+  }
+
+  /** C12 便签全局显隐：notesHidden=true 时不渲染任何 note 类型画线（数据保留） */
+  setNotesHidden(hidden: boolean) {
+    if (this.notesHidden === hidden) return
+    this.notesHidden = hidden
     this.draw()
   }
 
@@ -705,6 +716,8 @@ export class LightweightChartAdapter implements ChartApi {
     for (const d of this.drawings) {
       // 图层管理：隐藏的画线不渲染（数据仍保留，取消隐藏即恢复）
       if (d.hidden) continue
+      // C12 便签全局显隐：notesHidden 时跳过所有 note 类型
+      if (this.notesHidden && d.type === 'note') continue
       // 拖拽中的画线由预览态绘制（实时跟随指针）
       if (this.dragEdit && d.id === this.dragEdit.id) continue
       this.drawOne(ctx, d, d.id === this.selectedDrawingId)

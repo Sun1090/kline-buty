@@ -81,6 +81,9 @@ export interface MobileHeaderProps {
   /** 画线吸附开关 + 回调 */
   drawingSnap: boolean
   onToggleDrawingSnap: () => void
+  /** C12 便签全局显隐 + 回调 */
+  notesHidden: boolean
+  onToggleNotesHidden: () => void
   tradesActive: boolean
   onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
@@ -515,6 +518,23 @@ export function MobileHeader(props: MobileHeaderProps) {
                 }}
               >
                 {t('drawing.snap')}
+              </button>
+              <button
+                data-testid="mobile-drawing-note-toggle"
+                onClick={props.onToggleNotesHidden}
+                aria-pressed={props.notesHidden}
+                title={t('drawing.noteToggle')}
+                style={{
+                  padding: '10px 8px',
+                  fontSize: 12,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  background: props.notesHidden ? 'rgba(245,192,47,0.25)' : 'rgba(255,255,255,0.05)',
+                  color: props.notesHidden ? '#f5c02f' : 'var(--text-dim)',
+                }}
+              >
+                {t('drawing.noteToggle')}
               </button>
               <button
                 data-testid="drawing-layers-open"

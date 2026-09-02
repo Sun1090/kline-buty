@@ -81,6 +81,8 @@ function setup(overrides: Record<string, unknown> = {}) {
     drawingCanPaste: false,
     onCopyDrawing: vi.fn(),
     onPasteDrawing: vi.fn(),
+    notesHidden: false,
+    onToggleNotesHidden: vi.fn(),
     drawingImportError: null,
     layout: 'single' as const,
     themeMode: 'dark' as const,

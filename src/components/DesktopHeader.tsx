@@ -435,6 +435,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           >
             {t('drawing.snap')}
           </PanelButton>
+          <PanelButton
+            onClick={props.onToggleNotesHidden}
+            title={t('drawing.noteToggle')}
+            ariaLabel={t('drawing.noteToggle')}
+            active={props.notesHidden}
+            testId="drawing-note-toggle"
+          >
+            {t('drawing.noteToggle')}
+          </PanelButton>
           <button
             data-testid="drawing-layers-open"
             onClick={() => setMenu('layers')}

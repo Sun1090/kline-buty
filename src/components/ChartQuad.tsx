@@ -13,6 +13,7 @@ interface CellProps {
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
   drawingSnap?: boolean
+  notesHidden?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -23,7 +24,7 @@ interface CellProps {
   onCellPeriod: (p: Period) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCellPeriod }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, notesHidden = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCellPeriod }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -35,6 +36,7 @@ function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezo
         priceScaleMode={priceScaleMode}
         timezoneMode={timezoneMode}
         drawingSnap={drawingSnap}
+        notesHidden={notesHidden}
         mainIndicator={mainIndicator}
         subIndicator={subIndicator}
         indicatorParams={indicatorParams}
@@ -85,6 +87,7 @@ interface QuadChartProps {
   priceScaleMode?: 'linear' | 'log'
   timezoneMode?: 'utc' | 'local'
   drawingSnap?: boolean
+  notesHidden?: boolean
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -94,10 +97,10 @@ interface QuadChartProps {
 }
 
 /** 四图联动：2×2 网格，时间轴全联动；每格可独立切换周期（T21） */
-export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
+export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = false, notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
   const { ranges, broadcast } = useChartSync(4)
   const cellPeriods = periods ?? [period, period, period, period]
-  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
+  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>
