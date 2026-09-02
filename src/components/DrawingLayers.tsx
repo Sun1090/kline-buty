@@ -14,6 +14,8 @@ interface DrawingLayersProps {
   onToggleLocked: (id: string) => void
   /** C10 单条透明度调节（0.15–1） */
   onSetOpacity: (id: string, opacity: number) => void
+  /** C15 position 工具跟随最新价开关 */
+  onSetFollowLatest: (id: string, followLatest: boolean) => void
   onDelete: (id: string) => void
   onClearAll: () => void
   /** 批量显示/隐藏全部画线 */
@@ -63,6 +65,7 @@ export function DrawingLayers({
   onToggleHidden,
   onToggleLocked,
   onSetOpacity,
+  onSetFollowLatest,
   onDelete,
   onClearAll,
   onSetAllHidden,
@@ -426,6 +429,29 @@ export function DrawingLayers({
               {Math.round(value * 100)}%
             </span>
           </div>
+        )
+      })()}
+
+      {/* C15 position 工具跟随最新价：入场锚点随最新收盘价自动贴附 */}
+      {(() => {
+        const sel = drawings.find((d) => d.id === selectedId)
+        if (!sel || sel.type !== 'position') return null
+        const on = sel.followLatest ?? false
+        return (
+          <label
+            data-testid="drawing-follow-latest-row"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px', borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6, cursor: 'pointer' }}
+          >
+            <input
+              data-testid="drawing-follow-latest-checkbox"
+              type="checkbox"
+              checked={on}
+              onChange={(e) => onSetFollowLatest(sel.id, e.target.checked)}
+              aria-label={t('layers.followLatest')}
+              style={{ accentColor: 'var(--accent)' }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{t('layers.followLatest')}</span>
+          </label>
         )
       })()}
 

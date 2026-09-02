@@ -510,6 +510,9 @@ export function App() {
     const v = Math.min(1, Math.max(0.15, opacity))
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, opacity: v } : d)))
   }
+  const setDrawingFollowLatest = (id: string, followLatest: boolean) => {
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, followLatest } : d)))
+  }
   const deleteDrawing = (id: string) => {
     mutateDrawings((prev) => prev.filter((d) => d.id !== id))
     if (selectedDrawingId === id) setSelectedDrawingId(null)
@@ -775,6 +778,7 @@ export function App() {
           onToggleDrawingHidden={toggleHidden}
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
+          onSetDrawingFollowLatest={setDrawingFollowLatest}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
@@ -876,6 +880,7 @@ export function App() {
           onToggleDrawingHidden={toggleHidden}
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
+          onSetDrawingFollowLatest={setDrawingFollowLatest}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
