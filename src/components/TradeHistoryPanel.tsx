@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { TradeRecord } from '../hooks/usePaperAccount'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
+import { equitySeries } from '../utils/equity'
+import { buildSparkPath } from '../utils/sparkPath'
 
 interface TradeHistoryPanelProps {
   trades: TradeRecord[]
@@ -103,7 +105,29 @@ export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onReset 
       {trades.length === 0 ? (
         <div style={{ padding: '12px 4px', color: 'var(--text-faint)', textAlign: 'center' }}>{t('paper.empty')}</div>
       ) : (
-        <div style={{ maxHeight: 'min(46vh, 380px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div>
+          {/* D13 权益曲线：由流水推导的权益 sparkline */}
+          {(() => {
+            const pts = equitySeries(trades)
+            const last = pts[pts.length - 1]?.equity ?? 10_000
+            const up = last >= 10_000
+            const d = buildSparkPath(pts.map((p) => p.equity), 280, 48)
+            return (
+              <div
+                data-testid="trade-history-equity"
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}
+              >
+                <svg width={280} height={48} role="img" aria-label={t('paper.equity')} style={{ flex: 'none' }}>
+                  <path d={d} fill="none" stroke={up ? 'var(--up)' : 'var(--down)'} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+                </svg>
+                <span style={{ color: 'var(--text-faint)', fontSize: 11, whiteSpace: 'nowrap' }}>
+                  {t('paper.equity')}
+                  <b style={{ color: up ? 'var(--up)' : 'var(--down)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>{last.toFixed(2)}</b>
+                </span>
+              </div>
+            )
+          })()}
+          <div style={{ maxHeight: 'min(46vh, 380px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
           {trades.map((tr) => {
             const dirColor = tr.side === 'buy' ? 'var(--up)' : 'var(--down)'
             return (
@@ -130,6 +154,7 @@ export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onReset 
               </div>
             )
           })}
+        </div>
         </div>
       )}
     </div>
