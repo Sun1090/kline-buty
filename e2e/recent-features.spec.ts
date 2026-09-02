@@ -71,11 +71,16 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:paperTrades'))).toBeNull()
   })
 
-  test('画线：吸附开关、批量显隐、JSON 导出和去重导入', async ({ page }) => {
+  test('画线：吸附三态循环、批量显隐、JSON 导出和去重导入', async ({ page }) => {
     await openDrawings(page)
     const snap = page.getByTestId('drawing-snap-toggle')
+    // C3：默认 ohlc，点击循环 off → time → ohlc（持久化为 JSON 字符串，需 parse）
+    const snapMode = () => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawingSnap') ?? '""') as string)
+    await expect.poll(snapMode).toBe('ohlc')
     await snap.click()
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:drawingSnap'))).toBe('true')
+    await expect.poll(snapMode).toBe('off')
+    await snap.click()
+    await expect.poll(snapMode).toBe('time')
     await page.getByTestId('drawing-toggle').click()
     await drawHorizontalLine(page)
     await openLayers(page)
@@ -168,5 +173,44 @@ test.describe('2026-08 新功能回归', () => {
     await page.waitForTimeout(100)
     await wrap.dispatchEvent('touchend', { touches: [], changedTouches: [end] })
     await expect(page.getByTestId('pull-indicator')).toHaveCount(0, { timeout: 2_000 })
+  })
+
+  test('画线撤销/重做：新建后撤销回到 0，重做恢复', async ({ page }) => {
+    await drawHorizontalLine(page)
+    await openLayers(page)
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(1)
+    await page.getByTestId('drawing-layer-undo').click()
+    await expect(page.getByTestId('drawing-layer-empty')).toBeVisible()
+    await expect.poll(() => page.evaluate(() => {
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      return Object.values(all).flat().length
+    })).toBe(0)
+    await page.getByTestId('drawing-layer-redo').click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(1)
+  })
+
+  test('画线模板：保存当前组合 → 套用新增一份 → 模板持久化', async ({ page }) => {
+    await drawHorizontalLine(page)
+    await openLayers(page)
+    await page.getByTestId('drawing-template-name').fill('回归模板')
+    await page.getByTestId('drawing-template-save').click()
+    await expect(page.getByTestId('drawing-template-row')).toHaveCount(1)
+    await page.getByTestId('drawing-template-apply').click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(2)
+    await expect.poll(() => page.evaluate(() => {
+      const t = JSON.parse(localStorage.getItem('kline-buty:drawingTemplates') ?? '{}')
+      return Object.keys(t as Record<string, unknown>).length
+    })).toBe(1)
+  })
+
+  test('画线复制/粘贴：复制选中后粘贴生成新画线，剪贴板按钮可用', async ({ page }) => {
+    await drawHorizontalLine(page)
+    await openLayers(page)
+    await page.getByTestId('drawing-layer-row').first().click()
+    await page.getByTestId('drawing-layer-copy').click()
+    const paste = page.getByTestId('drawing-layer-paste')
+    await expect(paste).toBeEnabled()
+    await paste.click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(2)
   })
 })
