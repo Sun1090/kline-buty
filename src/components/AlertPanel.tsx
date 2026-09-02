@@ -22,7 +22,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   const { t } = useI18n()
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
-  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, history, clearHistory } = alertsApi
+  const [repeat, setRepeat] = useState(false)
+  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, soundKind, setSoundKind, history, clearHistory } = alertsApi
 
   const priceNum = Number(price)
   const valid = Number.isFinite(priceNum) && priceNum > 0
@@ -66,6 +67,30 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         >
           {soundEnabled ? '🔔' : '🔕'}
         </button>
+        {soundEnabled && (
+          <select
+            data-testid="alert-sound-kind"
+            value={soundKind}
+            onChange={(e) => setSoundKind(e.target.value as typeof soundKind)}
+            aria-label={t('alert.soundKind')}
+            title={t('alert.soundKind')}
+            style={{
+              background: 'var(--bg)',
+              color: 'var(--text)',
+              border: '1px solid #2a2e39',
+              borderRadius: 4,
+              fontSize: 11,
+              padding: '2px 4px',
+              marginLeft: 6,
+            }}
+          >
+            {(['beep', 'chime', 'ping', 'low'] as const).map((k) => (
+              <option key={k} value={k}>
+                {t(`alert.sound${k[0].toUpperCase()}${k.slice(1)}` as never)}
+              </option>
+            ))}
+          </select>
+        )}
         {permission === 'granted' ? (
           <span style={{ color: 'var(--up)', fontSize: 11 }}>{t('alert.granted')}</span>
         ) : permission === 'unsupported' ? (
@@ -111,8 +136,9 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         <button
           onClick={() => {
             if (valid) {
-              addAlert(symbol, direction, priceNum)
+              addAlert(symbol, direction, priceNum, repeat)
               setPrice('')
+              setRepeat(false)
             }
           }}
           disabled={!valid}
@@ -130,6 +156,13 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           {t('alert.add')}
         </button>
       </div>
+      <label
+        data-testid="alert-repeat-toggle"
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)', marginBottom: 8, cursor: 'pointer' }}
+      >
+        <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+        {t('alert.repeat')}
+      </label>
       {price !== '' && !valid && (
         <div style={{ color: 'var(--down)', fontSize: 11, marginBottom: 8 }} role="alert">
           {t('alert.invalid')}
@@ -155,6 +188,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
             >
               <span style={{ color: a.triggered ? 'var(--yellow)' : 'var(--text)' }}>
                 {a.direction === 'above' ? '≥' : '≤'} {a.price.toFixed(2)}
+                {a.repeat && <span style={{ color: 'var(--accent)', fontSize: 10 }}> ↻</span>}
                 {a.triggered && ` · ${t('alert.triggered')}`}
               </span>
               <span style={{ display: 'flex', gap: 6 }}>
