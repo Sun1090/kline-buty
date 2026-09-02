@@ -771,7 +771,8 @@ export function ChartView({
     <div
       style={{ position: 'relative', width: '100%', height: '100%' }}
       onContextMenu={(e) => {
-        if (window.matchMedia('(pointer: coarse)').matches) return
+        // E5：桌面右键 / 移动端长按（pointer: coarse 触发原生 contextmenu）统一弹自定义菜单；
+        // preventDefault 屏蔽系统菜单，避免纯触屏设备出现两份菜单
         const pt = apiRef.current?.priceAt(e.clientX, e.clientY)
         if (!pt) return
         e.preventDefault()
