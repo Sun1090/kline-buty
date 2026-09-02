@@ -396,6 +396,8 @@ export class LightweightChartAdapter implements ChartApi {
   private touchInertia = new TouchInertiaTracker()
   /** 惯性滚动动画帧；null 表示未运行动画 */
   private inertiaFrame: number | null = null
+  /** A4 实时帧 rAF 合并：同一帧多次 updateCandle 只重绘一次（光栅化有界，高刷行情节流收益明显） */
+  private drawRafHandle: number | null = null
   /** 松手时估算出的横向速度（px/s） */
   private inertiaVelocity = 0
   /** 动画起始时间（rAF 时钟，毫秒） */
@@ -3104,7 +3106,21 @@ export class LightweightChartAdapter implements ChartApi {
       color: candle.close >= candle.open ? this.theme.up : this.theme.down,
     })
     this.trackPrice(candle.close)
-    this.draw()
+    this.scheduleDraw()
+  }
+
+  /** A4 实时帧渲染节流：rAF 合并，同一帧多次 updateCandle 只重绘一次（末帧最新） */
+  private scheduleDraw() {
+    if (this.drawRafHandle != null) return
+    // 窄环境（SSR/部分测试）无 rAF：降级为同步直绘，保证不丢末帧
+    if (typeof requestAnimationFrame !== 'function') {
+      this.draw()
+      return
+    }
+    this.drawRafHandle = requestAnimationFrame(() => {
+      this.drawRafHandle = null
+      this.draw()
+    })
   }
 
   fitContent() {
@@ -3324,6 +3340,11 @@ export class LightweightChartAdapter implements ChartApi {
 
   destroy() {
     activeAdapters.delete(this)
+    // 清理 pending rAF 重绘：销毁后不能再碰已 remove 的 overlay 画布
+    if (this.drawRafHandle != null) {
+      cancelAnimationFrame(this.drawRafHandle)
+      this.drawRafHandle = null
+    }
     this.cancelTouchInertia()
     this.clearTouchLinger()
     this.container.removeEventListener('pointermove', this.onPointerMove)
