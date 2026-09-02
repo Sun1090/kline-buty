@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PriceAlert } from '../alerts/engine'
-import { createAlert, shouldTrigger } from '../alerts/engine'
+import { createAlert, shouldTrigger, stepAlert } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistedState } from './usePersistedState'
 
@@ -27,13 +27,16 @@ export interface AlertTriggerEvent {
 export interface AlertsApi {
   alerts: PriceAlert[]
   permission: NotificationPermissionState
-  addAlert: (symbol: string, direction: 'above' | 'below', price: number) => void
+  addAlert: (symbol: string, direction: 'above' | 'below', price: number, repeat?: boolean) => void
   removeAlert: (id: string) => void
   resetAlert: (id: string) => void
   requestPermission: () => Promise<NotificationPermissionState>
   /** 触发提示音开关（持久化） */
   soundEnabled: boolean
   setSoundEnabled: (v: boolean) => void
+  /** D11 音效选择（持久化） */
+  soundKind: AlertSoundKind
+  setSoundKind: (v: AlertSoundKind) => void
   /** 触发历史（新记录在前，上限 ALERT_HISTORY_MAX） */
   history: AlertTriggerEvent[]
   clearHistory: () => void
@@ -58,22 +61,40 @@ function loadHistory(): AlertTriggerEvent[] {
   return loadList<AlertTriggerEvent>(HISTORY_KEY)
 }
 
-/** 触发提示音（WebAudio 合成，不依赖音频文件；被浏览器策略拦截时静默） */
-export function playAlertBeep() {
+/** D11 提示音效种类 */
+export type AlertSoundKind = 'beep' | 'chime' | 'ping' | 'low'
+
+/** D11 各音效的频率/时长配置（WebAudio 合成，不依赖音频文件） */
+const SOUND_SPECS: Record<AlertSoundKind, { freqs: number[]; dur: number }> = {
+  beep: { freqs: [880], dur: 0.4 },
+  chime: { freqs: [660, 880, 1320], dur: 0.12 },
+  ping: { freqs: [1568], dur: 0.18 },
+  low: { freqs: [330], dur: 0.5 },
+}
+
+/** 触发提示音（WebAudio 合成，不依赖音频文件；被浏览器策略拦截时静默）。kind 选择音效 */
+export function playAlertBeep(kind: AlertSoundKind = 'beep') {
   try {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!Ctor) return
+    const spec = SOUND_SPECS[kind] ?? SOUND_SPECS.beep
     const ctx = new Ctor()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.25, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.4)
-    osc.onended = () => void ctx.close().catch(() => {})
+    const start = ctx.currentTime
+    spec.freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = freq
+      const t = start + i * spec.dur
+      gain.gain.setValueAtTime(0.25, t)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + spec.dur)
+      osc.start(t)
+      osc.stop(t + spec.dur)
+      osc.onended = () => {}
+    })
+    // 最后一个振荡器结束后关闭上下文
+    window.setTimeout(() => void ctx.close().catch(() => {}), spec.freqs.length * spec.dur * 1000 + 200)
   } catch {
     /* noop */
   }
@@ -90,6 +111,7 @@ export function usePriceAlerts(
 ): AlertsApi {
   const { t } = useI18n()
   const [soundEnabled, setSoundEnabled] = usePersistedState<boolean>('alertSound', true)
+  const [soundKind, setSoundKind] = usePersistedState<AlertSoundKind>('alertSoundKind', 'beep')
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
   const [history, setHistory] = useState<AlertTriggerEvent[]>(loadHistory)
   const [permission, setPermission] = useState<NotificationPermissionState>(() =>
@@ -118,8 +140,8 @@ export function usePriceAlerts(
   }, [])
 
   const addAlert = useCallback(
-    (symbol: string, direction: 'above' | 'below', price: number) => {
-      persist([...alertsRef.current, createAlert(symbol, direction, price)])
+    (symbol: string, direction: 'above' | 'below', price: number, repeat = false) => {
+      persist([...alertsRef.current, createAlert(symbol, direction, price, repeat)])
     },
     [],
   )
@@ -138,6 +160,8 @@ export function usePriceAlerts(
   historyRef.current = history
   const soundOnRef = useRef(soundEnabled)
   soundOnRef.current = soundEnabled
+  const soundKindRef = useRef(soundKind)
+  soundKindRef.current = soundKind
   const appendHistory = useCallback((events: AlertTriggerEvent[]) => {
     setHistory((prev) => {
       const next = [...events, ...prev].slice(0, ALERT_HISTORY_MAX)
@@ -180,10 +204,12 @@ export function usePriceAlerts(
         /* 通知失败不阻塞 */
       }
     }
-    if (soundOnRef.current) playAlertBeep()
+    if (soundOnRef.current) playAlertBeep(soundKindRef.current)
     const triggeredIds = new Set(due.map((a) => a.id))
     persistRef.current(
-      alertsRef.current.map((a) => (triggeredIds.has(a.id) ? { ...a, triggered: true } : a)),
+      alertsRef.current.map((a) =>
+        triggeredIds.has(a.id) ? { ...a, triggered: true } : stepAlert(a, lp.price),
+      ),
     )
     appendHistory(
       due.map((a) => ({
@@ -197,5 +223,5 @@ export function usePriceAlerts(
     )
   }, [latestPrice, permission, t, appendHistory])
 
-  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, history, clearHistory }
+  return { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, soundKind, setSoundKind, history, clearHistory }
 }
