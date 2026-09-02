@@ -27,6 +27,9 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 }
 
+/** D8 手数预设：常用数量一键填入（覆盖 BTC 级别小数与主流币整数档） */
+const QTY_PRESETS = [0.001, 0.01, 0.1, 1, 5, 10]
+
 /** 快速下单浮动面板：盘口档位价格预填，数量/预估金额/手续费实时计算，确认后写入模拟仓位 */
 const fillBtnStyle = (color: string): React.CSSProperties => ({
   border: '1px solid var(--border)',
@@ -122,6 +125,21 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.qty')}</span>
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
+      </div>
+      {/* D8 手数预设：一键填入常用数量 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+        <span style={{ color: 'var(--text-dim)', width: 70 }} />
+        {QTY_PRESETS.map((q) => (
+          <button
+            key={q}
+            data-testid={`qo-qty-${q}`}
+            onClick={() => setQtyStr(String(q))}
+            title={t('quickOrder.qtyPreset')}
+            style={fillBtnStyle('var(--text-dim)')}
+          >
+            {q}
+          </button>
+        ))}
       </div>
       {balance != null && priceNum > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
