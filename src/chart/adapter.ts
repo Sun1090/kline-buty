@@ -732,7 +732,21 @@ export class LightweightChartAdapter implements ChartApi {
         this.drawOne(ctx, d, d.id === this.selectedDrawingId)
       }
     }
-    if (this.dragPreview) this.drawOne(ctx, this.dragPreview, true)
+    if (this.dragPreview) {
+      this.drawOne(ctx, this.dragPreview, true)
+      // C13 拖拽实时坐标提示：当前位置（锚点）标签，跟随锚点显示
+      const anchor = this.dragEdit
+        ? this.dragPreview.points[this.dragEdit.kind === 'anchor' ? this.dragEdit.anchorIdx ?? 0 : 0]
+        : undefined
+      if (anchor) {
+        const ap = this.project(anchor.time, anchor.price)
+        if (ap) {
+          const d = new Date(anchor.time * 1000).toLocaleDateString()
+          const t = new Date(anchor.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          this.drawLabel(ctx, ap.x, ap.y - 10, `📍 ${anchor.price.toFixed(2)} · ${d} ${t}`, 'left')
+        }
+      }
+    }
 
     // 画线预览
     // 手势间隙也要保留多锚点进度：否则三角形等工具前两针之间没有任何视觉反馈。
