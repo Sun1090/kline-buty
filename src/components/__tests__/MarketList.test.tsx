@@ -186,4 +186,22 @@ describe('MarketList', () => {
     const rows = screen.getAllByTestId(/^market-row-/)
     expect(rows[0].textContent).toContain('BTC')
   })
+
+  it('G14 轮播开关：overlay 模式显示，点击切换开/关状态', () => {
+    stubHook()
+    render(<MarketList {...baseProps} overlay />)
+    const btn = screen.getByTestId('market-rotate')
+    expect(btn).toBeDefined()
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(btn)
+    expect(btn.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(btn)
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('G14 轮播开关：非 overlay 模式不显示', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    expect(screen.queryByTestId('market-rotate')).toBeNull()
+  })
 })

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
 import { topRank, useTickerList, type TickerSortKey } from '../hooks/useTickerList'
@@ -111,6 +111,30 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
   }, [scoped, query])
   // G4 榜单：按口径取 Top10（仅 rank 视图使用）
   const ranked = useMemo(() => topRank(rows, rankKey, 10), [rows, rankKey])
+  // G14 自动轮播：每 5s 在可见列表（当前视图）中循环切换品种
+  const [rotating, setRotating] = useState(false)
+  const rotIdxRef = useRef(0)
+  const rotListRef = useRef<string[]>([])
+  const rotSymbolRef = useRef(symbol)
+  rotSymbolRef.current = symbol
+  const rotList = useMemo(
+    () => (view === 'rank' ? ranked.map((r) => r.symbol) : filtered.map((r) => r.symbol)),
+    [view, ranked, filtered],
+  )
+  rotListRef.current = rotList
+  useEffect(() => {
+    if (!rotating || rotList.length === 0) return
+    const id = setInterval(() => {
+      const list = rotListRef.current
+      if (list.length === 0) return
+      // 从当前品种出发推进，找不到则从头部开始
+      const curIdx = list.indexOf(rotSymbolRef.current)
+      const nextIdx = (curIdx < 0 ? rotIdxRef.current : curIdx + 1) % list.length
+      rotIdxRef.current = nextIdx
+      onSelectSymbol(list[nextIdx])
+    }, 5000)
+    return () => clearInterval(id)
+  }, [rotating, rotList.length, onSelectSymbol])
 
   // 折叠态：桌面窄条（仅按钮），点击展开
   if (!open && !overlay) {
@@ -191,6 +215,26 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
         >
           ⟳
         </button>
+        {overlay && (
+          <button
+            data-testid="market-rotate"
+            onClick={() => setRotating((v) => !v)}
+            aria-pressed={rotating}
+            title={t('marketList.rotateTitle')}
+            aria-label={t('marketList.rotate')}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: rotating ? 'var(--up)' : 'var(--text-dim)',
+              fontSize: 13,
+              cursor: 'pointer',
+              padding: '2px 4px',
+              lineHeight: 1,
+            }}
+          >
+            {rotating ? '⏸' : '▶'}
+          </button>
+        )}
         <button
           data-testid="market-list-collapse"
           onClick={onToggle}
