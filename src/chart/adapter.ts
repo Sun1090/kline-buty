@@ -184,6 +184,8 @@ export interface ChartApi {
   nudgeCrosshair(dir: 1 | -1): void
   /** 屏幕坐标 → 图表 (time, price)；越界/映射失败返回 null（右键菜单用） */
   priceAt(clientX: number, clientY: number): { time: number; price: number } | null
+  /** G8 多格十字光标同步：按时间戳在本地数据上定位十字光标（null 清除） */
+  setCrosshairTime(time: number | null): void
   /** 清除十字光标 */
   clearCrosshair(): void
   /** 切换图表类型（蜡烛/折线/面积），保留副图与视图位置 */
@@ -3129,6 +3131,29 @@ export class LightweightChartAdapter implements ChartApi {
   clearCrosshair() {
     this.crosshairTime = null
     this.chart.clearCrosshairPosition()
+  }
+
+  /** G8 多格十字光标同步：按时间戳在本地数据上定位十字光标（null 清除）。
+   *  各格周期/数据不同，故取「时间最接近的本地 K 线」的收盘价作为纵向位置。 */
+  setCrosshairTime(time: number | null) {
+    if (time === null || this.lastCandles.length === 0) {
+      this.clearCrosshair()
+      return
+    }
+    // 二分找最接近的 K 线
+    let lo = 0
+    let hi = this.lastCandles.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (this.lastCandles[mid].time < time) lo = mid + 1
+      else hi = mid
+    }
+    // lo 指向第一个 >= time；比较左右取最近
+    let idx = lo
+    if (idx > 0 && Math.abs(this.lastCandles[idx - 1].time - time) < Math.abs(this.lastCandles[idx].time - time)) idx--
+    const candle = this.lastCandles[idx]
+    this.crosshairTime = candle.time
+    this.chart.setCrosshairPosition(candle.close, candle.time as UTCTimestamp, this.mainSeries)
   }
 
   setCandles(candles: Candle[]) {
