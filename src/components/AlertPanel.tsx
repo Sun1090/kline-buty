@@ -23,7 +23,31 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
   const [repeat, setRepeat] = useState(false)
+  /** D9 时间窗口：空=全天；格式 HH:MM（本地时区） */
+  const [timeFrom, setTimeFrom] = useState('')
+  const [timeTo, setTimeTo] = useState('')
   const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, soundKind, setSoundKind, history, clearHistory } = alertsApi
+
+  /** HH:MM → 分钟自 0:00；非法返回 null */
+  const parseHm = (v: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(v.trim())
+    if (!m) return null
+    const h = Number(m[1])
+    const min = Number(m[2])
+    if (h > 23 || min > 59) return null
+    return h * 60 + min
+  }
+  const timeWindow =
+    timeFrom.trim() === '' && timeTo.trim() === ''
+      ? undefined
+      : (() => {
+          const s = parseHm(timeFrom)
+          const e = parseHm(timeTo)
+          // 仅起点或仅终点：另一端取 0 点，视为即时生效窗口
+          const start = s ?? 0
+          const end = e ?? (s !== null ? s : 1440)
+          return s !== null || e !== null ? { start, end } : undefined
+        })()
 
   const priceNum = Number(price)
   const valid = Number.isFinite(priceNum) && priceNum > 0
@@ -136,9 +160,11 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         <button
           onClick={() => {
             if (valid) {
-              addAlert(symbol, direction, priceNum, repeat)
+              addAlert(symbol, direction, priceNum, repeat, timeWindow)
               setPrice('')
               setRepeat(false)
+              setTimeFrom('')
+              setTimeTo('')
             }
           }}
           disabled={!valid}
@@ -163,6 +189,27 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
         {t('alert.repeat')}
       </label>
+      {/* D9 时间窗口：HH:MM–HH:MM（本地时区），留空=全天 */}
+      <div data-testid="alert-time-window" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>{t('alert.timeWindow')}</span>
+        <input
+          data-testid="alert-time-from"
+          type="time"
+          value={timeFrom}
+          onChange={(e) => setTimeFrom(e.target.value)}
+          aria-label={`${t('alert.timeWindow')} ${t('alert.timeFrom')}`}
+          style={{ ...inputStyle, width: 84, fontSize: 11 }}
+        />
+        <span>–</span>
+        <input
+          data-testid="alert-time-to"
+          type="time"
+          value={timeTo}
+          onChange={(e) => setTimeTo(e.target.value)}
+          aria-label={`${t('alert.timeWindow')} ${t('alert.timeTo')}`}
+          style={{ ...inputStyle, width: 84, fontSize: 11 }}
+        />
+      </div>
       {price !== '' && !valid && (
         <div style={{ color: 'var(--down)', fontSize: 11, marginBottom: 8 }} role="alert">
           {t('alert.invalid')}

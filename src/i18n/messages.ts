@@ -379,6 +379,9 @@ export const zh = {
     soundChime: '风铃',
     soundPing: '叮',
     soundLow: '低沉',
+    timeWindow: '时间窗口',
+    timeFrom: '开始',
+    timeTo: '结束',
   },
   tooltip: {
     open: '开',
@@ -843,6 +846,9 @@ export const en: Messages = {
     soundChime: 'Chime',
     soundPing: 'Ping',
     soundLow: 'Low',
+    timeWindow: 'Time window',
+    timeFrom: 'From',
+    timeTo: 'To',
   },
   tooltip: {
     open: 'O',
@@ -1305,6 +1311,9 @@ export const ja: Messages = {
     soundChime: 'チャイム',
     soundPing: 'ピン',
     soundLow: 'ロー',
+    timeWindow: '時間帯',
+    timeFrom: '開始',
+    timeTo: '終了',
   },
   tooltip: {
     open: '始',
@@ -1768,6 +1777,9 @@ export const ko: Messages = {
     soundChime: '차임',
     soundPing: '핑',
     soundLow: '저음',
+    timeWindow: '시간 창',
+    timeFrom: '시작',
+    timeTo: '종료',
   },
   tooltip: {
     open: '시가',
@@ -2242,6 +2254,9 @@ export const es: Messages = {
     soundChime: 'Campanilla',
     soundPing: 'Ping',
     soundLow: 'Grave',
+    timeWindow: 'Ventana de tiempo',
+    timeFrom: 'Desde',
+    timeTo: 'Hasta',
   },
   tooltip: {
     open: 'Abr',

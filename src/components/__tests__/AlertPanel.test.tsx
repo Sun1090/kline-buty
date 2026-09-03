@@ -50,7 +50,7 @@ describe('AlertPanel', () => {
     const input = screen.getByPlaceholderText('63000.00')
     fireEvent.change(input, { target: { value: '61000' } })
     fireEvent.click(screen.getByText('添加提醒'))
-    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'below', 61000, false)
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'below', 61000, false, undefined)
   })
 
   it('删除提醒回调', () => {

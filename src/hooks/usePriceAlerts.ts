@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PriceAlert } from '../alerts/engine'
-import { createAlert, shouldTrigger, stepAlert } from '../alerts/engine'
+import { createAlert, shouldTrigger, stepAlert, type PriceAlert } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistedState } from './usePersistedState'
 
@@ -27,7 +26,7 @@ export interface AlertTriggerEvent {
 export interface AlertsApi {
   alerts: PriceAlert[]
   permission: NotificationPermissionState
-  addAlert: (symbol: string, direction: 'above' | 'below', price: number, repeat?: boolean) => void
+  addAlert: (symbol: string, direction: 'above' | 'below', price: number, repeat?: boolean, time?: { start: number; end: number }) => void
   removeAlert: (id: string) => void
   resetAlert: (id: string) => void
   requestPermission: () => Promise<NotificationPermissionState>
@@ -140,8 +139,8 @@ export function usePriceAlerts(
   }, [])
 
   const addAlert = useCallback(
-    (symbol: string, direction: 'above' | 'below', price: number, repeat = false) => {
-      persist([...alertsRef.current, createAlert(symbol, direction, price, repeat)])
+    (symbol: string, direction: 'above' | 'below', price: number, repeat = false, time?: { start: number; end: number }) => {
+      persist([...alertsRef.current, createAlert(symbol, direction, price, repeat, time)])
     },
     [],
   )
@@ -186,8 +185,11 @@ export function usePriceAlerts(
   useEffect(() => {
     const lp = priceRef.current
     if (!lp || permission !== 'granted') return
+    // D9 时间窗口：以触发时刻的本地分钟参与复合判定
+    const d = new Date()
+    const minuteOfDay = d.getHours() * 60 + d.getMinutes()
     const due = alertsRef.current.filter(
-      (a) => a.symbol === lp.symbol && shouldTrigger(a, lp.price),
+      (a) => a.symbol === lp.symbol && shouldTrigger(a, lp.price, minuteOfDay),
     )
     if (due.length === 0) return
     for (const a of due) {
@@ -208,7 +210,7 @@ export function usePriceAlerts(
     const triggeredIds = new Set(due.map((a) => a.id))
     persistRef.current(
       alertsRef.current.map((a) =>
-        triggeredIds.has(a.id) ? { ...a, triggered: true } : stepAlert(a, lp.price),
+        triggeredIds.has(a.id) ? { ...a, triggered: true } : stepAlert(a, lp.price, minuteOfDay),
       ),
     )
     appendHistory(

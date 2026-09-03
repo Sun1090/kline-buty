@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createAlert, evaluateAlert, shouldTrigger, isCurrentlyTrue, stepAlert } from '../engine'
+import { createAlert, evaluateAlert, evaluateTime, evaluateAlertCombo, shouldTrigger, isCurrentlyTrue, stepAlert, type PriceAlert } from '../engine'
 
 const above = createAlert('BTCUSDT', 'above', 65000)
 const below = createAlert('BTCUSDT', 'below', 60000)
@@ -113,5 +113,54 @@ describe('createAlert repeat 标记', () => {
   it('缺省 repeat=false，显式传入 true 生效', () => {
     expect(createAlert('E', 'above', 1).repeat).toBe(false)
     expect(createAlert('E', 'above', 1, true).repeat).toBe(true)
+  })
+  it('time 参数透传到字段', () => {
+    const a = createAlert('E', 'above', 1, false, { start: 600, end: 1200 })
+    expect(a.time).toEqual({ start: 600, end: 1200 })
+  })
+})
+
+describe('evaluateTime（D9 时间窗口）', () => {
+  const win: PriceAlert = createAlert('BTCUSDT', 'above', 65000, false, { start: 9 * 60 + 30, end: 15 * 60 })
+  it('无窗口 → 任意时刻满足', () => {
+    expect(evaluateTime(above, 0)).toBe(true)
+    expect(evaluateTime(above, 1439)).toBe(true)
+  })
+  it('窗口内闭区间 [start, end) 满足', () => {
+    expect(evaluateTime(win, 9 * 60 + 30)).toBe(true)
+    expect(evaluateTime(win, 12 * 60)).toBe(true)
+    expect(evaluateTime(win, 15 * 60 - 1)).toBe(true)
+  })
+  it('窗口外不满足', () => {
+    expect(evaluateTime(win, 9 * 60 + 29)).toBe(false)
+    expect(evaluateTime(win, 15 * 60)).toBe(false)
+  })
+  it('跨午夜窗口（start > end）环绕判定', () => {
+    const night = createAlert('E', 'above', 1, false, { start: 22 * 60, end: 2 * 60 })
+    expect(evaluateTime(night, 23 * 60)).toBe(true)
+    expect(evaluateTime(night, 1 * 60)).toBe(true)
+    expect(evaluateTime(night, 12 * 60)).toBe(false)
+  })
+})
+
+describe('evaluateAlertCombo（D9 价格 AND 时间）', () => {
+  const win = createAlert('BTCUSDT', 'above', 65000, false, { start: 9 * 60, end: 15 * 60 })
+  it('价格与时间同时满足才为 true', () => {
+    expect(evaluateAlertCombo(win, 66000, 10 * 60)).toBe(true)
+    expect(evaluateAlertCombo(win, 66000, 16 * 60)).toBe(false)
+    expect(evaluateAlertCombo(win, 63000, 10 * 60)).toBe(false)
+  })
+})
+
+describe('shouldTrigger 时间窗口参与', () => {
+  it('时间是硬条件：窗口外价格满足也不触发', () => {
+    const win = createAlert('BTCUSDT', 'above', 65000, false, { start: 9 * 60, end: 15 * 60 })
+    expect(shouldTrigger(win, 66000, 390)).toBe(false)
+    expect(shouldTrigger(win, 66000, 600)).toBe(true)
+  })
+  it('不传 minuteOfDay 时保持单价格判定（向后兼容）', () => {
+    expect(shouldTrigger({ ...above, triggered: true }, 66000)).toBe(false) // 已触发
+    expect(shouldTrigger({ ...above, triggered: false }, 66000)).toBe(true)
+    expect(shouldTrigger(createAlert('E', 'above', 1), 2)).toBe(true)
   })
 })
