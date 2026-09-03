@@ -120,4 +120,28 @@ describe('SymbolPicker', () => {
     const selected = [...options].find((o) => o.getAttribute('aria-selected') === 'true')
     expect(selected).toBeDefined()
   })
+
+  it('E10 键盘导航：ArrowDown 移动高亮、Enter 选择当前高亮项', async () => {
+    const onChange = vi.fn()
+    render(<SymbolPicker value="BTCUSDT" onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button'))
+    const listbox = await screen.findByRole('listbox')
+    // 首次 ArrowDown → 高亮第二项（导航索引从 0 起，逐次 +1）
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' })
+    // aria-activedescendant 指向某 option id（非空）
+    expect(listbox.getAttribute('aria-activedescendant')).toBeTruthy()
+    // Enter 选择当前高亮项 → onChange 被调用
+    fireEvent.keyDown(listbox, { key: 'Enter' })
+    expect(onChange).toHaveBeenCalled()
+  })
+
+  it('E10 键盘导航：Escape 关闭下拉', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    const listbox = await screen.findByRole('listbox')
+    fireEvent.keyDown(listbox, { key: 'Escape' })
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/搜索|Search/)).toBeNull()
+    })
+  })
 })
