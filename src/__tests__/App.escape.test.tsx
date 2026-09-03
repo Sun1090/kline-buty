@@ -19,6 +19,7 @@ vi.mock('../hooks/useKlineData', () => ({
     state: { candles: [], status: 'live' as const },
     hasMore: true,
     loadMore: vi.fn(),
+    retry: vi.fn(),
   })),
 }))
 
@@ -69,6 +70,7 @@ beforeEach(() => {
     state: { candles: makeCandles(800), status: 'live', live: null },
     hasMore: true,
     loadMore: vi.fn(),
+    retry: vi.fn(),
   })
 })
 

@@ -69,6 +69,8 @@ interface ChartViewProps {
   candles: Candle[]
   /** 数据加载状态（空数据时显示提示） */
   status?: string
+  /** E14 错误重试：加载失败时点击重载 */
+  onRetry?: () => void
   chartType: ChartType
   /** 价格坐标轴模式：线性 / 对数 */
   priceScaleMode?: 'linear' | 'log'
@@ -134,6 +136,7 @@ export function ChartView({
   period,
   candles,
   status,
+  onRetry,
   chartType,
   priceScaleMode = 'linear',
   timezoneMode = 'utc',
@@ -807,7 +810,28 @@ export function ChartView({
               <div>{t('status.loading')}</div>
             </>
           ) : status === 'error' ? (
-            t('status.chartError')
+            <>
+              <div>{t('status.chartError')}</div>
+              {onRetry && (
+                <button
+                  data-testid="chart-retry"
+                  onClick={onRetry}
+                  style={{
+                    pointerEvents: 'auto',
+                    marginTop: 8,
+                    padding: '4px 12px',
+                    fontSize: 12,
+                    borderRadius: 4,
+                    border: '1px solid var(--accent)',
+                    background: 'transparent',
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t('common.retry')}
+                </button>
+              )}
+            </>
           ) : (
             t('status.noData')
           )}
