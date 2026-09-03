@@ -9,21 +9,22 @@
 ## Features
 
 - **Real-time K-line charts** — Candlestick, line, area with 14 timeframes (1s to 1M)
-- **40 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more
-- **13+ indicators** — MA, EMA, BOLL, MACD, KDJ, RSI, SAR, Ichimoku, STOCH, ROC, MOM, WR, ATR, DMI, CCI, PSY, OBV, with customizable parameters
+- **49 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more, with undo/redo, templates, copy/paste, grouping, snap-to-OHLC alignment, per-line opacity
+- **26 indicators** — Main: MA, EMA, BOLL, VWAP, SAR, Ichimoku, Supertrend · Sub: VOL, MACD, KDJ, RSI, WR, OBV, ATR, DMI, CCI, PSY, STOCH, ROC, MOM, BBW, MFI, AO, CMF, Donchian, Aroon — all with customizable parameters and presets
 - **Order book & depth chart** — Real-time order book (8 bids/asks) and depth curve via WebSocket
 - **Multi-chart layout** — 1/2/4 panel layouts with synchronized time axes
 - **Market replay** — Historical tick-by-tick replay with speed control (1x–50x)
-- **Simulated positions** — Long/short orders with TP/SL lines, P&L tracking
-- **Price alerts** — Conditional triggers (≥/≤) with browser notifications
+- **Simulated trading** — Leverage/margin/liquidation price, weighted-average cost merge, TP/SL simulated fills, slippage model, P&L tracking, equity curve, CSV trade history export, account reset
+- **Price alerts** — Conditional triggers (≥/≤) with browser notifications, one-shot or repeat, time-window compound conditions, 4 selectable alert sounds
 - **i18n** — 中文 · English · 日本語 · 한국어 · Español
 - **Dark/Light themes** — 4 color presets (classic blue, red-up-green-down, purple, teal)
 - **PWA support** — Installable, offline cache, background notifications
 - **Keyboard shortcuts** — ⌘K symbol search, `1`/`2`/`3` layouts, `[`/`]` periods, `Space` replay, `?` help
 - **CSV export** — OHLCV + indicators
 - **Region screenshot** — Drag-select to export PNG
-- **Mobile touch** — Pinch zoom, crosshair with 2s linger, touch drawing editing
-- **Layer management** — Show/hide, lock/unlock, delete drawings
+- **Mobile touch** — Pinch zoom, crosshair with 2s linger, touch drawing editing, long-press quick actions
+- **Layer management** — Show/hide, lock/unlock, group/fold, delete drawings
+- **Reliability** — Local K-line cache for instant cold start, rAF frame coalescing, WS watchdog with exponential backoff reconnect, multi-source fallback, load-failure retry
 - **Keyboard accessibility** — Full keyboard flow: after Tabbing into a panel, arrow keys move focus across tool/symbol/layer grids (wraps around), Enter/Space selects; Esc closes overlays one layer at a time (no global Esc leak); replay seek bar supports arrow-key stepping and click-to-jump; drawing/period/layout buttons use aria-pressed for selected state, lists expose role=listbox/option + aria-selected for screen readers
 
 ## Online Preview
@@ -56,19 +57,25 @@ Data source: <a href="https://www.binance.com/" target="_blank">Binance</a> publ
 
 ## Tech Stack
 
-<a href="https://react.dev/" target="_blank">React 18</a> + <a href="https://www.typescriptlang.org/" target="_blank">TypeScript</a> + <a href="https://vite.dev/" target="_blank">Vite</a> + <a href="https://github.com/tradingview/lightweight-charts" target="_blank">lightweight-charts v5</a> (TradingView, Apache-2.0)
+<a href="https://react.dev/" target="_blank">React 19</a> + <a href="https://www.typescriptlang.org/" target="_blank">TypeScript 6</a> + <a href="https://vite.dev/" target="_blank">Vite 8</a> + <a href="https://github.com/tradingview/lightweight-charts" target="_blank">lightweight-charts v5</a> (TradingView, Apache-2.0)
 
 ```
 src/
 ├── chart/           # Domain types + rendering adapter (swappable engine)
-├── components/      # ChartView / PeriodBar / SymbolPicker / MarketList
+├── components/      # ChartView / ChartPair / ChartQuad / OrderBook / DepthChart / panels
 ├── data/
-│   ├── binance/     # REST pagination, WS client (heartbeat, reconnect, backfill)
-│   └── market.ts    # K-line store: ordered cache, idempotent merge
-├── hooks/           # useKlineData, useTickerList, etc.
+│   ├── binance/     # REST pagination, WS client (watchdog, backoff reconnect, backfill)
+│   ├── market.ts    # K-line store: ordered cache, idempotent merge
+│   └── cache.ts     # Local K-line cache (cold-start speedup)
+├── drawings/        # Drawing logic: 49 tools, undo/redo, templates, grouping, snap
+├── indicators/      # Indicator engine (pure functions, 26 indicators)
+├── alerts/          # Price alert engine (one-shot/repeat, time window)
+├── trade/ position/ # Simulated trading: orders, positions, P&L
+├── replay/          # Market replay engine
+├── depth/ volumeProfile/  # Order book aggregation, VPVR
+├── hooks/           # useKlineData, usePriceAlerts, usePaperAccount, etc.
 ├── i18n/            # Dictionary-driven i18n (5 languages)
-├── indicators/      # Indicator engine (pure functions)
-└── drawings/        # Drawing tools (40) and layer management
+└── utils/           # format / csv / equity / sparkline path
 ```
 
 ## Data Compliance
@@ -87,7 +94,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-42-blueviolet" alt="42 drawing tools" /> <img src="https://img.shields.io/badge/indicators-19-success" alt="19 indicators" /> <img src="https://img.shields.io/badge/E2E-94-blue" alt="94 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-604-yellow" alt="604 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/E2E-121-blue" alt="121 E2E tests" /> <img src="https://img.shields.io/badge/unit_tests-1000-yellow" alt="1000 unit tests" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 Research & Planning — docs complete
 - ✅ M1 Data foundation — Binance REST/WS, MarketStore, reconnection
@@ -114,6 +121,7 @@ src/
 - ✅ Robustness — ErrorBoundary, offline banner, empty state, partial failure tolerance
 - ✅ VPVR — Volume profile visible range
 - ✅ Engineering — ESLint 0 error, CI (typecheck/lint/test/build), 89 E2E tests
+- ✅ P3/P4 — 47 items implemented of the 100-item deepening list (see `docs/07-P3P4-任务清单.md` + `docs/11-P3P4-完成状态盘点.md`): 5 new sub-indicators (MFI/AO/CMF/Donchian/Aroon), drawing undo/redo/templates/grouping/snap/hover-highlight/text-align, simulated trading (leverage/margin/liquidation, weighted-cost merge, TP/SL fills, slippage, equity curve), alerts (repeat mode, 4 sounds, time-window), paper account CSV export & reset, K-line cache, frame coalescing, error retry, keyboard navigation, locale number formatting
 
 ## Changelog
 
@@ -123,8 +131,9 @@ See <a href="https://github.com/sun1090/kline-buty/releases" target="_blank">Git
 
 - **Decoupled data & rendering** — `ChartApi` interface abstracts the rendering engine, swappable without touching data layer
 - **Incremental rendering** — WS real-time frames go through `update` path, never interrupting user zoom/pan
-- **Consistent proxy routing** — All requests use `/api` `/ws` prefixes, zero config change when switching environments
-- **Self-healing connection** — Exponential backoff reconnect + REST gap-fill, idempotent merge at store layer
+- **Auto endpoint detection** — `detectMode()` probes proxy vs direct at startup; static hosting (Pages/Vercel) goes direct with CORS-enabled Binance domains, self-hosted/CI uses a proxy — zero config per environment
+- **Self-healing connection** — WS watchdog + exponential backoff reconnect (max 30s) + REST gap-fill, idempotent merge at store layer; fapi→dapi multi-source fallback
+- **Pure-function business logic** — indicator engine, drawing geometry, trade/position/alert rules are all pure functions with unit tests, decoupled from the renderer
 
 ## How to Contribute
 
