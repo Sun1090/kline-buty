@@ -3,7 +3,7 @@ import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
-import { cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
+import { anchorRangeForSwitch, cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA } from '../indicators/sma'
@@ -189,6 +189,8 @@ export function ChartView({
   cullRef.current = cull
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
+  /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
+  const lastVisibleTimeRef = useRef<{ toTime: number; spanMs: number } | null>(null)
   /** A11 可视起止时间戳（随缩放/平移更新），用于图表角落显示 */
   const [visibleRange, setVisibleRange] = useState<{ from: number | null; to: number | null }>({ from: null, to: null })
   /** 装载窗口生成时的全量数据长度：窗口贴尾沿时实时新帧自然流入 */
@@ -335,10 +337,13 @@ export function ChartView({
       const gTo = base + to
       lastVisibleRef.current = { from: gFrom, to: gTo }
       // A11 可视起止时间戳（索引 → 时间，数据不足时显示 null）
-      setVisibleRange({
-        from: allCandlesRef.current[gFrom]?.time ?? null,
-        to: allCandlesRef.current[gTo]?.time ?? null,
-      })
+      const tFrom = allCandlesRef.current[gFrom]?.time ?? null
+      const tTo = allCandlesRef.current[gTo]?.time ?? null
+      setVisibleRange({ from: tFrom, to: tTo })
+      // G2 周期切换锚定：记录右缘时间戳 + 时间跨度（毫秒）
+      if (tFrom != null && tTo != null) {
+        lastVisibleTimeRef.current = { toTime: tTo, spanMs: Math.max((tTo - tFrom) * 1000, 1) }
+      }
       const len = dataLenRef.current
       setAtLatest(!isAwayFromLatest(gTo, len))
       // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
@@ -671,7 +676,17 @@ export function ChartView({
       api.setCandles(windowData)
       // 换品种 / 进入回放 / 退出回放 / 首个裁剪窗口 → 适配全量
       if (keyChanged || enteringReplay || exitingReplay || (!cur && shouldCull(fullLen))) {
-        api.fitContent()
+        // G2 周期切换锚定：仅 period 变化（symbol 不变）且此前有可见区间时，
+        // 按旧右缘时间戳 + 时间跨度映射到新周期根数，保持相对位置而非跳到最新之外
+        const symChanged = keyRef.current.slice(0, keyRef.current.indexOf(':')) !== symbol
+        const vt = lastVisibleTimeRef.current
+        if (!symChanged && !enteringReplay && !exitingReplay && vt && windowData.length > 0) {
+          const anchor = anchorRangeForSwitch(windowData, vt.toTime, vt.spanMs, PERIOD_MS[period])
+          if (anchor) api.setVisibleRange(anchor)
+          else api.fitContent()
+        } else {
+          api.fitContent()
+        }
       } else if (cur) {
         // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回局部坐标
         const v = lastVisibleRef.current
