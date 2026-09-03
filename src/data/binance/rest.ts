@@ -32,7 +32,7 @@ const FETCH_TIMEOUT_MS = 8000
  * 依次尝试直到首个成功；全部失败抛最后错误。
  * 每次尝试带 8s 超时（AbortController），黑盒网络下快速失败并切到兜底域名。
  */
-async function binanceGet(path: string, fallback?: string): Promise<Response> {
+async function binanceGet(path: string, fallback?: string, signal?: AbortSignal): Promise<Response> {
   const mode = await detectMode()
   const candidates =
     mode === 'proxy' ? [path] : [buildApiUrl(mode, path), ...(fallback ? [fallback] : [])]
@@ -40,6 +40,9 @@ async function binanceGet(path: string, fallback?: string): Promise<Response> {
   for (const url of candidates) {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
+    // G15 请求取消：外部 signal（切换品种/周期时 abort）与内部超时合并，任一触发即中断
+    const onAbort = () => ctrl.abort()
+    signal?.addEventListener('abort', onAbort)
     try {
       const res = await fetch(url, { signal: ctrl.signal })
       if (!res.ok) throw new Error(`binance http ${res.status}`)
@@ -48,6 +51,7 @@ async function binanceGet(path: string, fallback?: string): Promise<Response> {
       lastErr = e
     } finally {
       clearTimeout(timer)
+      signal?.removeEventListener('abort', onAbort)
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('binance request failed')
@@ -63,6 +67,7 @@ export async function fetchKlines(
   limit = 800,
   startTime?: number,
   endTime?: number,
+  signal?: AbortSignal,
 ): Promise<Candle[]> {
   const params = new URLSearchParams({ symbol, interval, limit: String(limit) })
   if (startTime !== undefined) params.set('startTime', String(startTime))
@@ -73,7 +78,7 @@ export async function fetchKlines(
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt))
     try {
-      const res = await binanceGet(url)
+      const res = await binanceGet(url, undefined, signal)
       const data = (await res.json()) as RawKline[]
       return data.map(mapKline)
     } catch (e) {
