@@ -43,6 +43,7 @@ export interface IndicatorParams {
   aroonPeriod: number
   volMaPeriod: number
   trixPeriod: number
+  dpoPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -89,4 +90,5 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   aroonPeriod: 25,
   volMaPeriod: 5,
   trixPeriod: 15,
+  dpoPeriod: 20,
 }

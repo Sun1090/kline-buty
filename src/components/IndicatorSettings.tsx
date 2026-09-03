@@ -83,6 +83,7 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
   if (sub === 'mom') fields.push({ key: 'momPeriod', label: t('indicator.momPeriod'), kind: 'number' })
   if (sub === 'mfi') fields.push({ key: 'mfiPeriod', label: t('indicator.mfiPeriod'), kind: 'number' })
   if (sub === 'trix') fields.push({ key: 'trixPeriod', label: t('indicator.trixPeriod'), kind: 'number' })
+  if (sub === 'dpo') fields.push({ key: 'dpoPeriod', label: t('indicator.dpoPeriod'), kind: 'number' })
   if (sub === 'ao') {
     fields.push({ key: 'aoFast', label: t('indicator.aoFast'), kind: 'number' })
     fields.push({ key: 'aoSlow', label: t('indicator.aoSlow'), kind: 'number' })
