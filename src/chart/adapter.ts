@@ -89,6 +89,8 @@ export interface SubIndicatorData {
   hist?: { time: number; value: number; color?: string }[]
   lines?: { id: string; points: ValuePoint[] }[]
   markers?: { price: number; color: string }[]
+  /** H2 阈值区间背景（超买/超卖带）：副图 overlay 半透明填充 [from, to] */
+  zones?: { from: number; to: number; color: string }[]
 }
 
 /** 主图指标数据（UI 层计算，本层渲染） */
@@ -353,6 +355,8 @@ export class LightweightChartAdapter implements ChartApi {
   private volumeMaSeries: ISeriesApi<'Line'> | null = null
   private mainLines: ISeriesApi<'Line' | 'Area'>[] = []
   private subSeries: ISeriesApi<'Line' | 'Histogram'>[] = []
+  /** H2 副图阈值区间（超买/超卖带）：overlay 半透明背景填充 [from, to] */
+  private subZones: { from: number; to: number; color: string }[] = []
   private priceLine: IPriceLine | null = null
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
@@ -732,6 +736,8 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 免责声明水印：最底层绘制（画线在上），低透明度不抢视觉、不拦截交互
     this.drawWatermark(ctx, w, h)
+    // H2 副图阈值区间背景：超买/超卖带半透明填充（画线之下）
+    this.drawSubZones(ctx, w)
 
     for (const d of this.drawings) {
       // 图层管理：隐藏的画线不渲染（数据仍保留，取消隐藏即恢复）
@@ -802,6 +808,23 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.fillStyle = 'rgba(78,156,245,0.95)'
       ctx.font = '10px system-ui'
       ctx.fillText(Math.round(rect.w) + '×' + Math.round(rect.h), rect.x + 4, Math.max(10, rect.y - 4))
+    }
+  }
+
+  /** H2 副图阈值区间背景：超买/超卖带（[from, to]）按副图系列坐标绘制半透明水平带 */
+  private drawSubZones(ctx: CanvasRenderingContext2D, w: number) {
+    if (this.subZones.length === 0) return
+    // 副图系列 priceToCoordinate 返回图表坐标系 y（已含副图 pane 偏移），可直接用于 overlay
+    const series = this.volumeSeries ?? this.subSeries[0]
+    if (!series) return
+    for (const z of this.subZones) {
+      const yFrom = series.priceToCoordinate(z.from)
+      const yTo = series.priceToCoordinate(z.to)
+      if (yFrom === null || yTo === null) continue
+      const top = Math.min(yFrom, yTo)
+      const bottom = Math.max(yFrom, yTo)
+      ctx.fillStyle = z.color
+      ctx.fillRect(0, top, w, bottom - top)
     }
   }
 
@@ -3405,6 +3428,8 @@ export class LightweightChartAdapter implements ChartApi {
       }
       this.subSeries.push(line)
     }
+    // H2 阈值区间：存副图背景带数据（draw() 时在 overlay 上按副图价格坐标渲染）
+    this.subZones = data.zones ?? []
   }
 
   subscribeCrosshairMove(
