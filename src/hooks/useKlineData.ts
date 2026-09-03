@@ -50,6 +50,8 @@ export function useKlineData(symbol: string, period: Period) {
 
   useEffect(() => {
     aliveRef.current = true
+    // G15 请求取消：切换品种/周期或卸载时 abort 在途 REST（含重连补数），避免旧响应覆盖
+    const abortCtrl = new AbortController()
     const store = new MarketStore()
     storeRef.current = store
     setHasMore(true)
@@ -97,7 +99,7 @@ export function useKlineData(symbol: string, period: Period) {
       publish()
     }
 
-    fetchKlines(symbol, period, 800)
+    fetchKlines(symbol, period, 800, undefined, undefined, abortCtrl.signal)
       .then((hist) => {
         store.upsertAll(hist)
         publish()
@@ -126,7 +128,7 @@ export function useKlineData(symbol: string, period: Period) {
           if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
         },
         onReconnect: () => {
-          fetchKlines(symbol, period, 100)
+          fetchKlines(symbol, period, 100, undefined, undefined, abortCtrl.signal)
             .then((hist) => {
               store.upsertAll(hist)
               publish()
@@ -138,6 +140,8 @@ export function useKlineData(symbol: string, period: Period) {
 
     return () => {
       aliveRef.current = false
+      // G15 请求取消：中止在途 REST（初次加载 / 重连补数 / loadMore 之外的全部请求）
+      abortCtrl.abort()
       ws?.close()
       storeRef.current = null
     }
