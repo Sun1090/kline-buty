@@ -415,6 +415,7 @@ export const zh = {
     group: '聚合',
     spread: '价差',
     markHint: '点击标记到主图（再点清除）；左侧按钮快捷下单',
+    refresh: '刷新盘口（重连拉取最新快照）',
   },
   trade: {
     buy: "买入",
@@ -895,6 +896,7 @@ export const en: Messages = {
     group: 'Group',
     spread: 'Spread',
     markHint: 'Click to mark on main chart (click again to clear); quick-order button on the left',
+    refresh: 'Refresh order book (reconnect for latest snapshot)',
   },
   trade: {
     buy: "Buy",
@@ -1373,6 +1375,7 @@ export const ja: Messages = {
     group: 'グループ',
     spread: 'スプレッド',
     markHint: 'クリックでメインにマーク（再クリックで解除）；左ボタンでクイック注文',
+    refresh: '板を更新（再接続して最新スナップショット取得）',
   },
   trade: {
     buy: "買い",
@@ -1852,6 +1855,7 @@ export const ko: Messages = {
     group: '그룹',
     spread: '스프레드',
     markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제); 왼쪽 버튼으로 빠른 주문',
+    refresh: '호가창 새로고침(재접속하여 최신 스냅샷 조회)',
   },
   trade: {
     buy: "매수",
@@ -2342,6 +2346,7 @@ export const es: Messages = {
     group: 'Agrupar',
     spread: 'Diferencial',
     markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar); botón de orden rápida a la izquierda',
+    refresh: 'Actualizar cartera (reconectar para el último snapshot)',
   },
   trade: {
     buy: "Comprar",
