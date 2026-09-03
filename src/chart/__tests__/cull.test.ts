@@ -6,6 +6,7 @@ import {
   toLocal,
   toGlobal,
   localRange,
+  anchorRangeForSwitch,
   CULL_MARGIN,
 } from '../cull'
 
@@ -81,5 +82,39 @@ describe('shouldCull / windowCovers / 坐标映射', () => {
 
   it('margin 常量大于最长指标回看（Ichimoku 52 / SAR 前置）', () => {
     expect(CULL_MARGIN).toBeGreaterThanOrEqual(100)
+  })
+})
+
+describe('anchorRangeForSwitch（G2 周期切换锚定）', () => {
+  // 模拟 1m 周期数据：每根 60s，起始 2026-09-02 00:00:00 UTC
+  const base = 1_788_307_200
+  const candles1m = Array.from({ length: 120 }, (_, i) => ({ time: base + i * 60 }))
+
+  it('空数据返回 null', () => {
+    expect(anchorRangeForSwitch([], base, 60_000, 60_000)).toBeNull()
+  })
+
+  it('右缘时间精确命中某根 → 该根为右缘，根数 = 跨度/周期', () => {
+    // 可见 20 根：from 100 → to 119（时间 base+119*60），跨度 20 根 = 1_200_000ms
+    const r = anchorRangeForSwitch(candles1m, base + 119 * 60, 1_200_000, 60_000)
+    expect(r).toEqual({ from: 100, to: 119 })
+  })
+
+  it('右缘时间不在数据上 → 二分取最后一个 ≤ toTime 的索引', () => {
+    // toTime 落在 base+50*60 与 base+51*60 之间 → 右缘应为索引 50
+    // 跨度 600_000ms / 60_000 = 10 根 → from = 50-10+1 = 41
+    const r = anchorRangeForSwitch(candles1m, base + 50 * 60 + 30, 600_000, 60_000)
+    expect(r).toEqual({ from: 41, to: 50 })
+  })
+
+  it('跨度不足一根 → 根数最小为 1', () => {
+    const r = anchorRangeForSwitch(candles1m, base + 10 * 60, 500, 60_000)
+    expect(r).toEqual({ from: 10, to: 10 })
+  })
+
+  it('跨度远大于数据量 → 左缘 clamp 到 0', () => {
+    const r = anchorRangeForSwitch(candles1m, base + 10 * 60, 60 * 60_000, 60_000)
+    expect(r!.from).toBe(0)
+    expect(r!.to).toBe(10)
   })
 })

@@ -68,3 +68,29 @@ export function toGlobal(cull: CullWindow | null, index: number): number {
 export function localRange(cull: CullWindow, range: CullRange): CullRange {
   return { from: range.from - cull.start, to: range.to - cull.start }
 }
+
+/**
+ * G2 周期切换锚定：把旧周期的可见区间换算到新周期数据，保持右缘时间与时间跨度。
+ * 输入为新周期数据（升序，已按周期对齐）与旧视图（右缘时间戳秒级 + 可见时间跨度毫秒）。
+ * 输出为新数据索引区间（局部），右缘锚定到 `≤ toTime` 的最后一根，根数 = 跨度/新周期毫秒。
+ */
+export function anchorRangeForSwitch(
+  newCandles: { time: number }[],
+  toTimeSec: number,
+  spanMs: number,
+  periodMs: number,
+): CullRange | null {
+  if (newCandles.length === 0) return null
+  // 二分找新周期里右缘时间对应的索引（最后一个 time ≤ toTime）
+  let lo = 0
+  let hi = newCandles.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (newCandles[mid].time <= toTimeSec) lo = mid
+    else hi = mid - 1
+  }
+  const right = lo
+  const spanRoots = Math.max(1, Math.round(spanMs / periodMs))
+  const left = Math.max(0, right - spanRoots + 1)
+  return { from: left, to: right }
+}
