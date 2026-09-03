@@ -22,6 +22,7 @@ import { calcDonchian } from '../indicators/donchian'
 import { calcAroon } from '../indicators/aroon'
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
+import { thresholdZones } from '../indicators/thresholdZones'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
@@ -177,6 +178,13 @@ export function ChartView({
   const theme = themeFor(themeMode, colorPreset)
   const UP = theme.up
   const DOWN = theme.down
+  /** H2 副图阈值区间：纯函数区间 + 半透明上色（from≥50 超买→DOWN 带、to≤50 超卖→UP 带） */
+  const coloredZones = (kind: SubIndicatorKind): { from: number; to: number; color: string }[] =>
+    thresholdZones(kind).map((z) => ({
+      from: z.from,
+      to: z.to,
+      color: withAlpha(z.from >= 50 ? DOWN : UP, 0.06),
+    }))
   const containerRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<ChartApi | null>(null)
   const prevDataRef = useRef<Candle[] | null>(null)
@@ -525,6 +533,7 @@ export function ChartView({
           { price: 70, color: DOWN },
           { price: 30, color: UP },
         ],
+        zones: coloredZones('rsi'),
       }
     }
     if (subIndicator === 'wr') {
@@ -535,6 +544,7 @@ export function ChartView({
           { price: 20, color: UP },
           { price: 80, color: DOWN },
         ],
+        zones: coloredZones('wr'),
       }
     }
     if (subIndicator === 'obv') {
@@ -562,6 +572,7 @@ export function ChartView({
           { price: 100, color: DOWN },
           { price: -100, color: UP },
         ],
+        zones: coloredZones('cci'),
       }
     }
     if (subIndicator === 'psy') {
@@ -572,6 +583,7 @@ export function ChartView({
           { price: 75, color: DOWN },
           { price: 25, color: UP },
         ],
+        zones: coloredZones('psy'),
       }
     }
     if (subIndicator === 'stoch') {
@@ -582,6 +594,7 @@ export function ChartView({
           { id: 'K', points: k },
           { id: 'D', points: d },
         ],
+        zones: coloredZones('stoch'),
       }
     }
     if (subIndicator === 'roc') {
@@ -606,6 +619,7 @@ export function ChartView({
           { price: 80, color: DOWN },
           { price: 20, color: UP },
         ],
+        zones: coloredZones('mfi'),
       }
     }
     if (subIndicator === 'ao') {
@@ -645,6 +659,7 @@ export function ChartView({
           { price: 70, color: DOWN },
           { price: 30, color: UP },
         ],
+        zones: coloredZones('aroon'),
       }
     }
     return null
