@@ -45,6 +45,7 @@ export const SUB_OPTIONS: HeaderOption[] = [
   { value: 'cmf', label: 'CMF' },
   { value: 'donchian', label: 'DC' },
   { value: 'aroon', labelKey: 'indicator.aroon' },
+  { value: 'trix', label: 'TRIX' },
   { value: 'none', labelKey: 'common.none' },
 ]
 
