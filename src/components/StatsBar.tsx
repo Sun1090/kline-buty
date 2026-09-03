@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/useI18n'
 import { localeFor } from '../i18n/messages'
 import { fmtPriceLocale, fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
 import { formatRemaining } from '../utils/countdown'
+import { isVolumeSurge } from '../chart/volumeSurge'
 
 interface StatsBarProps {
   stats: MarketStats
@@ -16,6 +17,8 @@ interface StatsBarProps {
   period?: Period
   /** 最新 K 线开盘时间（秒级 UTC） */
   lastCandleTime?: number | null
+  /** G5 量能异动：最新成交量 / 前 N 根均量（null=数据不足） */
+  volumeSurge?: number | null
 }
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
@@ -27,7 +30,7 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps) {
+export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge }: StatsBarProps) {
   const { t, lang } = useI18n()
   // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
   const locale = localeFor(lang)
@@ -86,6 +89,25 @@ export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps)
       >
         {marketLabel}
       </span>
+      {/* G5 量能异动：最新成交量 / 前 N 根均量 ≥ 3× 时高亮警示 */}
+      {volumeSurge !== null && volumeSurge !== undefined && (
+        <span
+          data-testid="volume-surge"
+          title={t('stats.volumeSurgeTitle')}
+          style={{
+            fontSize: 11,
+            padding: '1px 6px',
+            borderRadius: 4,
+            flexShrink: 0,
+            fontWeight: 600,
+            color: isVolumeSurge(volumeSurge) ? 'var(--down)' : 'var(--text-dim)',
+            background: isVolumeSurge(volumeSurge) ? 'rgba(239,83,80,0.12)' : 'transparent',
+            border: isVolumeSurge(volumeSurge) ? '1px solid rgba(239,83,80,0.4)' : '1px solid var(--border)',
+          }}
+        >
+          {t('stats.volumeSurge')} {volumeSurge.toFixed(1)}×
+        </span>
+      )}
       {price !== null && (
         <Item label={t('stats.lastPrice')}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>

@@ -312,6 +312,8 @@ export const zh = {
     countdown: '收盘',
     marketPerp: '合约',
     marketSpot: '现货',
+    volumeSurge: '量能',
+    volumeSurgeTitle: '最新成交量 / 前 20 根均量 ≥ 3× 视为量能异动',
   },
   marketList: {
     title: '行情',
@@ -782,6 +784,8 @@ export const en: Messages = {
     countdown: 'Close in',
     marketPerp: 'Perp',
     marketSpot: 'Spot',
+    volumeSurge: 'Volume',
+    volumeSurgeTitle: 'Latest volume vs 20-bar average ≥ 3× flags a volume surge',
   },
   marketList: {
     title: 'Markets',
@@ -1250,6 +1254,8 @@ export const ja: Messages = {
     countdown: '終了まで',
     marketPerp: '先物',
     marketSpot: '現物',
+    volumeSurge: '出来高',
+    volumeSurgeTitle: '最新出来高 ÷ 直近20本平均 ≥ 3倍で出来高急増と判定',
   },
   marketList: {
     title: '相場',
@@ -1719,6 +1725,8 @@ export const ko: Messages = {
     countdown: '마감',
     marketPerp: '선물',
     marketSpot: '현물',
+    volumeSurge: '거래량',
+    volumeSurgeTitle: '최신 거래량 ÷ 최근 20봉 평균 ≥ 3배면 거래량 급증으로 판정',
   },
   marketList: {
     title: '시세',
@@ -2199,6 +2207,8 @@ export const es: Messages = {
     countdown: 'Cierre en',
     marketPerp: 'Perpetuo',
     marketSpot: 'Spot',
+    volumeSurge: 'Volumen',
+    volumeSurgeTitle: 'Volumen actual ÷ media de 20 velas ≥ 3× se marca como pico de volumen',
   },
   marketList: {
     title: 'Mercados',
