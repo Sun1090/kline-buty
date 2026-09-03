@@ -69,6 +69,7 @@ import {
 import { snapToCandle, type SnapMode } from '../drawings/snap'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
+import { fmtAxisPrice } from '../utils/format'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
 
@@ -491,6 +492,8 @@ export class LightweightChartAdapter implements ChartApi {
       // 触屏交互：单指拖拽平移 + 双指捏合缩放（横向由库原生处理，纵向由 onTouchMove 补充）
       handleScroll: { horzTouchDrag: true, vertTouchDrag: true },
       handleScale: { pinch: true },
+      // G13 价格坐标轴单位标签缩写（k/M/B），大数字更紧凑
+      localization: { priceFormatter: fmtAxisPrice as never },
     })
 
     this.mainSeries = this.createMainSeries('candlestick')
