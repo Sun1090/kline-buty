@@ -42,6 +42,7 @@ export interface IndicatorParams {
   donchianPeriod: number
   aroonPeriod: number
   volMaPeriod: number
+  trixPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -87,4 +88,5 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   donchianPeriod: 20,
   aroonPeriod: 25,
   volMaPeriod: 5,
+  trixPeriod: 15,
 }
