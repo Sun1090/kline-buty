@@ -55,15 +55,34 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleM
     setRangeA(r)
   }
 
+  // G8 十字光标时间联动：A 上报 → 写 B；B 上报 → 写 A；回显跳过（值相等即忽略）
+  const [crossA, setCrossA] = useState<number | null>(null)
+  const [crossB, setCrossB] = useState<number | null>(null)
+  const lastSeenCrossA = useRef<number | null>(null)
+  const lastSeenCrossB = useRef<number | null>(null)
+
+  const fromCrossA = (t: number | null) => {
+    const seen = lastSeenCrossA.current === t || lastSeenCrossB.current === t
+    lastSeenCrossA.current = t
+    if (seen) return
+    setCrossB(t)
+  }
+  const fromCrossB = (t: number | null) => {
+    const seen = lastSeenCrossA.current === t || lastSeenCrossB.current === t
+    lastSeenCrossB.current = t
+    if (seen) return
+    setCrossA(t)
+  }
+
   const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, minHeight: 0, borderBottom: '1px solid #2a2e39' }}>
-        <ChartView {...base} symbol={symbol} candles={a.state.candles} hasMore={a.hasMore} onLoadMore={a.loadMore} onViewRangeChange={fromA} externalRange={rangeA} referencePrice={referencePrice} markerPrice={markerPrice} />
+        <ChartView {...base} symbol={symbol} candles={a.state.candles} hasMore={a.hasMore} onLoadMore={a.loadMore} onViewRangeChange={fromA} externalRange={rangeA} onCrosshairChange={fromCrossA} externalCrosshairTime={crossB} referencePrice={referencePrice} markerPrice={markerPrice} />
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <ChartView {...base} symbol={secondSymbol} candles={b.state.candles} hasMore={b.hasMore} onLoadMore={b.loadMore} onViewRangeChange={fromB} externalRange={rangeB} />
+        <ChartView {...base} symbol={secondSymbol} candles={b.state.candles} hasMore={b.hasMore} onLoadMore={b.loadMore} onViewRangeChange={fromB} externalRange={rangeB} onCrosshairChange={fromCrossB} externalCrosshairTime={crossA} />
       </div>
     </div>
   )

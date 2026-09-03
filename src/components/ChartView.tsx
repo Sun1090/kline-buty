@@ -89,6 +89,10 @@ interface ChartViewProps {
   onViewRangeChange?: (range: { from: number; to: number }) => void
   /** 外部可见区间指令（多图同步时写入） */
   externalRange?: { from: number; to: number } | null
+  /** G8 十字光标时间变化上报（多图同步用，null=移出） */
+  onCrosshairChange?: (time: number | null) => void
+  /** G8 外部十字光标时间指令（多图同步时写入） */
+  externalCrosshairTime?: number | null
   /** 仓位线（模拟订单叠加） */
   positionLines?: PositionLines | null
   /** 外部参考价格线（盘口档位 hover 联动），null 清除 */
@@ -149,6 +153,8 @@ export function ChartView({
   onLoadMore,
   onViewRangeChange,
   externalRange,
+  onCrosshairChange,
+  externalCrosshairTime,
   positionLines,
   referencePrice,
   markerPrice,
@@ -202,6 +208,10 @@ export function ChartView({
   const prevReplayRef = useRef<{ cursor: number } | null>(null)
   const onViewRangeChangeRef = useRef(onViewRangeChange)
   onViewRangeChangeRef.current = onViewRangeChange
+  const onCrosshairChangeRef = useRef(onCrosshairChange)
+  onCrosshairChangeRef.current = onCrosshairChange
+  /** G8 防回环：记录本图最近一次上报的十字光标时间，外部同步回来相同时跳过写入 */
+  const lastReportedCrosshairRef = useRef<number | null>(null)
   const onDrawingCommitRef = useRef(onDrawingCommit)
   onDrawingCommitRef.current = onDrawingCommit
   const onDrawingSelectRef = useRef(onDrawingSelect)
@@ -249,6 +259,14 @@ export function ChartView({
     apiRef.current.setVisibleRange(cur ? localRange(cur, externalRange) : externalRange)
   }, [externalRange])
 
+  // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
+  useEffect(() => {
+    if (externalCrosshairTime === undefined || !apiRef.current) return
+    if (externalCrosshairTime === lastReportedCrosshairRef.current) return
+    lastReportedCrosshairRef.current = externalCrosshairTime
+    apiRef.current.setCrosshairTime(externalCrosshairTime)
+  }, [externalCrosshairTime])
+
   // 回放模式只取 [0, cursor] 区间；实时模式全量
   const replayData = useMemo(
     () => (replay ? candles.slice(0, replay.cursor + 1) : candles),
@@ -279,6 +297,10 @@ export function ChartView({
     apiRef.current = api
 
     const unsubCross = api.subscribeCrosshairMove((time, x, y) => {
+      // G8 十字光标同步：把时间上报给父级（pair/quad 联动），null 表示移出；
+      // 记录本次上报值供防回环（外部同步回来相同时跳过写入）
+      lastReportedCrosshairRef.current = time
+      onCrosshairChangeRef.current?.(time)
       if (time === null || x === null || y === null) {
         setTooltip(null)
         return

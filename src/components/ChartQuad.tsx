@@ -22,10 +22,13 @@ interface CellProps {
   showWatermark: boolean
   externalRange: Range2 | null
   onViewRangeChange: (r: Range2) => void
+  /** G8 十字光标时间联动 */
+  onCrosshairChange: (time: number | null) => void
+  externalCrosshairTime: number | null
   onCellPeriod: (p: Period) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCellPeriod }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCrosshairChange, externalCrosshairTime, onCellPeriod }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -46,6 +49,8 @@ function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezo
         hasMore={data.hasMore}
         onLoadMore={data.loadMore}
         onViewRangeChange={onViewRangeChange}
+        onCrosshairChange={onCrosshairChange}
+        externalCrosshairTime={externalCrosshairTime}
         showWatermark={showWatermark}
         externalRange={externalRange}
       />
@@ -99,7 +104,7 @@ interface QuadChartProps {
 
 /** 四图联动：2×2 网格，时间轴全联动；每格可独立切换周期（T21） */
 export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
-  const { ranges, broadcast } = useChartSync(4)
+  const { ranges, broadcast, crosshairTimes, broadcastCrosshair } = useChartSync(4)
   const cellPeriods = periods ?? [period, period, period, period]
   const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
 
@@ -121,6 +126,8 @@ export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, p
             onCellPeriod={(p) => onCellPeriod?.(i, p)}
             externalRange={ranges[i]}
             onViewRangeChange={(r) => broadcast(i, r)}
+            onCrosshairChange={(t) => broadcastCrosshair(i, t)}
+            externalCrosshairTime={crosshairTimes[i] ?? null}
           />
         </div>
       ))}

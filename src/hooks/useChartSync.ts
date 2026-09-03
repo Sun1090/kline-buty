@@ -29,5 +29,25 @@ export function useChartSync(count: number) {
     setRanges((prev) => ({ ...prev, ...next }))
   }
 
-  return { ranges, broadcast }
+  // G8 十字光标时间联动：任一图表十字光标移动 → 广播到其他所有图表（null=移出）
+  const [crosshairTimes, setCrosshairTimes] = useState<Record<number, number | null>>(() => {
+    const init: Record<number, number | null> = {}
+    for (let i = 0; i < count; i++) init[i] = null
+    return init
+  })
+  const crosshairExternalRef = useRef<Record<number, number | null>>({})
+
+  const broadcastCrosshair = (source: number, time: number | null) => {
+    // 回显检测：本图上报的值等于它当前接收的外部值 → 视为同步写入的回显，不再次广播
+    if (time === crosshairExternalRef.current[source]) return
+    const next: Record<number, number | null> = {}
+    for (let i = 0; i < count; i++) {
+      if (i === source) continue
+      next[i] = time
+    }
+    crosshairExternalRef.current = { ...crosshairExternalRef.current, ...next }
+    setCrosshairTimes((prev) => ({ ...prev, ...next }))
+  }
+
+  return { ranges, broadcast, crosshairTimes, broadcastCrosshair }
 }
