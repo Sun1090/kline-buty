@@ -23,6 +23,7 @@ import { calcAroon } from '../indicators/aroon'
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import { thresholdZones } from '../indicators/thresholdZones'
+import { findCrossovers } from '../indicators/crossovers'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
@@ -422,7 +423,17 @@ export function ChartView({
         const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
         lines.push(...indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })))
       }
-      return { lines }
+      // H3 金叉/死叉信号：最快线与最慢线交叉处打点（金叉=UP 圆点、死叉=DOWN 圆点）
+      const [fast, slow] = lines
+      let markers: { time: number; price: number; color: string }[] | undefined
+      if (fast && slow && fast.points.length > 0 && slow.points.length > 0) {
+        markers = findCrossovers(fast.points, slow.points).map((x) => ({
+          time: x.time,
+          price: x.price,
+          color: x.kind === 'golden' ? UP : DOWN,
+        }))
+      }
+      return { lines, markers }
     }
     if (mainIndicator === 'ema') {
       const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
