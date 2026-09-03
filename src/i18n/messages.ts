@@ -317,6 +317,8 @@ export const zh = {
     gapHealthy: '数据完整',
     gapPartial: '少量缺口',
     gapDegraded: '数据缺口 {n} 段',
+    dataLatency: '数据延迟',
+    dataLatencyTitle: '实时帧滞后超过 5 秒，数据可能停更或弱网',
   },
   marketList: {
     title: '行情',
@@ -795,6 +797,8 @@ export const en: Messages = {
     gapHealthy: 'Data OK',
     gapPartial: 'Some gaps',
     gapDegraded: 'Data gaps: {n}',
+    dataLatency: 'Data delay',
+    dataLatencyTitle: 'Live frame lagging over 5s — data may be stalled or network is slow',
   },
   marketList: {
     title: 'Markets',
@@ -1271,6 +1275,8 @@ export const ja: Messages = {
     gapHealthy: 'データ正常',
     gapPartial: '軽微な欠落',
     gapDegraded: 'データ欠落 {n} 箇所',
+    dataLatency: '遅延',
+    dataLatencyTitle: 'リアルタイムフレームが 5 秒以上遅延——データ停止または弱回線の可能性',
   },
   marketList: {
     title: '相場',
@@ -1748,6 +1754,8 @@ export const ko: Messages = {
     gapHealthy: '데이터 정상',
     gapPartial: '약간의 공백',
     gapDegraded: '데이터 공백 {n}곳',
+    dataLatency: '지연',
+    dataLatencyTitle: '실시간 프레임이 5초 이상 지연됨 — 데이터 중단 또는 약한 네트워크 가능성',
   },
   marketList: {
     title: '시세',
@@ -2236,6 +2244,8 @@ export const es: Messages = {
     gapHealthy: 'Datos completos',
     gapPartial: 'Algunas lagunas',
     gapDegraded: 'Lagunas de datos: {n}',
+    dataLatency: 'Retardo de datos',
+    dataLatencyTitle: 'El frame en vivo va retrasado más de 5s — los datos pueden estar detenidos o la red lenta',
   },
   marketList: {
     title: 'Mercados',

@@ -140,4 +140,21 @@ describe('StatsBar', () => {
     render(<StatsBar stats={stats} gapHealth="degraded" gapCount={3} />)
     expect(screen.getByTestId('data-health').textContent).toContain('数据缺口 3 段')
   })
+
+  it('G11 数据延迟：live 帧滞后 >5s → 显示延迟徽标', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    const live: LiveTick = { price: 65000, dir: 0, ts: Date.now() - 8000 }
+    render(<StatsBar stats={stats} live={live} />)
+    const el = screen.getByTestId('data-latency')
+    expect(el.textContent).toContain('数据延迟')
+  })
+
+  it('G11 数据延迟：滞后 ≤5s 或无 live → 不显示', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    const fresh: LiveTick = { price: 65000, dir: 0, ts: Date.now() - 1000 }
+    const { rerender } = render(<StatsBar stats={stats} live={fresh} />)
+    expect(screen.queryByTestId('data-latency')).toBeNull()
+    rerender(<StatsBar stats={stats} />)
+    expect(screen.queryByTestId('data-latency')).toBeNull()
+  })
 })
