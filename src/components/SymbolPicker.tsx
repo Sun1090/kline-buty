@@ -57,16 +57,24 @@ interface RowProps {
   onSelect: () => void
   onToggleStar: () => void
   starTitle: string
+  /** E10 键盘导航：option 唯一 id（供 aria-activedescendant 指向） */
+  id?: string
+  /** E10 键盘导航：是否为当前键盘高亮项 */
+  active?: boolean
+  /** E10 键盘导航：鼠标悬停同步高亮 */
+  onHover?: () => void
 }
 
 /** 交易对行：名称 + 价格 + 24h 涨跌 + 迷你图 + 收藏星标 */
-function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, starTitle }: RowProps) {
+function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, starTitle, id, active, onHover }: RowProps) {
   const changeColor = snap && snap.changePct >= 0 ? UP : DOWN
   return (
     <div
       role="option"
       aria-selected={selected}
+      id={id}
       onClick={onSelect}
+      onMouseEnter={onHover}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -74,7 +82,7 @@ function SymbolRow({ symbol, snap, selected, starred, onSelect, onToggleStar, st
         padding: '6px 8px',
         borderRadius: 6,
         cursor: 'pointer',
-        background: selected ? 'rgba(41,98,255,0.15)' : 'transparent',
+        background: active ? 'rgba(41,98,255,0.28)' : selected ? 'rgba(41,98,255,0.15)' : 'transparent',
       }}
     >
       <span style={{ width: 74, fontWeight: 600, fontSize: 13 }}>{symbol.replace('USDT', '/USDT')}</span>
@@ -108,6 +116,47 @@ export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProp
   const snapSymbols = useMemo(() => Array.from(new Set([...POPULAR_SYMBOLS, ...favorites])), [favorites])
   const { snapshots } = useMarketSnapshots(snapSymbols)
   const filtered = useFilteredSymbols(query)
+  // E10 键盘导航：可见交易对扁平列表，顺序与渲染完全一致（无搜索=收藏段+热门段，搜索=过滤结果）
+  const navItems = useMemo(() => {
+    if (query !== '') return filtered.map((s) => ({ id: `symbol-option-q-${s}`, symbol: s }))
+    return [
+      ...favorites.map((s) => ({ id: `symbol-option-fav-${s}`, symbol: s })),
+      ...POPULAR_SYMBOLS.map((s) => ({ id: `symbol-option-pop-${s}`, symbol: s })),
+    ]
+  }, [query, favorites, filtered])
+  const [activeIdx, setActiveIdx] = useState(0)
+  // 打开/查询变化时重置键盘高亮到首项
+  useEffect(() => setActiveIdx(0), [open, query])
+
+  /** E10 键盘导航：listbox 上的上下键/Home/End/Enter/Escape */
+  const onListKeyDown = (e: React.KeyboardEvent) => {
+    if (navItems.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIdx((i) => (i + 1) % navItems.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIdx((i) => (i - 1 + navItems.length) % navItems.length)
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      setActiveIdx(0)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      setActiveIdx(navItems.length - 1)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const item = navItems[Math.min(activeIdx, navItems.length - 1)]
+      if (item) select(item.symbol)
+    } else if (e.key === 'Escape') {
+      e.stopPropagation()
+      updateOpen(false)
+    }
+  }
+  const activeId = navItems.length > 0 ? navItems[Math.min(activeIdx, navItems.length - 1)].id : undefined
+  const hoverIdx = (id: string) => {
+    const i = navItems.findIndex((n) => n.id === id)
+    if (i >= 0) setActiveIdx(i)
+  }
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -217,6 +266,9 @@ export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProp
           <div
             role="listbox"
             aria-label={t('symbol.popular')}
+            tabIndex={0}
+            aria-activedescendant={activeId}
+            onKeyDown={onListKeyDown}
             style={{ maxHeight: 320, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
           >
             {query === '' && favorites.length > 0 && (
@@ -232,6 +284,9 @@ export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProp
                     onSelect={() => select(s)}
                     onToggleStar={() => toggleFavorite(s)}
                     starTitle={t('symbol.favoriteRemove')}
+                    id={`symbol-option-fav-${s}`}
+                    active={activeId === `symbol-option-fav-${s}`}
+                    onHover={() => hoverIdx(`symbol-option-fav-${s}`)}
                   />
                 ))}
               </>
@@ -250,6 +305,9 @@ export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProp
                   onSelect={() => select(s)}
                   onToggleStar={() => toggleFavorite(s)}
                   starTitle={favTitle(s)}
+                  id={`symbol-option-pop-${s}`}
+                  active={activeId === `symbol-option-pop-${s}`}
+                  onHover={() => hoverIdx(`symbol-option-pop-${s}`)}
                 />
               ))}
             {query !== '' && (
@@ -267,6 +325,9 @@ export function SymbolPicker({ value, onChange, onOpenChange }: SymbolPickerProp
                   onSelect={() => select(s)}
                   onToggleStar={() => toggleFavorite(s)}
                   starTitle={favTitle(s)}
+                  id={`symbol-option-q-${s}`}
+                  active={activeId === `symbol-option-q-${s}`}
+                  onHover={() => hoverIdx(`symbol-option-q-${s}`)}
                 />
               ))}
             {query !== '' && filtered.length === 0 && (
