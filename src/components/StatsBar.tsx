@@ -47,6 +47,9 @@ export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps)
   const changeColor = (stats.changePct ?? 0) >= 0 ? 'var(--up)' : 'var(--down)'
   const fundingPct = (stats.fundingRate ?? 0) * 100
   const fundingColor = fundingPct >= 0 ? 'var(--up)' : 'var(--down)'
+  // G3 市场类型：有合约专属字段（费率/标记价/未平仓）即视为合约，否则现货
+  const isPerp = stats.fundingRate !== null || stats.openInterest !== null || stats.markPrice !== null
+  const marketLabel = isPerp ? t('stats.marketPerp') : t('stats.marketSpot')
   // 实时帧优先：价 + 方向 + 闪烁（帧到达即高亮一次，肉眼可见行情在推）
   const price = live?.price ?? stats.price
   const dirColor =
@@ -69,6 +72,20 @@ export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps)
         overflowX: 'auto',
       }}
     >
+      {/* G3 市场类型徽标：合约/现货（现货隐藏费率/强平/未平仓口径） */}
+      <span
+        data-testid="market-type"
+        style={{
+          fontSize: 11,
+          padding: '1px 6px',
+          borderRadius: 4,
+          flexShrink: 0,
+          color: isPerp ? 'var(--accent)' : 'var(--text-dim)',
+          border: isPerp ? '1px solid var(--accent)' : '1px solid var(--border)',
+        }}
+      >
+        {marketLabel}
+      </span>
       {price !== null && (
         <Item label={t('stats.lastPrice')}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
@@ -123,17 +140,17 @@ export function StatsBar({ stats, live, period, lastCandleTime }: StatsBarProps)
           <span style={{ color: 'var(--text)' }}>{fmtVolume(stats.quoteVolume)} USDT</span>
         </Item>
       )}
-      {stats.fundingRate !== null && (
+      {isPerp && stats.fundingRate !== null && (
         <Item label={t('stats.fundingRate')}>
           <span style={{ color: fundingColor }}>{fundingPct.toFixed(4)}%</span>
         </Item>
       )}
-      {stats.openInterest !== null && (
+      {isPerp && stats.openInterest !== null && (
         <Item label={t('stats.openInterest')}>
           <span style={{ color: 'var(--text)' }}>{fmtPriceLocale(stats.openInterest, locale)}</span>
         </Item>
       )}
-      {stats.markPrice !== null && (
+      {isPerp && stats.markPrice !== null && (
         <Item label={t('stats.markPrice')}>
           <span style={{ color: 'var(--text-dim)' }}>{fmtPrice(stats.markPrice)}</span>
         </Item>
