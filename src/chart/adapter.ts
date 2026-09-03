@@ -50,6 +50,7 @@ import {
   measureInfo,
   moveAnchor,
   followLatestEntry,
+  textBoxX,
   parallelRaySpec,
   pitchforkRays,
   widthChannelSpec,
@@ -900,7 +901,8 @@ export class LightweightChartAdapter implements ChartApi {
       const lineH = Math.round(fontSize * 1.4)
       const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 12
       const h = lineH * lines.length + 8
-      const bx = a.x - w / 2
+      // C8 文字对齐：左/中/右（缺省 center）
+      const bx = textBoxX(a.x, w, d.textAlign ?? 'center')
       const by = a.y - h / 2
       ctx.fillStyle = this.theme.background + 'e6'
       ctx.fillRect(bx, by, w, h)
@@ -930,7 +932,8 @@ export class LightweightChartAdapter implements ChartApi {
       const fold = 9
       const w = Math.max(48, Math.max(...lines.map((l) => ctx.measureText(l).width)) + padX * 2)
       const h = Math.max(fontSize + padY * 2, lineH * lines.length + padY * 2)
-      const bx = a.x - w / 2
+      // C8 文字对齐：左/中/右（缺省 center）
+      const bx = textBoxX(a.x, w, d.textAlign ?? 'center')
       const by = a.y - h / 2
       ctx.fillStyle = selected ? 'rgba(78,156,245,0.16)' : 'rgba(245,192,47,0.14)'
       ctx.beginPath()
