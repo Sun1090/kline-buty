@@ -84,4 +84,22 @@ describe('StatsBar', () => {
     const region = screen.getByRole('region')
     expect(region.getAttribute('aria-label')).toBeTruthy()
   })
+
+  it('G3 市场类型：有费率/未平仓 → 合约徽标 + 显示合约字段', () => {
+    const stats = { ...EMPTY, price: 65000, fundingRate: 0.0001, openInterest: 123456, markPrice: 65001 }
+    render(<StatsBar stats={stats} />)
+    expect(screen.getByTestId('market-type').textContent).toBe('合约')
+    expect(screen.getByText('资金费率')).toBeDefined()
+    expect(screen.getByText('未平仓')).toBeDefined()
+    expect(screen.getByText('标记价')).toBeDefined()
+  })
+
+  it('G3 市场类型：无合约字段 → 现货徽标 + 隐藏合约字段', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} />)
+    expect(screen.getByTestId('market-type').textContent).toBe('现货')
+    expect(screen.queryByText('资金费率')).toBeNull()
+    expect(screen.queryByText('未平仓')).toBeNull()
+    expect(screen.queryByText('标记价')).toBeNull()
+  })
 })

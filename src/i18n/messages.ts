@@ -310,6 +310,8 @@ export const zh = {
     openInterest: '未平仓',
     markPrice: '标记价',
     countdown: '收盘',
+    marketPerp: '合约',
+    marketSpot: '现货',
   },
   marketList: {
     title: '行情',
@@ -778,6 +780,8 @@ export const en: Messages = {
     openInterest: 'Open interest',
     markPrice: 'Mark price',
     countdown: 'Close in',
+    marketPerp: 'Perp',
+    marketSpot: 'Spot',
   },
   marketList: {
     title: 'Markets',
@@ -1244,6 +1248,8 @@ export const ja: Messages = {
     openInterest: '未決済建玉',
     markPrice: 'マーク価格',
     countdown: '終了まで',
+    marketPerp: '先物',
+    marketSpot: '現物',
   },
   marketList: {
     title: '相場',
@@ -1711,6 +1717,8 @@ export const ko: Messages = {
     openInterest: '미청산 계약',
     markPrice: '마크 가격',
     countdown: '마감',
+    marketPerp: '선물',
+    marketSpot: '현물',
   },
   marketList: {
     title: '시세',
@@ -2189,6 +2197,8 @@ export const es: Messages = {
     openInterest: 'Interés abierto',
     markPrice: 'Precio de marca',
     countdown: 'Cierre en',
+    marketPerp: 'Perpetuo',
+    marketSpot: 'Spot',
   },
   marketList: {
     title: 'Mercados',
