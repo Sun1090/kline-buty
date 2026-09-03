@@ -39,17 +39,20 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
   const { t, lang } = useI18n()
   // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
   const locale = localeFor(lang)
-  // 收盘倒计时：每秒走一次本组件（面板小，重渲染开销可忽略）
+  // 收盘倒计时 + G11 数据延迟：每秒走一次本组件（面板小，重渲染开销可忽略）
   const [now, setNow] = useState(() => Date.now())
+  const needTicker = (period && lastCandleTime != null) || live != null
   useEffect(() => {
-    if (!period || lastCandleTime == null) return
+    if (!needTicker) return
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [period, lastCandleTime])
+  }, [needTicker, period, lastCandleTime, live])
   const remainingMs =
     period && lastCandleTime != null
       ? lastCandleTime * 1000 + PERIOD_MS[period] - now
       : null
+  // G11 数据延迟：最近实时帧到达 vs 当前系统时间（毫秒），无 live 时为 null
+  const latencyMs = live != null ? Math.max(0, now - live.ts) : null
   const empty = stats.price === null && stats.fundingRate === null && stats.openInterest === null && !live
   if (empty) return null
   const changeColor = (stats.changePct ?? 0) >= 0 ? 'var(--up)' : 'var(--down)'
@@ -111,6 +114,25 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
           }}
         >
           {t('stats.volumeSurge')} {volumeSurge.toFixed(1)}×
+        </span>
+      )}
+      {/* G11 数据延迟：实时帧滞后超过 5s 显示（弱网/停更提示） */}
+      {latencyMs != null && latencyMs > 5000 && (
+        <span
+          data-testid="data-latency"
+          title={t('stats.dataLatencyTitle')}
+          style={{
+            fontSize: 11,
+            padding: '1px 6px',
+            borderRadius: 4,
+            flexShrink: 0,
+            fontWeight: 600,
+            color: 'var(--yellow)',
+            background: 'rgba(245,192,47,0.12)',
+            border: '1px solid rgba(245,192,47,0.4)',
+          }}
+        >
+          {t('stats.dataLatency')} {Math.floor(latencyMs / 1000)}s
         </span>
       )}
       {/* G6 数据健康度：缺口档位徽标（无缺口正常显示，有缺口降级警示） */}
