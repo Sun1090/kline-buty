@@ -70,6 +70,8 @@ export interface Drawing {
   followLatest?: boolean
   /** C8 文字对齐（text/note）：相对锚点的水平对齐，缺省 center */
   textAlign?: 'left' | 'center' | 'right'
+  /** C4 画线分组名（缺省 undefined=未分组） */
+  group?: string
 }
 
 export interface Point {
@@ -609,6 +611,29 @@ export function toggleDrawingLocked(d: Drawing): Drawing {
 export function patchDrawing<T extends Drawing>(list: T[], id: string, patch: Partial<Drawing>): T[] {
   return list.map((d) => (d.id === id ? { ...d, ...patch } : d))
 }
+
+/** C4 画线分组：list → 分组名 → 画线[]（未分组的画线归入 `''` 键） */
+export function groupDrawings<T extends Drawing>(list: T[]): Record<string, T[]> {
+  const groups: Record<string, T[]> = {}
+  for (const d of list) {
+    const key = d.group ?? ''
+    ;(groups[key] ??= []).push(d)
+  }
+  return groups
+}
+
+/** C4 分组批量操作：对指定分组的全部画线统一切换隐藏（未分组 key=''） */
+export function toggleGroupHidden<T extends Drawing>(list: T[], group: string, hidden: boolean): T[] {
+  return list.map((d) => ((d.group ?? '') === group ? { ...d, hidden } : d))
+}
+
+/** C4 分组批量操作：对指定分组的全部画线统一切换锁定（未分组 key=''） */
+export function toggleGroupLocked<T extends Drawing>(list: T[], group: string, locked: boolean): T[] {
+  return list.map((d) => ((d.group ?? '') === group ? { ...d, locked } : d))
+}
+
+/** C9 悬停高亮默认分组名：用于图层树首行兜底显示 */
+export const UNGROUPED = ''
 
 /** 拖动单个锚点到新位置（射线保持锚点顺序，其余按时间重排） */
 export function moveAnchor(d: Drawing, idx: number, point: { time: number; price: number }): Drawing {

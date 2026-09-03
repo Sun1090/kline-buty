@@ -23,6 +23,9 @@ import {
   FIB_TIME_ZONE_NUMS,
   followLatestEntry,
   textBoxX,
+  groupDrawings,
+  toggleGroupHidden,
+  toggleGroupLocked,
   hitTestDrawings,
   linearRegression,
   parallelRaySpec,
@@ -1917,5 +1920,55 @@ describe('textBoxX（C8 文字对齐）', () => {
   })
   it('right → 锚点在框右缘', () => {
     expect(textBoxX(100, 20, 'right')).toBe(80)
+  })
+})
+
+describe('groupDrawings（C4 画线分组）', () => {
+  const a = createDrawing('horizontal', [{ time: 10, price: 100 }], 'a')
+  const b = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'b')
+  const c = createDrawing('vertical', [{ time: 40, price: 100 }], 'c')
+  it('无分组 → 全部归入空键', () => {
+    const g = groupDrawings([a, b, c])
+    expect(Object.keys(g)).toEqual([''])
+    expect(g[''].length).toBe(3)
+  })
+  it('按 group 字段分键', () => {
+    const g = groupDrawings([
+      { ...a, group: '结构' },
+      { ...b, group: '结构' },
+      { ...c, group: '趋势' },
+    ])
+    expect(g['结构'].length).toBe(2)
+    expect(g['趋势'].length).toBe(1)
+    expect(g['']).toBeUndefined()
+  })
+})
+
+describe('toggleGroupHidden / toggleGroupLocked（C4 分组批量操作）', () => {
+  const a = createDrawing('horizontal', [{ time: 10, price: 100 }], 'a')
+  const b = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 50 }], 'b')
+  const c = createDrawing('vertical', [{ time: 40, price: 100 }], 'c')
+  const list = [
+    { ...a, group: 'g1' },
+    { ...b, group: 'g1' },
+    { ...c, group: 'g2' },
+  ]
+  it('组隐藏只影响该组（未分组 key 不误伤）', () => {
+    const out = toggleGroupHidden(list, 'g1', true)
+    expect(out[0].hidden).toBe(true)
+    expect(out[1].hidden).toBe(true)
+    expect(out[2].hidden).toBeUndefined()
+    expect(out[2]).toBe(list[2]) // 其他组引用不变
+  })
+  it('组锁定只影响该组', () => {
+    const out = toggleGroupLocked(list, 'g2', true)
+    expect(out[0].locked).toBeUndefined()
+    expect(out[2].locked).toBe(true)
+  })
+  it('未分组 key（空串）批量操作', () => {
+    const mixed = [...list, { ...createDrawing('horizontal', [{ time: 1, price: 1 }], 'u'), group: '' }]
+    const out = toggleGroupHidden(mixed, '', true)
+    expect(out[3].hidden).toBe(true)
+    expect(out[0].hidden).toBeUndefined()
   })
 })
