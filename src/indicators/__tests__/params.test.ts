@@ -41,7 +41,7 @@ describe('DEFAULT_INDICATOR_PARAMS', () => {
       p.macdFast, p.macdSlow, p.macdSignal, p.kdjN, p.kdjM1, p.kdjM2,
       p.rsiPeriod, p.wrPeriod, p.obvMaPeriod, p.atrPeriod, p.dmiPeriod,
       p.cciPeriod, p.psyPeriod, p.stochK, p.stochSmooth, p.stochD,
-      p.rocPeriod, p.momPeriod,
+      p.rocPeriod, p.momPeriod, p.volMaPeriod,
     ]
     for (const v of periods) {
       expect(Number.isInteger(v)).toBe(true)
@@ -74,7 +74,7 @@ describe('DEFAULT_INDICATOR_PARAMS', () => {
       'kdjN', 'kdjM1', 'kdjM2',
       'rsiPeriod', 'wrPeriod', 'obvMaPeriod', 'atrPeriod', 'dmiPeriod',
       'cciPeriod', 'psyPeriod', 'stochK', 'stochSmooth', 'stochD',
-      'rocPeriod', 'momPeriod',
+      'rocPeriod', 'momPeriod', 'volMaPeriod',
     ]
     for (const k of keys) {
       expect(DEFAULT_INDICATOR_PARAMS[k]).toBeDefined()

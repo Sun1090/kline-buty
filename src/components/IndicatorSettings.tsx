@@ -58,6 +58,7 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
     fields.push({ key: 'kdjM1', label: t('indicator.kdjM1'), kind: 'number' })
     fields.push({ key: 'kdjM2', label: t('indicator.kdjM2'), kind: 'number' })
   }
+  if (sub === 'volume') fields.push({ key: 'volMaPeriod', label: t('indicator.volMaPeriod'), kind: 'number' })
   if (sub === 'rsi') fields.push({ key: 'rsiPeriod', label: t('indicator.rsiPeriod'), kind: 'number' })
   if (sub === 'wr') fields.push({ key: 'wrPeriod', label: t('indicator.wrPeriod'), kind: 'number' })
   if (sub === 'obv') fields.push({ key: 'obvMaPeriod', label: t('indicator.obvMaPeriod'), kind: 'number' })

@@ -41,6 +41,7 @@ export interface IndicatorParams {
   cmfPeriod: number
   donchianPeriod: number
   aroonPeriod: number
+  volMaPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -85,4 +86,5 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   cmfPeriod: 20,
   donchianPeriod: 20,
   aroonPeriod: 25,
+  volMaPeriod: 5,
 }
