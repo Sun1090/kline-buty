@@ -7,6 +7,7 @@ import { createKlineWs, type WsStatus } from '../data/binance/ws'
 import { detectMode } from '../data/binance/endpoints'
 import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
 import { readCachedCandles, writeCachedCandles } from '../data/cache'
+import { gapFillRanges, GAP_PAGE_SIZE } from '../data/gapFill'
 
 const PAGE_SIZE = 500
 /** 压测模式模拟实时帧的间隔（ms） */
@@ -128,12 +129,24 @@ export function useKlineData(symbol: string, period: Period) {
           if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
         },
         onReconnect: () => {
-          fetchKlines(symbol, period, 100, undefined, undefined, abortCtrl.signal)
-            .then((hist) => {
-              store.upsertAll(hist)
-              publish()
-            })
-            .catch(() => {})
+          // G7 断线分段补洞：从本地最后时间戳起，按缺失区间逐段 REST 回补（串行）
+          const all = store.all()
+          const last = all[all.length - 1]
+          if (!last) return
+          const ranges = gapFillRanges(last.time, Date.now() / 1000, period)
+          if (ranges.length === 0) return
+          void ranges.reduce((p, r) => {
+            return p.then(() =>
+              fetchKlines(symbol, period, GAP_PAGE_SIZE, r.startTime, r.endTime, abortCtrl.signal)
+                .then((hist) => {
+                  if (!aliveRef.current || storeRef.current !== store) return
+                  store.upsertAll(hist)
+                  // 每段补完后发布：缺口区数据逐步浮现（末段即最新）
+                  publish()
+                })
+                .catch(() => {}),
+            )
+          }, Promise.resolve())
         },
       }, undefined, mode)
     })
