@@ -146,6 +146,7 @@ export function App() {
   const [textDraft, setTextDraft] = useState('')
   const [textFontSize, setTextFontSize] = useState(DEFAULT_TEXT_FONT_SIZE)
   const [textColor, setTextColor] = useState('')
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
   const [position, setPosition] = useState<Position | null>(null)
@@ -434,13 +435,14 @@ export function App() {
     const text = textDraft.trim()
     mutateDrawings((prev) =>
       prev.map((d) =>
-        d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined } : d,
+        d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined, textAlign } : d,
       ),
     )
     setEditingTextId(null)
     setTextDraft('')
     setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
     setTextColor('')
+    setTextAlign('center')
   }
   const updateDrawing = (id: string, points: { time: number; price: number }[]) => {
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, points } : d)))
@@ -453,6 +455,7 @@ export function App() {
     setTextDraft(d.text ?? '')
     setTextFontSize(d.fontSize ?? DEFAULT_TEXT_FONT_SIZE)
     setTextColor(d.color ?? '')
+    setTextAlign(d.textAlign ?? 'center')
     setEditingTextId(id)
   }
   const startEditingSelectedText = () => {
@@ -1315,6 +1318,27 @@ export function App() {
                 }}
               >
                 {opt.color ? '' : 'A'}
+              </button>
+            ))}
+            <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 4 }}>{t('drawing.align')}</span>
+            {(['left', 'center', 'right'] as const).map((al) => (
+              <button
+                key={al}
+                data-testid={`mobile-text-align-${al}`}
+                aria-label={t(`drawing.align${al[0].toUpperCase()}${al.slice(1)}` as never)}
+                aria-pressed={textAlign === al}
+                onClick={() => setTextAlign(al)}
+                style={{
+                  padding: '2px 7px',
+                  fontSize: 12,
+                  border: textAlign === al ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: textAlign === al ? 'var(--accent)' : 'transparent',
+                  color: textAlign === al ? '#fff' : 'var(--text)',
+                }}
+              >
+                {al === 'left' ? '⬅' : al === 'center' ? '↔' : '➡'}
               </button>
             ))}
           </div>

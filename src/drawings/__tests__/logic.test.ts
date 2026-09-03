@@ -22,6 +22,7 @@ import {
   fibTimeZoneXs,
   FIB_TIME_ZONE_NUMS,
   followLatestEntry,
+  textBoxX,
   hitTestDrawings,
   linearRegression,
   parallelRaySpec,
@@ -1903,5 +1904,18 @@ describe('followLatestEntry（C15 position 工具贴附最新价）', () => {
     const out = followLatestEntry(on, { time: 200, price: 105 })
     expect(out).not.toBe(on)
     expect(on.points[0]).toEqual({ time: 100, price: 100 })
+  })
+})
+
+describe('textBoxX（C8 文字对齐）', () => {
+  it('center（缺省）→ 锚点在框中央', () => {
+    expect(textBoxX(100, 20)).toBe(90)
+    expect(textBoxX(100, 20, 'center')).toBe(90)
+  })
+  it('left → 锚点在框左缘', () => {
+    expect(textBoxX(100, 20, 'left')).toBe(100)
+  })
+  it('right → 锚点在框右缘', () => {
+    expect(textBoxX(100, 20, 'right')).toBe(80)
   })
 })

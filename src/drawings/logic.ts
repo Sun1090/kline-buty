@@ -68,6 +68,8 @@ export interface Drawing {
   opacity?: number
   /** C15 position 工具跟随最新价：入场锚点（点 0）随最新收盘价自动贴附 */
   followLatest?: boolean
+  /** C8 文字对齐（text/note）：相对锚点的水平对齐，缺省 center */
+  textAlign?: 'left' | 'center' | 'right'
 }
 
 export interface Point {
@@ -619,6 +621,16 @@ export function followLatestEntry(d: Drawing, latest: { time: number; price: num
   if (d.type !== 'position' || !d.followLatest) return d
   const points = d.points.map((p, i) => (i === 0 ? latest : p))
   return { ...d, points: normalizePoints(d.type, points) }
+}
+
+/**
+ * C8 文字框水平原点：给定锚点 x 与文字框宽，按对齐返回框左缘 x。
+ * left → 锚点在左；center → 锚点居中；right → 锚点在右。
+ */
+export function textBoxX(anchorX: number, width: number, align: 'left' | 'center' | 'right' = 'center'): number {
+  if (align === 'left') return anchorX
+  if (align === 'right') return anchorX - width
+  return anchorX - width / 2
 }
 
 /** 命中锚点：返回最近的锚点下标（阈值内），未命中 null。
