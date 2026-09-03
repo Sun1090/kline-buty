@@ -14,6 +14,11 @@ export function sortTickerRows(rows: TickerRow[], key: TickerSortKey, dir: SortD
   })
 }
 
+/** G4 榜单：按 key 取 Top N（默认涨跌幅降序前 10）；空表返回 [] */
+export function topRank(rows: TickerRow[], key: TickerSortKey = 'changePct', n = 10): TickerRow[] {
+  return sortTickerRows(rows, key, 'desc').slice(0, n)
+}
+
 export interface TickerListState {
   rows: TickerRow[]
   loading: boolean
