@@ -6,7 +6,7 @@ import type { SnapMode } from '../drawings/snap'
 import { anchorRangeForSwitch, cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
-import { calcMA, calcEMA } from '../indicators/sma'
+import { calcMA, calcEMA, calcSMA } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcBBW } from '../indicators/bbw'
 import { calcSupertrend } from '../indicators/supertrend'
@@ -481,13 +481,18 @@ export function ChartView({
       return { kind: 'bbw' as const, lines: [{ id: 'BBW', points: calcBBW(windowData, indicatorParams.bbwPeriod, indicatorParams.bbwMult) }] }
     }
     if (subIndicator === 'volume') {
+      const hist = windowData.map((c) => ({
+        time: c.time,
+        value: c.volume,
+        color: c.close >= c.open ? UP : DOWN,
+      }))
+      // G10 VOL 均量线（多周期可配）：volMaPeriod > 1 时按 SMA 平滑成交量
+      const maPeriod = indicatorParams.volMaPeriod
+      const ma = maPeriod > 1 ? calcSMA(hist.map((h) => ({ time: h.time, value: h.value })), maPeriod) : null
       return {
         kind: 'volume' as const,
-        hist: windowData.map((c) => ({
-          time: c.time,
-          value: c.volume,
-          color: c.close >= c.open ? UP : DOWN,
-        })),
+        hist,
+        lines: ma ? [{ id: 'VOL-MA', points: ma }] : [],
       }
     }
     if (subIndicator === 'macd') {

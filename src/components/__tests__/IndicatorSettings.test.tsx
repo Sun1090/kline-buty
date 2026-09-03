@@ -81,9 +81,14 @@ describe('IndicatorSettings', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ maPeriods: [5, 20] }))
   })
 
-  it('VWAP/成交量 无参数 → 显示提示', () => {
-    setup('vwap', 'volume')
+  it('VWAP + 无副图 → 显示提示', () => {
+    setup('vwap', 'none')
     expect(screen.getByText('当前指标无参数可调')).toBeDefined()
+  })
+
+  it('G10 成交量显示均量线周期参数', () => {
+    setup('vwap', 'volume')
+    expect(inputOf('VOL 均量线周期(1=关)')).toBeDefined()
   })
 
   it('修改 SAR 上限参数触发 onChange', () => {

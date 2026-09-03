@@ -349,6 +349,8 @@ export class LightweightChartAdapter implements ChartApi {
   private container: HTMLElement
   private mainSeries: ISeriesApi<SeriesType>
   private volumeSeries: ISeriesApi<'Histogram'> | null = null
+  /** G10 VOL 均量线（与 volumeSeries 同驻 volume 面板） */
+  private volumeMaSeries: ISeriesApi<'Line'> | null = null
   private mainLines: ISeriesApi<'Line' | 'Area'>[] = []
   private subSeries: ISeriesApi<'Line' | 'Histogram'>[] = []
   private priceLine: IPriceLine | null = null
@@ -3303,6 +3305,11 @@ export class LightweightChartAdapter implements ChartApi {
   setSubIndicator(data: SubIndicatorData) {
     for (const s of this.subSeries) this.chart.removeSeries(s)
     this.subSeries = []
+    // G10 VOL 均量线：复用常驻 line 序列（与 volumeSeries 同驻 volume 面板）
+    if (this.volumeMaSeries) {
+      this.chart.removeSeries(this.volumeMaSeries)
+      this.volumeMaSeries = null
+    }
 
     const isVolume = data.kind === 'volume'
     if (isVolume) {
@@ -3327,6 +3334,23 @@ export class LightweightChartAdapter implements ChartApi {
           color: h.color ?? this.theme.up,
         })),
       )
+      // G10 均量线（VOL MA）：叠加到 volume 面板同一价格轴
+      const ma = data.lines?.[0]
+      if (ma && ma.points.length) {
+        this.volumeMaSeries = this.chart.addSeries(
+          LineSeries,
+          {
+            priceScaleId: 'volume',
+            color: SUB_LINE_COLORS[ma.id] ?? '#f5c02f',
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          },
+          1,
+        )
+        this.volumeMaSeries.setData(ma.points.map((p) => ({ time: p.time as UTCTimestamp, value: p.value })))
+      }
       return
     }
 
