@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, cleanup } from '@testing-library/react'
-import { useTickerList, sortTickerRows } from '../useTickerList'
+import { useTickerList, sortTickerRows, topRank } from '../useTickerList'
 import { fetchTickers24h } from '../../data/binance/rest'
 
 vi.mock('../../data/binance/rest', () => ({
@@ -121,5 +121,27 @@ describe('useTickerList', () => {
     await act(async () => {})
     expect(result.current.error).toBe(false)
     expect(result.current.rows).toHaveLength(3)
+  })
+})
+
+describe('topRank（G4 全市场榜单）', () => {
+  it('按涨跌幅取 Top N（默认 10），降序', () => {
+    const r = topRank(rows)
+    expect(r.map((x) => x.symbol)).toEqual(['SOLUSDT', 'BTCUSDT', 'ETHUSDT'])
+  })
+
+  it('按成交额取 Top N', () => {
+    const r = topRank(rows, 'quoteVolume', 2)
+    expect(r.map((x) => x.symbol)).toEqual(['BTCUSDT', 'ETHUSDT'])
+    expect(r).toHaveLength(2)
+  })
+
+  it('n 大于数据量 → 返回全部（按序）', () => {
+    const r = topRank(rows, 'changePct', 100)
+    expect(r).toHaveLength(3)
+  })
+
+  it('空表 → []', () => {
+    expect(topRank([])).toEqual([])
   })
 })

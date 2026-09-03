@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
-import { useTickerList, type TickerSortKey } from '../hooks/useTickerList'
+import { topRank, useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import { useFavorites } from '../hooks/useFavorites'
 import type { TickerRow } from '../data/binance/rest'
 
@@ -20,10 +20,13 @@ function Row({
   row,
   active,
   onSelect,
+  rank,
 }: {
   row: TickerRow
   active: boolean
   onSelect: (s: string) => void
+  /** G4 榜单序号（非榜单视图不显示） */
+  rank?: number
 }) {
   const up = row.changePct >= 0
   return (
@@ -48,6 +51,19 @@ function Row({
         boxSizing: 'border-box',
       }}
     >
+      {rank !== undefined && (
+        <span
+          style={{
+            flex: '0 0 18px',
+            textAlign: 'center',
+            fontSize: 11,
+            fontWeight: 700,
+            color: rank <= 3 ? 'var(--yellow)' : 'var(--text-faint)',
+          }}
+        >
+          {rank}
+        </span>
+      )}
       <span style={{ flex: '0 0 84px', fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {row.symbol.replace('USDT', '')}
       </span>
@@ -80,7 +96,9 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
   const { rows, loading, error, sortKey, sortDir, setSortKey, refresh } = useTickerList()
   const { favorites } = useFavorites()
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'all' | 'favorites'>('all')
+  const [view, setView] = useState<'all' | 'favorites' | 'rank'>('all')
+  // G4 榜单口径：涨幅榜（changePct）/ 成交榜（quoteVolume）
+  const [rankKey, setRankKey] = useState<'changePct' | 'quoteVolume'>('changePct')
   // 视图过滤（自选/全部）与搜索过滤串联：先视图后搜索，排序由 hook 内排序函数处理
   const scoped = useMemo(
     () => (view === 'favorites' ? rows.filter((r) => favorites.includes(r.symbol)) : rows),
@@ -91,6 +109,8 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
     if (!q) return scoped
     return scoped.filter((r) => r.symbol.toLowerCase().includes(q))
   }, [scoped, query])
+  // G4 榜单：按口径取 Top10（仅 rank 视图使用）
+  const ranked = useMemo(() => topRank(rows, rankKey, 10), [rows, rankKey])
 
   // 折叠态：桌面窄条（仅按钮），点击展开
   if (!open && !overlay) {
@@ -216,6 +236,7 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           [
             ['all', 'marketList.tabAll', 'market-tab-all'],
             ['favorites', 'marketList.tabFavorites', 'market-tab-favorites'],
+            ['rank', 'marketList.tabRank', 'market-tab-rank'],
           ] as const
         ).map(([key, labelKey, testId]) => (
           <button
@@ -276,6 +297,35 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           )
         })}
       </div>
+      {/* G4 榜单口径切换：仅榜单视图显示（涨幅榜 / 成交榜 Top10） */}
+      {view === 'rank' && (
+        <div style={{ display: 'flex', gap: 4, padding: '0 8px 4px', flexShrink: 0 }}>
+          {(
+            [
+              ['changePct', 'marketList.rankChange', 'market-rank-change'],
+              ['quoteVolume', 'marketList.rankVolume', 'market-rank-volume'],
+            ] as const
+          ).map(([key, labelKey, testId]) => (
+            <button
+              key={key}
+              data-testid={testId}
+              onClick={() => setRankKey(key)}
+              aria-pressed={rankKey === key}
+              style={{
+                border: 'none',
+                background: rankKey === key ? 'rgba(41,98,255,0.15)' : 'transparent',
+                color: rankKey === key ? 'var(--accent)' : 'var(--text-dim)',
+                fontSize: 11,
+                cursor: 'pointer',
+                padding: '1px 8px',
+                borderRadius: 8,
+              }}
+            >
+              {t(labelKey)}
+            </button>
+          ))}
+        </div>
+      )}
       <div
         data-testid="market-list-body"
         style={{
@@ -296,6 +346,10 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           )
         ) : view === 'favorites' && scoped.length === 0 ? (
           <PanelState status="empty" message={t('marketList.favoritesEmpty')} />
+        ) : view === 'rank' ? (
+          ranked.map((row, i) => (
+            <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} rank={i + 1} />
+          ))
         ) : filtered.length === 0 ? (
           <PanelState status="empty" message={t('marketList.noMatch')} />
         ) : (

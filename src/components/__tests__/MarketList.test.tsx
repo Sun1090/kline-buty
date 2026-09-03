@@ -4,9 +4,13 @@ import { render, cleanup, screen, fireEvent } from '@testing-library/react'
 import { MarketList } from '../MarketList'
 import { useTickerList, type TickerSortKey, type SortDir } from '../../hooks/useTickerList'
 
-vi.mock('../../hooks/useTickerList', () => ({
-  useTickerList: vi.fn(),
-}))
+vi.mock('../../hooks/useTickerList', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../hooks/useTickerList')>()
+  return {
+    ...actual,
+    useTickerList: vi.fn(),
+  }
+})
 
 const mockUseTickerList = vi.mocked(useTickerList)
 
@@ -159,5 +163,27 @@ describe('MarketList', () => {
     expect(screen.getByTestId('market-list')).toBeDefined()
     fireEvent.click(screen.getByTestId('market-list-collapse'))
     expect(baseProps.onToggle).toHaveBeenCalled()
+  })
+
+  it('G4 榜单：切换榜单 tab 显示涨幅榜 Top10 与序号行', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('market-tab-rank'))
+    expect(screen.getByTestId('market-rank-change')).toBeDefined()
+    expect(screen.getByTestId('market-rank-volume')).toBeDefined()
+    // SOL 涨幅最高（3.45%），应排在榜首序号 1
+    const rows = screen.getAllByTestId(/^market-row-/)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0].textContent).toContain('SOL')
+  })
+
+  it('G4 榜单：切换成交榜口径', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('market-tab-rank'))
+    fireEvent.click(screen.getByTestId('market-rank-volume'))
+    // 成交额最高为 BTC（1.5e9）
+    const rows = screen.getAllByTestId(/^market-row-/)
+    expect(rows[0].textContent).toContain('BTC')
   })
 })
