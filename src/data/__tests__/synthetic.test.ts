@@ -5,7 +5,8 @@ describe('generateSyntheticCandles', () => {
   it('生成指定数量、时间递增的 K 线', () => {
     const cs = generateSyntheticCandles(20_000, { startTime: 1_700_000_000, stepSeconds: 60 })
     expect(cs).toHaveLength(20_000)
-    expect(cs[0].time).toBe(1_700_000_000)
+    // G1：起始时间非整分 → 向下对齐到 1m 边界（1_700_000_000 → 1_699_999_980）
+    expect(cs[0].time).toBe(1_699_999_980)
     expect(cs[1].time - cs[0].time).toBe(60)
     expect(cs[cs.length - 1].time - cs[0].time).toBe(60 * 19_999)
   })
