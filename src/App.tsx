@@ -46,6 +46,7 @@ import {
 import { normalizeSnapMode, type SnapMode } from './drawings/snap'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
+import { volumeSurgeRatio } from './chart/volumeSurge'
 import { parseDrawingsFile, serializeDrawings } from './drawings/io'
 import {
   applyTemplate,
@@ -1014,7 +1015,7 @@ export function App() {
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <StatsBar stats={stats} live={state.live} period={period} lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null} />
+          <StatsBar stats={stats} live={state.live} period={period} lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null} volumeSurge={volumeSurgeRatio(state.candles, 20)} />
       <OfflineBanner />
       {quickOrder && (
         <QuickOrderWithDepth

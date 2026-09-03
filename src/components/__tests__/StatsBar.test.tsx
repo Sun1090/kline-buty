@@ -102,4 +102,24 @@ describe('StatsBar', () => {
     expect(screen.queryByText('未平仓')).toBeNull()
     expect(screen.queryByText('标记价')).toBeNull()
   })
+
+  it('G5 量能异动：≥3× 显示量能徽标并高亮', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} volumeSurge={5} />)
+    const el = screen.getByTestId('volume-surge')
+    expect(el.textContent).toContain('量能')
+    expect(el.textContent).toContain('5.0×')
+  })
+
+  it('G5 量能异动：<3× 也显示但不高亮（弱色）', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} volumeSurge={1} />)
+    expect(screen.getByTestId('volume-surge').textContent).toContain('1.0×')
+  })
+
+  it('G5 量能异动：null（数据不足）不渲染徽标', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} volumeSurge={null} />)
+    expect(screen.queryByTestId('volume-surge')).toBeNull()
+  })
 })
