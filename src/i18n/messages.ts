@@ -314,6 +314,9 @@ export const zh = {
     marketSpot: '现货',
     volumeSurge: '量能',
     volumeSurgeTitle: '最新成交量 / 前 20 根均量 ≥ 3× 视为量能异动',
+    gapHealthy: '数据完整',
+    gapPartial: '少量缺口',
+    gapDegraded: '数据缺口 {n} 段',
   },
   marketList: {
     title: '行情',
@@ -786,6 +789,9 @@ export const en: Messages = {
     marketSpot: 'Spot',
     volumeSurge: 'Volume',
     volumeSurgeTitle: 'Latest volume vs 20-bar average ≥ 3× flags a volume surge',
+    gapHealthy: 'Data OK',
+    gapPartial: 'Some gaps',
+    gapDegraded: 'Data gaps: {n}',
   },
   marketList: {
     title: 'Markets',
@@ -1256,6 +1262,9 @@ export const ja: Messages = {
     marketSpot: '現物',
     volumeSurge: '出来高',
     volumeSurgeTitle: '最新出来高 ÷ 直近20本平均 ≥ 3倍で出来高急増と判定',
+    gapHealthy: 'データ正常',
+    gapPartial: '軽微な欠落',
+    gapDegraded: 'データ欠落 {n} 箇所',
   },
   marketList: {
     title: '相場',
@@ -1727,6 +1736,9 @@ export const ko: Messages = {
     marketSpot: '현물',
     volumeSurge: '거래량',
     volumeSurgeTitle: '최신 거래량 ÷ 최근 20봉 평균 ≥ 3배면 거래량 급증으로 판정',
+    gapHealthy: '데이터 정상',
+    gapPartial: '약간의 공백',
+    gapDegraded: '데이터 공백 {n}곳',
   },
   marketList: {
     title: '시세',
@@ -2209,6 +2221,9 @@ export const es: Messages = {
     marketSpot: 'Spot',
     volumeSurge: 'Volumen',
     volumeSurgeTitle: 'Volumen actual ÷ media de 20 velas ≥ 3× se marca como pico de volumen',
+    gapHealthy: 'Datos completos',
+    gapPartial: 'Algunas lagunas',
+    gapDegraded: 'Lagunas de datos: {n}',
   },
   marketList: {
     title: 'Mercados',

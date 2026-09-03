@@ -47,6 +47,7 @@ import { normalizeSnapMode, type SnapMode } from './drawings/snap'
 import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { volumeSurgeRatio } from './chart/volumeSurge'
+import { findGaps, gapHealth } from './chart/dataHealth'
 import { parseDrawingsFile, serializeDrawings } from './drawings/io'
 import {
   applyTemplate,
@@ -365,6 +366,8 @@ export function App() {
     return () => window.clearInterval(timer)
   }, [replay?.playing, loadMore])
   const stats = useMarketStats(symbol)
+  // G6 数据健康度：一次性检测缺口段数（StatsBar 徽标复用）
+  const dataGaps = findGaps(candles, period)
   const alertsApi = usePriceAlerts(
     candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,
   )
@@ -1015,7 +1018,15 @@ export function App() {
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <StatsBar stats={stats} live={state.live} period={period} lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null} volumeSurge={volumeSurgeRatio(state.candles, 20)} />
+          <StatsBar
+            stats={stats}
+            live={state.live}
+            period={period}
+            lastCandleTime={state.candles.length ? state.candles[state.candles.length - 1].time : null}
+            volumeSurge={volumeSurgeRatio(state.candles, 20)}
+            gapHealth={gapHealth(dataGaps)}
+            gapCount={dataGaps.length}
+          />
       <OfflineBanner />
       {quickOrder && (
         <QuickOrderWithDepth

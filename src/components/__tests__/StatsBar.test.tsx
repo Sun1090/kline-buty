@@ -122,4 +122,22 @@ describe('StatsBar', () => {
     render(<StatsBar stats={stats} volumeSurge={null} />)
     expect(screen.queryByTestId('volume-surge')).toBeNull()
   })
+
+  it('G6 数据健康度：healthy → 不显示警示徽标', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} gapHealth="healthy" gapCount={0} />)
+    expect(screen.queryByTestId('data-health')).toBeNull()
+  })
+
+  it('G6 数据健康度：partial → 显示少量缺口', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} gapHealth="partial" gapCount={1} />)
+    expect(screen.getByTestId('data-health').textContent).toContain('少量缺口')
+  })
+
+  it('G6 数据健康度：degraded → 显示缺口段数', () => {
+    const stats = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={stats} gapHealth="degraded" gapCount={3} />)
+    expect(screen.getByTestId('data-health').textContent).toContain('数据缺口 3 段')
+  })
 })

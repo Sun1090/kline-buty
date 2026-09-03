@@ -8,6 +8,7 @@ import { localeFor } from '../i18n/messages'
 import { fmtPriceLocale, fmtPricePrecise as fmtPrice, fmtVolumeBM as fmtVolume } from '../utils/format'
 import { formatRemaining } from '../utils/countdown'
 import { isVolumeSurge } from '../chart/volumeSurge'
+import type { GapHealth } from '../chart/dataHealth'
 
 interface StatsBarProps {
   stats: MarketStats
@@ -19,6 +20,10 @@ interface StatsBarProps {
   lastCandleTime?: number | null
   /** G5 量能异动：最新成交量 / 前 N 根均量（null=数据不足） */
   volumeSurge?: number | null
+  /** G6 数据健康度：缺口档位（null=不显示） */
+  gapHealth?: GapHealth | null
+  /** G6 缺口段数（degraded 文案用） */
+  gapCount?: number
 }
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
@@ -30,7 +35,7 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge }: StatsBarProps) {
+export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gapHealth, gapCount }: StatsBarProps) {
   const { t, lang } = useI18n()
   // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
   const locale = localeFor(lang)
@@ -106,6 +111,25 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge }: S
           }}
         >
           {t('stats.volumeSurge')} {volumeSurge.toFixed(1)}×
+        </span>
+      )}
+      {/* G6 数据健康度：缺口档位徽标（无缺口正常显示，有缺口降级警示） */}
+      {gapHealth !== null && gapHealth !== undefined && gapHealth !== 'healthy' && (
+        <span
+          data-testid="data-health"
+          title={t('stats.gapDegraded', { n: gapCount ?? 0 })}
+          style={{
+            fontSize: 11,
+            padding: '1px 6px',
+            borderRadius: 4,
+            flexShrink: 0,
+            fontWeight: 600,
+            color: 'var(--yellow)',
+            background: 'rgba(245,192,47,0.12)',
+            border: '1px solid rgba(245,192,47,0.4)',
+          }}
+        >
+          {gapHealth === 'partial' ? t('stats.gapPartial') : t('stats.gapDegraded', { n: gapCount ?? 0 })}
         </span>
       )}
       {price !== null && (
