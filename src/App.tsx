@@ -377,7 +377,9 @@ export function App() {
     if (!import.meta.env.PROD || !navigator.serviceWorker.controller) return
     navigator.serviceWorker.controller.postMessage({ type: 'alerts', alerts: alertsApi.alerts, lang })
   }, [alertsApi.alerts, lang])
-  const depth = useDepth(symbol)
+  // G12 盘口手动刷新：递增 nonce 触发 useDepth 重连拉取最新快照
+  const [depthReload, setDepthReload] = useState(0)
+  const depth = useDepth(symbol, depthReload)
   const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
 
@@ -1185,7 +1187,7 @@ export function App() {
         >
           {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
           {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
-            onQuickOrder={(price, side) => setQuickOrder({ side, price })} />}
+            onQuickOrder={(price, side) => setQuickOrder({ side, price })} onRefresh={() => setDepthReload((n) => n + 1)} />}
           {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
           {sentimentOpen && <SentimentPanel data={sentiment} />}
         </div>

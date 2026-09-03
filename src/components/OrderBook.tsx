@@ -15,6 +15,8 @@ interface OrderBookProps {
   onMarkPrice?: (price: number) => void
   /** 点击档位的买/卖快捷按钮，打开快速下单（价格预填） */
   onQuickOrder?: (price: number, side: OrderSide) => void
+  /** G12 盘口手动刷新（触发 WS 重连拉取最新快照） */
+  onRefresh?: () => void
 }
 
 const BID = 'var(--up)'
@@ -109,7 +111,7 @@ function Row({
 }
 
 /** 盘口订单簿：卖盘（上）/ 价差 / 买盘（下），含累计量与占比比例条；支持价格聚合精度切换 */
-export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrder }: OrderBookProps) {
+export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrder, onRefresh }: OrderBookProps) {
   const { t } = useI18n()
   const [groupIdx, setGroupIdx] = useState(0)
   const groupSize = GROUP_STEPS[groupIdx]
@@ -150,6 +152,26 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
         >
           {t('orderBook.group')} ×{groupSize === 0 ? 1 : groupSize}
         </button>
+        {onRefresh && (
+          <button
+            data-testid="ob-refresh"
+            onClick={onRefresh}
+            title={t('orderBook.refresh')}
+            aria-label={t('orderBook.refresh')}
+            style={{
+              border: '1px solid #2a2e39',
+              borderRadius: 4,
+              background: 'transparent',
+              color: 'var(--text-faint)',
+              cursor: 'pointer',
+              fontSize: 10,
+              padding: '1px 6px',
+              marginLeft: 4,
+            }}
+          >
+            ↻
+          </button>
+        )}
       </div>
       <div
         style={{

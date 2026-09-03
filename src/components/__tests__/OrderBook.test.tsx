@@ -117,4 +117,18 @@ describe('OrderBook 移动端快捷下单', () => {
     expect(asks.find((a) => Number(a.dataset.price) === 102)?.dataset.maxQty).toBe('true')
     expect(asks.find((a) => Number(a.dataset.price) === 101)?.dataset.maxQty).toBe('false')
   })
+
+  it('G12 盘口刷新：onRefresh 存在时显示 ↻ 按钮，点击触发回调', () => {
+    const onRefresh = vi.fn()
+    render(<OrderBook symbol="BTCUSDT" depth={depth} onRefresh={onRefresh} />)
+    const btn = screen.getByTestId('ob-refresh')
+    expect(btn).toBeDefined()
+    fireEvent.click(btn)
+    expect(onRefresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('G12 盘口刷新：无 onRefresh 时不显示按钮', () => {
+    render(<OrderBook symbol="BTCUSDT" depth={depth} />)
+    expect(screen.queryByTestId('ob-refresh')).toBeNull()
+  })
 })

@@ -19,7 +19,7 @@ const RECONNECT_MS = 2000
  * 直连模式候选链：spot stream 优先，连接失败/超时/首消息超时回退 USDT-M 期货流（流名同构），
  * 解决部分网络环境 spot WS 被阻断导致盘口/深度无数据的问题。
  */
-export function useDepth(symbol: string): DepthSnapshot | null {
+export function useDepth(symbol: string, reloadNonce = 0): DepthSnapshot | null {
   const [snapshot, setSnapshot] = useState<DepthSnapshot | null>(null)
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export function useDepth(symbol: string): DepthSnapshot | null {
       window.clearTimeout(connectTimer)
       window.clearTimeout(firstMsgTimer)
     }
-  }, [symbol])
+  }, [symbol, reloadNonce])
 
   return snapshot
 }
