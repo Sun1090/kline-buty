@@ -378,6 +378,8 @@ export class LightweightChartAdapter implements ChartApi {
   private drawingTool: DrawingTool = 'none'
   private drawingCallbacks: DrawingCallbacks | null = null
   private selectedDrawingId: string | null = null
+  /** C9 悬停高亮：指针当前命中的画线 id（悬停时显示锚点） */
+  private hoveredDrawingId: string | null = null
   /** 双指捏合纵向缩放状态（指距 / 起始价格区间） */
   private pinch: { dist: number; range: IRange<number> } | null = null
   /** 最近一次已震动的缩放因子（跨步进才重复震动） */
@@ -565,6 +567,13 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
+  /** C9 悬停高亮：仅当 hover 画线变化时重绘（避免每次 pointermove 都触发整图重绘） */
+  private setHoveredDrawing(id: string | null) {
+    if (this.hoveredDrawingId === id) return
+    this.hoveredDrawingId = id
+    this.draw()
+  }
+
   setTheme(mode: ThemeMode, presetId: ColorPresetId = 'classic') {
     this.theme = themeFor(mode, presetId)
     this.chart.applyOptions({
@@ -728,14 +737,16 @@ export class LightweightChartAdapter implements ChartApi {
       const renderDraw = latestCandle
         ? followLatestEntry(d, { time: latestCandle.time, price: latestCandle.close })
         : d
+      // C9 悬停高亮：指针命中的画线显示锚点（与选中同视觉，但非拖拽态才生效）
+      const hovered = !this.dragEdit && renderDraw.id === this.hoveredDrawingId
       // C10 单条透明度：drawOne 内有多处提前 return，故用 save/restore 包裹避免 globalAlpha 泄漏
       if (renderDraw.opacity !== undefined && renderDraw.opacity !== 1) {
         ctx.save()
         ctx.globalAlpha = Math.min(1, Math.max(0.15, renderDraw.opacity))
-        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId)
+        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId || hovered)
         ctx.restore()
       } else {
-        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId)
+        this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId || hovered)
       }
     }
     if (this.dragPreview) {
@@ -2389,6 +2400,8 @@ export class LightweightChartAdapter implements ChartApi {
           : null
         if (selected && nearestAnchor(selected, x, y, (t, p) => this.project(t, p)) !== null) {
           this.container.style.cursor = 'grab'
+          // C9 悬停高亮：选中画线的锚点悬停也高亮该画线
+          this.setHoveredDrawing(selected.id)
           return
         }
         const hit = hitTestDrawings(
@@ -2399,6 +2412,8 @@ export class LightweightChartAdapter implements ChartApi {
           (d) => (d.type === 'regchan' ? this.regchanSegments(d) : null),
         )
         this.container.style.cursor = hit ? 'grab' : ''
+        // C9 悬停高亮：命中画线高亮、未命中清除
+        this.setHoveredDrawing(hit)
         return
       }
       this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
@@ -2896,6 +2911,11 @@ export class LightweightChartAdapter implements ChartApi {
   private onPointerLeave = () => {
     this.dragKey = null
     this.hoverKey = null
+    // C9 悬停高亮：指针离开清空高亮
+    if (this.hoveredDrawingId !== null) {
+      this.hoveredDrawingId = null
+      this.draw()
+    }
     // 多锚点工具手势间隙保留进度预览；触屏 pointerup 后常伴随 pointerleave，
     // 若在这里清空，下一次实时重绘会把已确认锚点从 overlay 上擦掉。
     if (!this.drawingDown && !this.dragEdit && this.drawingPoints.length === 0) {
