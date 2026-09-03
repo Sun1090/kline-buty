@@ -38,6 +38,8 @@ import {
   TEXT_FONT_SIZE_MIN,
   toggleDrawingHidden,
   toggleDrawingLocked,
+  toggleGroupHidden,
+  toggleGroupLocked,
   type Drawing,
   type DrawingTool,
 } from './drawings/logic'
@@ -508,6 +510,13 @@ export function App() {
   const toggleLocked = (id: string) => {
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? toggleDrawingLocked(d) : d)))
   }
+  // C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组）
+  const setGroupHidden = (group: string, hidden: boolean) => {
+    mutateDrawings((prev) => toggleGroupHidden(prev, group, hidden))
+  }
+  const setGroupLocked = (group: string, locked: boolean) => {
+    mutateDrawings((prev) => toggleGroupLocked(prev, group, locked))
+  }
   // C10 单条透明度：0.15–1 范围调节（可撤销）
   const setDrawingOpacity = (id: string, opacity: number) => {
     const v = Math.min(1, Math.max(0.15, opacity))
@@ -782,6 +791,8 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
+          onGroupHidden={setGroupHidden}
+          onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
@@ -884,6 +895,8 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
+          onGroupHidden={setGroupHidden}
+          onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}

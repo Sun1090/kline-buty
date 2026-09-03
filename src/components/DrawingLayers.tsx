@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { Drawing } from '../drawings/logic'
+import { groupDrawings, type Drawing } from '../drawings/logic'
 import type { DrawingTemplate } from '../drawings/templates'
 import { useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
@@ -16,6 +16,9 @@ interface DrawingLayersProps {
   onSetOpacity: (id: string, opacity: number) => void
   /** C15 position 工具跟随最新价开关 */
   onSetFollowLatest: (id: string, followLatest: boolean) => void
+  /** C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组） */
+  onGroupHidden: (group: string, hidden: boolean) => void
+  onGroupLocked: (group: string, locked: boolean) => void
   onDelete: (id: string) => void
   onClearAll: () => void
   /** 批量显示/隐藏全部画线 */
@@ -66,6 +69,8 @@ export function DrawingLayers({
   onToggleLocked,
   onSetOpacity,
   onSetFollowLatest,
+  onGroupHidden,
+  onGroupLocked,
   onDelete,
   onClearAll,
   onSetAllHidden,
@@ -90,6 +95,15 @@ export function DrawingLayers({
   // 模板保存输入（C6）：回车或按钮提交
   const [templateName, setTemplateName] = useState('')
   const [templateSavedFlash, setTemplateSavedFlash] = useState(false)
+  // C4 分组折叠：低优先级组名集合（折叠时该组画线隐藏）
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const toggleGroupCollapsed = (group: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(group)) next.delete(group)
+      else next.add(group)
+      return next
+    })
   return (
     <div
       data-testid="drawing-layers"
@@ -327,76 +341,133 @@ export function DrawingLayers({
           aria-label={t('layers.title')}
           style={{ maxHeight: 'min(40vh, 320px)', overflowY: 'auto', overscrollBehavior: 'contain' }}
         >
-          {drawings.map((d) => {
-            const opt = DRAWING_TOOLS.find((o) => o.value === d.type)
-            const label = opt ? optionLabel(opt, t) : d.type
-            const selected = d.id === selectedId
+          {Object.entries(groupDrawings(drawings)).map(([group, items]) => {
+            const collapsed = collapsedGroups.has(group)
+            const allHidden = items.every((d) => d.hidden)
+            const allLocked = items.every((d) => d.locked)
+            const label = group === '' ? t('layers.ungrouped') : group
             return (
-              <div
-                key={d.id}
-                data-testid="drawing-layer-row"
-                role="option"
-                aria-selected={selected}
-                data-selected={selected}
-                data-type={d.type}
-                onClick={() => onSelect(d.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '5px 6px',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  marginBottom: 2,
-                  background: selected ? 'rgba(41,98,255,0.18)' : 'transparent',
-                  border: selected ? '1px solid var(--accent)' : '1px solid transparent',
-                }}
-              >
-                <span
+              <div key={group || '__ungrouped'}>
+                {/* C4 组头：折叠 + 组名 + 计数 + 组级显隐/锁定 */}
+                <div
+                  data-testid="drawing-group-header"
+                  data-group={group}
                   style={{
-                    flex: 1,
-                    fontSize: 12,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    color: selected ? 'var(--accent)' : 'var(--text-dim)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '3px 6px',
+                    marginTop: 4,
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.06)',
+                    fontSize: 11,
+                    color: 'var(--text-dim)',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => toggleGroupCollapsed(group)}
                 >
-                  {label}
-                </span>
-                {rowBtn(
-                  'drawing-layer-eye',
-                  d.hidden ? t('layers.show') : t('layers.hide'),
-                  !d.hidden,
-                  (e) => {
-                    e.stopPropagation()
-                    onToggleHidden(d.id)
-                  },
-                  d.hidden ? '🚫' : '👁',
-                  d.hidden ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.10)',
-                )}
-                {rowBtn(
-                  'drawing-layer-lock',
-                  d.locked ? t('layers.unlock') : t('layers.lock'),
-                  !!d.locked,
-                  (e) => {
-                    e.stopPropagation()
-                    onToggleLocked(d.id)
-                  },
-                  d.locked ? '🔒' : '🔓',
-                  d.locked ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.10)',
-                )}
-                {rowBtn(
-                  'drawing-layer-delete',
-                  t('common.delete'),
-                  false,
-                  (e) => {
-                    e.stopPropagation()
-                    onDelete(d.id)
-                  },
-                  '🗑',
-                  'rgba(239,83,80,0.12)',
-                )}
+                  <span style={{ flexShrink: 0, width: 14, textAlign: 'center' }}>{collapsed ? '▶' : '▼'}</span>
+                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {label} ({items.length})
+                  </span>
+                  {rowBtn(
+                    `drawing-group-eye-${group || 'ungrouped'}`,
+                    allHidden ? t('layers.show') : t('layers.hide'),
+                    !allHidden,
+                    (e) => {
+                      e.stopPropagation()
+                      onGroupHidden(group, !allHidden)
+                    },
+                    allHidden ? '🚫' : '👁',
+                    allHidden ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.10)',
+                  )}
+                  {rowBtn(
+                    `drawing-group-lock-${group || 'ungrouped'}`,
+                    allLocked ? t('layers.unlock') : t('layers.lock'),
+                    allLocked,
+                    (e) => {
+                      e.stopPropagation()
+                      onGroupLocked(group, !allLocked)
+                    },
+                    allLocked ? '🔒' : '🔓',
+                    allLocked ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.10)',
+                  )}
+                </div>
+                {/* C4 组折叠：折叠时组内画线不渲染（数据保留） */}
+                {!collapsed &&
+                  items.map((d) => {
+                    const opt = DRAWING_TOOLS.find((o) => o.value === d.type)
+                    const itemLabel = opt ? optionLabel(opt, t) : d.type
+                    const selected = d.id === selectedId
+                    return (
+                      <div
+                        key={d.id}
+                        data-testid="drawing-layer-row"
+                        role="option"
+                        aria-selected={selected}
+                        data-selected={selected}
+                        data-type={d.type}
+                        onClick={() => onSelect(d.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '5px 6px',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          marginBottom: 2,
+                          background: selected ? 'rgba(41,98,255,0.18)' : 'transparent',
+                          border: selected ? '1px solid var(--accent)' : '1px solid transparent',
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: 1,
+                            fontSize: 12,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            color: selected ? 'var(--accent)' : 'var(--text-dim)',
+                          }}
+                        >
+                          {itemLabel}
+                        </span>
+                        {rowBtn(
+                          'drawing-layer-eye',
+                          d.hidden ? t('layers.show') : t('layers.hide'),
+                          !d.hidden,
+                          (e) => {
+                            e.stopPropagation()
+                            onToggleHidden(d.id)
+                          },
+                          d.hidden ? '🚫' : '👁',
+                          d.hidden ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.10)',
+                        )}
+                        {rowBtn(
+                          'drawing-layer-lock',
+                          d.locked ? t('layers.unlock') : t('layers.lock'),
+                          !!d.locked,
+                          (e) => {
+                            e.stopPropagation()
+                            onToggleLocked(d.id)
+                          },
+                          d.locked ? '🔒' : '🔓',
+                          d.locked ? 'rgba(41,98,255,0.25)' : 'rgba(255,255,255,0.10)',
+                        )}
+                        {rowBtn(
+                          'drawing-layer-delete',
+                          t('common.delete'),
+                          false,
+                          (e) => {
+                            e.stopPropagation()
+                            onDelete(d.id)
+                          },
+                          '🗑',
+                          'rgba(239,83,80,0.12)',
+                        )}
+                      </div>
+                    )
+                  })}
               </div>
             )
           })}

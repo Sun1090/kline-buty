@@ -66,6 +66,9 @@ export interface MobileHeaderProps {
   onSetDrawingOpacity: (id: string, opacity: number) => void
   /** C15 position 工具跟随最新价开关 */
   onSetDrawingFollowLatest: (id: string, followLatest: boolean) => void
+  /** C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组） */
+  onGroupHidden: (group: string, hidden: boolean) => void
+  onGroupLocked: (group: string, locked: boolean) => void
   onDeleteDrawing: (id: string) => void
   onClearDrawings: () => void
   /** 画线撤销/重做（会话内历史栈） */
@@ -574,6 +577,8 @@ export function MobileHeader(props: MobileHeaderProps) {
               onToggleLocked={props.onToggleDrawingLocked}
               onSetOpacity={props.onSetDrawingOpacity}
               onSetFollowLatest={props.onSetDrawingFollowLatest}
+              onGroupHidden={props.onGroupHidden}
+              onGroupLocked={props.onGroupLocked}
               onDelete={props.onDeleteDrawing}
               onClearAll={props.onClearDrawings}
             onSetAllHidden={props.onSetAllDrawingsHidden}

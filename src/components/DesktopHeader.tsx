@@ -474,6 +474,8 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             onToggleLocked={props.onToggleDrawingLocked}
             onSetOpacity={props.onSetDrawingOpacity}
             onSetFollowLatest={props.onSetDrawingFollowLatest}
+            onGroupHidden={props.onGroupHidden}
+            onGroupLocked={props.onGroupLocked}
             onDelete={props.onDeleteDrawing}
             onClearAll={props.onClearDrawings}
             onSetAllHidden={props.onSetAllDrawingsHidden}
