@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK } from '../format'
+import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK, fmtAxisPrice } from '../format'
 
 describe('fmtPricePrecise（高精度：十字光标/信息条）', () => {
   it('≥1000 两位小数', () => {
@@ -73,5 +73,29 @@ describe('fmtPriceLocale（E8 千分位国际化）', () => {
   })
   it('整数无小数部分不强制补零', () => {
     expect(fmtPriceLocale(5000, 'en-US')).toBe('5,000')
+  })
+})
+
+describe('fmtAxisPrice（G13 坐标轴单位缩写）', () => {
+  it('≥1e9 → B', () => {
+    expect(fmtAxisPrice(1_234_567_890)).toBe('1.23B')
+  })
+  it('≥1e6 → M', () => {
+    expect(fmtAxisPrice(1_500_000)).toBe('1.50M')
+  })
+  it('≥1e3 → k（一位小数）', () => {
+    expect(fmtAxisPrice(65_000)).toBe('65.0k')
+    expect(fmtAxisPrice(999_500)).toBe('999.5k')
+  })
+  it('<1e3 ≥1 → 两位小数', () => {
+    expect(fmtAxisPrice(650)).toBe('650.00')
+    expect(fmtAxisPrice(12.5)).toBe('12.50')
+  })
+  it('<1 → 四位小数', () => {
+    expect(fmtAxisPrice(0.123456)).toBe('0.1235')
+  })
+  it('负数按绝对值判断量级', () => {
+    expect(fmtAxisPrice(-1_234_567_890)).toBe('-1.23B')
+    expect(fmtAxisPrice(-65_000)).toBe('-65.0k')
   })
 })
