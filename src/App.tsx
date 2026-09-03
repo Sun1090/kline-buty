@@ -346,7 +346,7 @@ export function App() {
       void document.documentElement.requestFullscreen().catch(() => {})
     }
   }
-  const { state, hasMore, loadMore } = useKlineData(symbol, period)
+  const { state, hasMore, loadMore, retry } = useKlineData(symbol, period)
   const { candles, status, error } = state
 
   // 回放播放器：每 500ms 按速度推进；接近开头时自动加载更早历史
@@ -1100,6 +1100,7 @@ export function App() {
             period={period}
             candles={candles}
             status={status}
+            onRetry={retry}
             themeMode={themeMode}
             colorPreset={colorPreset}
             showWatermark={showWatermark}

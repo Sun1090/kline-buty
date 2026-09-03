@@ -42,6 +42,8 @@ export interface KlineDataState {
 export function useKlineData(symbol: string, period: Period) {
   const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading', live: null })
   const [hasMore, setHasMore] = useState(true)
+  /** E14 错误重试：重试计数，作为 effect 依赖触发整段重载 */
+  const [retryNonce, setRetryNonce] = useState(0)
   const aliveRef = useRef(true)
   const storeRef = useRef<MarketStore | null>(null)
   const loadingMoreRef = useRef(false)
@@ -139,7 +141,10 @@ export function useKlineData(symbol: string, period: Period) {
       ws?.close()
       storeRef.current = null
     }
-  }, [symbol, period])
+  }, [symbol, period, retryNonce])
+
+  /** E14 错误重试：递增计数，触发整段数据重载 */
+  const retry = useCallback(() => setRetryNonce((n) => n + 1), [])
 
   /** 向左分页：以最早一根的 openTime 为终点，往前取一页 */
   const loadMore = useCallback(async () => {
@@ -163,5 +168,5 @@ export function useKlineData(symbol: string, period: Period) {
     }
   }, [symbol, period])
 
-  return { state, hasMore, loadMore }
+  return { state, hasMore, loadMore, retry }
 }
