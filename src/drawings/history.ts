@@ -8,7 +8,8 @@
  * 采用「新状态覆盖容量内最旧项」策略（Ring 语义，但保持不可变数组结构）。
  */
 
-/** 单步历史容量上限（含 undo 栈；redo 栈受 undo 栈规模约束） */
+/** 单步历史容量上限（含 undo 栈；redo 栈受 undo 栈规模约束）
+ * I12：pushSnapshot 支持可选 limit 覆盖（App 层可配撤销深度，默认 MAX_HISTORY）。 */
 export const MAX_HISTORY = 60
 
 export interface DrawingHistory {
@@ -33,10 +34,12 @@ export function canRedo(h: DrawingHistory): boolean {
 /**
  * 记录一次变更：将「变更前快照」压入 undo 栈，并清空 redo 栈。
  * 返回新历史对象（不可变）；容量满时丢弃最旧快照。
+ * I12：limit 可覆盖全局上限（默认 MAX_HISTORY），供用户配置撤销深度。
  */
-export function pushSnapshot<T>(h: DrawingHistory, before: T[]): DrawingHistory {
+export function pushSnapshot<T>(h: DrawingHistory, before: T[], limit = MAX_HISTORY): DrawingHistory {
   const past = [...h.past, before]
-  if (past.length > MAX_HISTORY) past.shift()
+  const cap = Math.max(1, Math.floor(limit))
+  if (past.length > cap) past.splice(0, past.length - cap)
   return { past, future: [] }
 }
 

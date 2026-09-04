@@ -18,6 +18,9 @@ interface DrawingLayersProps {
   onSetFollowLatest: (id: string, followLatest: boolean) => void
   /** I15 画线重命名（name 传 '' 清除） */
   onRename: (id: string, name: string) => void
+  /** I12 撤销深度（可配；1 = 只保留一步） */
+  undoDepth?: number
+  onUndoDepthChange?: (n: number) => void
   /** C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组） */
   onGroupHidden: (group: string, hidden: boolean) => void
   onGroupLocked: (group: string, locked: boolean) => void
@@ -92,6 +95,8 @@ export function DrawingLayers({
   onDeleteTemplate,
   onBack,
   onRename,
+  undoDepth,
+  onUndoDepthChange,
 }: DrawingLayersProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -197,6 +202,34 @@ export function DrawingLayers({
         >
           ↪
         </button>
+        {/* I12 撤销深度：可配，1 = 只保留一步 */}
+        <label
+          data-testid="drawing-undo-depth"
+          title={t('layers.undoDepthTitle')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--text-faint)', flex: '0 0 auto' }}
+        >
+          {t('layers.undoDepth')}
+          <input
+            type="number"
+            min={1}
+            max={200}
+            value={undoDepth ?? 60}
+            onChange={(e) => {
+              const n = Number(e.target.value)
+              if (Number.isFinite(n) && n >= 1) onUndoDepthChange?.(Math.min(200, Math.floor(n)))
+            }}
+            aria-label={t('layers.undoDepth')}
+            style={{
+              width: 38,
+              padding: '1px 3px',
+              fontSize: 10,
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+        </label>
         {/* C7 画线复制/粘贴（跨品种） */}
         <button
           data-testid="drawing-layer-copy"

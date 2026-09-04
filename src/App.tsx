@@ -146,6 +146,11 @@ export function App() {
   const [drawingColor, setDrawingColor] = usePersistedState<string>('drawingColor', '')
   /** 画线模板（C6）：命名保存常用组合，跨品种一键套用；持久化，按名索引 */
   const [drawingTemplates, setDrawingTemplates] = usePersistedState<Record<string, DrawingTemplate>>('drawingTemplates', {})
+  /** I12 画线撤销深度（可配，默认 60；1 = 只保留一步） */
+  const [undoDepth, setUndoDepth] = usePersistedState<number>('drawingUndoDepth', 60)
+  // I12 ref 镜像：mutateDrawings 的 useCallback 只依赖 [symbol]，深度变更经 ref 读取避免重绑
+  const undoDepthRef = useRef(undoDepth)
+  undoDepthRef.current = undoDepth
   const cancelDrawingRef = useRef<(() => void) | null>(null)
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
@@ -395,7 +400,7 @@ export function App() {
     // 快照读自镜像 ref，确保异步回调（导入）场景也拿到「变更前」最新值
     const before = drawingsRef.current[symbol] ?? []
     const hist = drawingHistoryRef.current[symbol] ?? createHistory()
-    drawingHistoryRef.current[symbol] = pushSnapshot(hist, before)
+    drawingHistoryRef.current[symbol] = pushSnapshot(hist, before, undoDepthRef.current)
     setDrawingsBySymbol((prev) => ({ ...prev, [symbol]: mutator(prev[symbol] ?? []) }))
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setter 引用稳定，加入会破坏回调稳定性
   }, [symbol])
@@ -807,6 +812,8 @@ export function App() {
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
           onRenameDrawing={renameDrawing}
+          undoDepth={undoDepth}
+          onUndoDepthChange={setUndoDepth}
           onGroupHidden={setGroupHidden}
           onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}
@@ -912,6 +919,8 @@ export function App() {
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
           onRenameDrawing={renameDrawing}
+          undoDepth={undoDepth}
+          onUndoDepthChange={setUndoDepth}
           onGroupHidden={setGroupHidden}
           onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}

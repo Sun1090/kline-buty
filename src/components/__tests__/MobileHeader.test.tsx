@@ -59,6 +59,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onSetDrawingOpacity: vi.fn(),
     onSetDrawingFollowLatest: vi.fn(),
     onRenameDrawing: vi.fn(),
+    undoDepth: 60,
+    onUndoDepthChange: vi.fn(),
     onGroupHidden: vi.fn(),
     onGroupLocked: vi.fn(),
     onDeleteDrawing: vi.fn(),
