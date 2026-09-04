@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { DrawingThumb, thumbnailPath } from '../thumbnail'
+import { DrawingThumb } from '../thumbnail'
+import { thumbnailPath } from '../thumbnailCore'
 import { createDrawing } from '../logic'
 
 describe('thumbnailPath（I6 画线缩略图归一化）', () => {

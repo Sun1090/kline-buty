@@ -143,7 +143,6 @@ export function useSubIndicatorWorker(
     return () => {
       alive = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 以缓存 key 为依赖，避免引用抖动
   }, [key, kind, candles, params])
 
   // 未触发 effect（首帧大窗口）时同步兜底，避免空白
