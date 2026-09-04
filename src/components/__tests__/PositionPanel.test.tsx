@@ -80,6 +80,32 @@ describe('PositionPanel', () => {
     expect(screen.queryByTestId('position-close-all')).toBeNull()
   })
 
+  it('J2 其他品种持仓：显示一览，切品种与全平触发回调', () => {
+    const onChange = vi.fn()
+    const onSwitchSymbol = vi.fn()
+    const onSettleSymbol = vi.fn()
+    render(
+      <PositionPanel
+        positions={EMPTY_POSITIONS}
+        currentPrice={105}
+        onChange={onChange}
+        otherSymbols={{ ETHUSDT: { long: longPosition, short: null } }}
+        onSwitchSymbol={onSwitchSymbol}
+        onSettleSymbol={onSettleSymbol}
+      />,
+    )
+    expect(screen.getByTestId('position-other-ETHUSDT')).toBeDefined()
+    fireEvent.click(screen.getByText(/ETHUSDT/))
+    expect(onSwitchSymbol).toHaveBeenCalledWith('ETHUSDT')
+    fireEvent.click(screen.getByLabelText('全部平仓 ETHUSDT'))
+    expect(onSettleSymbol).toHaveBeenCalledWith('ETHUSDT')
+  })
+
+  it('J2 无其他品种时不显示一览区', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={105} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-other-symbols')).toBeNull()
+  })
+
   it('无持仓 → 显示空态提示', () => {
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={100} onChange={vi.fn()} />)
     expect(screen.getByText('暂无持仓')).toBeDefined()

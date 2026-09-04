@@ -168,12 +168,22 @@ export function App() {
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
-  const [position, setPosition] = useState<Positions>(EMPTY_POSITIONS)
+  // J2 多品种持仓：按 symbol 隔离，切换品种保留各自多空持仓
+  const [positionsBySymbol, setPositionsBySymbol] = usePersistedState<Record<string, Positions>>('positionsBySymbol', {})
+  const position: Positions = positionsBySymbol[symbol] ?? EMPTY_POSITIONS
+  const setPosition = (p: Positions | ((prev: Positions) => Positions)) => {
+    setPositionsBySymbol((prev) => {
+      const base = prev[symbol] ?? EMPTY_POSITIONS
+      const next = typeof p === 'function' ? (p as (x: Positions) => Positions)(base) : p
+      return { ...prev, [symbol]: next }
+    })
+  }
   const [positionOpen, setPositionOpen] = useState(false)
   const [tradesOpen, setTradesOpen] = useState(false)
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
-  const prevPositionRef = useRef<Positions>(EMPTY_POSITIONS)
+  // J2 每品种上次结算快照：切换品种不互相误结算
+  const prevPositionRef = useRef<Record<string, Positions>>({})
   // T27：图表右键菜单动作（提醒/清空画线）
   useEffect(() => {
     const onRequestAlert = (e: Event) => {
@@ -193,9 +203,9 @@ export function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- alertsApi/candles 取最新渲染闭包即可，事件监听只挂一次
   }, [])
-  // J1 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓
+  // J1/J2 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓；按 symbol 隔离
   useEffect(() => {
-    const prev = prevPositionRef.current
+    const prev = prevPositionRef.current[symbol] ?? EMPTY_POSITIONS
     const price = candles[candles.length - 1]?.close ?? null
     if (price != null) {
       // TP/SL 触发：任一方向最新价触达 → 独立结算该方向并清空槽位
@@ -218,9 +228,9 @@ export function App() {
         }
       }
     }
-    prevPositionRef.current = position
+    prevPositionRef.current[symbol] = position
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在 position 翻转时结算；paper/candles 变化不应重触发
-  }, [position])
+  }, [position, symbol])
   // E4 面板折叠/展开记忆：市场数据面板状态持久化（刷新后恢复上次开合）
   const [alertsOpen, setAlertsOpen] = usePersistedState('alertsOpen', false)
   const [depthOpen, setDepthOpen] = usePersistedState('depthOpen', false)
@@ -1123,6 +1133,12 @@ export function App() {
           positions={position}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
           onChange={setPosition}
+          otherSymbols={Object.fromEntries(Object.entries(positionsBySymbol).filter(([s]) => s !== symbol))}
+          onSwitchSymbol={(s) => {
+            setSymbol(s)
+            setPositionOpen(true)
+          }}
+          onSettleSymbol={(s) => setPositionsBySymbol((prev) => ({ ...prev, [s]: EMPTY_POSITIONS }))}
         />
       )}
       {alertsOpen && (

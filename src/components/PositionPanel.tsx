@@ -10,6 +10,12 @@ interface PositionPanelProps {
   currentPrice: number | null
   /** 开仓变更回调（传入新的 positions 容器） */
   onChange: (p: Positions) => void
+  /** J2 其他品种持仓一览（key=symbol；不含当前品种） */
+  otherSymbols?: Record<string, Positions>
+  /** J2 切到某品种查看/平仓 */
+  onSwitchSymbol?: (symbol: string) => void
+  /** J2 平掉某品种全部持仓（含其多空） */
+  onSettleSymbol?: (symbol: string) => void
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -30,7 +36,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, onChange }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -184,6 +190,39 @@ export function PositionPanel({ positions, currentPrice, onChange }: PositionPan
           </button>
         )}
       </div>
+
+      {/* J2 其他品种持仓一览：切品种查看或一键全平 */}
+      {otherSymbols && Object.keys(otherSymbols).length > 0 && (
+        <div
+          data-testid="position-other-symbols"
+          style={{ marginBottom: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}
+        >
+          <div style={{ color: 'var(--text-faint)', fontSize: 11, marginBottom: 4 }}>{t('position.otherSymbols')}</div>
+          {Object.entries(otherSymbols).map(([sym, ps]) => {
+            if (!ps.long && !ps.short) return null
+            const total = (ps.long?.quantity ?? 0) + (ps.short?.quantity ?? 0)
+            return (
+              <div key={sym} data-testid={`position-other-${sym}`} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <button
+                  onClick={() => onSwitchSymbol?.(sym)}
+                  title={t('position.switch')}
+                  style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: 11, padding: 0 }}
+                >
+                  <b>{sym}</b> · {total}
+                </button>
+                <button
+                  onClick={() => onSettleSymbol?.(sym)}
+                  title={t('position.closeAll')}
+                  aria-label={`${t('position.closeAll')} ${sym}`}
+                  style={{ flex: '0 0 auto', padding: '2px 8px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'rgba(239,83,80,0.15)', color: 'var(--down)' }}
+                >
+                  🗑
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         {(['long', 'short'] as const).map((d) => (
