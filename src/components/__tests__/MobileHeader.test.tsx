@@ -18,6 +18,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onDrawingTool: vi.fn(),
     onDeleteSelectedDrawing: vi.fn(),
     onCycleLayout: vi.fn(),
+    compareSymbol: null,
+    onCycleCompare: vi.fn(),
     onToggleTheme: vi.fn(),
     onColorPreset: vi.fn(),
     onTogglePosition: vi.fn(),

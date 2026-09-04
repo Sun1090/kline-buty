@@ -671,6 +671,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               {layoutLabel}
             </PanelButton>
             <PanelButton
+              onClick={props.onCycleCompare}
+              title={t('layout.compareTitle')}
+              ariaLabel={`${t('layout.compareTitle')}: ${props.compareSymbol ?? t('layout.compareOff')}`}
+              active={props.compareSymbol !== null}
+              testId="compare-toggle"
+            >
+              {t('layout.compare')}
+            </PanelButton>
+            <PanelButton
               onClick={props.onToggleScale}
               title={t('scale.title')}
               ariaLabel={`${t('scale.title')}: ${props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}`}

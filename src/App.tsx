@@ -126,6 +126,17 @@ export function App() {
   // H11 指标线颜色自定义：line id → 覆盖色
   const [lineColors, setLineColors] = usePersistedState<Record<string, string>>('lineColors', {})
   const [layout, setLayout] = usePersistedState<'single' | 'pair' | 'quad'>('layout', 'single')
+  // L3 对比模式：单图叠加比较品种（null=关闭；pair 布局下不生效）
+  const [compareSymbol, setCompareSymbol] = usePersistedState<string | null>('compareSymbol', null)
+  // L3 循环切换比较品种：null → 各候选 → null
+  const CYCLE_COMPARE = ['ETHUSDT', 'SOLUSDT', 'BNBUSDT']
+  const cycleCompare = () => {
+    setCompareSymbol((cur) => {
+      if (cur === null) return CYCLE_COMPARE[0]
+      const i = CYCLE_COMPARE.indexOf(cur)
+      return i >= 0 && i < CYCLE_COMPARE.length - 1 ? CYCLE_COMPARE[i + 1] : null
+    })
+  }
   const [themeSetting, setThemeSetting] = usePersistedState<ThemeMode | 'auto'>('theme', 'dark')
 
   // T5：自动档跟随系统 prefers-color-scheme（设置持久化为 auto/dark/light，图表用派生的有效模式）
@@ -373,6 +384,8 @@ export function App() {
   }
   const { state, hasMore, loadMore, retry } = useKlineData(symbol, period)
   const { candles, status, error } = state
+  // L3 对比模式：叠加品种 K 线（仅单图布局使用）
+  const compareData = useKlineData(compareSymbol ?? symbol, period)
 
   // 回放播放器：每 500ms 按速度推进；接近开头时自动加载更早历史
   useEffect(() => {
@@ -890,6 +903,8 @@ export function App() {
           onPasteDrawing={pasteClipboardDrawing}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
+          compareSymbol={compareSymbol}
+          onCycleCompare={cycleCompare}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
@@ -1003,6 +1018,8 @@ export function App() {
           onPasteDrawing={pasteClipboardDrawing}
           layout={layout}
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
+          compareSymbol={compareSymbol}
+          onCycleCompare={cycleCompare}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
@@ -1243,6 +1260,7 @@ export function App() {
             positionLines={position.long ?? position.short}
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
+            compareSeries={compareSymbol && layout === 'single' ? { symbol: compareSymbol, candles: compareData.state.candles } : null}
             onPositionDrag={(key, price) =>
               setPosition((prev) => {
                 const target = prev.long ?? prev.short

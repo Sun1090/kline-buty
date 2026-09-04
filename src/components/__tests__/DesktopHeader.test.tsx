@@ -18,6 +18,8 @@ function setup(overrides: Record<string, unknown> = {}) {
     onDrawingTool: vi.fn(),
     onDeleteSelectedDrawing: vi.fn(),
     onCycleLayout: vi.fn(),
+    compareSymbol: null,
+    onCycleCompare: vi.fn(),
     onToggleTheme: vi.fn(),
     onColorPreset: vi.fn(),
     onTogglePosition: vi.fn(),
@@ -172,6 +174,15 @@ describe('DesktopHeader（桌面顶栏）', () => {
     expect(btn.getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(btn)
     expect(h.onToggleCoordBadge).toHaveBeenCalledTimes(1)
+  })
+
+  it('L3 对比模式开关：点击触发 onCycleCompare + aria-pressed 联动', () => {
+    const h = setup({ compareSymbol: 'ETHUSDT' as string | null })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const btn = screen.getByTestId('compare-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('true') // compareSymbol 非 null → 激活
+    fireEvent.click(btn)
+    expect(h.onCycleCompare).toHaveBeenCalledTimes(1)
   })
 
   it('无弹层打开时 Esc 不拦截（App 全局 Esc 正常生效）', () => {
