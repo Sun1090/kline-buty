@@ -21,6 +21,8 @@ interface ChartPairProps {
   coordBadge?: boolean
   /** I13 画线全局透明度 */
   drawingGlobalOpacity?: number
+  /** L5 动态字号 */
+  fontScale?: number
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -36,7 +38,7 @@ interface ChartPairProps {
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, fontScale = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
@@ -80,7 +82,7 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleM
     setCrossA(t)
   }
 
-  const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, coordBadge, drawingGlobalOpacity, mainIndicator, subIndicator, indicatorParams, lineColors, replay: null, themeMode, colorPreset, showWatermark }
+  const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, coordBadge, drawingGlobalOpacity, fontScale, mainIndicator, subIndicator, indicatorParams, lineColors, replay: null, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

@@ -126,6 +126,9 @@ export interface MobileHeaderProps {
   /** L3 对比模式：当前叠加品种（null=关闭）与循环切换 */
   compareSymbol: string | null
   onCycleCompare: () => void
+  /** L5 动态字号：当前系数与循环切换 */
+  fontScale: number
+  onCycleFontScale: () => void
   themeMode: ThemeMode
   onToggleTheme: () => void
   colorPreset: ColorPresetId

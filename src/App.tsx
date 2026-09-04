@@ -137,6 +137,14 @@ export function App() {
       return i >= 0 && i < CYCLE_COMPARE.length - 1 ? CYCLE_COMPARE[i + 1] : null
     })
   }
+  // L5 动态字号：图表内系统字号系数（0.85–1.2，步进 0.05）
+  const [fontScale, setFontScale] = usePersistedState<number>('fontScale', 1)
+  const FONT_SCALES = [0.85, 1, 1.15, 1.2]
+  const cycleFontScale = () =>
+    setFontScale((cur) => {
+      const i = FONT_SCALES.indexOf(cur)
+      return FONT_SCALES[i >= 0 && i < FONT_SCALES.length - 1 ? i + 1 : 0]
+    })
   const [themeSetting, setThemeSetting] = usePersistedState<ThemeMode | 'auto'>('theme', 'dark')
 
   // T5：自动档跟随系统 prefers-color-scheme（设置持久化为 auto/dark/light，图表用派生的有效模式）
@@ -905,6 +913,8 @@ export function App() {
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           compareSymbol={compareSymbol}
           onCycleCompare={cycleCompare}
+          fontScale={fontScale}
+          onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
@@ -1020,6 +1030,8 @@ export function App() {
           onCycleLayout={() => setLayout(layout === 'single' ? 'pair' : layout === 'pair' ? 'quad' : 'single')}
           compareSymbol={compareSymbol}
           onCycleCompare={cycleCompare}
+          fontScale={fontScale}
+          onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
@@ -1206,6 +1218,7 @@ export function App() {
           notesHidden={notesHidden}
           coordBadge={coordBadge}
           drawingGlobalOpacity={drawingGlobalOpacity}
+          fontScale={fontScale}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -1227,6 +1240,7 @@ export function App() {
           notesHidden={notesHidden}
           coordBadge={coordBadge}
           drawingGlobalOpacity={drawingGlobalOpacity}
+          fontScale={fontScale}
           periods={quadPeriods ?? undefined}
           onCellPeriod={(i, p) => setQuadPeriods((prev) => { const next = (prev ?? [period, period, period, period]) as [Period, Period, Period, Period]; next[i] = p; return [...next] })}
             mainIndicator={mainIndicator}
@@ -1250,6 +1264,7 @@ export function App() {
           notesHidden={notesHidden}
           coordBadge={coordBadge}
           drawingGlobalOpacity={drawingGlobalOpacity}
+          fontScale={fontScale}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
