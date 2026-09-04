@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { groupDrawings, summarizeDrawings, type Drawing } from '../drawings/logic'
 import type { DrawingTemplate } from '../drawings/templates'
+import { DrawingThumb } from '../drawings/thumbnail'
 import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
@@ -524,6 +525,8 @@ export function DrawingLayers({
                           border: selected ? '1px solid var(--accent)' : '1px solid transparent',
                         }}
                       >
+                        {/* I6 画线缩略图：图层行内小预览（形状/颜色识别） */}
+                        <DrawingThumb drawing={d} />
                         {renamingId === d.id ? (
                           <input
                             data-testid="drawing-rename-input"
