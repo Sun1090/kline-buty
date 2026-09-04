@@ -33,6 +33,7 @@ import { calcVortex } from '../indicators/vortex'
 import { lastHistValue, lastValuesOfLines } from '../indicators/lastValues'
 import type { IndicatorParams } from '../indicators/params'
 import type { SubIndicatorData } from '../chart/adapter'
+import { useSubIndicatorWorker } from '../hooks/useSubIndicatorWorker'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
@@ -197,6 +198,45 @@ export function ChartView({
       to: z.to,
       color: withAlpha(z.from >= 50 ? DOWN : UP, 0.06),
     }))
+  /** H13 阈值线标记（worker 短路时补齐）：与各分支 markers 一致 */
+  const lineMarkersFor = (kind: SubIndicatorKind): { price: number; color: string }[] => {
+    switch (kind) {
+      case 'rsi':
+      case 'aroon':
+        return [
+          { price: 70, color: DOWN },
+          { price: 30, color: UP },
+        ]
+      case 'wr':
+        return [
+          { price: 80, color: DOWN },
+          { price: 20, color: UP },
+        ]
+      case 'cci':
+        return [
+          { price: 100, color: DOWN },
+          { price: -100, color: UP },
+        ]
+      case 'psy':
+        return [
+          { price: 75, color: DOWN },
+          { price: 25, color: UP },
+        ]
+      case 'mfi':
+        return [
+          { price: 80, color: DOWN },
+          { price: 20, color: UP },
+        ]
+      case 'roc':
+      case 'mom':
+      case 'cmf':
+      case 'trix':
+      case 'dpo':
+        return [{ price: 0, color: '#2a2e39' }]
+      default:
+        return []
+    }
+  }
   const containerRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<ChartApi | null>(null)
   const prevDataRef = useRef<Candle[] | null>(null)
@@ -509,8 +549,17 @@ export function ChartView({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
   }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
+  // H13 副图线 worker：大数据量时异步计算（小窗口/worker 不可用走同步兜底）
+  const subWorker = useSubIndicatorWorker(subIndicator, windowData, indicatorParams)
+  const workerLines = subWorker.lines
+  const workerActive = subWorker.fromWorker
+
   const subData = useMemo(() => {
     const buildSubData = (kind: SubIndicatorKind): SubIndicatorData | null => {
+    // H13 大数据量副图线 worker 短路：当前副图由 worker 提供线集时跳过主线程重算
+    if (kind === subIndicator && kind !== 'none' && workerLines && workerActive) {
+      return { kind, lines: workerLines, markers: lineMarkersFor(kind), zones: coloredZones(kind) }
+    }
     if (kind === 'bbw') {
       return { kind: 'bbw' as const, lines: [{ id: 'BBW', points: calcBBW(windowData, indicatorParams.bbwPeriod, indicatorParams.bbwMult) }] }
     }
@@ -718,8 +767,8 @@ export function ChartView({
     const overlayKind = indicatorParams.subOverlay as SubIndicatorKind
     const overlay = overlayKind !== 'none' && overlayKind !== subIndicator ? buildSubData(overlayKind) : null
     return mergeSubData(buildSubData(subIndicator), overlay)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
-  }, [windowData, subIndicator, indicatorParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性；workerLines 已由 workerActive 门控
+  }, [windowData, subIndicator, indicatorParams, workerActive])
 
   // ---- 数据装载（窗口装载 / 增量 updateCandle + 指标重绘） ----
   useEffect(() => {
