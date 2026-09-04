@@ -215,6 +215,8 @@ export interface ChartApi {
   setDrawings(drawings: Drawing[]): void
   /** I9 画线坐标信息角标常显开关（每条线端点在 overlay 上显示坐标标签） */
   setCoordBadge(show: boolean): void
+  /** I13 画线全局透明度（0.15–1，与单条透明度相乘生效） */
+  setGlobalDrawingOpacity(opacity: number): void
   /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
   setNotesHidden(hidden: boolean): void
   /** 画线工具模式（none 为只读/选中） */
@@ -380,6 +382,8 @@ export class LightweightChartAdapter implements ChartApi {
   private showWatermark = true
   /** I9 画线坐标信息角标常显开关（每条线端点在 overlay 上显示坐标标签） */
   private coordBadge = false
+  /** I13 画线全局透明度（1=不缩放；与单条 opacity 相乘） */
+  private globalDrawingOpacity = 1
   /** 当前 K 线周期秒数（量度标签根数） */
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
@@ -553,6 +557,14 @@ export class LightweightChartAdapter implements ChartApi {
   setCoordBadge(show: boolean) {
     if (this.coordBadge === show) return
     this.coordBadge = show
+    this.draw()
+  }
+
+  /** I13 画线全局透明度：重绘 overlay 立即生效 */
+  setGlobalDrawingOpacity(opacity: number) {
+    const v = Math.min(1, Math.max(0.15, opacity))
+    if (this.globalDrawingOpacity === v) return
+    this.globalDrawingOpacity = v
     this.draw()
   }
 
@@ -770,10 +782,11 @@ export class LightweightChartAdapter implements ChartApi {
         : d
       // C9 悬停高亮：指针命中的画线显示锚点（与选中同视觉，但非拖拽态才生效）
       const hovered = !this.dragEdit && renderDraw.id === this.hoveredDrawingId
-      // C10 单条透明度：drawOne 内有多处提前 return，故用 save/restore 包裹避免 globalAlpha 泄漏
-      if (renderDraw.opacity !== undefined && renderDraw.opacity !== 1) {
+      // C10 单条透明度 × I13 全局透明度：相乘后包裹 drawOne（避免 globalAlpha 泄漏）
+      const alpha = Math.min(1, Math.max(0.15, (renderDraw.opacity ?? 1) * this.globalDrawingOpacity))
+      if (alpha < 1) {
         ctx.save()
-        ctx.globalAlpha = Math.min(1, Math.max(0.15, renderDraw.opacity))
+        ctx.globalAlpha = alpha
         this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId || hovered)
         ctx.restore()
       } else {

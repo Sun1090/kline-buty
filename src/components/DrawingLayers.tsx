@@ -49,6 +49,9 @@ interface DrawingLayersProps {
   onDeleteTemplate: (name: string) => void
   /** 返回画线工具选择视图 */
   onBack: () => void
+  /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
+  globalOpacity?: number
+  onGlobalOpacityChange?: (v: number) => void
 }
 
 const btnBase: CSSProperties = {
@@ -97,6 +100,8 @@ export function DrawingLayers({
   onRename,
   undoDepth,
   onUndoDepthChange,
+  globalOpacity,
+  onGlobalOpacityChange,
 }: DrawingLayersProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -377,6 +382,28 @@ export function DrawingLayers({
             {t('layers.clearAll')}
           </button>
         )}
+      </div>
+
+      {/* I13 画线全局透明度：所有画线统一透明度滑杆（与单条透明度相乘） */}
+      <div
+        data-testid="drawing-global-opacity-row"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px', marginBottom: 6 }}
+      >
+        <span style={{ fontSize: 11, color: 'var(--text-faint)', width: 52, flexShrink: 0 }}>{t('layers.globalOpacity')}</span>
+        <input
+          data-testid="drawing-global-opacity-slider"
+          type="range"
+          min={0.15}
+          max={1}
+          step={0.05}
+          value={globalOpacity ?? 1}
+          onChange={(e) => onGlobalOpacityChange?.(Number(e.target.value))}
+          aria-label={`${t('layers.globalOpacity')} ${Math.round((globalOpacity ?? 1) * 100)}%`}
+          style={{ flex: 1, accentColor: 'var(--accent)' }}
+        />
+        <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 38, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          {Math.round((globalOpacity ?? 1) * 100)}%
+        </span>
       </div>
 
       {/* 列表 / 空状态 */}

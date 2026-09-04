@@ -35,6 +35,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onApplyTemplate: vi.fn(),
     onDeleteTemplate: vi.fn(),
     onBack: vi.fn(),
+    onGlobalOpacityChange: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
     drawings: [],
@@ -192,6 +193,14 @@ describe('DrawingLayers（图层管理面板）', () => {
     cleanup()
     setup({ drawings: [h1, t1], selectedId: null })
     expect(screen.queryByTestId('drawing-opacity-slider')).toBeNull()
+  })
+
+  it('I13 全局透明度：常显滑杆，调节触发 onGlobalOpacityChange', () => {
+    const handlers = setup({ drawings: [h1, t1], globalOpacity: 1 })
+    const slider = screen.getByTestId('drawing-global-opacity-slider') as HTMLInputElement
+    expect(slider).toBeTruthy()
+    fireEvent.change(slider, { target: { value: '0.4' } })
+    expect(handlers.onGlobalOpacityChange).toHaveBeenCalledWith(0.4)
   })
 
   it('模板列表：套用/删除按钮触发对应回调', () => {
