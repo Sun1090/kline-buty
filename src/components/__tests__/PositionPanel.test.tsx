@@ -68,6 +68,18 @@ describe('PositionPanel', () => {
     expect(onChange).toHaveBeenCalledWith({ long: null, short: shortPosition })
   })
 
+  it('J8 全部平仓：一键置空两方向槽位', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel positions={{ long: longPosition, short: shortPosition }} currentPrice={105} onChange={onChange} />)
+    fireEvent.click(screen.getByTestId('position-close-all'))
+    expect(onChange).toHaveBeenCalledWith({ long: null, short: null })
+  })
+
+  it('J8 无持仓时不显示全部平仓按钮', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={105} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-close-all')).toBeNull()
+  })
+
   it('无持仓 → 显示空态提示', () => {
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={100} onChange={vi.fn()} />)
     expect(screen.getByText('暂无持仓')).toBeDefined()

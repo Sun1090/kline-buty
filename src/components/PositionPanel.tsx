@@ -164,6 +164,25 @@ export function PositionPanel({ positions, currentPrice, onChange }: PositionPan
         {!positions.long && !positions.short && (
           <div style={{ color: 'var(--text-faint)', fontSize: 11, padding: '4px 2px' }}>{t('position.noPosition')}</div>
         )}
+        {(positions.long || positions.short) && (
+          <button
+            data-testid="position-close-all"
+            onClick={() => onChange({ long: null, short: null })}
+            style={{
+              width: '100%',
+              padding: '4px 0',
+              fontSize: 11,
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              background: 'rgba(239,83,80,0.15)',
+              color: 'var(--down)',
+              marginTop: 4,
+            }}
+          >
+            {t('position.closeAll')}
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
