@@ -8,6 +8,18 @@ export interface HeaderOption {
   labelKey?: MessageKey
 }
 
+/** H15 指标收藏排序：收藏项排前，其余保持原序（收藏集中的值未命中则忽略） */
+export function favoriteFirst(options: HeaderOption[], favorites: string[]): HeaderOption[] {
+  const favValues = new Set(favorites)
+  const fav: HeaderOption[] = []
+  const rest: HeaderOption[] = []
+  for (const o of options) {
+    if (favValues.has(o.value)) fav.push(o)
+    else rest.push(o)
+  }
+  return [...fav, ...rest]
+}
+
 export const TYPE_OPTIONS: HeaderOption[] = [
   { value: 'candlestick', labelKey: 'chartType.candlestick' },
   { value: 'line', labelKey: 'chartType.line' },

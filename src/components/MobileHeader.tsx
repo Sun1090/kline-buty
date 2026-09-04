@@ -18,9 +18,11 @@ import {
   DRAWING_TOOLS,
   MAIN_OPTIONS,
   SUB_OPTIONS,
+  favoriteFirst,
   TYPE_OPTIONS,
   optionLabel,
 } from './headerOptions'
+import { useIndicatorFavorites } from '../hooks/useIndicatorFavorites'
 
 type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more' | 'layers'
 
@@ -167,6 +169,8 @@ function SectionTitle({ children }: { children: string }) {
 
 export function MobileHeader(props: MobileHeaderProps) {
   const { t } = useI18n()
+  // H15 指标收藏快速切换：常用副图指标置顶
+  const { favorites: subFavorites, toggleFavorite: toggleSubFavorite } = useIndicatorFavorites()
   const [menu, setMenu] = useState<MenuId | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -451,13 +455,37 @@ export function MobileHeader(props: MobileHeaderProps) {
             <>
               <SectionTitle>{t('group.sub')}</SectionTitle>
               <OptionGrid
-                options={SUB_OPTIONS}
+                options={favoriteFirst(SUB_OPTIONS, subFavorites)}
                 value={props.subIndicator}
                 label={(o) => optionLabel(o, t)}
                 onPick={(v) => {
                   props.onSubIndicator(v as SubIndicatorKind)
                   closePanel()
                 }}
+                renderSuffix={(o) =>
+                  o.value !== 'none' ? (
+                    <button
+                      data-testid={`sub-fav-${o.value}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleSubFavorite(o.value)
+                      }}
+                      title={t('drawing.favoriteToggle')}
+                      aria-label={t('drawing.favoriteToggle')}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: subFavorites.includes(o.value) ? 'var(--yellow)' : 'var(--text-faint)',
+                        cursor: 'pointer',
+                        fontSize: 10,
+                        padding: '1px',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {subFavorites.includes(o.value) ? '★' : '☆'}
+                    </button>
+                  ) : null
+                }
               />
             </>
           )}
