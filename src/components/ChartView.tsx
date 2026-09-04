@@ -23,6 +23,7 @@ import { calcAroon } from '../indicators/aroon'
 import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import { thresholdZones } from '../indicators/thresholdZones'
+import { subScaleFixedRange } from '../indicators/subScale'
 import { findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
@@ -238,6 +239,8 @@ export function ChartView({
   const [regionSelecting, setRegionSelecting] = useState(false)
   // T27：右键菜单（复制价格 / 添加提醒 / 清空画线）；触屏为主设备时不启用
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number } | null>(null)
+  /** H12 副图 Y 轴固定范围（有界指标）：true 锁定到理论极值，false 自动缩放 */
+  const [subScaleFixed, setSubScaleFixed] = useState(false)
   const [ctxCopied, setCtxCopied] = useState(false)
   useEffect(() => {
     if (!ctxMenu) return
@@ -777,6 +780,12 @@ export function ChartView({
     prevDataRef.current = windowData
   }, [windowData, mainData, subData, symbol, period, chartType, replay, cull])
 
+  // H12 副图 Y 轴固定范围：切换副图指标时重置为自动；开启/关闭时同步 adapter
+  useEffect(() => {
+    const r = subScaleFixed ? subScaleFixedRange(subIndicator) : null
+    apiRef.current?.setSubScaleRange(r)
+  }, [subScaleFixed, subIndicator])
+
   // 仓位线独立 effect：拖拽高频更新时避免触发指标/数据装载
   useEffect(() => {
     apiRef.current?.setPositionLines(positionLines ?? null)
@@ -1150,6 +1159,27 @@ export function ChartView({
                 <span style={{ color: 'var(--text-faint)' }}>{r.id}:</span> {r.value}
               </span>
             ))}
+            {/* H12 副图 Y 轴固定范围切换：仅对有界指标显示 */}
+            {subScaleFixedRange(subIndicator) && (
+              <button
+                data-testid="sub-scale-toggle"
+                onClick={() => setSubScaleFixed((v) => !v)}
+                aria-pressed={subScaleFixed}
+                title={t('chart.subScaleToggleTitle')}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  background: subScaleFixed ? 'rgba(41,98,255,0.15)' : 'transparent',
+                  color: subScaleFixed ? 'var(--accent)' : 'var(--text-dim)',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  padding: '0 6px',
+                  pointerEvents: 'auto',
+                }}
+              >
+                {t('chart.subScaleFixed')}
+              </button>
+            )}
           </div>
         )
       })()}

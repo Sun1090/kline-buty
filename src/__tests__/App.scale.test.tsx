@@ -31,6 +31,7 @@ vi.mock('../chart/adapter', () => ({
     setChartType() {}
     setMainIndicator() {}
     setSubIndicator() {}
+    setSubScaleRange() {}
     setPositionLines() {}
     setReferencePrice() {}
     setMarkerPrice() {}
