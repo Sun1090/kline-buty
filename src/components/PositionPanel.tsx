@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, suggestLevels } from '../position/pnl'
+import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
 import { useI18n } from '../i18n/useI18n'
 
 interface PositionPanelProps {
-  position: Position | null
+  /** J1 双向持仓：long/short 各自独立 */
+  positions: Positions
   currentPrice: number | null
-  onChange: (p: Position | null) => void
+  /** 开仓变更回调（传入新的 positions 容器） */
+  onChange: (p: Positions) => void
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -22,28 +25,32 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--text)',
 }
 
-export function PositionPanel({ position, currentPrice, onChange }: PositionPanelProps) {
+const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position.short' }[] = [
+  { key: 'long', label: 'position.long' },
+  { key: 'short', label: 'position.short' },
+]
+
+export function PositionPanel({ positions, currentPrice, onChange }: PositionPanelProps) {
   const { t } = useI18n()
-  const [entry, setEntry] = useState<string>(position ? String(position.entry) : '')
-  const [quantity, setQuantity] = useState<string>(position ? String(position.quantity) : '')
-  const [direction, setDirection] = useState<'long' | 'short'>(position?.direction ?? 'long')
+  const [entry, setEntry] = useState<string>('')
+  const [quantity, setQuantity] = useState<string>('')
+  const [direction, setDirection] = useState<'long' | 'short'>('long')
   const [leverage, setLeverage] = useState(10)
   const [tpPct, setTpPct] = useState('3')
   const [slPct, setSlPct] = useState('2')
   // 止盈/止损模式：pct=百分比参考价，price=手动输入价位
   const [levelMode, setLevelMode] = useState<'pct' | 'price'>('pct')
-  const [tpPrice, setTpPrice] = useState<string>(position?.takeProfit ? String(position.takeProfit) : '')
-  const [slPrice, setSlPrice] = useState<string>(position?.stopLoss ? String(position.stopLoss) : '')
+  const [tpPrice, setTpPrice] = useState<string>('')
+  const [slPrice, setSlPrice] = useState<string>('')
 
   const entryNum = Number(entry)
   const qtyNum = Number(quantity)
   const valid = Number.isFinite(entryNum) && entryNum > 0 && Number.isFinite(qtyNum) && qtyNum > 0
 
   const levels = valid ? suggestLevels(entryNum, direction, Number(tpPct) || 0, Number(slPct) || 0) : null
-  const active = position && currentPrice !== null ? calcPnl(position, currentPrice) : null
-  // D2/D3：保证金与强平价（当前仓位在仓位视角展示）
+  // D2/D3：保证金与强平价（表单视角展示）
   const margin = valid ? calcMargin(entryNum * qtyNum, leverage) : null
-  const liqPrice = position && valid ? calcLiquidationPrice(position, leverage) : null
+  const liqPrice = valid ? calcLiquidationPrice({ entry: entryNum, quantity: qtyNum, direction }, leverage) : null
 
   // 价格模式下校验手动输入的止盈/止损价
   const tpNum = Number(tpPrice)
@@ -56,20 +63,26 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
 
   const apply = () => {
     if (!valid || !canApply) return
-    onChange({
+    // J1 开仓：仅写对应方向槽位（hedge：buy→long、sell→short）
+    const pos: Position = {
       entry: entryNum,
       quantity: qtyNum,
       direction,
       takeProfit: levelMode === 'pct' ? levels!.takeProfit : tpNum,
       stopLoss: levelMode === 'pct' ? levels!.stopLoss : slNum,
-    })
+    }
+    onChange({ ...positions, [direction]: pos })
+    setEntry('')
+    setQuantity('')
   }
 
   const fillPrice = () => {
     if (currentPrice !== null && entry === '') setEntry(currentPrice.toFixed(2))
   }
 
-  const pnlColor = active ? (active.pnl >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--text-faint)'
+  const settle = (slot: 'long' | 'short') => {
+    onChange({ ...positions, [slot]: null })
+  }
 
   return (
     <div
@@ -91,13 +104,65 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontWeight: 600 }}>{t('position.title')}</span>
-        {position && (
-          <button
-            onClick={() => onChange(null)}
-            style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 12 }}
-          >
-            {t('position.close')}
-          </button>
+        <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>
+          {positions.long || positions.short ? `${t('position.hedgeMode')} · 2/2` : ''}
+        </span>
+      </div>
+
+      {/* J1 双向持仓列表：多空各自显示，独立平仓 */}
+      <div style={{ marginBottom: 10 }}>
+        {DIRECTION_ROW.map(({ key, label }) => {
+          const p = positions[key]
+          if (!p) return null
+          const active = currentPrice !== null ? calcPnl(p, currentPrice) : null
+          const color = active ? (active.pnl >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--text-faint)'
+          return (
+            <div
+              key={key}
+              data-testid={`position-row-${key}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 8px',
+                marginBottom: 6,
+                borderRadius: 6,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: key === 'long' ? 'rgba(38,166,154,0.08)' : 'rgba(239,83,80,0.08)',
+              }}
+            >
+              <span style={{ fontWeight: 600, color: key === 'long' ? 'var(--up)' : 'var(--down)' }}>{t(label)}</span>
+              <span style={{ color: 'var(--text-dim)', fontVariantNumeric: 'tabular-nums' }}>
+                {t('position.qtyShort')} {p.quantity} @ {p.entry.toFixed(2)}
+              </span>
+              {active && (
+                <span style={{ color, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
+                  {active.pnl >= 0 ? '+' : ''}
+                  {active.pnl.toFixed(2)}
+                </span>
+              )}
+              <button
+                onClick={() => settle(key)}
+                title={t('position.close')}
+                aria-label={`${t('position.close')} ${t(label)}`}
+                style={{
+                  flex: '0 0 auto',
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'rgba(239,83,80,0.15)',
+                  color: 'var(--down)',
+                }}
+              >
+                {t('position.close')}
+              </button>
+            </div>
+          )
+        })}
+        {!positions.long && !positions.short && (
+          <div style={{ color: 'var(--text-faint)', fontSize: 11, padding: '4px 2px' }}>{t('position.noPosition')}</div>
         )}
       </div>
 
@@ -237,33 +302,28 @@ export function PositionPanel({ position, currentPrice, onChange }: PositionPane
         </div>
       )}
 
-      {active ? (
-        <div style={{ borderTop: '1px solid #2a2e39', paddingTop: 8, fontSize: 13 }}>
-          <span style={{ color: 'var(--text-dim)', marginRight: 8 }}>{t('position.floatingPnl')}</span>
-          <b style={{ color: pnlColor, fontVariantNumeric: 'tabular-nums' }}>
-            {active.pnl >= 0 ? '+' : ''}
-            {active.pnl.toFixed(2)} USDT（{active.pnlPct >= 0 ? '+' : ''}
-            {active.pnlPct.toFixed(2)}%）
-          </b>
-        </div>
-      ) : (
-        <button
-          onClick={apply}
-          disabled={!canApply}
-          style={{
-            width: '100%',
-            padding: '6px 0',
-            fontSize: 12,
-            border: 'none',
-            borderRadius: 4,
-            cursor: canApply ? 'pointer' : 'not-allowed',
-            background: canApply ? 'var(--accent)' : 'var(--border)',
-            color: canApply ? '#fff' : 'var(--text-faint)',
-          }}
-        >
-          {t('position.open')}
-        </button>
-      )}
+      <button
+        onClick={apply}
+        disabled={!canApply}
+        style={{
+          width: '100%',
+          padding: '6px 0',
+          fontSize: 12,
+          border: 'none',
+          borderRadius: 4,
+          cursor: canApply ? 'pointer' : 'not-allowed',
+          background: canApply ? 'var(--accent)' : 'var(--border)',
+          color: canApply ? '#fff' : 'var(--text-faint)',
+        }}
+      >
+        {t('position.open')}
+      </button>
     </div>
   )
+}
+
+/** 兼容旧单仓位用法：包装为 Positions（仅保留传入方向） */
+export function _fromLegacy(p: Position | null): Positions {
+  if (!p) return EMPTY_POSITIONS
+  return { long: p.direction === 'long' ? p : null, short: p.direction === 'short' ? p : null }
 }
