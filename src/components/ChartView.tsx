@@ -124,6 +124,8 @@ interface ChartViewProps {
   drawingGlobalOpacity?: number
   /** L3 对比模式：单图叠加的第二品种收盘价线（null/缺省=不叠加） */
   compareSeries?: { symbol: string; candles: Candle[] } | null
+  /** L5 动态字号：图表内系统字号系数（0.85–1.2） */
+  fontScale?: number
   /** 画线工具 */
   drawingTool?: DrawingTool
   /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
@@ -183,6 +185,7 @@ export function ChartView({
   coordBadge,
   drawingGlobalOpacity,
   compareSeries,
+  fontScale,
   drawingTool,
   selectedDrawingId,
   onDrawingCommit,
@@ -911,6 +914,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setGlobalDrawingOpacity?.(drawingGlobalOpacity ?? 1)
   }, [drawingGlobalOpacity])
+
+  // L5 动态字号 effect
+  useEffect(() => {
+    apiRef.current?.setFontScale?.(fontScale ?? 1)
+  }, [fontScale])
 
   // 画线工具 effect：工具变化时切换（切换非 none 工具会清空选中，符合预期）
   useEffect(() => {

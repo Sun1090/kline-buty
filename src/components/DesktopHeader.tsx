@@ -680,6 +680,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               {t('layout.compare')}
             </PanelButton>
             <PanelButton
+              onClick={props.onCycleFontScale}
+              title={t('layout.fontScaleTitle')}
+              ariaLabel={`${t('layout.fontScaleTitle')}: ${Math.round(props.fontScale * 100)}%`}
+              active={props.fontScale !== 1}
+              testId="fontscale-toggle"
+            >
+              {t('layout.fontScale')} {Math.round(props.fontScale * 100)}%
+            </PanelButton>
+            <PanelButton
               onClick={props.onToggleScale}
               title={t('scale.title')}
               ariaLabel={`${t('scale.title')}: ${props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear')}`}

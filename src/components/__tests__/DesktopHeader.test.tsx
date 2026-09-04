@@ -20,6 +20,8 @@ function setup(overrides: Record<string, unknown> = {}) {
     onCycleLayout: vi.fn(),
     compareSymbol: null,
     onCycleCompare: vi.fn(),
+    fontScale: 1,
+    onCycleFontScale: vi.fn(),
     onToggleTheme: vi.fn(),
     onColorPreset: vi.fn(),
     onTogglePosition: vi.fn(),
@@ -183,6 +185,16 @@ describe('DesktopHeader（桌面顶栏）', () => {
     expect(btn.getAttribute('aria-pressed')).toBe('true') // compareSymbol 非 null → 激活
     fireEvent.click(btn)
     expect(h.onCycleCompare).toHaveBeenCalledTimes(1)
+  })
+
+  it('L5 动态字号开关：显示当前比例并触发 onCycleFontScale', () => {
+    const h = setup({ fontScale: 1.15 })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const btn = screen.getByTestId('fontscale-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('true') // fontScale ≠ 1 → 激活
+    expect(btn.textContent).toContain('115%')
+    fireEvent.click(btn)
+    expect(h.onCycleFontScale).toHaveBeenCalledTimes(1)
   })
 
   it('无弹层打开时 Esc 不拦截（App 全局 Esc 正常生效）', () => {

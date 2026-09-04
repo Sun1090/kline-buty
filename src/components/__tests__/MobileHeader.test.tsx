@@ -20,6 +20,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onCycleLayout: vi.fn(),
     compareSymbol: null,
     onCycleCompare: vi.fn(),
+    fontScale: 1,
+    onCycleFontScale: vi.fn(),
     onToggleTheme: vi.fn(),
     onColorPreset: vi.fn(),
     onTogglePosition: vi.fn(),

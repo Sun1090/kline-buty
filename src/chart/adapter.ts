@@ -217,6 +217,8 @@ export interface ChartApi {
   setCoordBadge(show: boolean): void
   /** I13 画线全局透明度（0.15–1，与单条透明度相乘生效） */
   setGlobalDrawingOpacity(opacity: number): void
+  /** L5 动态字号：图表内系统字号系数（0.85–1.2；不影响用户设置的画线文字字号） */
+  setFontScale(scale: number): void
   /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
   setNotesHidden(hidden: boolean): void
   /** 画线工具模式（none 为只读/选中） */
@@ -384,6 +386,8 @@ export class LightweightChartAdapter implements ChartApi {
   private coordBadge = false
   /** I13 画线全局透明度（1=不缩放；与单条 opacity 相乘） */
   private globalDrawingOpacity = 1
+  /** L5 动态字号系数（系统绘制字号缩放；用户画线文字不缩放） */
+  private fontScale = 1
   /** 当前 K 线周期秒数（量度标签根数） */
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
@@ -568,6 +572,19 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.globalDrawingOpacity === v) return
     this.globalDrawingOpacity = v
     this.draw()
+  }
+
+  /** L5 动态字号系数：clamp 0.85–1.2；重绘立即生效 */
+  setFontScale(scale: number) {
+    const v = Math.min(1.2, Math.max(0.85, scale))
+    if (this.fontScale === v) return
+    this.fontScale = v
+    this.draw()
+  }
+
+  /** L5 系统字号辅助：按 fontScale 缩放像素值 */
+  private fs(px: number): number {
+    return Math.max(6, Math.round(px * this.fontScale))
   }
 
   /** C12 便签全局显隐：notesHidden=true 时不渲染任何 note 类型画线（数据保留） */
@@ -845,7 +862,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.strokeRect(rect.x, rect.y, rect.w, rect.h)
       ctx.setLineDash([])
       ctx.fillStyle = 'rgba(78,156,245,0.95)'
-      ctx.font = '10px system-ui'
+      ctx.font = `${this.fs(10)}px system-ui`
       ctx.fillText(Math.round(rect.w) + '×' + Math.round(rect.h), rect.x + 4, Math.max(10, rect.y - 4))
     }
   }
@@ -872,7 +889,7 @@ export class LightweightChartAdapter implements ChartApi {
     for (const m of this.markerLabels) {
       const pt = this.project(m.time, m.price)
       if (!pt) continue
-      ctx.font = '700 11px system-ui, sans-serif'
+      ctx.font = `700 ${this.fs(11)}px system-ui, sans-serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
       ctx.fillStyle = m.color
@@ -913,7 +930,7 @@ export class LightweightChartAdapter implements ChartApi {
     const date = new Date(p.time * 1000).toLocaleDateString()
     const time = new Date(p.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     ctx.save()
-    ctx.font = '10px system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif'
+    ctx.font = `${this.fs(10)}px system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`
     ctx.textBaseline = 'bottom'
     const label = `${p.price.toFixed(2)} · ${date} ${time}`
     // 背景色块提升可读性
@@ -935,7 +952,7 @@ export class LightweightChartAdapter implements ChartApi {
     ctx.save()
     ctx.globalAlpha = 0.055
     ctx.fillStyle = this.theme.textColor
-    ctx.font = `600 ${size}px system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif`
+    ctx.font = `600 ${this.fs(size)}px system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     const { x, y } = watermarkAnchor(w, h)
@@ -973,7 +990,7 @@ export class LightweightChartAdapter implements ChartApi {
     ctx.strokeStyle = color
     ctx.fillStyle = color
     ctx.lineWidth = selected ? 1.6 : 1
-    ctx.font = '10px system-ui'
+    ctx.font = `${this.fs(10)}px system-ui`
     ctx.setLineDash([])
 
     if (d.type === 'horizontal') {
@@ -1728,7 +1745,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.moveTo(pts[0].x, pts[0].y)
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
       ctx.stroke()
-      ctx.font = '10px system-ui'
+      ctx.font = `${this.fs(10)}px system-ui`
       ctx.textBaseline = 'middle'
       for (let i = 0; i < pts.length; i++) {
         ctx.beginPath()

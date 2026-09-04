@@ -17,6 +17,8 @@ interface CellProps {
   notesHidden?: boolean
   coordBadge?: boolean
   drawingGlobalOpacity?: number
+  /** L5 动态字号 */
+  fontScale?: number
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -31,7 +33,7 @@ interface CellProps {
   onCellPeriod: (p: Period) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, colorPreset, showWatermark, externalRange, onViewRangeChange, onCrosshairChange, externalCrosshairTime, onCellPeriod }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, fontScale = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, colorPreset, showWatermark, externalRange, onViewRangeChange, onCrosshairChange, externalCrosshairTime, onCellPeriod }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -46,6 +48,7 @@ function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezo
         notesHidden={notesHidden}
         coordBadge={coordBadge}
         drawingGlobalOpacity={drawingGlobalOpacity}
+        fontScale={fontScale}
         mainIndicator={mainIndicator}
         subIndicator={subIndicator}
         indicatorParams={indicatorParams}
@@ -102,6 +105,8 @@ interface QuadChartProps {
   notesHidden?: boolean
   coordBadge?: boolean
   drawingGlobalOpacity?: number
+  /** L5 动态字号 */
+  fontScale?: number
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
@@ -113,10 +118,10 @@ interface QuadChartProps {
 }
 
 /** 四图联动：2×2 网格，时间轴全联动；每格可独立切换周期（T21） */
-export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
+export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, coordBadge = false, drawingGlobalOpacity = 1, fontScale = 1, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
   const { ranges, broadcast, crosshairTimes, broadcastCrosshair } = useChartSync(4)
   const cellPeriods = periods ?? [period, period, period, period]
-  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, coordBadge, drawingGlobalOpacity, mainIndicator, subIndicator, indicatorParams, lineColors, themeMode, colorPreset, showWatermark }
+  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, coordBadge, drawingGlobalOpacity, fontScale, mainIndicator, subIndicator, indicatorParams, lineColors, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>
