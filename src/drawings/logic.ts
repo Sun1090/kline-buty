@@ -555,6 +555,64 @@ export function measureInfo(a: { price: number }, b: { price: number }): { diff:
   return { diff, pct }
 }
 
+/** I2 画线统计汇总：总数 + 按线/面分类的数量与量度。 */
+export interface DrawingStats {
+  total: number
+  /** 线类画线（趋势/射线/通道等两点连线）：总长度（价格空间）与条数 */
+  lineCount: number
+  totalLineLength: number
+  /** 面类画线（矩形/椭圆/圆/三角形/角度等三点面）：总面积（价格×时间，秒·价）与条数 */
+  areaCount: number
+  totalArea: number
+}
+
+/** 线类画线类型（取前两点价格差作为长度；不足两点计 0） */
+const LINE_TOOL_TYPES = new Set<string>([
+  'trend', 'extended', 'ray', 'hray', 'vray', 'channel', 'hchannel', 'fibchannel', 'forecast',
+])
+/** 面类画线类型（用包围盒 width×height 近似面积，单位 秒·价） */
+const AREA_TOOL_TYPES = new Set<string>([
+  'rect', 'ellipse', 'circle', 'triangle', 'wedge', 'angle', 'pband', 'pricerange', 'timerange', 'daterange',
+])
+
+/** I2 画线统计：遍历画线按类型分类汇总（隐藏线不计入）。 */
+export function summarizeDrawings(drawings: Drawing[]): DrawingStats {
+  let lineCount = 0
+  let totalLineLength = 0
+  let areaCount = 0
+  let totalArea = 0
+  for (const d of drawings) {
+    if (d.hidden) continue
+    if (LINE_TOOL_TYPES.has(d.type)) {
+      const a = d.points[0]
+      const b = d.points[1]
+      if (a && b) {
+        lineCount++
+        totalLineLength += Math.abs(b.price - a.price)
+      }
+    } else if (AREA_TOOL_TYPES.has(d.type)) {
+      const pts = d.points
+      if (pts.length >= 2) {
+        const times = pts.map((p) => p.time)
+        const prices = pts.map((p) => p.price)
+        const w = Math.max(...times) - Math.min(...times)
+        const h = Math.max(...prices) - Math.min(...prices)
+        if (w > 0 && h > 0) {
+          areaCount++
+          totalArea += w * h
+        }
+      }
+    }
+  }
+  return {
+    total: drawings.filter((d) => !d.hidden).length,
+    lineCount,
+    totalLineLength,
+    areaCount,
+    totalArea,
+  }
+}
+
 /** 三点贝塞尔曲线：A/C 为端点，B 为控制点 */
 export function cubicBezierPoints(
   a: Point,

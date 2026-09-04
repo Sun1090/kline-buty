@@ -31,6 +31,7 @@ import {
   parallelRaySpec,
   widthChannelSpec,
   measureInfo,
+  summarizeDrawings,
   moveAnchor,
   pitchforkMid,
   pitchforkRays,
@@ -1970,5 +1971,48 @@ describe('toggleGroupHidden / toggleGroupLocked（C4 分组批量操作）', () 
     const out = toggleGroupHidden(mixed, '', true)
     expect(out[3].hidden).toBe(true)
     expect(out[0].hidden).toBeUndefined()
+  })
+})
+
+describe('summarizeDrawings（I2 画线统计）', () => {
+  it('空数组 → 全零', () => {
+    const s = summarizeDrawings([])
+    expect(s).toEqual({ total: 0, lineCount: 0, totalLineLength: 0, areaCount: 0, totalArea: 0 })
+  })
+
+  it('线类：两点价格差求和', () => {
+    const trend = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 130 }], 't1')
+    const ray = createDrawing('ray', [{ time: 0, price: 50 }, { time: 10, price: 30 }], 'r1')
+    const s = summarizeDrawings([trend, ray])
+    expect(s.lineCount).toBe(2)
+    expect(s.totalLineLength).toBeCloseTo(30 + 20)
+  })
+
+  it('面类：包围盒面积（宽×高，秒·价）', () => {
+    const rect = createDrawing('rect', [
+      { time: 0, price: 10 },
+      { time: 100, price: 20 },
+    ] as { time: number; price: number }[], 'r1')
+    const s = summarizeDrawings([rect])
+    expect(s.areaCount).toBe(1)
+    expect(s.totalArea).toBeCloseTo(100 * 10)
+  })
+
+  it('隐藏画线不计入 total 与分类', () => {
+    const trend = createDrawing('trend', [{ time: 0, price: 100 }, { time: 100, price: 130 }], 't1')
+    const hidden = { ...createDrawing('rect', [{ time: 0, price: 10 }, { time: 100, price: 20 }], 'r1'), hidden: true }
+    const s = summarizeDrawings([trend, hidden])
+    expect(s.total).toBe(1)
+    expect(s.lineCount).toBe(1)
+    expect(s.areaCount).toBe(0)
+  })
+
+  it('非线非面类型（horizontal/text）只计入总数', () => {
+    const h = createDrawing('horizontal', [{ time: 0, price: 100 }], 'h1')
+    const text = { ...createDrawing('text', [{ time: 0, price: 100 }], 'x1'), text: 'hi' }
+    const s = summarizeDrawings([h, text])
+    expect(s.total).toBe(2)
+    expect(s.lineCount).toBe(0)
+    expect(s.areaCount).toBe(0)
   })
 })

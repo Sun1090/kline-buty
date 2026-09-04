@@ -246,6 +246,8 @@ export const zh = {
     templateApply: '套用',
     templateEmpty: '暂无模板——保存当前画线组合后一键套用到任意品种',
     templateSaved: '已保存模板',
+    statsLine: '线 {count} · 长度 {len}',
+    statsArea: '面 {count} · 面积 {area}',
   },
   symbol: {
     searchPlaceholder: '搜索交易对…',
@@ -747,6 +749,8 @@ export const en: Messages = {
     templateApply: 'Apply',
     templateEmpty: 'No templates yet — save a drawing set to reuse it on any symbol',
     templateSaved: 'Template saved',
+    statsLine: 'Lines {count} · length {len}',
+    statsArea: 'Areas {count} · area {area}',
   },
   symbol: {
     searchPlaceholder: 'Search symbols…',
@@ -1246,6 +1250,8 @@ export const ja: Messages = {
     templateApply: '適用',
     templateEmpty: 'テンプレートなし——現在の画線を保存すると任意の銘柄に再利用できます',
     templateSaved: 'テンプレートを保存しました',
+    statsLine: '線 {count} · 長さ {len}',
+    statsArea: '面 {count} · 面積 {area}',
   },
   symbol: {
     searchPlaceholder: '銘柄を検索…',
@@ -1746,6 +1752,8 @@ export const ko: Messages = {
     templateApply: '적용',
     templateEmpty: '템플릿 없음——현재 도면 조합을 저장하면 모든 종목에 재사용할 수 있습니다',
     templateSaved: '템플릿 저장됨',
+    statsLine: '선 {count} · 길이 {len}',
+    statsArea: '면 {count} · 면적 {area}',
   },
   symbol: {
     searchPlaceholder: '종목 검색…',
@@ -2257,6 +2265,8 @@ export const es: Messages = {
     templateApply: 'Aplicar',
     templateEmpty: 'Sin plantillas: guarda un conjunto de dibujos para reutilizarlo en cualquier símbolo',
     templateSaved: 'Plantilla guardada',
+    statsLine: 'Líneas {count} · longitud {len}',
+    statsArea: 'Áreas {count} · área {area}',
   },
   symbol: {
     searchPlaceholder: 'Buscar símbolos…',
