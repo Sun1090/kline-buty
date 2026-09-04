@@ -36,6 +36,8 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onDeleteTemplate: vi.fn(),
     onBack: vi.fn(),
     onGlobalOpacityChange: vi.fn(),
+    onBatchDelete: vi.fn(),
+    onBatchSetHidden: vi.fn(),
   }
   const props: Parameters<typeof DrawingLayers>[0] = {
     drawings: [],
@@ -201,6 +203,24 @@ describe('DrawingLayers（图层管理面板）', () => {
     expect(slider).toBeTruthy()
     fireEvent.change(slider, { target: { value: '0.4' } })
     expect(handlers.onGlobalOpacityChange).toHaveBeenCalledWith(0.4)
+  })
+
+  it('I7 批量操作：勾选两行 → 显示批量栏，删除/隐藏触发对应回调', () => {
+    const handlers = setup({ drawings: [h1, t1] })
+    // 初始无批量栏
+    expect(screen.queryByTestId('drawing-batch-bar')).toBeNull()
+    // 勾选两行
+    fireEvent.click(screen.getByTestId('drawing-batch-check-h1'))
+    fireEvent.click(screen.getByTestId('drawing-batch-check-t1'))
+    expect(screen.getByTestId('drawing-batch-bar')).toBeDefined()
+    // 批量隐藏
+    fireEvent.click(screen.getByTestId('drawing-batch-hide'))
+    expect(handlers.onBatchSetHidden).toHaveBeenCalledWith(['h1', 't1'], true)
+    // 批量删除
+    fireEvent.click(screen.getByTestId('drawing-batch-check-h1'))
+    fireEvent.click(screen.getByTestId('drawing-batch-check-t1'))
+    fireEvent.click(screen.getByTestId('drawing-batch-delete'))
+    expect(handlers.onBatchDelete).toHaveBeenCalledWith(['h1', 't1'])
   })
 
   it('模板列表：套用/删除按钮触发对应回调', () => {

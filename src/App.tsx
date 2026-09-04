@@ -555,6 +555,17 @@ export function App() {
     mutateDrawings((prev) => prev.filter((d) => d.id !== id))
     if (selectedDrawingId === id) setSelectedDrawingId(null)
   }
+  // I7 批量删除：多选 ids 一次性移除（单次撤销快照）
+  const batchDeleteDrawings = (ids: string[]) => {
+    const set = new Set(ids)
+    mutateDrawings((prev) => prev.filter((d) => !set.has(d.id)))
+    if (selectedDrawingId && set.has(selectedDrawingId)) setSelectedDrawingId(null)
+  }
+  // I7 批量显隐：多选 ids 统一隐藏/显示（单次撤销快照）
+  const batchSetDrawingsHidden = (ids: string[], hidden: boolean) => {
+    const set = new Set(ids)
+    mutateDrawings((prev) => prev.map((d) => (set.has(d.id) ? { ...d, hidden } : d)))
+  }
   const clearDrawings = () => {
     mutateDrawings(() => [])
     setSelectedDrawingId(null)
@@ -833,6 +844,8 @@ export function App() {
           onToggleCoordBadge={() => setCoordBadge((v) => !v)}
           globalOpacity={drawingGlobalOpacity}
           onGlobalOpacityChange={setGlobalDrawingOpacity}
+          onBatchDelete={batchDeleteDrawings}
+          onBatchSetHidden={batchSetDrawingsHidden}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -944,6 +957,8 @@ export function App() {
           onToggleCoordBadge={() => setCoordBadge((v) => !v)}
           globalOpacity={drawingGlobalOpacity}
           onGlobalOpacityChange={setGlobalDrawingOpacity}
+          onBatchDelete={batchDeleteDrawings}
+          onBatchSetHidden={batchSetDrawingsHidden}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)

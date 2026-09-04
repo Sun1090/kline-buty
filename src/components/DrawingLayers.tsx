@@ -53,6 +53,9 @@ interface DrawingLayersProps {
   /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
   globalOpacity?: number
   onGlobalOpacityChange?: (v: number) => void
+  /** I7 批量操作：多选后批量删除/隐藏 */
+  onBatchDelete?: (ids: string[]) => void
+  onBatchSetHidden?: (ids: string[], hidden: boolean) => void
 }
 
 const btnBase: CSSProperties = {
@@ -103,11 +106,15 @@ export function DrawingLayers({
   onUndoDepthChange,
   globalOpacity,
   onGlobalOpacityChange,
+  onBatchDelete,
+  onBatchSetHidden,
 }: DrawingLayersProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
   // I15 搜索：按自定义名或类型标签过滤图层树（空 = 全部）
   const [searchQuery, setSearchQuery] = useState('')
+  // I7 多选：选中用于批量操作（checkbox 勾选的画线 id 集合）
+  const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set())
   // I15 重命名：正在编辑的图层 id（行内输入框）
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
@@ -407,6 +414,40 @@ export function DrawingLayers({
         </span>
       </div>
 
+      {/* I7 批量操作栏：多选时显示删除/隐藏按钮 */}
+      {multiSelected.size > 0 && (
+        <div
+          data-testid="drawing-batch-bar"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 2px', marginBottom: 6, borderTop: '1px solid var(--border)', paddingTop: 6 }}
+        >
+          <span style={{ fontSize: 11, color: 'var(--text-faint)', flex: 1 }}>
+            {t('layers.batchCount', { n: String(multiSelected.size) })}
+          </span>
+          <button
+            data-testid="drawing-batch-hide"
+            onClick={() => {
+              onBatchSetHidden?.([...multiSelected], true)
+              setMultiSelected(new Set())
+            }}
+            title={t('layers.hide')}
+            style={{ padding: '3px 8px', fontSize: 11, border: 'none', borderRadius: 6, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', color: 'var(--text-dim)' }}
+          >
+            🚫
+          </button>
+          <button
+            data-testid="drawing-batch-delete"
+            onClick={() => {
+              onBatchDelete?.([...multiSelected])
+              setMultiSelected(new Set())
+            }}
+            title={t('layers.delete')}
+            style={{ padding: '3px 8px', fontSize: 11, border: 'none', borderRadius: 6, cursor: 'pointer', background: 'rgba(239,83,80,0.15)', color: 'var(--down)' }}
+          >
+            🗑
+          </button>
+        </div>
+      )}
+
       {/* 列表 / 空状态 */}
       {importError && (
         <div data-testid="drawing-import-error" style={{ padding: '4px 8px', fontSize: 11, color: 'var(--down)' }}>
@@ -525,6 +566,24 @@ export function DrawingLayers({
                           border: selected ? '1px solid var(--accent)' : '1px solid transparent',
                         }}
                       >
+                        {/* I7 多选 checkbox：勾选进批量集合（点击不触发行选择） */}
+                        <input
+                          type="checkbox"
+                          data-testid={`drawing-batch-check-${d.id}`}
+                          checked={multiSelected.has(d.id)}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            setMultiSelected((prev) => {
+                              const next = new Set(prev)
+                              if (e.target.checked) next.add(d.id)
+                              else next.delete(d.id)
+                              return next
+                            })
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`${t('layers.select')} ${d.name ?? itemLabel}`}
+                          style={{ flex: '0 0 auto', width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
                         {/* I6 画线缩略图：图层行内小预览（形状/颜色识别） */}
                         <DrawingThumb drawing={d} />
                         {renamingId === d.id ? (
