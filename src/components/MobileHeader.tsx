@@ -116,6 +116,9 @@ export interface MobileHeaderProps {
   /** I13 画线全局透明度 + 回调 */
   globalOpacity: number
   onGlobalOpacityChange: (v: number) => void
+  /** I7 画线批量操作（多选删除/隐藏） */
+  onBatchDelete?: (ids: string[]) => void
+  onBatchSetHidden?: (ids: string[], hidden: boolean) => void
   tradesActive: boolean
   onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
@@ -640,6 +643,8 @@ export function MobileHeader(props: MobileHeaderProps) {
               onSetOpacity={props.onSetDrawingOpacity}
               globalOpacity={props.globalOpacity}
               onGlobalOpacityChange={props.onGlobalOpacityChange}
+              onBatchDelete={props.onBatchDelete}
+              onBatchSetHidden={props.onBatchSetHidden}
               onSetFollowLatest={props.onSetDrawingFollowLatest}
               onRename={props.onRenameDrawing}
               undoDepth={props.undoDepth}
