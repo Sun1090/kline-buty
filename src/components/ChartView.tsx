@@ -27,6 +27,7 @@ import { findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
 import { calcVortex } from '../indicators/vortex'
+import { lastHistValue, lastValuesOfLines } from '../indicators/lastValues'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
@@ -1113,6 +1114,45 @@ export function ChartView({
           {fmtRangeTime(visibleRange.to, timezoneMode, localeFor(lang))}
         </div>
       )}
+      {/* H9 指标末尾值一览（主图线 + 副图线/柱，随数据更新） */}
+      {(() => {
+        const main = lastValuesOfLines(mainData.lines)
+        const sub = subData ? lastValuesOfLines(subData.lines ?? []) : []
+        const subHist = subData ? lastHistValue(subData.hist) : null
+        if (main.length === 0 && sub.length === 0 && subHist === null) return null
+        const rows: { id: string; value: string }[] = [
+          ...main.map((v) => ({ id: v.id, value: fmtPrice(v.value) })),
+          ...sub.map((v) => ({ id: v.id, value: v.value.toFixed(2) })),
+        ]
+        if (subHist !== null) {
+          rows.unshift({ id: subData?.kind === 'macd' ? 'MACD' : 'VOL', value: subData?.kind === 'macd' ? subHist.toFixed(3) : fmtVolume(subHist) })
+        }
+        return (
+          <div
+            data-testid="chart-indicator-last"
+            style={{
+              position: 'absolute',
+              left: 10,
+              bottom: 40,
+              display: 'flex',
+              gap: 12,
+              fontSize: 11,
+              color: 'var(--text-dim)',
+              opacity: 0.85,
+              pointerEvents: 'none',
+              userSelect: 'none',
+              fontVariantNumeric: 'tabular-nums',
+              zIndex: 3,
+            }}
+          >
+            {rows.map((r) => (
+              <span key={r.id} style={{ whiteSpace: 'nowrap' }}>
+                <span style={{ color: 'var(--text-faint)' }}>{r.id}:</span> {r.value}
+              </span>
+            ))}
+          </div>
+        )
+      })()}
       {ctxMenu && (
         <div
           data-testid="chart-ctx-menu"
