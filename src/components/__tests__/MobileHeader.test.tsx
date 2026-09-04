@@ -35,6 +35,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onExport: vi.fn(),
     onToggleScale: vi.fn(),
     onToggleWatermark: vi.fn(),
+    onGlobalOpacityChange: vi.fn(),
   }
   const props: Parameters<typeof MobileHeader>[0] = {
     symbol: 'BTCUSDT',
@@ -87,6 +88,7 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onToggleNotesHidden: vi.fn(),
     coordBadge: false,
     onToggleCoordBadge: vi.fn(),
+    globalOpacity: 1,
     drawingImportError: null,
     layout: 'single',
     themeMode: 'dark',

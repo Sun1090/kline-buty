@@ -120,6 +120,8 @@ interface ChartViewProps {
   notesHidden?: boolean
   /** I9 画线坐标角标常显（每条线端点显示坐标标签） */
   coordBadge?: boolean
+  /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
+  drawingGlobalOpacity?: number
   /** 画线工具 */
   drawingTool?: DrawingTool
   /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
@@ -177,6 +179,7 @@ export function ChartView({
   drawings,
   notesHidden,
   coordBadge,
+  drawingGlobalOpacity,
   drawingTool,
   selectedDrawingId,
   onDrawingCommit,
@@ -884,6 +887,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setCoordBadge?.(coordBadge ?? false)
   }, [coordBadge])
+
+  // I13 画线全局透明度 effect
+  useEffect(() => {
+    apiRef.current?.setGlobalDrawingOpacity?.(drawingGlobalOpacity ?? 1)
+  }, [drawingGlobalOpacity])
 
   // 画线工具 effect：工具变化时切换（切换非 none 工具会清空选中，符合预期）
   useEffect(() => {

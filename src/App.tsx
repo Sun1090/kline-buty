@@ -111,6 +111,8 @@ export function App() {
   const [notesHidden, setNotesHidden] = usePersistedState<boolean>('notesHidden', false)
   /** I9 画线坐标角标常显（每条线端点坐标标签） */
   const [coordBadge, setCoordBadge] = usePersistedState<boolean>('drawingCoordBadge', false)
+  /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
+  const [drawingGlobalOpacity, setDrawingGlobalOpacity] = usePersistedState<number>('drawingGlobalOpacity', 1)
   // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
   const [quadPeriods, setQuadPeriods] = useState<[Period, Period, Period, Period] | null>(null)
   // T22：下拉刷新重挂载键
@@ -540,6 +542,8 @@ export function App() {
     const v = Math.min(1, Math.max(0.15, opacity))
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, opacity: v } : d)))
   }
+  // I13 全局透明度：不写回画线数据，仅渲染期相乘（持久化设置项）
+  const setGlobalDrawingOpacity = (v: number) => setDrawingGlobalOpacity(Math.min(1, Math.max(0.15, v)))
   const setDrawingFollowLatest = (id: string, followLatest: boolean) => {
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, followLatest } : d)))
   }
@@ -827,6 +831,8 @@ export function App() {
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           coordBadge={coordBadge}
           onToggleCoordBadge={() => setCoordBadge((v) => !v)}
+          globalOpacity={drawingGlobalOpacity}
+          onGlobalOpacityChange={setGlobalDrawingOpacity}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -936,6 +942,8 @@ export function App() {
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           coordBadge={coordBadge}
           onToggleCoordBadge={() => setCoordBadge((v) => !v)}
+          globalOpacity={drawingGlobalOpacity}
+          onGlobalOpacityChange={setGlobalDrawingOpacity}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -1135,6 +1143,7 @@ export function App() {
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
           coordBadge={coordBadge}
+          drawingGlobalOpacity={drawingGlobalOpacity}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -1155,6 +1164,7 @@ export function App() {
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
           coordBadge={coordBadge}
+          drawingGlobalOpacity={drawingGlobalOpacity}
           periods={quadPeriods ?? undefined}
           onCellPeriod={(i, p) => setQuadPeriods((prev) => { const next = (prev ?? [period, period, period, period]) as [Period, Period, Period, Period]; next[i] = p; return [...next] })}
             mainIndicator={mainIndicator}
@@ -1177,6 +1187,7 @@ export function App() {
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
           coordBadge={coordBadge}
+          drawingGlobalOpacity={drawingGlobalOpacity}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

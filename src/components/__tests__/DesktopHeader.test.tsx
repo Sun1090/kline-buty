@@ -42,6 +42,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onConfirmText: vi.fn(),
     onCancelText: vi.fn(),
     onToggleCoordBadge: vi.fn(),
+    onGlobalOpacityChange: vi.fn(),
   }
   const props = {
     symbol: 'BTCUSDT',
@@ -93,6 +94,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     notesHidden: false,
     onToggleNotesHidden: vi.fn(),
     coordBadge: false,
+    globalOpacity: 1,
     drawingImportError: null,
     layout: 'single' as const,
     themeMode: 'dark' as const,

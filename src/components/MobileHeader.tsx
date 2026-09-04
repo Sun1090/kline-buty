@@ -107,6 +107,9 @@ export interface MobileHeaderProps {
   /** I9 画线坐标角标常显 + 回调 */
   coordBadge: boolean
   onToggleCoordBadge: () => void
+  /** I13 画线全局透明度 + 回调 */
+  globalOpacity: number
+  onGlobalOpacityChange: (v: number) => void
   tradesActive: boolean
   onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
@@ -629,6 +632,8 @@ export function MobileHeader(props: MobileHeaderProps) {
               onToggleHidden={props.onToggleDrawingHidden}
               onToggleLocked={props.onToggleDrawingLocked}
               onSetOpacity={props.onSetDrawingOpacity}
+              globalOpacity={props.globalOpacity}
+              onGlobalOpacityChange={props.onGlobalOpacityChange}
               onSetFollowLatest={props.onSetDrawingFollowLatest}
               onRename={props.onRenameDrawing}
               undoDepth={props.undoDepth}
