@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findCrossovers } from '../crossovers'
+import { annotateCrossovers, findCrossovers } from '../crossovers'
 import type { ValuePoint } from '../sma'
 
 describe('findCrossovers（H3 金叉/死叉检测）', () => {
@@ -83,5 +83,29 @@ describe('findCrossovers（H3 金叉/死叉检测）', () => {
 
   it('空输入 → 空', () => {
     expect(findCrossovers([], [])).toEqual([])
+  })
+})
+
+describe('annotateCrossovers（H14 回测买卖标注）', () => {
+  it('金叉 → label B，死叉 → label S', () => {
+    const signals = [
+      { time: 10, price: 100, kind: 'golden' as const },
+      { time: 20, price: 120, kind: 'death' as const },
+    ]
+    expect(annotateCrossovers(signals)).toEqual([
+      { time: 10, price: 100, kind: 'golden', label: 'B' },
+      { time: 20, price: 120, kind: 'death', label: 'S' },
+    ])
+  })
+
+  it('保留原始顺序与字段', () => {
+    const signals = [{ time: 5, price: 50, kind: 'golden' as const }]
+    const out = annotateCrossovers(signals)
+    expect(out[0]).toMatchObject({ time: 5, price: 50, kind: 'golden' })
+    expect(out).toHaveLength(1)
+  })
+
+  it('空输入 → 空', () => {
+    expect(annotateCrossovers([])).toEqual([])
   })
 })

@@ -98,8 +98,8 @@ export interface MainIndicatorData {
   lines: { id: string; points: ValuePoint[]; color?: string }[]
   /** Ichimoku 云带：spanA/spanB 之间按点着色填充（颜色由 UI 层按涨跌给 rgba） */
   cloud?: { time: number; top: number; bottom: number; color: string }[]
-  /** SAR 圆点（每点独立颜色：多头/空头） */
-  markers?: { time: number; price: number; color: string }[]
+  /** SAR 圆点（每点独立颜色：多头/空头）；H14 可带 label（买卖标注文字，overlay 绘制） */
+  markers?: { time: number; price: number; color: string; label?: string }[]
 }
 
 /** 仓位线（模拟订单叠加）：开仓/止盈/止损三条价格线 */
@@ -357,6 +357,8 @@ export class LightweightChartAdapter implements ChartApi {
   private volumeMaSeries: ISeriesApi<'Line'> | null = null
   private mainLines: ISeriesApi<'Line' | 'Area'>[] = []
   private subSeries: ISeriesApi<'Line' | 'Histogram'>[] = []
+  /** H14 主图指标信号标注（B/S 文字标签）：overlay 在对应价格处绘制 */
+  private markerLabels: { time: number; price: number; label: string; color: string }[] = []
   /** H2 副图阈值区间（超买/超卖带）：overlay 半透明背景填充 [from, to] */
   private subZones: { from: number; to: number; color: string }[] = []
   private priceLine: IPriceLine | null = null
@@ -740,6 +742,8 @@ export class LightweightChartAdapter implements ChartApi {
     this.drawWatermark(ctx, w, h)
     // H2 副图阈值区间背景：超买/超卖带半透明填充（画线之下）
     this.drawSubZones(ctx, w)
+    // H14 指标买卖标注（B/S 文字标签，随主图数据渲染）
+    this.drawMarkerLabels(ctx)
 
     for (const d of this.drawings) {
       // 图层管理：隐藏的画线不渲染（数据仍保留，取消隐藏即恢复）
@@ -827,6 +831,23 @@ export class LightweightChartAdapter implements ChartApi {
       const bottom = Math.max(yFrom, yTo)
       ctx.fillStyle = z.color
       ctx.fillRect(0, top, w, bottom - top)
+    }
+  }
+
+  /** H14 指标买卖标注：B/S 文字标签（金叉做多 / 死叉做空），随主图时间坐标绘制 */
+  private drawMarkerLabels(ctx: CanvasRenderingContext2D) {
+    for (const m of this.markerLabels) {
+      const pt = this.project(m.time, m.price)
+      if (!pt) continue
+      ctx.font = '700 11px system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.fillStyle = m.color
+      // 描边加白边提升可读性（深浅主题下均清晰）
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)'
+      ctx.lineWidth = 3
+      ctx.strokeText(m.label, pt.x + 6, pt.y - 6)
+      ctx.fillText(m.label, pt.x + 6, pt.y - 6)
     }
   }
 
@@ -3247,6 +3268,10 @@ export class LightweightChartAdapter implements ChartApi {
     for (const s of this.mainLines) this.chart.removeSeries(s)
     this.mainLines = []
     const pane = 0
+    // H14 买卖标注标签：markers 中带 label 的点存为 overlay 文字
+    this.markerLabels = (data.markers ?? [])
+      .filter((m) => m.label)
+      .map((m) => ({ time: m.time, price: m.price, label: m.label as string, color: m.color }))
 
     // Ichimoku 云带：上边界（max）与下边界（min）各一条面积序列，涨绿/跌红
     if (data.cloud?.length) {
