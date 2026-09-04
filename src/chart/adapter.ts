@@ -201,6 +201,8 @@ export interface ChartApi {
   setMainIndicator(data: MainIndicatorData): void
   /** 副图指标（VOL/MACD/KDJ/RSI） */
   setSubIndicator(data: SubIndicatorData): void
+  /** H12 副图 Y 轴固定范围：传 range 锁定到 [from,to]，传 null 恢复自动 */
+  setSubScaleRange(range: { from: number; to: number } | null): void
   /** 仓位线（开仓/止盈/止损），null 清除 */
   setPositionLines(lines: PositionLines | null): void
   /** 外部参考价格线（盘口档位 hover 联动），null 清除 */
@@ -3430,6 +3432,17 @@ export class LightweightChartAdapter implements ChartApi {
     }
     // H2 阈值区间：存副图背景带数据（draw() 时在 overlay 上按副图价格坐标渲染）
     this.subZones = data.zones ?? []
+  }
+
+  /** H12 副图 Y 轴自动/固定：range 锁定可见范围，null 恢复自动缩放 */
+  setSubScaleRange(range: { from: number; to: number } | null) {
+    const scale = this.chart.priceScale('sub', 1)
+    if (range) {
+      scale.setAutoScale(false)
+      scale.setVisibleRange({ from: range.from, to: range.to })
+    } else {
+      scale.setAutoScale(true)
+    }
   }
 
   subscribeCrosshairMove(

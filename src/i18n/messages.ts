@@ -47,6 +47,10 @@ export const zh = {
     line: '折线',
     area: '面积',
   },
+  chart: {
+    subScaleFixed: '固定Y轴',
+    subScaleToggleTitle: '副图 Y 轴锁定到理论极值（超买超卖稳定比较），再点恢复自动',
+  },
   group: {
     type: '类型',
     main: '主图',
@@ -538,6 +542,10 @@ export const en: Messages = {
     line: 'Line',
     area: 'Area',
   },
+  chart: {
+    subScaleFixed: 'Fix Y',
+    subScaleToggleTitle: 'Lock sub-pane Y-axis to theoretical extremes (stable overbought/oversold comparison); click again for auto',
+  },
   group: {
     type: 'Type',
     main: 'Main',
@@ -1026,6 +1034,10 @@ export const ja: Messages = {
     candlestick: 'ローソク',
     line: '折れ線',
     area: 'エリア',
+  },
+  chart: {
+    subScaleFixed: 'Y軸固定',
+    subScaleToggleTitle: '副パネルY軸を理論極値に固定（過買過売を安定比較）、再クリックで自動に戻す',
   },
   group: {
     type: 'タイプ',
@@ -1516,6 +1528,10 @@ export const ko: Messages = {
     candlestick: '캔들',
     line: '라인',
     area: '영역',
+  },
+  chart: {
+    subScaleFixed: 'Y축 고정',
+    subScaleToggleTitle: '보조 패널 Y축을 이론적 극값으로 고정(과매수/과매도 안정 비교), 다시 클릭 시 자동 복귀',
   },
   group: {
     type: '유형',
@@ -2018,6 +2034,10 @@ export const es: Messages = {
     candlestick: 'Velas',
     line: 'Línea',
     area: 'Área',
+  },
+  chart: {
+    subScaleFixed: 'Fijar Y',
+    subScaleToggleTitle: 'Bloquear el eje Y del subpanel a los extremos teóricos (comparación estable de sobrecompra/sobreventa); clic de nuevo para automático',
   },
   group: {
     type: 'Tipo',
