@@ -35,3 +35,25 @@ export function findCrossovers(fast: ValuePoint[], slow: ValuePoint[]): Crossove
   }
   return out
 }
+
+/** H14 回测标注：交叉信号 → 带买卖标签的标注点（B=金叉做多 / S=死叉做空） */
+export interface SignalAnnotation {
+  time: number
+  price: number
+  kind: 'golden' | 'death'
+  /** 展示标签：金叉 'B'，死叉 'S' */
+  label: string
+}
+
+/**
+ * H14 把交叉信号转换为带标签的买卖标注（逐点，金叉 B / 死叉 S）。
+ * 保留原始 kind/price，追加 label 供渲染；输入空 → 空数组。
+ */
+export function annotateCrossovers(signals: CrossoverPoint[]): SignalAnnotation[] {
+  return signals.map((s) => ({
+    time: s.time,
+    price: s.price,
+    kind: s.kind,
+    label: s.kind === 'golden' ? 'B' : 'S',
+  }))
+}

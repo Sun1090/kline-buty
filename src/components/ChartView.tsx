@@ -25,7 +25,7 @@ import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import { thresholdZones } from '../indicators/thresholdZones'
 import { subScaleFixedRange } from '../indicators/subScale'
 import { applyLineColorOverrides } from '../indicators/lineColors'
-import { findCrossovers } from '../indicators/crossovers'
+import { annotateCrossovers, findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
 import { calcVortex } from '../indicators/vortex'
@@ -434,14 +434,15 @@ export function ChartView({
         const closes = windowData.map((c) => ({ time: c.time, value: c.close }))
         lines.push(...indicatorParams.maPeriods.map((p) => ({ id: `EMA${p}`, points: calcEMA(closes, p) })))
       }
-      // H3 金叉/死叉信号：最快线与最慢线交叉处打点（金叉=UP 圆点、死叉=DOWN 圆点）
+      // H3/H14 金叉/死叉信号：最快线与最慢线交叉处打点（金叉=UP B 标注、死叉=DOWN S 标注）
       const [fast, slow] = lines
-      let markers: { time: number; price: number; color: string }[] | undefined
+      let markers: { time: number; price: number; color: string; label?: string }[] | undefined
       if (fast && slow && fast.points.length > 0 && slow.points.length > 0) {
-        markers = findCrossovers(fast.points, slow.points).map((x) => ({
+        markers = annotateCrossovers(findCrossovers(fast.points, slow.points)).map((x) => ({
           time: x.time,
           price: x.price,
           color: x.kind === 'golden' ? UP : DOWN,
+          label: x.label,
         }))
       }
       return { lines, markers }
