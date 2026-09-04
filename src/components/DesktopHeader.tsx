@@ -513,6 +513,8 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             onSetFollowLatest={props.onSetDrawingFollowLatest}
             onRename={props.onRenameDrawing}
             onGroupHidden={props.onGroupHidden}
+            undoDepth={props.undoDepth}
+            onUndoDepthChange={props.onUndoDepthChange}
             onGroupLocked={props.onGroupLocked}
             onDelete={props.onDeleteDrawing}
             onClearAll={props.onClearDrawings}

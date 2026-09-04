@@ -70,6 +70,9 @@ export interface MobileHeaderProps {
   onSetDrawingFollowLatest: (id: string, followLatest: boolean) => void
   /** I15 画线重命名（name 传 '' 清除） */
   onRenameDrawing: (id: string, name: string) => void
+  /** I12 撤销深度（透传给 DrawingLayers） */
+  undoDepth: number
+  onUndoDepthChange: (n: number) => void
   /** C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组） */
   onGroupHidden: (group: string, hidden: boolean) => void
   onGroupLocked: (group: string, locked: boolean) => void
@@ -608,6 +611,8 @@ export function MobileHeader(props: MobileHeaderProps) {
               onSetOpacity={props.onSetDrawingOpacity}
               onSetFollowLatest={props.onSetDrawingFollowLatest}
               onRename={props.onRenameDrawing}
+              undoDepth={props.undoDepth}
+              onUndoDepthChange={props.onUndoDepthChange}
               onGroupHidden={props.onGroupHidden}
               onGroupLocked={props.onGroupLocked}
               onDelete={props.onDeleteDrawing}

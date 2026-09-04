@@ -111,4 +111,29 @@ describe('DrawingHistory 画线撤销/重做历史栈', () => {
     expect(h.past).toHaveLength(0)
     expect(h2.past).toHaveLength(1)
   })
+
+  it('I12 撤销深度：默认上限 MAX_HISTORY 生效', () => {
+    let h = createHistory()
+    for (let i = 0; i < MAX_HISTORY + 10; i++) h = pushSnapshot(h, [{ id: `d${i}` }])
+    expect(h.past.length).toBe(MAX_HISTORY)
+    // 最旧快照被丢弃（首个插入的 d0 已被挤出）
+    expect((h.past[0][0] as { id: string }).id).toBe('d10')
+    expect((h.past[h.past.length - 1][0] as { id: string }).id).toBe(`d${MAX_HISTORY + 9}`)
+  })
+
+  it('I12 撤销深度：limit 覆盖上限（更浅 → 只保留 limit 步）', () => {
+    let h = createHistory()
+    for (let i = 0; i < 10; i++) h = pushSnapshot(h, [{ id: `d${i}` }], 3)
+    expect(h.past.length).toBe(3)
+    expect((h.past[0][0] as { id: string }).id).toBe('d7')
+    expect((h.past[2][0] as { id: string }).id).toBe('d9')
+  })
+
+  it('I12 撤销深度：limit 兜底 ≥1（0/负数不导致空栈崩溃）', () => {
+    let h = createHistory()
+    h = pushSnapshot(h, [{ id: 'a' }], 0)
+    expect(h.past.length).toBe(1)
+    h = pushSnapshot(h, [{ id: 'b' }], -5)
+    expect(h.past.length).toBe(1)
+  })
 })
