@@ -34,6 +34,7 @@ function Row({
       data-testid={`market-row-${row.symbol}`}
       onClick={() => onSelect(row.symbol)}
       title={`${row.symbol} ${fmtPrice(row.price)}`}
+      aria-label={`${row.symbol} ${fmtPrice(row.price)}`}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -320,6 +321,7 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
               data-testid={`market-sort-${col.key}`}
               onClick={() => setSortKey(col.key)}
               title={t('marketList.sortTitle')}
+              aria-label={`${t('marketList.sortTitle')}: ${t(`marketList.${col.labelKey}` as never)}`}
               style={{
                 flex: col.key === 'symbol' ? '0 0 84px' : '0 0 76px',
                 ...(col.key === 'changePct' ? { flex: '0 0 56px' } : {}),

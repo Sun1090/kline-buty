@@ -141,6 +141,7 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
           data-testid="ob-group-toggle"
           onClick={() => setGroupIdx((i) => (i + 1) % GROUP_STEPS.length)}
           title={t('orderBook.group')}
+          aria-label={t('orderBook.group')}
           style={{
             border: '1px solid #2a2e39',
             borderRadius: 4,
