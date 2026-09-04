@@ -11,6 +11,7 @@ import { useMarketStats } from './hooks/useMarketStats'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
+import { usePrefetch } from './hooks/usePrefetch'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from './indicators/params'
 import { createReplay, tickReplay, seekReplay, setSpeed, cycleSpeed, type ReplayState } from './replay/engine'
 import { PositionPanel } from './components/PositionPanel'
@@ -394,6 +395,8 @@ export function App() {
   const { candles, status, error } = state
   // L3 对比模式：叠加品种 K 线（仅单图布局使用）
   const compareData = useKlineData(compareSymbol ?? symbol, period)
+  // N7 数据预取：空闲时预取相邻品种 + 当前品种更早历史到本地缓存
+  usePrefetch(symbol, period)
 
   // 回放播放器：每 500ms 按速度推进；接近开头时自动加载更早历史
   useEffect(() => {
