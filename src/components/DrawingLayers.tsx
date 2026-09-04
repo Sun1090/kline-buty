@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { groupDrawings, type Drawing } from '../drawings/logic'
 import type { DrawingTemplate } from '../drawings/templates'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { DRAWING_TOOLS, optionLabel } from './headerOptions'
 
@@ -16,6 +16,8 @@ interface DrawingLayersProps {
   onSetOpacity: (id: string, opacity: number) => void
   /** C15 position 工具跟随最新价开关 */
   onSetFollowLatest: (id: string, followLatest: boolean) => void
+  /** I15 画线重命名（name 传 '' 清除） */
+  onRename: (id: string, name: string) => void
   /** C4 分组批量操作：组统一隐藏/锁定（key='' 为未分组） */
   onGroupHidden: (group: string, hidden: boolean) => void
   onGroupLocked: (group: string, locked: boolean) => void
@@ -89,9 +91,15 @@ export function DrawingLayers({
   onApplyTemplate,
   onDeleteTemplate,
   onBack,
+  onRename,
 }: DrawingLayersProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
+  // I15 搜索：按自定义名或类型标签过滤图层树（空 = 全部）
+  const [searchQuery, setSearchQuery] = useState('')
+  // I15 重命名：正在编辑的图层 id（行内输入框）
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
   // 模板保存输入（C6）：回车或按钮提交
   const [templateName, setTemplateName] = useState('')
   const [templateSavedFlash, setTemplateSavedFlash] = useState(false)
@@ -104,6 +112,20 @@ export function DrawingLayers({
       else next.add(group)
       return next
     })
+  // I15 搜索过滤：自定义名 / 类型标签 / 分组名 任一命中（空查询 = 全部）
+  const visibleDrawings = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return drawings
+    return drawings.filter((d) => {
+      const opt = DRAWING_TOOLS.find((o) => o.value === d.type)
+      const typeLabel = opt ? optionLabel(opt, t).toLowerCase() : d.type
+      return (
+        (d.name ?? '').toLowerCase().includes(q) ||
+        typeLabel.includes(q) ||
+        (d.group ?? '').toLowerCase().includes(q)
+      )
+    })
+  }, [drawings, searchQuery, t])
   return (
     <div
       data-testid="drawing-layers"
@@ -328,6 +350,26 @@ export function DrawingLayers({
           {importError}
         </div>
       )}
+      {drawings.length > 0 && (
+        <input
+          data-testid="drawing-search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t('layers.search')}
+          aria-label={t('layers.search')}
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '4px 8px',
+            marginBottom: 6,
+            fontSize: 11,
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            background: 'var(--bg)',
+            color: 'var(--text)',
+          }}
+        />
+      )}
       {drawings.length === 0 ? (
         <div
           data-testid="drawing-layer-empty"
@@ -341,7 +383,7 @@ export function DrawingLayers({
           aria-label={t('layers.title')}
           style={{ maxHeight: 'min(40vh, 320px)', overflowY: 'auto', overscrollBehavior: 'contain' }}
         >
-          {Object.entries(groupDrawings(drawings)).map(([group, items]) => {
+          {Object.entries(groupDrawings(visibleDrawings)).map(([group, items]) => {
             const collapsed = collapsedGroups.has(group)
             const allHidden = items.every((d) => d.hidden)
             const allLocked = items.every((d) => d.locked)
@@ -420,18 +462,62 @@ export function DrawingLayers({
                           border: selected ? '1px solid var(--accent)' : '1px solid transparent',
                         }}
                       >
-                        <span
-                          style={{
-                            flex: 1,
-                            fontSize: 12,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            color: selected ? 'var(--accent)' : 'var(--text-dim)',
-                          }}
-                        >
-                          {itemLabel}
-                        </span>
+                        {renamingId === d.id ? (
+                          <input
+                            data-testid="drawing-rename-input"
+                            autoFocus
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            onBlur={() => {
+                              onRename(d.id, renameDraft.trim())
+                              setRenamingId(null)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                onRename(d.id, renameDraft.trim())
+                                setRenamingId(null)
+                              } else if (e.key === 'Escape') setRenamingId(null)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              flex: 1,
+                              fontSize: 12,
+                              padding: '1px 4px',
+                              border: '1px solid var(--accent)',
+                              borderRadius: 4,
+                              background: 'var(--bg)',
+                              color: 'var(--text)',
+                              minWidth: 0,
+                            }}
+                          />
+                        ) : (
+                          <span
+                            data-testid="drawing-layer-name"
+                            style={{
+                              flex: 1,
+                              fontSize: 12,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              color: selected ? 'var(--accent)' : 'var(--text-dim)',
+                            }}
+                          >
+                            {d.name ?? itemLabel}
+                          </span>
+                        )}
+                        {renamingId !== d.id &&
+                          rowBtn(
+                            'drawing-layer-rename',
+                            t('layers.rename'),
+                            false,
+                            (e) => {
+                              e.stopPropagation()
+                              setRenamingId(d.id)
+                              setRenameDraft(d.name ?? '')
+                            },
+                            '✎',
+                            'rgba(255,255,255,0.06)',
+                          )}
                         {rowBtn(
                           'drawing-layer-eye',
                           d.hidden ? t('layers.show') : t('layers.hide'),

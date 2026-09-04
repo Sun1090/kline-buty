@@ -536,6 +536,10 @@ export function App() {
   const setDrawingFollowLatest = (id: string, followLatest: boolean) => {
     mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, followLatest } : d)))
   }
+  /** I15 画线重命名：name 空串清除自定义名 */
+  const renameDrawing = (id: string, name: string) => {
+    mutateDrawings((prev) => prev.map((d) => (d.id === id ? { ...d, name: name || undefined } : d)))
+  }
   const deleteDrawing = (id: string) => {
     mutateDrawings((prev) => prev.filter((d) => d.id !== id))
     if (selectedDrawingId === id) setSelectedDrawingId(null)
@@ -802,6 +806,7 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
+          onRenameDrawing={renameDrawing}
           onGroupHidden={setGroupHidden}
           onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}
@@ -906,6 +911,7 @@ export function App() {
           onToggleDrawingLocked={toggleLocked}
           onSetDrawingOpacity={setDrawingOpacity}
           onSetDrawingFollowLatest={setDrawingFollowLatest}
+          onRenameDrawing={renameDrawing}
           onGroupHidden={setGroupHidden}
           onGroupLocked={setGroupLocked}
           onDeleteDrawing={deleteDrawing}
