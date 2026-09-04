@@ -47,6 +47,7 @@ export const SUB_OPTIONS: HeaderOption[] = [
   { value: 'aroon', labelKey: 'indicator.aroon' },
   { value: 'trix', label: 'TRIX' },
   { value: 'dpo', label: 'DPO' },
+  { value: 'vortex', label: 'VI' },
   { value: 'none', labelKey: 'common.none' },
 ]
 

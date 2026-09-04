@@ -44,6 +44,7 @@ export interface IndicatorParams {
   volMaPeriod: number
   trixPeriod: number
   dpoPeriod: number
+  vortexPeriod: number
 }
 
 export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
@@ -91,4 +92,5 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   volMaPeriod: 5,
   trixPeriod: 15,
   dpoPeriod: 20,
+  vortexPeriod: 14,
 }
