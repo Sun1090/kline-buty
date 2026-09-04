@@ -957,7 +957,7 @@ export class LightweightChartAdapter implements ChartApi {
       // C8 文字对齐：左/中/右（缺省 center）
       const bx = textBoxX(a.x, w, d.textAlign ?? 'center')
       const by = a.y - h / 2
-      ctx.fillStyle = this.theme.background + 'e6'
+      ctx.fillStyle = d.textBg ? d.textBg : this.theme.background + 'e6'
       ctx.fillRect(bx, by, w, h)
       ctx.strokeStyle = selected ? '#4e9cf5' : fill + '99'
       ctx.lineWidth = selected ? 1.6 : 1

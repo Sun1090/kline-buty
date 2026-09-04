@@ -60,6 +60,8 @@ export interface Drawing {
   fontSize?: number
   /** 文本颜色（text 用；note 固定便签配色） */
   color?: string
+  /** I5 文字底色（text 用；缺省半透明主题背景） */
+  textBg?: string
   /** 图层管理：隐藏（不渲染 + 不参与命中，画线仍保留在数据里） */
   hidden?: boolean
   /** 图层管理：锁定（仍渲染但不可选中/拖拽编辑） */

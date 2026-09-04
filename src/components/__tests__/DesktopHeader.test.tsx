@@ -38,6 +38,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onTextDraftChange: vi.fn(),
     onTextFontSizeChange: vi.fn(),
     onTextColorChange: vi.fn(),
+    onTextBgChange: vi.fn(),
     onConfirmText: vi.fn(),
     onCancelText: vi.fn(),
   }
@@ -110,6 +111,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     textDraft: '',
     textFontSize: 14,
     textColor: '',
+    textBg: '',
     ...handlers,
     ...overrides,
   }
@@ -182,5 +184,14 @@ describe('DesktopHeader（桌面顶栏）', () => {
     } finally {
       window.removeEventListener('keydown', appEscSpy)
     }
+  })
+
+  it('I5 文字底色：编辑态显示底色选择器，点击触发 onTextBgChange', () => {
+    const onTextBgChange = vi.fn()
+    setup({ editingTextId: 'd1', onTextBgChange })
+    const btn = screen.getByTestId('text-bg-blue')
+    expect(btn).toBeDefined()
+    fireEvent.click(btn)
+    expect(onTextBgChange).toHaveBeenCalled()
   })
 })
