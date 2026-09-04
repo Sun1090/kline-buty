@@ -1,55 +1,16 @@
 import type { CSSProperties } from 'react'
-import type { Drawing, DrawingType } from './logic'
+import type { Drawing } from './logic'
+import { AREA_TYPES, POLY_TYPES, THUMB_H, THUMB_W, colorFor, thumbnailPath } from './thumbnailCore'
 
 /**
  * I6 画线缩略图（图层树内每层预览小图）。
  *
- * 纯函数：把画线的逻辑坐标 points 归一化到固定小画布，按工具类型画示意形状。
- * 不渲染真实行情轴——缩略图只表达「形状与相对几何」，足够用户在图层树里快速识别。
+ * 形状与几何归一化在 thumbnailCore（纯函数），本组件只负责按工具类型渲染 SVG 示意。
  */
-
-const W = 44
-const H = 24
-const PAD = 3
-
-/** 需要矩形/区域类绘制的工具：以首点为对角绘制矩形或区域 */
-const AREA_TYPES: DrawingType[] = ['rect', 'pband', 'pricerange', 'gannbox', 'fib', 'fibchannel', 'fibfan', 'fibtimed', 'cycle', 'wedge', 'triangle', 'hchannel', 'channel', 'pitchfork', 'regchan']
-
-/** 多边形/连线类：把点连成折线 */
-const POLY_TYPES: DrawingType[] = ['trend', 'ray', 'hray', 'vray', 'extended', 'fibext', 'polyline', 'bezier', 'xabcd', 'elliott', 'parray', 'pchannel', 'forecast', 'speedlines', 'angle', 'measure']
 
 export interface ThumbProps {
   drawing: Drawing
   style?: CSSProperties
-}
-
-function scalePoint(p: { time: number; price: number }, minT: number, maxT: number, minP: number, maxP: number) {
-  const spanT = Math.max(1e-9, maxT - minT)
-  const spanP = Math.max(1e-9, maxP - minP)
-  const x = PAD + ((p.time - minT) / spanT) * (W - PAD * 2)
-  const y = PAD + (1 - (p.price - minP) / spanP) * (H - PAD * 2)
-  return { x, y }
-}
-
-/** 缩略图色：继承画线色或主题降级色 */
-function colorFor(d: Drawing): string {
-  return d.color ?? '#9aa7b5'
-}
-
-/**
- * 归一化全部锚点到一个平面坐标系（minT/maxT/minP/maxP 覆盖所有点）。
- * 返回 svg 内折线 path 与单点位置。
- */
-export function thumbnailPath(drawing: Drawing): { path: string; single: { x: number; y: number } | null } {
-  const pts = drawing.points
-  if (pts.length === 0) return { path: '', single: null }
-  const minT = Math.min(...pts.map((p) => p.time))
-  const maxT = Math.max(...pts.map((p) => p.time))
-  const minP = Math.min(...pts.map((p) => p.price))
-  const maxP = Math.max(...pts.map((p) => p.price))
-  const scaled = pts.map((p) => scalePoint(p, minT, maxT, minP, maxP))
-  const path = scaled.map((s, i) => `${i === 0 ? 'M' : 'L'}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(' ')
-  return { path, single: scaled.length === 1 ? scaled[0] : null }
 }
 
 /**
@@ -63,18 +24,18 @@ export function DrawingThumb({ drawing, style }: ThumbProps) {
   const isArea = AREA_TYPES.includes(type)
   const isPoly = POLY_TYPES.includes(type) || drawing.points.length > 1
 
-  let body: React.ReactNode = null
+  let body: React.ReactNode
   if (single) {
     // 单点工具：横线/竖线/十字/文本用对应标记
     if (type === 'horizontal' || type === 'hray' || type === 'pricelabel') {
-      body = <line x1={PAD} y1={single.y} x2={W - PAD} y2={single.y} stroke={color} strokeWidth={1.5} />
+      body = <line x1={3} y1={single.y} x2={THUMB_W - 3} y2={single.y} stroke={color} strokeWidth={1.5} />
     } else if (type === 'vertical' || type === 'vray' || type === 'timerange' || type === 'daterange') {
-      body = <line x1={single.x} y1={PAD} x2={single.x} y2={H - PAD} stroke={color} strokeWidth={1.5} />
+      body = <line x1={single.x} y1={3} x2={single.x} y2={THUMB_H - 3} stroke={color} strokeWidth={1.5} />
     } else if (type === 'cross') {
       body = (
         <>
-          <line x1={PAD} y1={single.y} x2={W - PAD} y2={single.y} stroke={color} strokeWidth={1.2} />
-          <line x1={single.x} y1={PAD} x2={single.x} y2={H - PAD} stroke={color} strokeWidth={1.2} />
+          <line x1={3} y1={single.y} x2={THUMB_W - 3} y2={single.y} stroke={color} strokeWidth={1.2} />
+          <line x1={single.x} y1={3} x2={single.x} y2={THUMB_H - 3} stroke={color} strokeWidth={1.2} />
         </>
       )
     } else {
@@ -98,12 +59,14 @@ export function DrawingThumb({ drawing, style }: ThumbProps) {
     const maxT = Math.max(...drawing.points.map((p) => p.time))
     const minP = Math.min(...drawing.points.map((p) => p.price))
     const maxP = Math.max(...drawing.points.map((p) => p.price))
-    const pa = scalePoint(a, minT, maxT, minP, maxP)
-    const pb = scalePoint(b, minT, maxT, minP, maxP)
-    const x = Math.min(pa.x, pb.x)
-    const y = Math.min(pa.y, pb.y)
-    const w = Math.abs(pb.x - pa.x)
-    const h = Math.abs(pb.y - pa.y)
+    const spanT = Math.max(1e-9, maxT - minT)
+    const spanP = Math.max(1e-9, maxP - minP)
+    const px = (t: number) => 3 + ((t - minT) / spanT) * (THUMB_W - 6)
+    const py = (price: number) => 3 + (1 - (price - minP) / spanP) * (THUMB_H - 6)
+    const x = Math.min(px(a.time), px(b.time))
+    const y = Math.min(py(a.price), py(b.price))
+    const w = Math.abs(px(b.time) - px(a.time))
+    const h = Math.abs(py(b.price) - py(a.price))
     body = (
       <rect
         x={x}
@@ -124,9 +87,9 @@ export function DrawingThumb({ drawing, style }: ThumbProps) {
 
   return (
     <svg
-      width={W}
-      height={H}
-      viewBox={`0 0 ${W} ${H}`}
+      width={THUMB_W}
+      height={THUMB_H}
+      viewBox={`0 0 ${THUMB_W} ${THUMB_H}`}
       data-testid={`drawing-thumb-${drawing.type}`}
       aria-hidden="true"
       style={{
