@@ -7,11 +7,14 @@ export function OptionGrid({
   value,
   onPick,
   label,
+  renderSuffix,
 }: {
   options: HeaderOption[]
   value: string
   onPick: (v: string) => void
   label: (o: HeaderOption) => string
+  /** H15 指标收藏：选项右侧额外按钮（星标），点击不触发 onPick */
+  renderSuffix?: (o: HeaderOption) => React.ReactNode
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [focusIdx, setFocusIdx] = useState(0)
@@ -86,26 +89,29 @@ export function OptionGrid({
     >
       {options.map((o, idx) => {
         const active = o.value === value
+        const suffix = renderSuffix?.(o)
         return (
-          <button
-            key={o.value}
-            aria-pressed={active}
-            tabIndex={idx === focusIdx ? 0 : -1}
-            onClick={() => onPick(o.value)}
-            style={{
-              flex: '0 0 auto',
-              minWidth: 72,
-              padding: '7px 10px',
-              fontSize: 12,
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-              color: active ? '#fff' : 'var(--text-dim)',
-            }}
-          >
-            {label(o)}
-          </button>
+          <span key={o.value} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+            <button
+              aria-pressed={active}
+              tabIndex={idx === focusIdx ? 0 : -1}
+              onClick={() => onPick(o.value)}
+              style={{
+                flex: '0 0 auto',
+                minWidth: 72,
+                padding: '7px 10px',
+                fontSize: 12,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                color: active ? '#fff' : 'var(--text-dim)',
+              }}
+            >
+              {label(o)}
+            </button>
+            {suffix}
+          </span>
         )
       })}
     </div>

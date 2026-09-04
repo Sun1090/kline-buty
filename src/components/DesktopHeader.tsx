@@ -18,8 +18,10 @@ import {
   MAIN_OPTIONS,
   SUB_OPTIONS,
   TYPE_OPTIONS,
+  favoriteFirst,
   optionLabel,
 } from './headerOptions'
+import { useIndicatorFavorites } from '../hooks/useIndicatorFavorites'
 import type { MobileHeaderProps } from './MobileHeader'
 
 type MenuId = 'drawing' | 'more' | 'layers' | null
@@ -155,6 +157,8 @@ function RowButton({
 
 export function DesktopHeader(props: DesktopHeaderProps) {
   const { t } = useI18n()
+  // H15 指标收藏快速切换：常用副图指标置顶显示
+  const { favorites: subFavorites, toggleFavorite: toggleSubFavorite } = useIndicatorFavorites()
   const [menu, setMenu] = useState<MenuId>(null)
   // 交易对搜索下拉是否打开：它是顶栏最上层，Esc 层进链路里先于菜单关闭
   const [searchOpen, setSearchOpen] = useState(false)
@@ -557,27 +561,51 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
               <span style={{ fontSize: 11, color: 'var(--text-faint)', marginRight: 2 }}>{t('group.sub')}</span>
-              {SUB_OPTIONS.map((o) => {
+              {favoriteFirst(SUB_OPTIONS, subFavorites).map((o) => {
                 const active = o.value === props.subIndicator
+                const starred = subFavorites.includes(o.value)
                 return (
-                  <button
-                    key={o.value}
-                    data-testid={`sub-indicator-${o.value}`}
-                    onClick={() => props.onSubIndicator(o.value as never)}
-                    style={{
-                      flex: '0 0 auto',
-                      padding: '7px 10px',
-                      fontSize: 12,
-                      border: 'none',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                      color: active ? '#fff' : 'var(--text-dim)',
-                    }}
-                  >
-                    {optionLabel(o, t)}
-                  </button>
+                  <span key={o.value} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    <button
+                      data-testid={`sub-indicator-${o.value}`}
+                      onClick={() => props.onSubIndicator(o.value as never)}
+                      style={{
+                        flex: '0 0 auto',
+                        padding: '7px 10px',
+                        fontSize: 12,
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        background: active ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                        color: active ? '#fff' : 'var(--text-dim)',
+                      }}
+                    >
+                      {optionLabel(o, t)}
+                    </button>
+                    {o.value !== 'none' && (
+                      <button
+                        data-testid={`sub-fav-${o.value}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSubFavorite(o.value)
+                        }}
+                        title={t('drawing.favoriteToggle')}
+                        aria-label={t('drawing.favoriteToggle')}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          color: starred ? 'var(--yellow)' : 'var(--text-faint)',
+                          cursor: 'pointer',
+                          fontSize: 10,
+                          padding: '1px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {starred ? '★' : '☆'}
+                      </button>
+                    )}
+                  </span>
                 )
               })}
             </div>
