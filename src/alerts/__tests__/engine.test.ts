@@ -107,6 +107,33 @@ describe('stepAlert（D10 循环模式状态推进）', () => {
     const rearm = stepAlert(t1, 61000)
     expect(rearm.triggered).toBe(false)
   })
+
+  it('K10 重复间隔：间隔内不二次触发，超间隔可再触发', () => {
+    const a = createAlert('BTCUSDT', 'above', 65000, true, undefined, 30)
+    const t1 = stepAlert(a, 66000, undefined, 1000)
+    expect(t1.triggered).toBe(true)
+    expect(t1.lastTriggeredAt).toBe(1000)
+    // 间隔 30 分钟 = 1,800,000 ms；10 分钟后仍在间隔内 → 不触发
+    const t2 = stepAlert({ ...t1, triggered: false }, 66000, undefined, 1000 + 10 * 60_000)
+    expect(t2.triggered).toBe(false)
+    // 超过间隔 → 可再触发
+    const t3 = stepAlert({ ...t1, triggered: false }, 66000, undefined, 1000 + 31 * 60_000)
+    expect(t3.triggered).toBe(true)
+    expect(t3.lastTriggeredAt).toBe(1000 + 31 * 60_000)
+  })
+
+  it('K10 无间隔设置：不限制重复', () => {
+    const a = createAlert('BTCUSDT', 'above', 65000, true)
+    const t1 = stepAlert(a, 66000, undefined, 1000)
+    const t2 = stepAlert({ ...t1, triggered: false }, 66000, undefined, 1000 + 60_000)
+    expect(t2.triggered).toBe(true)
+  })
+
+  it('K2 分组：createAlert 透传 group', () => {
+    const a = createAlert('BTCUSDT', 'above', 65000, false, undefined, undefined, '趋势')
+    expect(a.group).toBe('趋势')
+    expect(createAlert('E', 'above', 1).group).toBeUndefined()
+  })
 })
 
 describe('createAlert repeat 标记', () => {
