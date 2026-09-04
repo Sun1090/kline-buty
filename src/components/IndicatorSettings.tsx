@@ -6,6 +6,10 @@ import { usePersistedState } from '../hooks/usePersistedState'
 import type { TFunction } from '../i18n/translate'
 import { editableLineIds } from '../indicators/lineColors'
 import { MAIN_LINE_COLORS, SUB_LINE_COLORS } from '../chart/adapter'
+import { SUB_OPTIONS, optionLabel } from './headerOptions'
+
+/** H10 副图叠加可选项：全部副图指标 value + 'none'（不叠加） */
+const SUB_OVERLAY_OPTIONS = SUB_OPTIONS.map((o) => o.value)
 
 /** 参数预设：命名映射，持久化在 localStorage（B15 参数预设保存/切换） */
 type ParamPresets = Record<string, IndicatorParams>
@@ -14,7 +18,9 @@ const PRESETS_KEY = 'indicatorPresets'
 interface Field {
   key: keyof IndicatorParams
   label: string
-  kind: 'number' | 'list' | 'boolean'
+  kind: 'number' | 'list' | 'boolean' | 'select'
+  /** select 选项：value 列表（'none'=不叠加） */
+  options?: string[]
 }
 
 interface IndicatorSettingsProps {
@@ -38,6 +44,8 @@ function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction)
     })
   // 主图叠加：MA 之上同时显示 EMA（复合均线系统）
   if (main === 'ma') fields.push({ key: 'maOverlayEma', label: t('indicator.maOverlayEma'), kind: 'boolean' })
+  // H10 副图叠加：同轴再叠一条副图指标（副图激活时可选，'none'=关闭）
+  if (sub !== 'none') fields.push({ key: 'subOverlay', label: t('indicator.subOverlay'), kind: 'select', options: SUB_OVERLAY_OPTIONS })
   if (main === 'boll') {
     fields.push({ key: 'bollPeriod', label: t('indicator.bollPeriod'), kind: 'number' })
     fields.push({ key: 'bollMult', label: t('indicator.bollMult'), kind: 'number' })
@@ -241,6 +249,22 @@ export function IndicatorSettings({
               onChange={(e) => apply({ [f.key]: e.target.checked } as Partial<IndicatorParams>)}
               style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent)' }}
             />
+          ) : f.kind === 'select' ? (
+            <select
+              aria-label={f.label}
+              value={draft[f.key] as string}
+              onChange={(e) => apply({ [f.key]: e.target.value } as Partial<IndicatorParams>)}
+              style={{ ...inputStyle, width: 110, cursor: 'pointer' }}
+            >
+              {(f.options ?? []).map((v) => {
+                const opt = SUB_OPTIONS.find((o) => o.value === v)
+                return (
+                  <option key={v} value={v}>
+                    {opt ? optionLabel(opt, t) : v}
+                  </option>
+                )
+              })}
+            </select>
           ) : (
             <input
               style={inputStyle}
