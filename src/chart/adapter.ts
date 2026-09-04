@@ -483,6 +483,8 @@ export class LightweightChartAdapter implements ChartApi {
       }
     | null = null
   private dragPreview: Drawing | null = null
+  /** I14 拖拽中指针位置（overlay 像素坐标）：画对齐参考辅助线用 */
+  private dragPointer: { x: number; y: number } | null = null
 
   constructor(container: HTMLElement) {
     activeAdapters.add(this)
@@ -809,6 +811,11 @@ export class LightweightChartAdapter implements ChartApi {
           this.drawLabel(ctx, ap.x, ap.y - 10, `📍 ${anchor.price.toFixed(2)} · ${d} ${t}`, 'left')
         }
       }
+      // I14 拖拽辅助线：从被拖锚点沿当前指针位置画水平/垂直对齐参考虚线（价格/时间对齐）
+      if (this.dragEdit && this.dragPointer) {
+        const ap = anchor ? this.project(anchor.time, anchor.price) : null
+        if (ap) this.drawDragGuides(ctx, ap, this.dragPointer)
+      }
     }
 
     // 画线预览
@@ -875,6 +882,26 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.strokeText(m.label, pt.x + 6, pt.y - 6)
       ctx.fillText(m.label, pt.x + 6, pt.y - 6)
     }
+  }
+
+  /** I14 拖拽对齐参考辅助线：以被拖锚点为原点，向指针位置延伸水平（价格对齐）与垂直（时间对齐）虚线 */
+  private drawDragGuides(ctx: CanvasRenderingContext2D, ap: { x: number; y: number }, p: { x: number; y: number }) {
+    ctx.save()
+    ctx.strokeStyle = this.theme.accent
+    ctx.globalAlpha = 0.35
+    ctx.setLineDash([4, 4])
+    ctx.lineWidth = 1
+    // 水平线：过锚点、延伸至指针所在列（对齐价格）
+    ctx.beginPath()
+    ctx.moveTo(ap.x, ap.y)
+    ctx.lineTo(p.x, ap.y)
+    ctx.stroke()
+    // 垂直线：过锚点、延伸至指针所在行（对齐时间）
+    ctx.beginPath()
+    ctx.moveTo(ap.x, ap.y)
+    ctx.lineTo(ap.x, p.y)
+    ctx.stroke()
+    ctx.restore()
   }
 
   /** I9 画线坐标角标：每条画线首个可见端点显示坐标标签（`price · date`） */
@@ -2491,6 +2518,7 @@ export class LightweightChartAdapter implements ChartApi {
                 Number(time) - this.dragEdit.startTime,
                 Number(price) - this.dragEdit.startPrice,
               )
+        this.dragPointer = { x, y }
         this.draw()
       }
       return
@@ -2560,6 +2588,7 @@ export class LightweightChartAdapter implements ChartApi {
       const preview = this.dragPreview
       this.dragEdit = null
       this.dragPreview = null
+      this.dragPointer = null
       if (preview) {
         this.drawings = this.drawings.map((d) => (d.id === preview.id ? preview : d))
         this.drawingCallbacks?.onUpdate?.(edit.id, preview.points)
@@ -2634,6 +2663,7 @@ export class LightweightChartAdapter implements ChartApi {
     this.drawingDown = null
     this.dragPreview = null
     this.dragEdit = null
+    this.dragPointer = null
     this.dragKey = null
     this.hoverKey = null
     this.touchMoved = false
@@ -3025,6 +3055,7 @@ export class LightweightChartAdapter implements ChartApi {
     if (!this.drawingDown && !this.dragEdit && this.drawingPoints.length === 0) {
       this.drawingPreview = null
       this.dragPreview = null
+      this.dragPointer = null
     }
     if (!this.drawingDown && !this.dragEdit && !this.dragKey) this.setPanEnabled(true)
     this.container.style.cursor = ''
