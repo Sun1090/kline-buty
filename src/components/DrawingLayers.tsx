@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { groupDrawings, type Drawing } from '../drawings/logic'
+import { groupDrawings, summarizeDrawings, type Drawing } from '../drawings/logic'
 import type { DrawingTemplate } from '../drawings/templates'
 import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
@@ -126,6 +126,8 @@ export function DrawingLayers({
       )
     })
   }, [drawings, searchQuery, t])
+  // I2 画线统计：线/面数量与量度汇总
+  const stats = useMemo(() => summarizeDrawings(visibleDrawings), [visibleDrawings])
   return (
     <div
       data-testid="drawing-layers"
@@ -611,6 +613,17 @@ export function DrawingLayers({
           </label>
         )
       })()}
+
+      {/* I2 画线统计：线/面数量与量度汇总（画线多时显示） */}
+      {stats.total > 0 && (
+        <div
+          data-testid="drawing-stats"
+          style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-faint)', padding: '4px 2px', borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6 }}
+        >
+          <span>{t('layers.statsLine', { count: stats.lineCount, len: stats.totalLineLength.toFixed(1) })}</span>
+          <span>{t('layers.statsArea', { count: stats.areaCount, area: stats.totalArea.toFixed(0) })}</span>
+        </div>
+      )}
 
       {/* 画线模板（C6）：命名保存常用组合，一键套用 */}
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 10, paddingTop: 8 }}>
