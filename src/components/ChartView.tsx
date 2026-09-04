@@ -26,6 +26,7 @@ import { thresholdZones } from '../indicators/thresholdZones'
 import { findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
+import { calcVortex } from '../indicators/vortex'
 import type { IndicatorParams } from '../indicators/params'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
@@ -34,7 +35,7 @@ import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/
 import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'supertrend' | 'none'
-export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon' | 'trix' | 'dpo' | 'none'
+export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon' | 'trix' | 'dpo' | 'vortex' | 'none'
 export type { ChartType }
 
 const LOAD_MORE_COOLDOWN_MS = 3000
@@ -687,6 +688,16 @@ export function ChartView({
         kind: 'dpo' as const,
         lines: [{ id: 'DPO', points: calcDPO(windowData, indicatorParams.dpoPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
+      }
+    }
+    if (subIndicator === 'vortex') {
+      const v = calcVortex(windowData, indicatorParams.vortexPeriod)
+      return {
+        kind: 'vortex' as const,
+        lines: [
+          { id: 'VI+', points: v.plus },
+          { id: 'VI-', points: v.minus },
+        ],
       }
     }
     return null
