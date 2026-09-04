@@ -5,6 +5,7 @@ import { fmtCompact } from '../depth/format'
 import { fmtPriceCompact as fmtPrice } from '../utils/format'
 import { useI18n } from '../i18n/useI18n'
 import type { OrderSide } from '../trade/order'
+import { Skeleton } from './Skeleton'
 
 interface OrderBookProps {
   symbol: string
@@ -190,9 +191,7 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
         <span style={{ textAlign: 'right' }}>{t('orderBook.cum')}</span>
       </div>
       {!hasData ? (
-        <div style={{ fontSize: 11, color: 'var(--text-faint)', padding: '6px 8px' }}>
-          {t('status.depthLoading')}
-        </div>
+        <Skeleton rows={10} rowHeight={16} testId="orderbook-skeleton" />
       ) : (
         <>
           {data.asks.map((r) => (
