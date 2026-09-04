@@ -11,12 +11,14 @@ interface TradeHistoryPanelProps {
   onClear: () => void
   /** D14 导出流水 CSV */
   onExport: () => void
+  /** J6 导出权益曲线 CSV */
+  onExportEquity: () => void
   /** D15 重置模拟账户（两步确认在面板内） */
   onReset: () => void
 }
 
 /** 交易流水面板：模拟成交记录（新在前），含清空/导出/重置；空态引导 */
-export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onReset }: TradeHistoryPanelProps) {
+export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onExportEquity, onReset }: TradeHistoryPanelProps) {
   const { t } = useI18n()
   // D15 重置两步确认：首次点击进入确认态，3s 未二次确认自动复位
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -92,6 +94,22 @@ export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onReset 
             }}
           >
             {confirmingReset ? t('paper.resetConfirm') : t('paper.reset')}
+          </button>
+          <button
+            data-testid="trade-history-export-equity"
+            onClick={onExportEquity}
+            title={t('paper.exportEquity')}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-faint)',
+              borderRadius: 4,
+              padding: '1px 5px',
+              fontSize: 11,
+              cursor: 'pointer',
+            }}
+          >
+            {t('paper.exportEquity')}
           </button>
           <button
             onClick={onClose}
