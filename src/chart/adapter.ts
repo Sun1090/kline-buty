@@ -213,6 +213,8 @@ export interface ChartApi {
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
   setDrawings(drawings: Drawing[]): void
+  /** I9 画线坐标信息角标常显开关（每条线端点在 overlay 上显示坐标标签） */
+  setCoordBadge(show: boolean): void
   /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
   setNotesHidden(hidden: boolean): void
   /** 画线工具模式（none 为只读/选中） */
@@ -376,6 +378,8 @@ export class LightweightChartAdapter implements ChartApi {
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
   /** 免责声明水印开关（默认开） */
   private showWatermark = true
+  /** I9 画线坐标信息角标常显开关（每条线端点在 overlay 上显示坐标标签） */
+  private coordBadge = false
   /** 当前 K 线周期秒数（量度标签根数） */
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
@@ -542,6 +546,13 @@ export class LightweightChartAdapter implements ChartApi {
 
   setDrawings(drawings: Drawing[]) {
     this.drawings = drawings
+    this.draw()
+  }
+
+  /** I9 画线坐标角标常显开关：重绘 overlay 立即生效 */
+  setCoordBadge(show: boolean) {
+    if (this.coordBadge === show) return
+    this.coordBadge = show
     this.draw()
   }
 
@@ -768,6 +779,8 @@ export class LightweightChartAdapter implements ChartApi {
       } else {
         this.drawOne(ctx, renderDraw, renderDraw.id === this.selectedDrawingId || hovered)
       }
+      // I9 坐标角标常显：每条可见画线的端点在 overlay 上显示坐标标签
+      if (this.coordBadge && !this.dragEdit) this.drawCoordBadges(ctx, renderDraw)
     }
     if (this.dragPreview) {
       this.drawOne(ctx, this.dragPreview, true)
@@ -849,6 +862,28 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.strokeText(m.label, pt.x + 6, pt.y - 6)
       ctx.fillText(m.label, pt.x + 6, pt.y - 6)
     }
+  }
+
+  /** I9 画线坐标角标：每条画线首个可见端点显示坐标标签（`price · date`） */
+  private drawCoordBadges(ctx: CanvasRenderingContext2D, d: Drawing) {
+    if (!d.points || d.points.length === 0) return
+    const p = d.points[0]
+    const ap = this.project(p.time, p.price)
+    if (!ap) return
+    const date = new Date(p.time * 1000).toLocaleDateString()
+    const time = new Date(p.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ctx.save()
+    ctx.font = '10px system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif'
+    ctx.textBaseline = 'bottom'
+    const label = `${p.price.toFixed(2)} · ${date} ${time}`
+    // 背景色块提升可读性
+    ctx.fillStyle = this.theme.background
+    const w = ctx.measureText(label).width + 8
+    ctx.fillRect(ap.x - 4, ap.y - 14, w, 16)
+    ctx.fillStyle = this.theme.textColor
+    ctx.textAlign = 'left'
+    ctx.fillText(label, ap.x, ap.y)
+    ctx.restore()
   }
 
   /** 免责声明水印：主图区居中、低透明度、跟随主题色；overlay 无 pointer-events 不拦截交互 */

@@ -109,6 +109,8 @@ export function App() {
   const setDrawingSnap = (v: SnapMode) => setDrawingSnapRaw(v)
   // C12 便签全局显隐（持久化；隐藏不渲染 note，数据保留）
   const [notesHidden, setNotesHidden] = usePersistedState<boolean>('notesHidden', false)
+  /** I9 画线坐标角标常显（每条线端点坐标标签） */
+  const [coordBadge, setCoordBadge] = usePersistedState<boolean>('drawingCoordBadge', false)
   // T21：四图每格独立周期（会话态，默认全部跟随当前周期）
   const [quadPeriods, setQuadPeriods] = useState<[Period, Period, Period, Period] | null>(null)
   // T22：下拉刷新重挂载键
@@ -823,6 +825,8 @@ export function App() {
           onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
+          coordBadge={coordBadge}
+          onToggleCoordBadge={() => setCoordBadge((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -930,6 +934,8 @@ export function App() {
           onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
+          coordBadge={coordBadge}
+          onToggleCoordBadge={() => setCoordBadge((v) => !v)}
           tradesActive={tradesOpen}
           onToggleTrades={() => setTradesOpen((v) => {
             if (!v) setPositionOpen(false)
@@ -1128,6 +1134,7 @@ export function App() {
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
+          coordBadge={coordBadge}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
@@ -1147,6 +1154,7 @@ export function App() {
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
+          coordBadge={coordBadge}
           periods={quadPeriods ?? undefined}
           onCellPeriod={(i, p) => setQuadPeriods((prev) => { const next = (prev ?? [period, period, period, period]) as [Period, Period, Period, Period]; next[i] = p; return [...next] })}
             mainIndicator={mainIndicator}
@@ -1168,6 +1176,7 @@ export function App() {
           timezoneMode={timezoneMode}
           drawingSnap={drawingSnap}
           notesHidden={notesHidden}
+          coordBadge={coordBadge}
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}

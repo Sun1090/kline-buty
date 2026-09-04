@@ -85,6 +85,8 @@ function setup(overrides: Partial<Parameters<typeof MobileHeader>[0]> = {}) {
     onPasteDrawing: vi.fn(),
     notesHidden: false,
     onToggleNotesHidden: vi.fn(),
+    coordBadge: false,
+    onToggleCoordBadge: vi.fn(),
     drawingImportError: null,
     layout: 'single',
     themeMode: 'dark',

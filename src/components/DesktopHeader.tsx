@@ -481,6 +481,15 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           >
             {t('drawing.noteToggle')}
           </PanelButton>
+          <PanelButton
+            onClick={props.onToggleCoordBadge}
+            title={t('drawing.coordBadge')}
+            ariaLabel={t('drawing.coordBadge')}
+            active={props.coordBadge}
+            testId="drawing-coord-badge-toggle"
+          >
+            {t('drawing.coordBadge')}
+          </PanelButton>
           <button
             data-testid="drawing-layers-open"
             onClick={() => setMenu('layers')}

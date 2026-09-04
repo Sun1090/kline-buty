@@ -118,6 +118,8 @@ interface ChartViewProps {
   drawings?: Drawing[]
   /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */
   notesHidden?: boolean
+  /** I9 画线坐标角标常显（每条线端点显示坐标标签） */
+  coordBadge?: boolean
   /** 画线工具 */
   drawingTool?: DrawingTool
   /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
@@ -174,6 +176,7 @@ export function ChartView({
   onPositionDrag,
   drawings,
   notesHidden,
+  coordBadge,
   drawingTool,
   selectedDrawingId,
   onDrawingCommit,
@@ -876,6 +879,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setNotesHidden?.(notesHidden ?? false)
   }, [notesHidden])
+
+  // I9 画线坐标角标常显 effect
+  useEffect(() => {
+    apiRef.current?.setCoordBadge?.(coordBadge ?? false)
+  }, [coordBadge])
 
   // 画线工具 effect：工具变化时切换（切换非 none 工具会清空选中，符合预期）
   useEffect(() => {

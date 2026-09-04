@@ -104,6 +104,9 @@ export interface MobileHeaderProps {
   /** C12 便签全局显隐 + 回调 */
   notesHidden: boolean
   onToggleNotesHidden: () => void
+  /** I9 画线坐标角标常显 + 回调 */
+  coordBadge: boolean
+  onToggleCoordBadge: () => void
   tradesActive: boolean
   onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
@@ -581,6 +584,23 @@ export function MobileHeader(props: MobileHeaderProps) {
                 }}
               >
                 {t('drawing.noteToggle')}
+              </button>
+              <button
+                data-testid="mobile-drawing-coord-badge-toggle"
+                onClick={props.onToggleCoordBadge}
+                aria-pressed={props.coordBadge}
+                title={t('drawing.coordBadge')}
+                style={{
+                  padding: '10px 8px',
+                  fontSize: 12,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  background: props.coordBadge ? 'rgba(78,156,245,0.25)' : 'rgba(255,255,255,0.05)',
+                  color: props.coordBadge ? '#4e9cf5' : 'var(--text-dim)',
+                }}
+              >
+                {t('drawing.coordBadge')}
               </button>
               <button
                 data-testid="drawing-layers-open"

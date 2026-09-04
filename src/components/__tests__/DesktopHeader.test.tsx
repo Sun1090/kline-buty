@@ -41,6 +41,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onTextBgChange: vi.fn(),
     onConfirmText: vi.fn(),
     onCancelText: vi.fn(),
+    onToggleCoordBadge: vi.fn(),
   }
   const props = {
     symbol: 'BTCUSDT',
@@ -91,6 +92,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onPasteDrawing: vi.fn(),
     notesHidden: false,
     onToggleNotesHidden: vi.fn(),
+    coordBadge: false,
     drawingImportError: null,
     layout: 'single' as const,
     themeMode: 'dark' as const,
@@ -159,6 +161,15 @@ describe('DesktopHeader（桌面顶栏）', () => {
     const scale = screen.getByTestId('scale-toggle')
     expect(scale.getAttribute('aria-label')).toBeTruthy()
     expect(scale.getAttribute('aria-pressed')).toBe('true') // log → 激活
+  })
+
+  it('I9 坐标角标开关：点击触发 onToggleCoordBadge + aria-pressed', () => {
+    const h = setup()
+    fireEvent.click(screen.getByTestId('drawing-toggle'))
+    const btn = screen.getByTestId('drawing-coord-badge-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(btn)
+    expect(h.onToggleCoordBadge).toHaveBeenCalledTimes(1)
   })
 
   it('无弹层打开时 Esc 不拦截（App 全局 Esc 正常生效）', () => {
