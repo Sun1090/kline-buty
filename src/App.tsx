@@ -152,6 +152,8 @@ export function App() {
   const [textDraft, setTextDraft] = useState('')
   const [textFontSize, setTextFontSize] = useState(DEFAULT_TEXT_FONT_SIZE)
   const [textColor, setTextColor] = useState('')
+  /** I5 文字底色（空 = 半透明主题背景） */
+  const [textBg, setTextBg] = useState('')
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
@@ -445,13 +447,14 @@ export function App() {
     const text = textDraft.trim()
     mutateDrawings((prev) =>
       prev.map((d) =>
-        d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined, textAlign } : d,
+        d.id === editingTextId ? { ...d, text, fontSize: textFontSize, color: textColor || undefined, textBg: textBg || undefined, textAlign } : d,
       ),
     )
     setEditingTextId(null)
     setTextDraft('')
     setTextFontSize(DEFAULT_TEXT_FONT_SIZE)
     setTextColor('')
+    setTextBg('')
     setTextAlign('center')
   }
   const updateDrawing = (id: string, points: { time: number; price: number }[]) => {
@@ -973,9 +976,11 @@ export function App() {
           textDraft={textDraft}
           textFontSize={textFontSize}
           textColor={textColor}
+          textBg={textBg}
           onTextDraftChange={setTextDraft}
           onTextFontSizeChange={setTextFontSize}
           onTextColorChange={setTextColor}
+          onTextBgChange={setTextBg}
           onConfirmText={confirmTextDrawing}
           onCancelText={() => {
             setEditingTextId(null)

@@ -32,9 +32,13 @@ export interface DesktopHeaderProps extends MobileHeaderProps {
   textDraft: string
   textFontSize: number
   textColor: string
+  /** I5 文字底色（空 = 半透明主题背景） */
+  textBg: string
   onTextDraftChange: (v: string) => void
   onTextFontSizeChange: (n: number) => void
   onTextColorChange: (c: string) => void
+  /** I5 文字底色变更 */
+  onTextBgChange: (c: string) => void
   onConfirmText: () => void
   onCancelText: () => void
 }
@@ -380,6 +384,35 @@ export function DesktopHeader(props: DesktopHeaderProps) {
                     height: 16,
                     borderRadius: '50%',
                     border: props.textColor === opt.color ? '2px solid #fff' : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: opt.color || 'transparent',
+                    ...(opt.color
+                      ? {}
+                      : {
+                          background: 'transparent',
+                          border: '1px dashed var(--border)',
+                          color: 'var(--text)',
+                          fontSize: 10,
+                          lineHeight: '14px',
+                        }),
+                  }}
+                >
+                  {opt.color ? '' : 'A'}
+                </button>
+              ))}
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 4 }}>{t('drawing.textBg')}</span>
+              {TEXT_COLOR_OPTIONS.map((opt) => (
+                <button
+                  key={`bg-${opt.id}`}
+                  data-testid={`text-bg-${opt.id}`}
+                  aria-label={`${t('drawing.textBg')} ${opt.id}`}
+                  aria-pressed={props.textBg === opt.color}
+                  onClick={() => props.onTextBgChange(opt.color)}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    border: props.textBg === opt.color ? '2px solid #fff' : '1px solid var(--border)',
                     cursor: 'pointer',
                     background: opt.color || 'transparent',
                     ...(opt.color
