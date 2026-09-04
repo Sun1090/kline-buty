@@ -303,6 +303,9 @@ export const zh = {
     presetSave: '保存',
     presetSaved: '已保存',
     presetName: '预设名称',
+    exportParams: '导出参数',
+    importParams: '导入参数',
+    importParamsOk: '参数已导入',
   },
   stats: {
     lastPrice: '最新价',
@@ -790,6 +793,9 @@ export const en: Messages = {
     presetSave: 'Save',
     presetSaved: 'Saved',
     presetName: 'Preset name',
+    exportParams: 'Export params',
+    importParams: 'Import params',
+    importParamsOk: 'Params imported',
   },
   stats: {
     lastPrice: 'Last price',
@@ -1275,6 +1281,9 @@ export const ja: Messages = {
     presetSave: '保存',
     presetSaved: '保存済み',
     presetName: 'プリセット名',
+    exportParams: 'パラメータ出力',
+    importParams: 'パラメータ読込',
+    importParamsOk: 'パラメータを読込みました',
   },
   stats: {
     lastPrice: '最新価格',
@@ -1761,6 +1770,9 @@ export const ko: Messages = {
     presetSave: '저장',
     presetSaved: '저장됨',
     presetName: '프리셋 이름',
+    exportParams: '매개변수 내보내기',
+    importParams: '매개변수 가져오기',
+    importParamsOk: '매개변수를 가져왔습니다',
   },
   stats: {
     lastPrice: '최신가',
@@ -2258,6 +2270,9 @@ export const es: Messages = {
     presetSave: 'Guardar',
     presetSaved: 'Guardado',
     presetName: 'Nombre del ajuste',
+    exportParams: 'Exportar parámetros',
+    importParams: 'Importar parámetros',
+    importParamsOk: 'Parámetros importados',
   },
   stats: {
     lastPrice: 'Último precio',

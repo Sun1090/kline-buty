@@ -103,4 +103,23 @@ describe('IndicatorSettings', () => {
     fireEvent.click(screen.getByText('✕'))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('H8 导出：按钮存在且可点击（触发下载不抛错）', () => {
+    // jsdom 无 URL.createObjectURL → 导出会走 a.click，容忍不抛错
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    setup('ma', 'rsi')
+    const btn = screen.getByTestId('indicator-export')
+    expect(btn).toBeDefined()
+    fireEvent.click(btn)
+    expect(anchorClickSpy).toHaveBeenCalled()
+    anchorClickSpy.mockRestore()
+  })
+
+  it('H8 导入：按钮触发文件选择器', () => {
+    const fileClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {})
+    setup('ma', 'rsi')
+    fireEvent.click(screen.getByTestId('indicator-import'))
+    expect(fileClickSpy).toHaveBeenCalled()
+    fileClickSpy.mockRestore()
+  })
 })

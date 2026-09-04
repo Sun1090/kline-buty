@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from '../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from './ChartView'
 import { useI18n } from '../i18n/useI18n'
@@ -142,6 +142,37 @@ export function IndicatorSettings({
     onChange({ ...p })
   }
 
+  // H8 参数导入/导出（跨设备迁移 JSON 快照）
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [importFlash, setImportFlash] = useState(false)
+  const exportParams = () => {
+    const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'kline-buty-indicator-params.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const importParamsFile = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result ?? '')) as Partial<IndicatorParams>
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.maPeriods)) return
+        const next = { ...draft, ...parsed }
+        setDraft(next)
+        onChange(next)
+        setImportFlash(true)
+        window.setTimeout(() => setImportFlash(false), 1500)
+      } catch {
+        /* 非法 JSON/结构不符 → 忽略 */
+      }
+    }
+    reader.readAsText(file)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   const presetNames = Object.keys(presets)
 
   return (
@@ -269,6 +300,57 @@ export function IndicatorSettings({
           >
             {t('indicator.reset')}
           </button>
+        </div>
+        {/* H8 参数导入/导出（JSON 快照，跨设备迁移） */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <button
+            data-testid="indicator-export"
+            onClick={exportParams}
+            title={t('indicator.exportParams')}
+            style={{
+              flex: 1,
+              background: 'none',
+              border: '1px solid #2a2e39',
+              color: 'var(--text-dim)',
+              cursor: 'pointer',
+              fontSize: 12,
+              borderRadius: 4,
+              padding: '4px 8px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t('indicator.exportParams')}
+          </button>
+          <button
+            data-testid="indicator-import"
+            onClick={() => fileRef.current?.click()}
+            title={t('indicator.importParams')}
+            style={{
+              flex: 1,
+              background: 'none',
+              border: '1px solid #2a2e39',
+              color: importFlash ? 'var(--up, #26a69a)' : 'var(--text-dim)',
+              cursor: 'pointer',
+              fontSize: 12,
+              borderRadius: 4,
+              padding: '4px 8px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {importFlash ? t('indicator.importParamsOk') : t('indicator.importParams')}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            data-testid="indicator-import-input"
+            style={{ display: 'none' }}
+            aria-hidden="true"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) importParamsFile(f)
+            }}
+          />
         </div>
       </div>
     </div>
