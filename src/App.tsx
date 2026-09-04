@@ -116,6 +116,8 @@ export function App() {
   const [mainIndicator, setMainIndicator] = usePersistedState<MainIndicatorKind>('mainIndicator', 'ma')
   const [subIndicator, setSubIndicator] = usePersistedState<SubIndicatorKind>('subIndicator', 'volume')
   const [indicatorParams, setIndicatorParams] = usePersistedState<IndicatorParams>('indicatorParams', DEFAULT_INDICATOR_PARAMS)
+  // H11 指标线颜色自定义：line id → 覆盖色
+  const [lineColors, setLineColors] = usePersistedState<Record<string, string>>('lineColors', {})
   const [layout, setLayout] = usePersistedState<'single' | 'pair' | 'quad'>('layout', 'single')
   const [themeSetting, setThemeSetting] = usePersistedState<ThemeMode | 'auto'>('theme', 'dark')
 
@@ -1080,6 +1082,15 @@ export function App() {
           subIndicator={subIndicator}
           onChange={setIndicatorParams}
           onClose={() => setSettingsOpen(false)}
+          lineColors={lineColors}
+          onLineColorChange={(id, color) =>
+            setLineColors((prev) => {
+              const next = { ...prev }
+              if (color) next[id] = color
+              else delete next[id]
+              return next
+            })
+          }
         />
       )}
       <main key={`chart-${reloadKey}`} style={{ flex: 1, minHeight: 0, marginRight: 'var(--side-panel-w)' }}>
@@ -1100,6 +1111,7 @@ export function App() {
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
+            lineColors={lineColors}
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
           />
@@ -1139,6 +1151,7 @@ export function App() {
             mainIndicator={mainIndicator}
             subIndicator={subIndicator}
             indicatorParams={indicatorParams}
+            lineColors={lineColors}
             replay={replay}
             hasMore={hasMore}
             onLoadMore={loadMore}

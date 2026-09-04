@@ -311,6 +311,9 @@ export const zh = {
     exportParams: '导出参数',
     importParams: '导入参数',
     importParamsOk: '参数已导入',
+    lineColors: '线色',
+    lineColorFor: '{name} 线颜色',
+    lineColorReset: '恢复默认色',
   },
   stats: {
     lastPrice: '最新价',
@@ -806,6 +809,9 @@ export const en: Messages = {
     exportParams: 'Export params',
     importParams: 'Import params',
     importParamsOk: 'Params imported',
+    lineColors: 'Line colors',
+    lineColorFor: '{name} line color',
+    lineColorReset: 'Reset to default',
   },
   stats: {
     lastPrice: 'Last price',
@@ -1299,6 +1305,9 @@ export const ja: Messages = {
     exportParams: 'パラメータ出力',
     importParams: 'パラメータ読込',
     importParamsOk: 'パラメータを読込みました',
+    lineColors: 'ライン色',
+    lineColorFor: '{name} ラインの色',
+    lineColorReset: 'デフォルトに戻す',
   },
   stats: {
     lastPrice: '最新価格',
@@ -1793,6 +1802,9 @@ export const ko: Messages = {
     exportParams: '매개변수 내보내기',
     importParams: '매개변수 가져오기',
     importParamsOk: '매개변수를 가져왔습니다',
+    lineColors: '선 색상',
+    lineColorFor: '{name} 선 색상',
+    lineColorReset: '기본 색상으로 초기화',
   },
   stats: {
     lastPrice: '최신가',
@@ -2298,6 +2310,9 @@ export const es: Messages = {
     exportParams: 'Exportar parámetros',
     importParams: 'Importar parámetros',
     importParamsOk: 'Parámetros importados',
+    lineColors: 'Colores de línea',
+    lineColorFor: 'Color de línea de {name}',
+    lineColorReset: 'Restablecer al predeterminado',
   },
   stats: {
     lastPrice: 'Último precio',

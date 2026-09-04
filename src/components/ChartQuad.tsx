@@ -18,6 +18,7 @@ interface CellProps {
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
+  lineColors?: Record<string, string>
   colorPreset: ColorPresetId
   showWatermark: boolean
   externalRange: Range2 | null
@@ -28,7 +29,7 @@ interface CellProps {
   onCellPeriod: (p: Period) => void
 }
 
-function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, colorPreset, showWatermark, externalRange, onViewRangeChange, onCrosshairChange, externalCrosshairTime, onCellPeriod }: CellProps) {
+function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, lineColors = {}, colorPreset, showWatermark, externalRange, onViewRangeChange, onCrosshairChange, externalCrosshairTime, onCellPeriod }: CellProps) {
   const data = useKlineData(symbol, period)
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -44,6 +45,7 @@ function QuadCell({ symbol, period, chartType, priceScaleMode = 'linear', timezo
         mainIndicator={mainIndicator}
         subIndicator={subIndicator}
         indicatorParams={indicatorParams}
+        lineColors={lineColors}
         colorPreset={colorPreset}
         replay={null}
         hasMore={data.hasMore}
@@ -97,16 +99,18 @@ interface QuadChartProps {
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
+  /** H11 指标线颜色自定义（透传给内部 ChartView） */
+  lineColors?: Record<string, string>
   themeMode?: 'dark' | 'light'
   colorPreset?: ColorPresetId
   showWatermark?: boolean
 }
 
 /** 四图联动：2×2 网格，时间轴全联动；每格可独立切换周期（T21） */
-export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
+export function ChartQuad({ symbols, period, periods, onCellPeriod, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true }: QuadChartProps) {
   const { ranges, broadcast, crosshairTimes, broadcastCrosshair } = useChartSync(4)
   const cellPeriods = periods ?? [period, period, period, period]
-  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, themeMode, colorPreset, showWatermark }
+  const base = { chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, lineColors, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100%' }}>

@@ -20,6 +20,8 @@ interface ChartPairProps {
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
+  /** H11 指标线颜色自定义（透传给内部 ChartView） */
+  lineColors?: Record<string, string>
   themeMode?: 'dark' | 'light'
   colorPreset?: ColorPresetId
   showWatermark?: boolean
@@ -30,7 +32,7 @@ interface ChartPairProps {
 }
 
 /** 双图联动：时间轴同步（A 拖动 → B 跟随），数据/指标配置共享 */
-export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
+export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleMode = 'linear', timezoneMode = 'utc', drawingSnap = 'ohlc', notesHidden = false, mainIndicator, subIndicator, indicatorParams, lineColors = {}, themeMode = 'dark', colorPreset = 'classic', showWatermark = true, referencePrice, markerPrice }: ChartPairProps) {
   const a = useKlineData(symbol, period)
   const b = useKlineData(secondSymbol, period)
 
@@ -74,7 +76,7 @@ export function ChartPair({ symbol, secondSymbol, period, chartType, priceScaleM
     setCrossA(t)
   }
 
-  const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, replay: null, themeMode, colorPreset, showWatermark }
+  const base = { period, chartType, priceScaleMode, timezoneMode, drawingSnap, notesHidden, mainIndicator, subIndicator, indicatorParams, lineColors, replay: null, themeMode, colorPreset, showWatermark }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
