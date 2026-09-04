@@ -32,6 +32,8 @@ import {
   widthChannelSpec,
   measureInfo,
   summarizeDrawings,
+  extractDrawingStyle,
+  applyDrawingStyle,
   moveAnchor,
   pitchforkMid,
   pitchforkRays,
@@ -2014,5 +2016,53 @@ describe('summarizeDrawings（I2 画线统计）', () => {
     expect(s.total).toBe(2)
     expect(s.lineCount).toBe(0)
     expect(s.areaCount).toBe(0)
+  })
+})
+
+describe('extractDrawingStyle / applyDrawingStyle（I11 格式刷）', () => {
+  it('extract：只取显式设置的可复制造型字段', () => {
+    const d = {
+      ...createDrawing('trend', [{ time: 0, price: 1 }, { time: 2, price: 3 }], 't1'),
+      color: '#ff0000',
+      opacity: 0.5,
+      fontSize: 16,
+      textBg: '#000000',
+      followLatest: true,
+    }
+    expect(extractDrawingStyle(d)).toEqual({
+      color: '#ff0000',
+      opacity: 0.5,
+      fontSize: 16,
+      textBg: '#000000',
+      followLatest: true,
+    })
+  })
+
+  it('extract：未设置字段不出现', () => {
+    const d = createDrawing('text', [{ time: 0, price: 1 }], 'x1')
+    expect(extractDrawingStyle(d)).toEqual({})
+  })
+
+  it('apply：把样式合并进画线，非样式字段保留', () => {
+    const d = createDrawing('rect', [{ time: 0, price: 1 }, { time: 5, price: 9 }], 'r1')
+    const styled = applyDrawingStyle(d, { color: '#22c55e', opacity: 0.7 })
+    expect(styled.color).toBe('#22c55e')
+    expect(styled.opacity).toBe(0.7)
+    // id/type/points 不变
+    expect(styled.id).toBe('r1')
+    expect(styled.type).toBe('rect')
+    expect(styled.points).toEqual(d.points)
+  })
+
+  it('apply + extract 往返：可完整恢复样例样式', () => {
+    const d = {
+      ...createDrawing('text', [{ time: 0, price: 1 }], 'x1'),
+      color: '#4e9cf5',
+      fontSize: 20,
+    }
+    const restored = applyDrawingStyle(d, extractDrawingStyle(d))
+    expect(restored.color).toBe('#4e9cf5')
+    expect(restored.fontSize).toBe(20)
+    expect(restored.id).toBe('x1')
   })
 })
