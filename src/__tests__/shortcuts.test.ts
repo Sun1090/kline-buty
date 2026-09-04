@@ -90,6 +90,37 @@ describe('shortcutFor', () => {
   it('未知键返回 none', () => {
     expect(shortcutFor(ev('x'), false).type).toBe('none')
   })
+
+  it('L1 可配置：覆盖键位后按新键触发', () => {
+    const keys = { 'open-search': [{ key: 'o' }] }
+    // 旧键 k（mod）不再触发（已被覆盖且无 mod 匹配新键）
+    expect(shortcutFor(ev('k', { ctrlKey: true }), false, keys).type).toBe('none')
+    // 新键 o 触发
+    expect(shortcutFor(ev('o'), false, keys)).toEqual({ type: 'open-search' })
+    // 其他默认键不受影响
+    expect(shortcutFor(ev('['), false, keys)).toEqual({ type: 'period-prev' })
+  })
+
+  it('L1 可配置：mod 键覆盖生效', () => {
+    const keys = { 'replay-toggle': [{ key: 'r', mod: true }] }
+    expect(shortcutFor(ev(' '), false, keys).type).toBe('none') // 旧空格被覆盖
+    expect(shortcutFor(ev('r', { ctrlKey: true }), false, keys)).toEqual({ type: 'replay-toggle' })
+  })
+
+  it('L1 可配置：布局键 1/2/3 固定不受覆盖影响', () => {
+    const keys = { 'open-search': [{ key: '1' }] }
+    expect(shortcutFor(ev('1'), false, keys)).toEqual({ type: 'set-layout', layout: 'single' })
+  })
+
+  it('L1 默认多绑定：/ 与 ⌘K 都触发搜索', () => {
+    expect(shortcutFor(ev('/'), false)).toEqual({ type: 'open-search' })
+    expect(shortcutFor(ev('k', { metaKey: true }), false)).toEqual({ type: 'open-search' })
+  })
+
+  it('L1 默认多绑定：Delete 与 Backspace 都触发删除', () => {
+    expect(shortcutFor(ev('Delete'), false)).toEqual({ type: 'delete-drawing' })
+    expect(shortcutFor(ev('Backspace'), false)).toEqual({ type: 'delete-drawing' })
+  })
 })
 
 describe('cycleValue', () => {

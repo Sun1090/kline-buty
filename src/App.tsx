@@ -31,6 +31,7 @@ import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
+import { ShortcutsSettings } from './components/ShortcutsSettings'
 import { PullToRefresh } from './components/PullToRefresh'
 import {
   createDrawing,
@@ -74,7 +75,7 @@ import { MAIN_OPTIONS, SUB_OPTIONS } from './components/headerOptions'
 import { useI18n } from './i18n/useI18n'
 import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
-import { shortcutFor, isTypingTarget, cycleValue } from './shortcuts'
+import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
 import { nextBackTarget } from './chart/backNavigation'
 
 // 壳内启用原生状态栏与启动屏；浏览器环境动态 import 会立即返回，不影响普通 Web 使用。
@@ -246,6 +247,10 @@ export function App() {
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  // L1 快捷键可配置：键位覆盖持久化（action → 键位列表；空对象=全用默认）
+  const [shortcutKeys, setShortcutKeys] = usePersistedState<ShortcutKeyMap>('shortcutKeys', {})
+  // L1 快捷键配置面板开合
+  const [shortcutSettingsOpen, setShortcutSettingsOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerH, setHeaderH] = useState(0)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
@@ -694,7 +699,7 @@ export function App() {
   // ⌘K / 打开搜索、F 全屏、1/2/3 布局、M/N 循环指标、? 帮助
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const action = shortcutFor(e, isTypingTarget(e.target as HTMLElement | null))
+      const action = shortcutFor(e, isTypingTarget(e.target as HTMLElement | null), shortcutKeys)
       switch (action.type) {
         case 'none':
           return
@@ -782,6 +787,7 @@ export function App() {
     editingTextId,
     textDraft,
     shortcutsOpen,
+    shortcutKeys,
     settingsOpen,
     alertsOpen,
     positionOpen,
@@ -1299,7 +1305,8 @@ export function App() {
           onExit={() => setReplay(null)}
         />
       )}
-      {shortcutsOpen && <ShortcutsHelp />}
+      {shortcutsOpen && <ShortcutsHelp onConfigure={() => setShortcutSettingsOpen((v) => !v)} configuring={shortcutSettingsOpen} />}
+      {shortcutSettingsOpen && <ShortcutsSettings keys={shortcutKeys} onChange={setShortcutKeys} onClose={() => setShortcutSettingsOpen(false)} />}
       {editingTextId && isMobile && (
         <div
           data-testid="mobile-text-editor"
