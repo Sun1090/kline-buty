@@ -4,6 +4,8 @@ import type { MainIndicatorKind, SubIndicatorKind } from './ChartView'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistedState } from '../hooks/usePersistedState'
 import type { TFunction } from '../i18n/translate'
+import { editableLineIds } from '../indicators/lineColors'
+import { MAIN_LINE_COLORS, SUB_LINE_COLORS } from '../chart/adapter'
 
 /** 参数预设：命名映射，持久化在 localStorage（B15 参数预设保存/切换） */
 type ParamPresets = Record<string, IndicatorParams>
@@ -21,6 +23,9 @@ interface IndicatorSettingsProps {
   subIndicator: SubIndicatorKind
   onChange: (p: IndicatorParams) => void
   onClose: () => void
+  /** H11 指标线颜色自定义：line id → 覆盖色 */
+  lineColors?: Record<string, string>
+  onLineColorChange?: (id: string, color: string) => void
 }
 
 function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction): Field[] {
@@ -111,6 +116,8 @@ export function IndicatorSettings({
   subIndicator,
   onChange,
   onClose,
+  lineColors = {},
+  onLineColorChange,
 }: IndicatorSettingsProps) {
   const { t } = useI18n()
   const fields = fieldsFor(mainIndicator, subIndicator, t)
@@ -174,6 +181,14 @@ export function IndicatorSettings({
   }
 
   const presetNames = Object.keys(presets)
+  // H11 可调色线：按当前主图/副图 + 周期组展开
+  const editableLines = editableLineIds(
+    mainIndicator,
+    subIndicator,
+    draft.maPeriods,
+    Boolean(draft.maOverlayEma),
+    (draft.volMaPeriod ?? 1) > 1,
+  )
 
   return (
     <div
@@ -236,6 +251,43 @@ export function IndicatorSettings({
           )}
         </div>
       ))}
+      {onLineColorChange && editableLines.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: '1px solid #2a2e39', paddingTop: 8 }}>
+          <div style={{ color: 'var(--text-dim)', marginBottom: 6 }}>{t('indicator.lineColors')}</div>
+          {editableLines.map((id) => {
+            const current = lineColors[id] ?? MAIN_LINE_COLORS[id] ?? SUB_LINE_COLORS[id] ?? '#9aa7b5'
+            return (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <input
+                  aria-label={t('indicator.lineColorFor', { name: id })}
+                  type="color"
+                  value={current}
+                  onChange={(e) => onLineColorChange(id, e.target.value)}
+                  style={{
+                    width: 28,
+                    height: 22,
+                    padding: 0,
+                    border: '1px solid #2a2e39',
+                    borderRadius: 4,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                  }}
+                />
+                <span style={{ color: 'var(--text-dim)', flex: 1 }}>{id}</span>
+                {lineColors[id] !== undefined && (
+                  <button
+                    onClick={() => onLineColorChange(id, '')}
+                    title={t('indicator.lineColorReset')}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12 }}
+                  >
+                    ↺
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
       <div style={{ marginTop: 12, borderTop: '1px solid #2a2e39', paddingTop: 10 }}>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
           <select

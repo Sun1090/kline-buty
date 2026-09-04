@@ -24,8 +24,11 @@ vi.mock('../hooks/useKlineData', () => ({
 }))
 
 const scaleModes: string[] = []
-vi.mock('../chart/adapter', () => ({
-  LightweightChartAdapter: class {
+vi.mock('../chart/adapter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../chart/adapter')>()
+  return {
+    ...actual,
+    LightweightChartAdapter: class {
     setCandles() {}
     updateCandle() {}
     setChartType() {}
@@ -59,7 +62,8 @@ vi.mock('../chart/adapter', () => ({
     }
     destroy() {}
   },
-}))
+  }
+})
 
 import { App } from '../App'
 import { useKlineData } from '../hooks/useKlineData'

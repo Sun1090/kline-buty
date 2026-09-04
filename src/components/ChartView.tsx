@@ -24,6 +24,7 @@ import { calcSAR } from '../indicators/sar'
 import { calcIchimoku, ichimokuCloud } from '../indicators/ichimoku'
 import { thresholdZones } from '../indicators/thresholdZones'
 import { subScaleFixedRange } from '../indicators/subScale'
+import { applyLineColorOverrides } from '../indicators/lineColors'
 import { findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
@@ -88,6 +89,8 @@ interface ChartViewProps {
   mainIndicator: MainIndicatorKind
   subIndicator: SubIndicatorKind
   indicatorParams: IndicatorParams
+  /** H11 指标线颜色自定义：line id → 覆盖色（持久化于 App） */
+  lineColors?: Record<string, string>
   /** 回放模式：仅渲染 [0, cursor] 区间的数据 */
   replay: { cursor: number } | null
   hasMore: boolean
@@ -179,6 +182,7 @@ export function ChartView({
   themeMode = 'dark',
   colorPreset = 'classic',
   showWatermark = true,
+  lineColors = {},
 }: ChartViewProps) {
   const { t, lang } = useI18n()
   const theme = themeFor(themeMode, colorPreset)
@@ -775,10 +779,15 @@ export function ChartView({
     }
 
     api.setChartType(chartType)
-    api.setMainIndicator(mainData)
-    if (subData) api.setSubIndicator(subData)
+    api.setMainIndicator({ ...mainData, lines: applyLineColorOverrides(mainData.lines, lineColors) })
+    if (subData) {
+      api.setSubIndicator({
+        ...subData,
+        lines: subData.lines ? applyLineColorOverrides(subData.lines, lineColors) : undefined,
+      })
+    }
     prevDataRef.current = windowData
-  }, [windowData, mainData, subData, symbol, period, chartType, replay, cull])
+  }, [windowData, mainData, subData, symbol, period, chartType, replay, cull, lineColors])
 
   // H12 副图 Y 轴固定范围：切换副图指标时重置为自动；开启/关闭时同步 adapter
   useEffect(() => {

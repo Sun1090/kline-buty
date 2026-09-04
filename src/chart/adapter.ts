@@ -268,7 +268,7 @@ function formatTickTime(timeSec: number, mode: 'utc' | 'local'): string {
   return h === 0 && mi === 0 ? `${pad(mo + 1)}-${pad(day)}` : `${pad(h)}:${pad(mi)}`
 }
 
-const MAIN_LINE_COLORS: Record<string, string> = {
+export const MAIN_LINE_COLORS: Record<string, string> = {
   MA5: '#f5c02f',
   MA10: '#4e9cf5',
   MA20: '#e45f9d',
@@ -287,7 +287,7 @@ const MAIN_LINE_COLORS: Record<string, string> = {
 }
 
 /** 副图指标线配色 */
-const SUB_LINE_COLORS: Record<string, string> = {
+export const SUB_LINE_COLORS: Record<string, string> = {
   DIF: '#f5c02f',
   DEA: '#4e9cf5',
   K: '#f5c02f',
