@@ -29,6 +29,7 @@ import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, settleSlot, type Positi
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
+import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { PullToRefresh } from './components/PullToRefresh'
 import {
@@ -664,6 +665,20 @@ export function App() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
+  // J6 导出权益曲线 CSV（由流水推导的权益时间序列）
+  const exportEquityCsv = () => {
+    if (paper.trades.length === 0) return
+    const csv = equityToCsv(paper.trades)
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = equityCsvFileName()
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   // 键盘快捷键（纯逻辑见 src/shortcuts.ts）：[ ] 周期、Space 回放、Delete 删画线、Esc 取消、
   // ⌘K / 打开搜索、F 全屏、1/2/3 布局、M/N 循环指标、? 帮助
@@ -1099,6 +1114,7 @@ export function App() {
           onClose={() => setTradesOpen(false)}
           onClear={paper.clearTrades}
           onExport={exportTradesCsv}
+          onExportEquity={exportEquityCsv}
           onReset={paper.reset}
         />
       )}

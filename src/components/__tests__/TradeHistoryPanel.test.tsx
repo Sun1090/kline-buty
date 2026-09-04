@@ -23,6 +23,7 @@ function setup(overrides: Partial<Parameters<typeof TradeHistoryPanel>[0]> = {})
     onClose: vi.fn(),
     onClear: vi.fn(),
     onExport: vi.fn(),
+    onExportEquity: vi.fn(),
     onReset: vi.fn(),
   }
   const props: Parameters<typeof TradeHistoryPanel>[0] = { trades: [], ...handlers, ...overrides }
@@ -44,6 +45,12 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(screen.getByTestId('trade-history-clear')).toBeTruthy()
     fireEvent.click(screen.getByTestId('trade-history-export'))
     expect(handlers.onExport).toHaveBeenCalled()
+  })
+
+  it('J6 导出权益曲线按钮：触发 onExportEquity', () => {
+    const handlers = setup({ trades })
+    fireEvent.click(screen.getByTestId('trade-history-export-equity'))
+    expect(handlers.onExportEquity).toHaveBeenCalled()
   })
 
   it('清空按钮触发 onClear', () => {
