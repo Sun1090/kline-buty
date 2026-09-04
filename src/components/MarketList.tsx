@@ -381,12 +381,12 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
         }}
       >
         {loading && rows.length === 0 ? (
-          <PanelState status="loading" message={t('marketList.loading')} />
+          <PanelState status="loading" message={t('marketList.loading')} skeleton />
         ) : rows.length === 0 ? (
           error ? (
             <PanelState status="error" message={t('marketList.empty')} onRetry={refresh} />
           ) : (
-            <PanelState status="loading" message={t('marketList.loading')} />
+            <PanelState status="loading" message={t('marketList.loading')} skeleton />
           )
         ) : view === 'favorites' && scoped.length === 0 ? (
           <PanelState status="empty" message={t('marketList.favoritesEmpty')} />

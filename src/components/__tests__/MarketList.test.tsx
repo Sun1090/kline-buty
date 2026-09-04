@@ -138,10 +138,10 @@ describe('MarketList', () => {
     expect(baseProps.onToggle).toHaveBeenCalled()
   })
 
-  it('加载中显示加载文案', () => {
+  it('加载中显示骨架屏（L6）', () => {
     stubHook({ rows: [], loading: true })
     render(<MarketList {...baseProps} />)
-    expect(screen.getByText('加载行情…')).toBeDefined()
+    expect(screen.getByTestId('panel-skeleton')).toBeDefined()
   })
 
   it('无数据 + 出错 → 空态文案', () => {
