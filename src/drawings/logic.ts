@@ -575,6 +575,31 @@ const AREA_TOOL_TYPES = new Set<string>([
   'rect', 'ellipse', 'circle', 'triangle', 'wedge', 'angle', 'pband', 'pricerange', 'timerange', 'daterange',
 ])
 
+/** I11 画线可复制样式子集（颜色/透明度/字号/底色/跟随价）。 */
+export interface DrawingStyle {
+  color?: string
+  opacity?: number
+  fontSize?: number
+  textBg?: string
+  followLatest?: boolean
+}
+
+/** I11 提取画线的可复制样式子集（只含已显式设置的字段）。 */
+export function extractDrawingStyle(d: Drawing): DrawingStyle {
+  const s: DrawingStyle = {}
+  if (d.color !== undefined) s.color = d.color
+  if (d.opacity !== undefined) s.opacity = d.opacity
+  if (d.fontSize !== undefined) s.fontSize = d.fontSize
+  if (d.textBg !== undefined) s.textBg = d.textBg
+  if (d.followLatest !== undefined) s.followLatest = d.followLatest
+  return s
+}
+
+/** I11 把样式子集套用回画线（保留 id/type/points/text/group 等非样式字段）。 */
+export function applyDrawingStyle(d: Drawing, style: DrawingStyle): Drawing {
+  return { ...d, ...style }
+}
+
 /** I2 画线统计：遍历画线按类型分类汇总（隐藏线不计入）。 */
 export function summarizeDrawings(drawings: Drawing[]): DrawingStats {
   let lineCount = 0
