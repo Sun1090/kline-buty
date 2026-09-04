@@ -3,7 +3,6 @@ import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup } from '@testing-library/react'
 import { ShortcutsHelp } from '../ShortcutsHelp'
 import { ShortcutsSettings, eventToKey } from '../ShortcutsSettings'
-import type { ShortcutKeyMap } from '../../shortcuts'
 
 afterEach(cleanup)
 
