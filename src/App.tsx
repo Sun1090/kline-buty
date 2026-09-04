@@ -826,7 +826,7 @@ export function App() {
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
-          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
+          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : drawingSnap === 'ohlc' ? 'grid' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           coordBadge={coordBadge}
@@ -937,7 +937,7 @@ export function App() {
           onClearDrawings={clearDrawings}
           onSetAllDrawingsHidden={setAllDrawingsHidden}
           drawingSnap={drawingSnap}
-          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : 'off')}
+          onToggleDrawingSnap={() => setDrawingSnap(drawingSnap === 'off' ? 'time' : drawingSnap === 'time' ? 'ohlc' : drawingSnap === 'ohlc' ? 'grid' : 'off')}
           notesHidden={notesHidden}
           onToggleNotesHidden={() => setNotesHidden((v) => !v)}
           coordBadge={coordBadge}
