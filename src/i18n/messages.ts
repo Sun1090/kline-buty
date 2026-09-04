@@ -89,6 +89,9 @@ export const zh = {
   },
   layout: {
     switchTitle: '布局切换（单图/双图/四图）',
+    compare: '对比',
+    compareTitle: '对比叠加品种',
+    compareOff: '关闭',
     single: '单图',
     pair: '双图',
     quad: '四图',
@@ -628,6 +631,9 @@ export const en: Messages = {
   },
   layout: {
     switchTitle: 'Switch layout (single/pair/quad)',
+    compare: 'Compare',
+    compareTitle: 'Compare overlay symbol',
+    compareOff: 'Off',
     single: 'Single',
     pair: 'Pair',
     quad: 'Quad',
@@ -1165,6 +1171,9 @@ export const ja: Messages = {
   },
   layout: {
     switchTitle: 'レイアウト切替（1枚/2枚/4枚）',
+    compare: '比較',
+    compareTitle: '比較銘柄を重ねる',
+    compareOff: 'オフ',
     single: '1枚',
     pair: '2枚',
     quad: '4枚',
@@ -1703,6 +1712,9 @@ export const ko: Messages = {
   },
   layout: {
     switchTitle: '레이아웃 전환 (단일/2개/4개)',
+    compare: '비교',
+    compareTitle: '비교 종목 중첩',
+    compareOff: '끄기',
     single: '단일',
     pair: '2개',
     quad: '4개',
@@ -2253,6 +2265,9 @@ export const es: Messages = {
   },
   layout: {
     switchTitle: 'Cambiar diseño (único/par/cuádruple)',
+    compare: 'Comparar',
+    compareTitle: 'Símbolo superpuesto',
+    compareOff: 'Apagado',
     single: 'Único',
     pair: 'Par',
     quad: 'Cuádruple',

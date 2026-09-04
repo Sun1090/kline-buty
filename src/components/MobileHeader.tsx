@@ -123,6 +123,9 @@ export interface MobileHeaderProps {
   onToggleTrades: () => void
   layout: 'single' | 'pair' | 'quad'
   onCycleLayout: () => void
+  /** L3 对比模式：当前叠加品种（null=关闭）与循环切换 */
+  compareSymbol: string | null
+  onCycleCompare: () => void
   themeMode: ThemeMode
   onToggleTheme: () => void
   colorPreset: ColorPresetId

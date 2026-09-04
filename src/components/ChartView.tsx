@@ -6,7 +6,7 @@ import type { SnapMode } from '../drawings/snap'
 import { anchorRangeForSwitch, cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
-import { calcMA, calcEMA, calcSMA } from '../indicators/sma'
+import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
 import { calcBBW } from '../indicators/bbw'
 import { calcSupertrend } from '../indicators/supertrend'
@@ -122,6 +122,8 @@ interface ChartViewProps {
   coordBadge?: boolean
   /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
   drawingGlobalOpacity?: number
+  /** L3 对比模式：单图叠加的第二品种收盘价线（null/缺省=不叠加） */
+  compareSeries?: { symbol: string; candles: Candle[] } | null
   /** 画线工具 */
   drawingTool?: DrawingTool
   /** 当前选中画线 id（同步到渲染层用于拖拽判定） */
@@ -180,6 +182,7 @@ export function ChartView({
   notesHidden,
   coordBadge,
   drawingGlobalOpacity,
+  compareSeries,
   drawingTool,
   selectedDrawingId,
   onDrawingCommit,
@@ -555,6 +558,19 @@ export function ChartView({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
   }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
+  // L3 对比模式：单图叠加第二品种收盘价线（归一化到主图坐标；用于走势对比）
+  const compareLines = useMemo<{ id: string; points: ValuePoint[]; color?: string }[] | null>(() => {
+    if (!compareSeries || compareSeries.candles.length === 0) return null
+    return [
+      {
+        id: `CMP_${compareSeries.symbol}`,
+        points: compareSeries.candles.map((c) => ({ time: c.time, value: c.close })),
+        color: theme.accent,
+      },
+    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- theme 为渲染派生量
+  }, [compareSeries, themeMode])
+
   // H13 副图线 worker：大数据量时异步计算（小窗口/worker 不可用走同步兜底）
   const subWorker = useSubIndicatorWorker(subIndicator, windowData, indicatorParams)
   const workerLines = subWorker.lines
@@ -843,7 +859,10 @@ export function ChartView({
     }
 
     api.setChartType(chartType)
-    api.setMainIndicator({ ...mainData, lines: applyLineColorOverrides(mainData.lines, lineColors) })
+    const lines = applyLineColorOverrides(mainData.lines, lineColors)
+    // L3 对比模式：主图指标线末尾追加对比品种收盘价线
+    if (compareLines) lines.push(...compareLines)
+    api.setMainIndicator({ ...mainData, lines })
     if (subData) {
       api.setSubIndicator({
         ...subData,
@@ -851,7 +870,7 @@ export function ChartView({
       })
     }
     prevDataRef.current = windowData
-  }, [windowData, mainData, subData, symbol, period, chartType, replay, cull, lineColors])
+  }, [windowData, mainData, subData, symbol, period, chartType, replay, cull, lineColors, compareLines])
 
   // H12 副图 Y 轴固定范围：切换副图指标时重置为自动；开启/关闭时同步 adapter
   useEffect(() => {
