@@ -29,6 +29,22 @@ describe('snapToCandle（C3 吸附三态）', () => {
     expect(r.price).toBe(11) // 11.1 距 open 11 最近（阈值=振幅×0.75=3）
   })
 
+  it('I4 grid：时间对齐 + 价格吸附网格步长', () => {
+    // 价格 11.7 → 步长 0.1（<100）→ 吸附到 11.7（已对齐）；时间对齐 200
+    const r = snapToCandle(151, 11.73, candles, 'grid')
+    expect(r.time).toBe(200)
+    expect(r.price).toBe(11.7)
+  })
+
+  it('I4 grid：价格吸附到网格步长取整', () => {
+    // 104.7 → 步长 10（≥1000? 否，104<1000 → step 10? 否，104>=100 → step 10）→ 吸附到 105
+    expect(snapToCandle(151, 104.7, candles, 'grid').price).toBe(105)
+    // 95.4 → 步长 0.1（<100）→ 吸附到 95.4（已对齐）
+    expect(snapToCandle(151, 95.4, candles, 'grid').price).toBe(95.4)
+    // 95.7 → 步长 0.1 → 吸附到 95.7
+    expect(snapToCandle(151, 95.72, candles, 'grid').price).toBe(95.7)
+  })
+
   it('默认模式 = ohlc（兼容旧行为）', () => {
     expect(snapToCandle(151, 11.1, candles)).toEqual(snapToCandle(151, 11.1, candles, 'ohlc'))
   })
@@ -46,8 +62,8 @@ describe('snapToCandle（C3 吸附三态）', () => {
 })
 
 describe('normalizeSnapMode（C3 旧值兼容）', () => {
-  it('合法枚举原样通过', () => {
-    for (const m of ['off', 'time', 'ohlc'] as SnapMode[]) {
+  it('合法枚举原样通过（含 I4 grid）', () => {
+    for (const m of ['off', 'time', 'ohlc', 'grid'] as SnapMode[]) {
       expect(normalizeSnapMode(m)).toBe(m)
     }
   })
@@ -58,7 +74,8 @@ describe('normalizeSnapMode（C3 旧值兼容）', () => {
     expect(normalizeSnapMode(false)).toBe('off')
   })
   it('非法字符串 → off（安全回落）', () => {
-    expect(normalizeSnapMode('grid')).toBe('off')
+    expect(normalizeSnapMode('gird')).toBe('off')
+    expect(normalizeSnapMode(42)).toBe('off')
   })
   it('null/undefined/数字 → off', () => {
     expect(normalizeSnapMode(null)).toBe('off')

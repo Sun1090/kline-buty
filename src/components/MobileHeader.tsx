@@ -28,7 +28,13 @@ type MenuId = 'type' | 'main' | 'sub' | 'drawing' | 'more' | 'layers'
 
 /** C3 吸附对齐模式 → 显示文案 */
 function snapModeLabel(mode: SnapMode, t: (key: MessageKey) => string): string {
-  return mode === 'time' ? t('drawing.snapTime') : mode === 'ohlc' ? t('drawing.snapOhlc') : t('drawing.snapOff')
+  return mode === 'time'
+    ? t('drawing.snapTime')
+    : mode === 'grid'
+      ? t('drawing.snapGrid')
+      : mode === 'ohlc'
+        ? t('drawing.snapOhlc')
+        : t('drawing.snapOff')
 }
 
 export interface MobileHeaderProps {
