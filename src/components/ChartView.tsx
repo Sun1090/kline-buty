@@ -16,6 +16,7 @@ import { calcRSI } from '../indicators/rsi'
 import { calcVWAP } from '../indicators/vwap'
 import { calcWR, calcOBV, calcATR, calcDMI, calcCCI, calcPSY, calcSTOCH, calcROC, calcMOM } from '../indicators/extras'
 import { calcMFI } from '../indicators/mfi'
+import { mergeSubData } from '../indicators/mergeSubData'
 import { calcAO } from '../indicators/ao'
 import { calcCMF } from '../indicators/cmf'
 import { calcDonchian } from '../indicators/donchian'
@@ -31,6 +32,7 @@ import { calcDPO } from '../indicators/dpo'
 import { calcVortex } from '../indicators/vortex'
 import { lastHistValue, lastValuesOfLines } from '../indicators/lastValues'
 import type { IndicatorParams } from '../indicators/params'
+import type { SubIndicatorData } from '../chart/adapter'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
@@ -508,10 +510,11 @@ export function ChartView({
   }, [windowData, mainIndicator, indicatorParams, period, themeMode])
 
   const subData = useMemo(() => {
-    if (subIndicator === 'bbw') {
+    const buildSubData = (kind: SubIndicatorKind): SubIndicatorData | null => {
+    if (kind === 'bbw') {
       return { kind: 'bbw' as const, lines: [{ id: 'BBW', points: calcBBW(windowData, indicatorParams.bbwPeriod, indicatorParams.bbwMult) }] }
     }
-    if (subIndicator === 'volume') {
+    if (kind === 'volume') {
       const hist = windowData.map((c) => ({
         time: c.time,
         value: c.volume,
@@ -526,7 +529,7 @@ export function ChartView({
         lines: ma ? [{ id: 'VOL-MA', points: ma }] : [],
       }
     }
-    if (subIndicator === 'macd') {
+    if (kind === 'macd') {
       const macd = calcMACD(windowData, indicatorParams.macdFast, indicatorParams.macdSlow, indicatorParams.macdSignal)
       return {
         kind: 'macd' as const,
@@ -537,7 +540,7 @@ export function ChartView({
         ],
       }
     }
-    if (subIndicator === 'kdj') {
+    if (kind === 'kdj') {
       const kdj = calcKDJ(windowData, indicatorParams.kdjN, indicatorParams.kdjM1, indicatorParams.kdjM2)
       return {
         kind: 'kdj' as const,
@@ -548,7 +551,7 @@ export function ChartView({
         ],
       }
     }
-    if (subIndicator === 'rsi') {
+    if (kind === 'rsi') {
       return {
         kind: 'rsi' as const,
         lines: [{ id: 'RSI', points: calcRSI(windowData, indicatorParams.rsiPeriod) }],
@@ -559,7 +562,7 @@ export function ChartView({
         zones: coloredZones('rsi'),
       }
     }
-    if (subIndicator === 'wr') {
+    if (kind === 'wr') {
       return {
         kind: 'wr' as const,
         lines: [{ id: 'WR', points: calcWR(windowData, indicatorParams.wrPeriod) }],
@@ -570,13 +573,13 @@ export function ChartView({
         zones: coloredZones('wr'),
       }
     }
-    if (subIndicator === 'obv') {
+    if (kind === 'obv') {
       return { kind: 'obv' as const, lines: [{ id: 'OBV', points: calcOBV(windowData, indicatorParams.obvMaPeriod) }] }
     }
-    if (subIndicator === 'atr') {
+    if (kind === 'atr') {
       return { kind: 'atr' as const, lines: [{ id: 'ATR', points: calcATR(windowData, indicatorParams.atrPeriod) }] }
     }
-    if (subIndicator === 'dmi') {
+    if (kind === 'dmi') {
       const dmi = calcDMI(windowData, indicatorParams.dmiPeriod)
       return {
         kind: 'dmi' as const,
@@ -587,7 +590,7 @@ export function ChartView({
         ],
       }
     }
-    if (subIndicator === 'cci') {
+    if (kind === 'cci') {
       return {
         kind: 'cci' as const,
         lines: [{ id: 'CCI', points: calcCCI(windowData, indicatorParams.cciPeriod) }],
@@ -598,7 +601,7 @@ export function ChartView({
         zones: coloredZones('cci'),
       }
     }
-    if (subIndicator === 'psy') {
+    if (kind === 'psy') {
       return {
         kind: 'psy' as const,
         lines: [{ id: 'PSY', points: calcPSY(windowData, indicatorParams.psyPeriod) }],
@@ -609,7 +612,7 @@ export function ChartView({
         zones: coloredZones('psy'),
       }
     }
-    if (subIndicator === 'stoch') {
+    if (kind === 'stoch') {
       const { k, d } = calcSTOCH(windowData, indicatorParams.stochK, indicatorParams.stochSmooth, indicatorParams.stochD)
       return {
         kind: 'stoch' as const,
@@ -620,21 +623,21 @@ export function ChartView({
         zones: coloredZones('stoch'),
       }
     }
-    if (subIndicator === 'roc') {
+    if (kind === 'roc') {
       return {
         kind: 'roc' as const,
         lines: [{ id: 'ROC', points: calcROC(windowData, indicatorParams.rocPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
-    if (subIndicator === 'mom') {
+    if (kind === 'mom') {
       return {
         kind: 'mom' as const,
         lines: [{ id: 'MOM', points: calcMOM(windowData, indicatorParams.momPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
-    if (subIndicator === 'mfi') {
+    if (kind === 'mfi') {
       return {
         kind: 'mfi' as const,
         lines: [{ id: 'MFI', points: calcMFI(windowData, indicatorParams.mfiPeriod) }],
@@ -645,21 +648,21 @@ export function ChartView({
         zones: coloredZones('mfi'),
       }
     }
-    if (subIndicator === 'ao') {
+    if (kind === 'ao') {
       const ao = calcAO(windowData, indicatorParams.aoFast, indicatorParams.aoSlow)
       return {
         kind: 'ao' as const,
         hist: ao.map((p) => ({ time: p.time, value: p.value, color: p.value >= 0 ? UP : DOWN })),
       }
     }
-    if (subIndicator === 'cmf') {
+    if (kind === 'cmf') {
       return {
         kind: 'cmf' as const,
         lines: [{ id: 'CMF', points: calcCMF(windowData, indicatorParams.cmfPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
-    if (subIndicator === 'donchian') {
+    if (kind === 'donchian') {
       const dc = calcDonchian(windowData, indicatorParams.donchianPeriod)
       return {
         kind: 'donchian' as const,
@@ -670,7 +673,7 @@ export function ChartView({
         ],
       }
     }
-    if (subIndicator === 'aroon') {
+    if (kind === 'aroon') {
       const aroon = calcAroon(windowData, indicatorParams.aroonPeriod)
       return {
         kind: 'aroon' as const,
@@ -685,21 +688,21 @@ export function ChartView({
         zones: coloredZones('aroon'),
       }
     }
-    if (subIndicator === 'trix') {
+    if (kind === 'trix') {
       return {
         kind: 'trix' as const,
         lines: [{ id: 'TRIX', points: calcTRIX(windowData, indicatorParams.trixPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
-    if (subIndicator === 'dpo') {
+    if (kind === 'dpo') {
       return {
         kind: 'dpo' as const,
         lines: [{ id: 'DPO', points: calcDPO(windowData, indicatorParams.dpoPeriod) }],
         markers: [{ price: 0, color: '#2a2e39' }],
       }
     }
-    if (subIndicator === 'vortex') {
+    if (kind === 'vortex') {
       const v = calcVortex(windowData, indicatorParams.vortexPeriod)
       return {
         kind: 'vortex' as const,
@@ -710,6 +713,11 @@ export function ChartView({
       }
     }
     return null
+    }
+    // H10 副图叠加：overlay 非 none 且非当前副图时，同轴合并其线
+    const overlayKind = indicatorParams.subOverlay as SubIndicatorKind
+    const overlay = overlayKind !== 'none' && overlayKind !== subIndicator ? buildSubData(overlayKind) : null
+    return mergeSubData(buildSubData(subIndicator), overlay)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- UP/DOWN 为渲染派生量（来自 theme），加入会破坏 memo 稳定性
   }, [windowData, subIndicator, indicatorParams])
 

@@ -3,6 +3,8 @@ export interface IndicatorParams {
   maPeriods: number[]
   /** 主图叠加：主指标为 MA 时同时绘制 EMA 线（复合均线系统） */
   maOverlayEma: boolean
+  /** H10 副图叠加：同轴再叠一条副图指标线（'none'=不叠加） */
+  subOverlay: string
   bollPeriod: number
   bollMult: number
   sarAfStart: number
@@ -51,6 +53,7 @@ export const DEFAULT_INDICATOR_PARAMS: IndicatorParams = {
   // 主图
   maPeriods: [5, 10, 20],
   maOverlayEma: false,
+  subOverlay: 'none',
   bollPeriod: 20,
   bollMult: 2,
   sarAfStart: 0.02,

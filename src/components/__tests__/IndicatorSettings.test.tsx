@@ -122,4 +122,17 @@ describe('IndicatorSettings', () => {
     expect(fileClickSpy).toHaveBeenCalled()
     fileClickSpy.mockRestore()
   })
+
+  it('H10 副图叠加：副图激活时显示叠加 select，默认 none', () => {
+    const { onChange } = setup('ma', 'rsi')
+    const select = screen.getByLabelText('副图叠加指标') as HTMLSelectElement
+    expect(select.value).toBe('none')
+    fireEvent.change(select, { target: { value: 'kdj' } })
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ subOverlay: 'kdj' }))
+  })
+
+  it('H10 副图叠加：无副图时隐藏叠加 select', () => {
+    setup('vwap', 'none')
+    expect(screen.queryByLabelText('副图叠加指标')).toBeNull()
+  })
 })
