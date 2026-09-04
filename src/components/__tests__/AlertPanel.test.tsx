@@ -50,7 +50,7 @@ describe('AlertPanel', () => {
     const input = screen.getByPlaceholderText('63000.00')
     fireEvent.change(input, { target: { value: '61000' } })
     fireEvent.click(screen.getByText('添加提醒'))
-    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'below', 61000, false, undefined)
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'below', 61000, false, undefined, undefined, undefined)
   })
 
   it('删除提醒回调', () => {
@@ -121,5 +121,59 @@ describe('AlertPanel', () => {
     expect(btn.disabled).toBe(false)
     expect(input.getAttribute('aria-invalid')).toBe('false')
     expect(screen.queryByText('请输入有效价格（正数）')).toBeNull()
+  })
+
+  it('K4 声音预览：点击试听按钮调用 playAlertBeep', () => {
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={makeApi()} />)
+    const btn = screen.getByTestId('alert-sound-preview')
+    expect(btn).toBeDefined()
+    // jsdom 无 AudioContext，playAlertBeep 内部兜底不抛即可（点击不炸）
+    fireEvent.click(btn)
+  })
+
+  it('K10 重复间隔：开启循环后显示间隔输入，创建时透传间隔', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    expect(screen.queryByTestId('alert-repeat-interval')).toBeNull()
+    fireEvent.click(screen.getByTestId('alert-repeat-toggle').querySelector('input')!)
+    expect(screen.getByTestId('alert-repeat-interval')).toBeDefined()
+    const input = screen.getByPlaceholderText('63000.00')
+    fireEvent.change(input, { target: { value: '61000' } })
+    const interval = screen.getByTestId('alert-repeat-interval-input')
+    fireEvent.change(interval, { target: { value: '30' } })
+    fireEvent.click(screen.getByText('添加提醒'))
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'above', 61000, true, undefined, 30, undefined)
+  })
+
+  it('K2 分组：输入分组名，创建时透传 group', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    const input = screen.getByPlaceholderText('63000.00')
+    fireEvent.change(input, { target: { value: '65000' } })
+    const g = screen.getByTestId('alert-group-input')
+    fireEvent.change(g, { target: { value: '趋势' } })
+    fireEvent.click(screen.getByText('添加提醒'))
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'above', 65000, false, undefined, undefined, '趋势')
+  })
+
+  it('K13 排序：切换排序键 aria-pressed 联动', () => {
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={makeApi()} />)
+    const priceBtn = screen.getByTestId('alert-sort-price')
+    const timeBtn = screen.getByTestId('alert-sort-time')
+    expect(timeBtn.getAttribute('aria-pressed')).toBe('true') // 默认 time
+    fireEvent.click(priceBtn)
+    expect(priceBtn.getAttribute('aria-pressed')).toBe('true')
+    expect(timeBtn.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('K2 分组显示：带分组的提醒显示分组头', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, group: '趋势' },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 61000, triggered: false },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    expect(screen.getByTestId('alert-group-趋势')).toBeDefined()
   })
 })

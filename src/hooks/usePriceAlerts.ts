@@ -26,7 +26,7 @@ export interface AlertTriggerEvent {
 export interface AlertsApi {
   alerts: PriceAlert[]
   permission: NotificationPermissionState
-  addAlert: (symbol: string, direction: 'above' | 'below', price: number, repeat?: boolean, time?: { start: number; end: number }) => void
+  addAlert: (symbol: string, direction: 'above' | 'below', price: number, repeat?: boolean, time?: { start: number; end: number }, repeatInterval?: number, group?: string) => void
   removeAlert: (id: string) => void
   resetAlert: (id: string) => void
   requestPermission: () => Promise<NotificationPermissionState>
@@ -139,8 +139,8 @@ export function usePriceAlerts(
   }, [])
 
   const addAlert = useCallback(
-    (symbol: string, direction: 'above' | 'below', price: number, repeat = false, time?: { start: number; end: number }) => {
-      persist([...alertsRef.current, createAlert(symbol, direction, price, repeat, time)])
+    (symbol: string, direction: 'above' | 'below', price: number, repeat = false, time?: { start: number; end: number }, repeatInterval?: number, group?: string) => {
+      persist([...alertsRef.current, createAlert(symbol, direction, price, repeat, time, repeatInterval, group)])
     },
     [],
   )
