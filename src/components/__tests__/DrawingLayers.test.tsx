@@ -14,6 +14,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onToggleLocked: vi.fn(),
     onSetOpacity: vi.fn(),
     onSetFollowLatest: vi.fn(),
+    onRename: vi.fn(),
     onGroupHidden: vi.fn(),
     onGroupLocked: vi.fn(),
     onDelete: vi.fn(),
@@ -218,5 +219,32 @@ describe('DrawingLayers（图层管理面板）', () => {
     // h1 被选中 → 首行 aria-selected=true
     expect(options[0].getAttribute('aria-selected')).toBe('true')
     expect(options[1].getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('I15 搜索：按类型标签过滤图层树', () => {
+    setup({ drawings: [h1, t1] })
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(2)
+    fireEvent.change(screen.getByTestId('drawing-search'), { target: { value: '趋势' } })
+    // 趋势线行保留，水平线行被过滤
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(1)
+    expect(screen.getByTestId('drawing-layer-row').getAttribute('data-type')).toBe('trend')
+  })
+
+  it('I15 搜索：按自定义名过滤', () => {
+    const named = { ...h1, name: '关键支撑' }
+    setup({ drawings: [named, t1] })
+    fireEvent.change(screen.getByTestId('drawing-search'), { target: { value: '支撑' } })
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(1)
+    expect(screen.getByTestId('drawing-layer-name').textContent).toBe('关键支撑')
+  })
+
+  it('I15 重命名：点击 ✎ → 行内输入 → 回车提交 onRename 并清除', () => {
+    const onRename = vi.fn()
+    setup({ drawings: [h1], onRename })
+    fireEvent.click(screen.getByTestId('drawing-layer-rename'))
+    const input = screen.getByTestId('drawing-rename-input')
+    fireEvent.change(input, { target: { value: '斐波那契' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onRename).toHaveBeenCalledWith('h1', '斐波那契')
   })
 })

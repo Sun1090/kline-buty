@@ -74,6 +74,8 @@ export interface Drawing {
   textAlign?: 'left' | 'center' | 'right'
   /** C4 画线分组名（缺省 undefined=未分组） */
   group?: string
+  /** I15 画线命名（图层树搜索/展示用，缺省 undefined=无自定义名） */
+  name?: string
 }
 
 export interface Point {
