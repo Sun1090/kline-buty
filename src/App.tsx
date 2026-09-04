@@ -23,8 +23,9 @@ import { QuickOrderWithDepth } from './components/QuickOrder'
 import { SentimentPanel } from './components/SentimentPanel'
 import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
-import { buildPositionFromOrder, estimateOrder, mergePosition, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
-import { calcPnl, checkHit, type Position } from './position/pnl'
+import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
+import { calcPnl, checkHit } from './position/pnl'
+import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
@@ -166,12 +167,12 @@ export function App() {
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [replay, setReplay] = useState<ReplayState | null>(null)
-  const [position, setPosition] = useState<Position | null>(null)
+  const [position, setPosition] = useState<Positions>(EMPTY_POSITIONS)
   const [positionOpen, setPositionOpen] = useState(false)
   const [tradesOpen, setTradesOpen] = useState(false)
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
-  const prevPositionRef = useRef<Position | null>(null)
+  const prevPositionRef = useRef<Positions>(EMPTY_POSITIONS)
   // T27：图表右键菜单动作（提醒/清空画线）
   useEffect(() => {
     const onRequestAlert = (e: Event) => {
@@ -191,39 +192,30 @@ export function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- alertsApi/candles 取最新渲染闭包即可，事件监听只挂一次
   }, [])
+  // J1 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓
   useEffect(() => {
     const prev = prevPositionRef.current
     const price = candles[candles.length - 1]?.close ?? null
-    if (prev && price != null) {
-      // D5 止盈/止损单模拟触发：最新价触达 TP/SL → 立即在本次记账平仓并重置仓位
-      const hit = checkHit(prev, price)
-      if (hit) {
-        const fee = prev.entry * prev.quantity * TAKER_FEE_RATE
-        const { pnl } = calcPnl(prev, price)
-        paper.recordClose({
-          symbol,
-          side: prev.direction === 'long' ? 'buy' : 'sell',
-          price,
-          qty: prev.quantity,
-          fee,
-          pnl,
-        })
-        setPosition(null)
-        prevPositionRef.current = null
-        return
+    if (price != null) {
+      // TP/SL 触发：任一方向最新价触达 → 独立结算该方向并清空槽位
+      for (const slot of ['long', 'short'] as const) {
+        const p = prev[slot]
+        if (!p) continue
+        const hit = checkHit(p, price)
+        if (hit) {
+          const fee = p.entry * p.quantity * TAKER_FEE_RATE
+          const { pnl } = calcPnl(p, price)
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
+          setPosition((cur) => settleSlot(cur, slot).next)
+          continue
+        }
+        // 显式平仓：上一帧该方向有仓、当前帧已置空 → 结算
+        if (position[slot] === null) {
+          const fee = p.entry * p.quantity * TAKER_FEE_RATE
+          const { pnl } = calcPnl(p, price)
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
+        }
       }
-    }
-    if (prev && position === null && price != null) {
-      const fee = prev.entry * prev.quantity * TAKER_FEE_RATE
-      const { pnl } = calcPnl(prev, price)
-      paper.recordClose({
-        symbol,
-        side: prev.direction === 'long' ? 'buy' : 'sell',
-        price,
-        qty: prev.quantity,
-        fee,
-        pnl,
-      })
     }
     prevPositionRef.current = position
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在 position 翻转时结算；paper/candles 变化不应重触发
@@ -873,7 +865,7 @@ export function App() {
           onColorPreset={setColorPreset}
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
-          positionActive={positionOpen || position !== null}
+          positionActive={positionOpen || position.long !== null || position.short !== null}
           onTogglePosition={() => setPositionOpen((v) => {
             if (!v) setTradesOpen(false)
             return !v
@@ -986,7 +978,7 @@ export function App() {
           onColorPreset={setColorPreset}
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
-          positionActive={positionOpen || position !== null}
+          positionActive={positionOpen || position.long !== null || position.short !== null}
           onTogglePosition={() => setPositionOpen((v) => {
             if (!v) setTradesOpen(false)
             return !v
@@ -1093,8 +1085,8 @@ export function App() {
             const est = estimateOrder(order.price, order.qty, order.side, DEFAULT_SLIPPAGE_RATIO)
             if (!paper.canOpen(est.notional, est.fee)) return
             paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee })
-            // D6 持仓成本合并：已有仓同向加权加仓 / 反向减仓；null=恰好平仓清仓
-            setPosition((prev) => (prev ? mergePosition(prev, order.side, est.fillPrice, order.qty) : buildPositionFromOrder(order.side, est.fillPrice, order.qty)))
+            // J1 双向持仓（hedge）：buy 只影响 long 槽、sell 只影响 short 槽
+            setPosition((prev) => applyHedgeOrder(prev, order.side, est.fillPrice, order.qty))
             setPositionOpen(true)
             setTradesOpen(false)
             setQuickOrder(null)
@@ -1112,7 +1104,7 @@ export function App() {
       )}
       {positionOpen && (
         <PositionPanel
-          position={position}
+          positions={position}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
           onChange={setPosition}
         />
@@ -1210,11 +1202,16 @@ export function App() {
             replay={replay}
             hasMore={hasMore}
             onLoadMore={loadMore}
-            positionLines={position}
+            positionLines={position.long ?? position.short}
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
             onPositionDrag={(key, price) =>
-              setPosition((prev) => (prev ? { ...prev, [key]: price } : prev))
+              setPosition((prev) => {
+                const target = prev.long ?? prev.short
+                if (!target) return prev
+                const slot = prev.long ? 'long' : 'short'
+                return { ...prev, [slot]: { ...target, [key]: price } }
+              })
             }
             drawings={drawings}
             drawingTool={drawingTool}
