@@ -144,4 +144,17 @@ describe('SymbolPicker', () => {
       expect(screen.queryByPlaceholderText(/搜索|Search/)).toBeNull()
     })
   })
+
+  it('O7：热门行星标切换 → 收藏持久化（☆ 按钮 aria-label=加入自选）', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    await screen.findByRole('listbox')
+    // aria-label 为「加入自选/取消自选」的星标按钮存在（至少一行）
+    const stars = screen.getAllByRole('button', { name: /自选/ })
+    expect(stars.length).toBeGreaterThan(0)
+    fireEvent.click(stars[0])
+    // 点击后收藏写入 localStorage（useFavorites 持久化）
+    const saved = localStorage.getItem('kline-buty:favorites')
+    expect(saved).toBeTruthy()
+  })
 })
