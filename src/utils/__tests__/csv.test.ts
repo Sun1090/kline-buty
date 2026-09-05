@@ -69,6 +69,50 @@ describe('indicatorColumns', () => {
     expect(cols.map((c) => c.header)).toEqual(['DIF', 'DEA', 'MACD_HIST'])
     expect(cols).toHaveLength(3)
   })
+  it('O7 覆盖：主图分支（EMA/BOLL/VWAP/SAR/Ichimoku）各出预期列', () => {
+    const cases: { main: string; headers: string[] }[] = [
+      { main: 'ema', headers: ['EMA5', 'EMA10', 'EMA20'] },
+      { main: 'boll', headers: ['BOLL_UPPER', 'BOLL_MID', 'BOLL_LOWER'] },
+      { main: 'vwap', headers: ['VWAP'] },
+      { main: 'sar', headers: ['SAR'] },
+      { main: 'ichimoku', headers: ['ICH_TENKAN', 'ICH_KIJUN', 'ICH_SPANA', 'ICH_SPANB', 'ICH_CHIKOU'] },
+    ]
+    for (const { main, headers } of cases) {
+      const cols = indicatorColumns(candles, {
+        ...opts,
+        mainIndicator: main as never,
+        subIndicator: 'none' as never,
+      })
+      expect(cols.map((c) => c.header)).toEqual(headers)
+    }
+  })
+  it('O7 覆盖：副图分支（KDJ/WR/OBV/ATR/DMI/CCI/PSY/STOCH/ROC/MOM/MFI/AO/CMF/DONCHIAN/AROON）各出预期列', () => {
+    const cases: { sub: string; headers: string[] }[] = [
+      { sub: 'kdj', headers: ['K', 'D', 'J'] },
+      { sub: 'wr', headers: ['WR'] },
+      { sub: 'obv', headers: ['OBV'] },
+      { sub: 'atr', headers: ['ATR'] },
+      { sub: 'dmi', headers: ['PDI', 'MDI', 'ADX'] },
+      { sub: 'cci', headers: ['CCI'] },
+      { sub: 'psy', headers: ['PSY'] },
+      { sub: 'stoch', headers: ['K', 'D'] },
+      { sub: 'roc', headers: ['ROC'] },
+      { sub: 'mom', headers: ['MOM'] },
+      { sub: 'mfi', headers: ['MFI'] },
+      { sub: 'ao', headers: ['AO'] },
+      { sub: 'cmf', headers: ['CMF'] },
+      { sub: 'donchian', headers: ['DC_U', 'DC_L'] },
+      { sub: 'aroon', headers: ['AROON_U', 'AROON_D'] },
+    ]
+    for (const { sub, headers } of cases) {
+      const cols = indicatorColumns(candles, {
+        ...opts,
+        mainIndicator: 'none',
+        subIndicator: sub as never,
+      })
+      expect(cols.map((c) => c.header)).toEqual(headers)
+    }
+  })
 })
 
 describe('buildCsv', () => {
