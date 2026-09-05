@@ -103,4 +103,35 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     expect(screen.getByTestId('header-more').getAttribute('aria-expanded')).toBe('true')
     fireEvent.keyDown(window, { key: 'Escape' })
   })
+
+  it('L5 字号切换按钮在更多菜单：点击循环切换并持久化', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    const btn = screen.getByTestId('fontscale-toggle')
+    const before = btn.textContent ?? ''
+    expect(before).toMatch(/\d+%/)
+    fireEvent.click(btn)
+    const after = btn.textContent ?? ''
+    expect(after).not.toBe(before) // 循环切换
+    expect(localStorage.getItem('kline-buty:fontScale')).toBeTruthy() // 已持久化
+  })
+
+  it('L3 对比模式按钮在更多菜单：循环切换 compareSymbol 持久化', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    const btn = screen.getByTestId('compare-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(btn)
+    expect(btn.getAttribute('aria-pressed')).toBe('true')
+    const saved = localStorage.getItem('kline-buty:compareSymbol')
+    expect(saved).toBeTruthy()
+  })
+
+  it('快捷键帮助：? 打开帮助面板，再按关闭', () => {
+    render(<App />)
+    fireEvent.keyDown(window, { key: '?' })
+    expect(screen.getByTestId('shortcuts-help')).toBeDefined()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('shortcuts-help')).toBeNull()
+  })
 })
