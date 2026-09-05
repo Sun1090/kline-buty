@@ -177,6 +177,9 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
   return (
     <div
       data-testid="market-list"
+      role="region"
+      aria-label={t('marketList.title')}
+      tabIndex={0}
       style={{
         flex: overlay ? '1 1 auto' : '0 0 264px',
         width: overlay ? '100%' : 264,

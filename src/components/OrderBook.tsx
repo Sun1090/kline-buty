@@ -132,6 +132,9 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
         minWidth: 260,
       }}
       data-testid="order-book"
+      role="region"
+      aria-label={t('panel.orderBookTitle')}
+      tabIndex={0}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
