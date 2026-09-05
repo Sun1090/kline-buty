@@ -84,4 +84,21 @@ describe('PeriodBar', () => {
     const bar = screen.getByTestId('period-bar')
     expect(bar.querySelectorAll('button[tabindex="0"]').length).toBe(1)
   })
+
+  it('O7 覆盖：ArrowDown 移动焦点 / Home 跳到首 / End 跳到尾', () => {
+    render(<PeriodBar value="1m" onChange={vi.fn()} />)
+    const cur = screen.getByTestId('period-1m')
+    cur.focus()
+    // ArrowDown 下一周期（1m → 3m）
+    fireEvent.keyDown(cur, { key: 'ArrowDown' })
+    expect(screen.getByTestId('period-3m').getAttribute('tabindex')).toBe('0')
+    // Home 跳首（1s）
+    fireEvent.keyDown(screen.getByTestId('period-3m'), { key: 'Home' })
+    expect(screen.getByTestId('period-1s').getAttribute('tabindex')).toBe('0')
+    // End 跳尾（1M = 月）
+    fireEvent.keyDown(screen.getByTestId('period-1s'), { key: 'End' })
+    const bar = screen.getByTestId('period-bar')
+    const last = bar.querySelector('button:last-of-type') as HTMLElement
+    expect(last.getAttribute('tabindex')).toBe('0')
+  })
 })
