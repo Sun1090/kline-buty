@@ -17,7 +17,9 @@
     "docs:lint": "node scripts/kb-lint.mjs",
     "docs:anchor": "node scripts/kb-anchor-check.mjs",
     "docs:dev": "npm run docs:prepare && vitepress dev docs-site",
-    "docs:build": "node scripts/docs-build.mjs"
+    "docs:build": "node scripts/docs-build.mjs",
+    "precheck": "node scripts/precheck.mjs",
+    "precheck:skip-build": "node scripts/precheck.mjs --skip-build"
   },
   "dependencies": {
     "lightweight-charts": "^5.0.0",
