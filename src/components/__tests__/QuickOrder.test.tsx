@@ -84,4 +84,18 @@ describe('QuickOrder 快速下单', () => {
     expect(handlers.onConfirm).toHaveBeenCalled()
     expect(screen.queryByTestId('qo-insufficient')).toBeNull()
   })
+
+  it('O7：百分比仓位按钮（25/50/75/100%）按余额计算数量', () => {
+    setup({ balance: 10000, price: 100 })
+    // 100%：余额 10000 ÷ (100 × 1.001) ≈ 99.9 → 按步长取整为 99.9
+    fireEvent.click(screen.getByTestId('qo-pct-100'))
+    const qty = Number((screen.getByTestId('qo-qty') as HTMLInputElement).value)
+    expect(qty).toBeGreaterThan(0)
+    expect(qty).toBeLessThan(100)
+    // 25%：约为 100% 的 1/4
+    fireEvent.click(screen.getByTestId('qo-pct-25'))
+    const qty25 = Number((screen.getByTestId('qo-qty') as HTMLInputElement).value)
+    expect(qty25).toBeGreaterThan(0)
+    expect(qty25).toBeLessThan(qty)
+  })
 })
