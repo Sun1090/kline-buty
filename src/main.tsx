@@ -4,6 +4,10 @@ import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { I18nProvider } from './i18n/I18nProvider'
 import { SKELETON_KEYFRAMES } from './components/Skeleton'
+import { initErrorReporting } from './utils/errorReport'
+
+// O1 错误监控：全局 error / unhandledrejection 捕获（本地降级；endpoint 未配置不上报）
+initErrorReporting()
 
 // L6 骨架屏脉冲动画 + M4 统一焦点环：一次性注入全局样式
 if (typeof document !== 'undefined') {
