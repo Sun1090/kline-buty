@@ -78,6 +78,7 @@ import { useI18n } from './i18n/useI18n'
 import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
 import { checkVersionUpdate, readMetaVersion } from './utils/versionCheck'
+import { storageAdvisory } from './utils/storageMonitor'
 import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
 import { nextBackTarget } from './chart/backNavigation'
 
@@ -268,6 +269,9 @@ export function App() {
   const [copied, setCopied] = useState(false)
   // P4 更新提示：版本升级时显示可关闭横幅
   const [updateBanner, setUpdateBanner] = useState(false)
+  // N11 localStorage 容量监控：超阈值时提示清理
+  const [storageWarn, setStorageWarn] = useState(false)
+  const [storageMsg, setStorageMsg] = useState('')
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
@@ -365,6 +369,20 @@ export function App() {
       const { hasUpdate } = checkVersionUpdate(current, localStorage)
       if (hasUpdate) setUpdateBanner(true)
     }
+  }, [])
+
+  // N11 localStorage 容量监控：超阈值时提示清理（低频检查，避免每次渲染开销）
+  useEffect(() => {
+    const check = () => {
+      const a = storageAdvisory(localStorage)
+      if (a.warn) {
+        setStorageWarn(true)
+        setStorageMsg(a.message)
+      }
+    }
+    check()
+    const t = window.setTimeout(check, 3000) // 延迟一次，等主要持久化写入完成
+    return () => window.clearTimeout(t)
   }, [])
 
   // Service Worker 注册（生产环境）+ 通知点击定位交易对
@@ -894,6 +912,39 @@ export function App() {
             onClick={() => setUpdateBanner(false)}
             aria-label={t('common.close')}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {/* N11 存储容量提示：localStorage 高水位时提醒清理 */}
+      {storageWarn && (
+        <div
+          data-testid="storage-banner"
+          role="status"
+          style={{
+            position: 'fixed',
+            top: 56,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 14px',
+            background: 'var(--yellow)',
+            color: '#1e222d',
+            borderRadius: 8,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            fontSize: 12,
+          }}
+        >
+          <span>{t('storage.warn', { size: storageMsg })}</span>
+          <button
+            data-testid="storage-dismiss"
+            onClick={() => setStorageWarn(false)}
+            aria-label={t('common.close')}
+            style={{ background: 'none', border: 'none', color: '#1e222d', cursor: 'pointer', fontSize: 12 }}
           >
             ✕
           </button>

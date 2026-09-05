@@ -502,6 +502,9 @@ export const zh = {
   offline: {
     text: '网络已断开，行情暂停更新，恢复后自动重连',
   },
+  storage: {
+    warn: '本地存储占用已达 {size}，建议清理旧数据',
+  },
   update: {
     banner: '发现新版本，点击刷新加载最新功能',
     reload: '刷新',
@@ -556,6 +559,9 @@ export const zh = {
 export type Messages = typeof zh
 
 export const en: Messages = {
+  storage: {
+    warn: 'Local storage usage reached {size}, consider clearing old data',
+  },
   update: {
     banner: 'New version available - refresh to get the latest',
     reload: 'Refresh',
@@ -1104,6 +1110,9 @@ export const en: Messages = {
 }
 
 export const ja: Messages = {
+  storage: {
+    warn: 'ローカルストレージ使用量が {size} に達しました。古いデータを整理してください',
+  },
   update: {
     banner: '新しいバージョンがあります——更新して最新版を読み込みます',
     reload: '更新',
@@ -1653,6 +1662,9 @@ export const ja: Messages = {
 
 
 export const ko: Messages = {
+  storage: {
+    warn: '로컬 저장소 사용량이 {size}에 도달했습니다. 오래된 데이터를 정리하세요',
+  },
   update: {
     banner: '새 버전이 있습니다 — 새로고침하여 최신 기능을 불러오세요',
     reload: '새로고침',
@@ -2214,6 +2226,9 @@ type LeafKeyOf<T, Prefix extends string = ''> = {
 export type MessageKey = LeafKeyOf<Messages>
 
 export const es: Messages = {
+  storage: {
+    warn: 'El almacenamiento local alcanzó {size}, considera limpiar datos antiguos',
+  },
   update: {
     banner: 'Nueva versión disponible — actualiza para cargar lo último',
     reload: 'Actualizar',
