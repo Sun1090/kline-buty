@@ -8,6 +8,7 @@ import { detectMode } from '../data/binance/endpoints'
 import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
 import { readCachedCandles, writeCachedCandles } from '../data/cache'
 import { gapFillRanges, GAP_PAGE_SIZE } from '../data/gapFill'
+import { createBatchScheduler } from '../utils/batchScheduler'
 
 const PAGE_SIZE = 500
 /** 压测模式模拟实时帧的间隔（ms） */
@@ -114,16 +115,31 @@ export function useKlineData(symbol: string, period: Period) {
       })
 
     let ws: ReturnType<typeof createKlineWs> | null = null
+    // N8 WS 消息批处理：同帧多条 kline 合并一次 publish（避免每消息一次 setState+数组复制）
+    let batchLast: { closes: number[]; frames: LiveTick[] } | null = null
+    const batcher = createBatchScheduler(() => {
+      if (!aliveRef.current || storeRef.current !== store) return
+      const b = batchLast
+      batchLast = null
+      if (!b || b.frames.length === 0) return
+      prevClose = b.closes[b.closes.length - 1] ?? null
+      publish(b.frames[b.frames.length - 1])
+    })
     // 探测端点模式（代理/直连）后建立 WS
     void detectMode().then((mode) => {
       if (!aliveRef.current) return
       ws = createKlineWs(symbol, period, {
         onKline: (c) => {
           store.upsert(c)
-          const dir: -1 | 0 | 1 =
-            prevClose == null ? 0 : c.close > prevClose ? 1 : c.close < prevClose ? -1 : 0
-          prevClose = c.close
-          publish({ price: c.close, ts: Date.now(), dir })
+          // 同帧内合并方向与最新 tick，统一在下一帧 publish
+          if (!batchLast) batchLast = { closes: [], frames: [] }
+          batchLast.closes.push(c.close)
+          batchLast.frames.push({
+            price: c.close,
+            ts: Date.now(),
+            dir: prevClose == null ? 0 : c.close > prevClose ? 1 : c.close < prevClose ? -1 : 0,
+          })
+          batcher.schedule()
         },
         onStatus: (s) => {
           if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
@@ -153,6 +169,7 @@ export function useKlineData(symbol: string, period: Period) {
 
     return () => {
       aliveRef.current = false
+      batcher.cancel()
       // G15 请求取消：中止在途 REST（初次加载 / 重连补数 / loadMore 之外的全部请求）
       abortCtrl.abort()
       ws?.close()
