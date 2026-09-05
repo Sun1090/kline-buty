@@ -44,7 +44,6 @@ function push(r: ErrorReport) {
   reports.push(r)
   if (reports.length > MAX_REPORTS) reports.shift()
   // 本地降级：无论是否配置端点都保留 console 摘要
-  // eslint-disable-next-line no-console
   console.warn('[errorReport]', r.kind, r.message)
 }
 

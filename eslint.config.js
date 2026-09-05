@@ -28,6 +28,9 @@ export default tseslint.config(
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // O3 复杂度治理：新增代码须保持低圈复杂度；既有超限模块在文件内显式豁免并逐步拆分
+      complexity: ['warn', { max: 30 }],
+      'max-lines': ['warn', { max: 900, skipBlankLines: true, skipComments: true }],
     },
   },
 )

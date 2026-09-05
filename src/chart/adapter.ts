@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, complexity -- O3 治理基线：本文件为轻量级图表渲染引擎的既有大模块（drawOne 覆盖 20+ 工具分支），复杂度/行数已超出新代码阈值，作为已知技术债逐步拆分，新增文件/函数须遵守 max 30 复杂度与 900 行上限。 */
 import {
   createChart,
   CandlestickSeries,

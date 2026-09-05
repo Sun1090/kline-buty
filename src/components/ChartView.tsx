@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- O3 治理基线：ChartView 为图表编排大组件，指标/数据/交互聚合，行数已超新代码阈值；新增逻辑应抽到 indicators/hooks 层。 */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
