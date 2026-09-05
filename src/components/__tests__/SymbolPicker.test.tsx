@@ -177,4 +177,20 @@ describe('SymbolPicker', () => {
       expect(screen.getByText(/结果|results|件/)).toBeDefined()
     })
   })
+  it('O7 补测：搜索结果行 悬停高亮同步 + 点击选择', async () => {
+    const onChange = vi.fn()
+    render(<SymbolPicker value="BTCUSDT" onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button'))
+    const input = await screen.findByPlaceholderText(/搜索|Search/)
+    fireEvent.change(input, { target: { value: 'ETH' } })
+    const filteredRow = document.getElementById('symbol-option-q-ETHUSDT') as HTMLElement
+    await waitFor(() => expect(filteredRow).toBeTruthy())
+    // 悬停 → 键盘高亮同步（aria-activedescendant 指向该 option）
+    fireEvent.mouseEnter(filteredRow)
+    expect(screen.getByRole('listbox').getAttribute('aria-activedescendant')).toBe('symbol-option-q-ETHUSDT')
+    // 点击选择 → onChange + 下拉关闭
+    fireEvent.click(filteredRow)
+    expect(onChange).toHaveBeenCalledWith('ETHUSDT')
+  })
+
 })
