@@ -23,6 +23,7 @@ export type ShortcutActionType =
   | 'toggle-shortcuts'
   | 'copy-drawing'
   | 'paste-drawing'
+  | 'cycle-lang'
 
 export type ShortcutAction =
   | { type: 'none' }
@@ -41,6 +42,7 @@ export type ShortcutAction =
   | { type: 'toggle-shortcuts' }
   | { type: 'copy-drawing' }
   | { type: 'paste-drawing' }
+  | { type: 'cycle-lang' }
 
 export interface ShortcutEvent {
   key: string
@@ -79,6 +81,7 @@ export const DEFAULT_BINDINGS: Required<ShortcutKeyMap> = {
   'toggle-shortcuts': [{ key: '?' }],
   'copy-drawing': [{ key: 'c', mod: true }],
   'paste-drawing': [{ key: 'v', mod: true }],
+  'cycle-lang': [{ key: 'l', mod: true, shift: true }],
 }
 
 /** L1 布局动作键（单键 1/2/3），固定不配置 */

@@ -23,6 +23,7 @@ const CONFIGURABLE: { type: ShortcutActionType; labelKey: MessageKey }[] = [
   { type: 'toggle-shortcuts', labelKey: 'shortcuts.help' },
   { type: 'copy-drawing', labelKey: 'shortcuts.copyDrawing' },
   { type: 'paste-drawing', labelKey: 'shortcuts.pasteDrawing' },
+  { type: 'cycle-lang', labelKey: 'shortcuts.cycleLang' },
 ]
 
 /** L1 把按键事件归一化为可存储的键位定义（忽略独立修饰键/功能键） */
