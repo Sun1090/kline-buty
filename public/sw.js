@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kline-buty-v2'
+const CACHE_NAME = 'kline-buty-v3'
 const SCOPE = self.registration.scope
 const PRECACHE = [SCOPE, SCOPE + 'index.html', SCOPE + 'manifest.webmanifest', SCOPE + 'icon.svg']
 
@@ -20,8 +20,22 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
-  // 文档站（VitePress）自带资源指纹与多语言路由，交还浏览器默认行为，避免离线回退到主应用壳
-  if (url.pathname.startsWith('/knowledge')) return
+  // P1 知识库离线：VitePress 产物带资源指纹 + 多语言路由，
+  // 纳入「网络优先、离线回退缓存」——在线取最新、离线读上次缓存（首页路由回退到缓存 index.html）
+  if (url.pathname.startsWith('/knowledge') && event.request.mode !== 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          if (res.ok && event.request.method === 'GET') {
+            const clone = res.clone()
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone))
+          }
+          return res
+        })
+        .catch(() => caches.match(event.request)),
+    )
+    return
+  }
   if (url.pathname.includes('/api') || url.pathname.includes('/fapi') || url.pathname.includes('/ws')) return
   event.respondWith(
     fetch(event.request)
