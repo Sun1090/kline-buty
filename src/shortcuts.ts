@@ -158,6 +158,45 @@ export function validateKeys(keys: ShortcutKeyMap): ShortcutActionType[] {
   return (Object.entries(keys) as [ShortcutActionType, ShortcutKey[]][]).filter(([, defs]) => !defs || defs.length === 0 || defs.some((d) => !d.key)).map(([t]) => t)
 }
 
+/**
+ * M10 快捷键冲突检测：合并默认与自定义键位表，找出被多个动作共用的 (key,mod,shift) 组合。
+ * 返回冲突列表 `{ key: ShortcutKey, actions: ShortcutActionType[] }`（action 数 ≥ 2 为冲突）。
+ * 与布局键（1/2/3）、方向键回放（←/→/↑/↓）冲突也计入。
+ */
+export function findConflicts(keys: ShortcutKeyMap): { key: ShortcutKey; actions: ShortcutActionType[] }[] {
+  const merged = { ...DEFAULT_BINDINGS, ...keys }
+  const byBinding = new Map<string, { key: ShortcutKey; actions: ShortcutActionType[] }>()
+  const bindingId = (k: ShortcutKey) => `${k.key}:${k.mod ?? false}:${k.shift ?? false}`
+
+  const register = (type: ShortcutActionType, def: ShortcutKey) => {
+    const id = bindingId(def)
+    const hit = byBinding.get(id)
+    if (hit) {
+      if (!hit.actions.includes(type)) hit.actions.push(type)
+    } else {
+      byBinding.set(id, { key: def, actions: [type] })
+    }
+  }
+
+  for (const [type, defs] of Object.entries(merged) as [ShortcutActionType, ShortcutKey[]][]) {
+    if (type === 'set-layout') continue
+    for (const def of defs ?? []) register(type, def)
+  }
+  // 布局键与方向键固定绑定（不参与配置，但可能被自定义覆盖）
+  for (const [key, action] of Object.entries(LAYOUT_KEYS)) {
+    if (action.type === 'set-layout') register('set-layout' as ShortcutActionType, { key })
+  }
+
+  return Array.from(byBinding.values())
+    .filter((x) => x.actions.length >= 2)
+    .sort((a, b) => bindingId(a.key).localeCompare(bindingId(b.key)))
+}
+
+/** M10 便捷版：冲突是否存在于某配置 */
+export function hasConflicts(keys: ShortcutKeyMap): boolean {
+  return findConflicts(keys).length > 0
+}
+
 /** L1 把单个按键事件格式化为可读标签（显示用） */
 export function keyLabel(def: ShortcutKey): string {
   const parts: string[] = []

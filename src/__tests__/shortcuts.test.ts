@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shortcutFor, cycleValue, isTypingTarget } from '../shortcuts'
+import { shortcutFor, cycleValue, isTypingTarget, findConflicts, hasConflicts, type ShortcutKeyMap } from '../shortcuts'
 
 const ev = (k: string, o: Partial<Parameters<typeof shortcutFor>[0]> = {}) => ({
   key: k,
@@ -120,6 +120,40 @@ describe('shortcutFor', () => {
   it('L1 默认多绑定：Delete 与 Backspace 都触发删除', () => {
     expect(shortcutFor(ev('Delete'), false)).toEqual({ type: 'delete-drawing' })
     expect(shortcutFor(ev('Backspace'), false)).toEqual({ type: 'delete-drawing' })
+  })
+})
+
+describe('findConflicts（M10 快捷键冲突检测）', () => {
+  it('默认配置：无冲突（多绑定是同一动作的备选，不计为跨动作冲突）', () => {
+    expect(findConflicts({})).toEqual([])
+  })
+
+  it('自定义配置：两个动作共用一个键 → 冲突', () => {
+    const keys: ShortcutKeyMap = {
+      'open-search': [{ key: 'm' }], // 与 cycle-main 默认 m 冲突
+    }
+    const conflicts = findConflicts(keys)
+    expect(conflicts.length).toBe(1)
+    expect(conflicts[0].key.key).toBe('m')
+    expect(conflicts[0].actions).toContain('open-search')
+    expect(conflicts[0].actions).toContain('cycle-main')
+    expect(hasConflicts(keys)).toBe(true)
+  })
+
+  it('自定义配置：覆盖后无冲突（原默认键不再命中）', () => {
+    const keys: ShortcutKeyMap = {
+      'open-search': [{ key: 'o' }],
+    }
+    expect(hasConflicts(keys)).toBe(false)
+  })
+
+  it('自定义键位与布局键冲突也被检测（如设为 1）', () => {
+    const keys: ShortcutKeyMap = {
+      'open-search': [{ key: '1' }],
+    }
+    const conflicts = findConflicts(keys)
+    expect(conflicts.length).toBe(1)
+    expect(conflicts[0].actions).toContain('set-layout')
   })
 })
 

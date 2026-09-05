@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
-import { DEFAULT_BINDINGS, keyLabel, type ShortcutActionType, type ShortcutKey, type ShortcutKeyMap } from '../shortcuts'
+import { DEFAULT_BINDINGS, findConflicts, keyLabel, type ShortcutActionType, type ShortcutKey, type ShortcutKeyMap } from '../shortcuts'
+import { ACTION_LABELS } from './ShortcutsHelp'
 import type { MessageKey } from '../i18n/messages'
 
 interface ShortcutsSettingsProps {
@@ -33,10 +34,12 @@ export function eventToKey(e: { key: string; ctrlKey: boolean; metaKey: boolean;
   return { key: norm, mod: e.ctrlKey || e.metaKey, shift: e.shiftKey }
 }
 
-/** L1 快捷键配置面板：逐动作显示当前键位，点击行后按新键替换 */
+/** L1 快捷键配置面板：逐动作显示当前键位，点击行后按新键替换；M10 冲突实时提示 */
 export function ShortcutsSettings({ keys, onChange, onClose }: ShortcutsSettingsProps) {
   const { t } = useI18n()
   const [recording, setRecording] = useState<ShortcutActionType | null>(null)
+  // M10 冲突提示：最近一次录制后检测到的冲突（空=无）
+  const [conflict, setConflict] = useState<{ actions: ShortcutActionType[]; label: string } | null>(null)
 
   const bindingFor = (type: ShortcutActionType): ShortcutKey[] => keys[type] ?? DEFAULT_BINDINGS[type] ?? []
   const labelOf = (type: ShortcutActionType) => bindingFor(type).map(keyLabel).join(' / ') || '—'
@@ -48,7 +51,18 @@ export function ShortcutsSettings({ keys, onChange, onClose }: ShortcutsSettings
       e.stopPropagation()
       const def = eventToKey(e)
       if (!def) return
-      onChange({ ...keys, [recording]: [def] })
+      const next = { ...keys, [recording]: [def] }
+      onChange(next)
+      // M10 冲突检测：新键位若与其他动作冲突，提示用户
+      const hit = findConflicts(next).find((c) => c.actions.includes(recording))
+      setConflict(
+        hit
+          ? {
+              actions: hit.actions,
+              label: hit.actions.map((a) => t(ACTION_LABELS[a])).join(' / '),
+            }
+          : null,
+      )
       setRecording(null)
     }
     window.addEventListener('keydown', onKey, true)
@@ -87,6 +101,11 @@ export function ShortcutsSettings({ keys, onChange, onClose }: ShortcutsSettings
       {recording && (
         <div data-testid="shortcuts-recording" style={{ marginBottom: 8, padding: '6px 8px', borderRadius: 4, background: 'rgba(41,98,255,0.15)', color: 'var(--accent)' }}>
           {t('shortcuts.recording')}
+        </div>
+      )}
+      {conflict && (
+        <div data-testid="shortcuts-conflict" role="alert" style={{ marginBottom: 8, padding: '6px 8px', borderRadius: 4, background: 'rgba(239,83,80,0.15)', color: 'var(--down)' }}>
+          {t('shortcuts.conflict', { names: conflict.label })}
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, maxHeight: 320, overflowY: 'auto' }}>
