@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { MarketStats } from '../hooks/useMarketStats'
 import type { LiveTick } from '../hooks/useKlineData'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import type { Period } from '../chart/types'
 import { PERIOD_MS } from '../chart/types'
 import { useI18n } from '../i18n/useI18n'
@@ -37,6 +38,8 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
 
 export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gapHealth, gapCount }: StatsBarProps) {
   const { t, lang } = useI18n()
+  // M7 减少动效：系统偏好开启时禁用实时跳动闪烁
+  const reducedMotion = useReducedMotion()
   // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
   const locale = localeFor(lang)
   // 收盘倒计时 + G11 数据延迟：每秒走一次本组件（面板小，重渲染开销可忽略）
@@ -67,7 +70,7 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
     live && live.dir !== 0 ? (live.dir > 0 ? 'var(--up)' : 'var(--down)') : changeColor
   const arrow = live ? (live.dir > 0 ? '▲' : live.dir < 0 ? '▼' : '') : ''
   const flashClass =
-    live && live.dir !== 0 ? (live.dir > 0 ? 'tick-flash-up' : 'tick-flash-down') : undefined
+    live && live.dir !== 0 && !reducedMotion ? (live.dir > 0 ? 'tick-flash-up' : 'tick-flash-down') : undefined
   return (
     <div
       role="region"
