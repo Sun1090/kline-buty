@@ -31,6 +31,7 @@ export function detectHover(
   return best
 }
 
+/** 拖拽时指针 y 坐标 → 价格（无效/非正数返回 null） */
 export function resolveDragPrice(
   pointerY: number,
   yToPrice: (y: number) => number | null,
