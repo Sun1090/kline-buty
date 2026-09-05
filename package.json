@@ -19,7 +19,8 @@
     "docs:dev": "npm run docs:prepare && vitepress dev docs-site",
     "docs:build": "node scripts/docs-build.mjs",
     "precheck": "node scripts/precheck.mjs",
-    "precheck:skip-build": "node scripts/precheck.mjs --skip-build"
+    "precheck:skip-build": "node scripts/precheck.mjs --skip-build",
+    "bundle:report": "node scripts/bundle-report.mjs"
   },
   "dependencies": {
     "lightweight-charts": "^5.0.0",
