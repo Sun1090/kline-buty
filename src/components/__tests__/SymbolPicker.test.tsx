@@ -193,4 +193,27 @@ describe('SymbolPicker', () => {
     expect(onChange).toHaveBeenCalledWith('ETHUSDT')
   })
 
+  it('热门行悬停 → 键盘高亮同步（aria-activedescendant 指到热门 option）', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    await screen.findByPlaceholderText(/搜索|Search/)
+    const popularRow = document.querySelector('[id^="symbol-option-pop-"]') as HTMLElement
+    expect(popularRow).toBeTruthy()
+    fireEvent.mouseEnter(popularRow)
+    expect(screen.getByRole('listbox').getAttribute('aria-activedescendant')).toBe(popularRow.id)
+  })
+
+  it('热门行星标按钮点击 → 触发收藏切换且不关闭下拉、不触发选择', async () => {
+    const onChange = vi.fn()
+    render(<SymbolPicker value="BTCUSDT" onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button'))
+    await screen.findByPlaceholderText(/搜索|Search/)
+    const popularRow = document.querySelector('[id^="symbol-option-pop-"]') as HTMLElement
+    const star = popularRow.querySelector('button') as HTMLButtonElement
+    fireEvent.click(star)
+    // 星标点击 stopPropagation → 下拉不关、onChange 不触发
+    expect(screen.getByPlaceholderText(/搜索|Search/)).toBeDefined()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
 })
