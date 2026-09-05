@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { IndicatorSettings } from '../IndicatorSettings'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from '../../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from '../ChartView'
 
 afterEach(cleanup)
+beforeEach(() => localStorage.clear())
 
 function setup(main: MainIndicatorKind, sub: SubIndicatorKind, params: IndicatorParams = DEFAULT_INDICATOR_PARAMS) {
   const onChange = vi.fn()
@@ -134,5 +135,70 @@ describe('IndicatorSettings', () => {
   it('H10 副图叠加：无副图时隐藏叠加 select', () => {
     setup('vwap', 'none')
     expect(screen.queryByLabelText('副图叠加指标')).toBeNull()
+  })
+
+  it('B15 预设：命名保存 → 下拉出现并可按名加载', () => {
+    const { onChange } = setup('ma', 'rsi')
+    fireEvent.change(screen.getByLabelText('预设名称'), { target: { value: '快线' } })
+    fireEvent.click(screen.getByText('保存'))
+    const select = screen.getByLabelText('参数预设') as HTMLSelectElement
+    expect(Array.from(select.options).map((o) => o.textContent)).toContain('快线')
+    fireEvent.change(select, { target: { value: '快线' } })
+    expect(onChange).toHaveBeenCalled()
+  })
+
+  it('B15 预设：空名不保存', () => {
+    const { onChange } = setup('ma', 'rsi')
+    fireEvent.click(screen.getByText('保存'))
+    const select = screen.getByLabelText('参数预设') as HTMLSelectElement
+    expect(select.options).toHaveLength(1) // 仅占位「加载预设…」
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('B15 重置为默认 → onChange 收到默认参数', () => {
+    const { onChange } = setup('ma', 'rsi', { ...DEFAULT_INDICATOR_PARAMS, rsiPeriod: 7 })
+    fireEvent.click(screen.getByText('重置为默认'))
+    expect(onChange).toHaveBeenCalledWith(DEFAULT_INDICATOR_PARAMS)
+  })
+
+  it('H8 导入：合法 JSON → 应用参数并闪「参数已导入」', async () => {
+    const { onChange } = setup('ma', 'rsi')
+    const file = new File([JSON.stringify({ rsiPeriod: 7, maPeriods: [5, 10, 20] })], 'p.json', { type: 'application/json' })
+    fireEvent.change(screen.getByTestId('indicator-import-input'), { target: { files: [file] } })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rsiPeriod: 7 })))
+    expect(screen.getByText('参数已导入')).toBeDefined()
+  })
+
+  it('H8 导入：结构不符 / 非法 JSON → 忽略不应用', async () => {
+    const { onChange } = setup('ma', 'rsi')
+    fireEvent.change(screen.getByTestId('indicator-import-input'), {
+      target: { files: [new File(['{"foo":1}'], 'a.json', { type: 'application/json' })] },
+    })
+    await waitFor(() => expect(onChange).not.toHaveBeenCalled())
+    fireEvent.change(screen.getByTestId('indicator-import-input'), {
+      target: { files: [new File(['not-json'], 'b.json', { type: 'application/json' })] },
+    })
+    await waitFor(() => expect(onChange).not.toHaveBeenCalled())
+  })
+
+  it('H11 线色：颜色输入可改，重置按钮回退默认色', () => {
+    const onLineColorChange = vi.fn()
+    render(
+      <IndicatorSettings
+        params={DEFAULT_INDICATOR_PARAMS}
+        mainIndicator="ma"
+        subIndicator="rsi"
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+        lineColors={{ MA5: '#ff0000' }}
+        onLineColorChange={onLineColorChange}
+      />,
+    )
+    const colorInput = document.querySelector('input[type="color"]') as HTMLInputElement
+    expect(colorInput).toBeDefined()
+    fireEvent.change(colorInput, { target: { value: '#00ff00' } })
+    expect(onLineColorChange).toHaveBeenCalledWith('MA5', '#00ff00')
+    fireEvent.click(screen.getByTitle('恢复默认色'))
+    expect(onLineColorChange).toHaveBeenCalledWith('MA5', '')
   })
 })
