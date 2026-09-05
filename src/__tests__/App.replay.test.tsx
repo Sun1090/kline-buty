@@ -20,6 +20,7 @@ vi.mock('../hooks/useKlineData', () => ({
     hasMore: true,
     loadMore: vi.fn(),
     retry: vi.fn(),
+    loadDemo: vi.fn(),
   })),
 }))
 
@@ -77,6 +78,7 @@ beforeEach(() => {
     hasMore: true,
     loadMore: vi.fn(),
     retry: vi.fn(),
+    loadDemo: vi.fn(),
   })
 })
 
@@ -132,6 +134,7 @@ describe('回放集成', () => {
       hasMore: true,
       loadMore: vi.fn(),
       retry: vi.fn(),
+    loadDemo: vi.fn(),
     })
     render(<App />)
     fireEvent.click(screen.getByTestId('header-more'))
