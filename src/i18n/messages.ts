@@ -221,6 +221,7 @@ export const zh = {
     screenshot: '截图',
     screenshotTitle: '截图分享',
     screenshotRegion: '框选',
+    screenshotScale: '截图分辨率倍数',
     regionHint: '拖拽框选图表区域，松开导出 PNG',
   },
   layers: {
@@ -781,6 +782,7 @@ export const en: Messages = {
     screenshot: 'Shot',
     screenshotTitle: 'Share screenshot',
     screenshotRegion: 'Crop',
+    screenshotScale: 'Screenshot resolution',
     regionHint: 'Drag a region on the chart, release to export PNG',
   },
   layers: {
@@ -1332,6 +1334,7 @@ export const ja: Messages = {
     screenshot: 'スクショ',
     screenshotTitle: 'スクリーンショット共有',
     screenshotRegion: '範囲指定',
+    screenshotScale: 'スクリーンショット解像度',
     regionHint: 'チャートの領域をドラッグ選択、離すと PNG を書き出し',
   },
   layers: {
@@ -1884,6 +1887,7 @@ export const ko: Messages = {
     screenshot: '캡처',
     screenshotTitle: '스크린샷 공유',
     screenshotRegion: '영역 선택',
+    screenshotScale: '스크린샷 해상도',
     regionHint: '차트 영역을 드래그로 선택하고 놓으면 PNG 내보내기',
   },
   layers: {
@@ -2447,6 +2451,7 @@ export const es: Messages = {
     screenshot: 'Captura',
     screenshotTitle: 'Compartir captura',
     screenshotRegion: 'Recortar',
+    screenshotScale: 'Resolución de captura',
     regionHint: 'Arrastra para seleccionar una zona del gráfico y suelta para exportar PNG',
   },
   layers: {

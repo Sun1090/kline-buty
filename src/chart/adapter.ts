@@ -235,7 +235,7 @@ export interface ChartApi {
   /** 取消进行中的多锚点画线（清空进度并恢复手势） */
   cancelDrawing(): void
   /** 截图：主图 + 画线图层合成 PNG dataURL；传 rect 时裁剪该区域（CSS 像素） */
-  takeScreenshot(rect?: RegionRect): string | null
+  takeScreenshot(rect?: RegionRect, scale?: number): string | null
   /** 进入框选截图模式（拖拽出矩形，松开回调 onRegionCapture） */
   startRegionSelect(): void
   /** 取消框选截图模式 */
@@ -705,22 +705,26 @@ export class LightweightChartAdapter implements ChartApi {
       .applyOptions({ mode: mode === 'log' ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal })
   }
 
-  takeScreenshot(rect?: RegionRect): string | null {
+  takeScreenshot(rect?: RegionRect, scale = 1): string | null {
     const main = this.chart.takeScreenshot()
     if (!main) return null
+    const factor = Math.min(4, Math.max(1, Math.round(scale)))
     const canvas = document.createElement('canvas')
-    canvas.width = main.width
-    canvas.height = main.height
+    canvas.width = main.width * factor
+    canvas.height = main.height * factor
     const ctx = canvas.getContext('2d')
     if (!ctx) return main.toDataURL('image/png')
-    ctx.drawImage(main, 0, 0)
-    ctx.drawImage(this.overlay, 0, 0, this.overlay.width, this.overlay.height, 0, 0, main.width, main.height)
+    // N5 分辨率倍数：按 factor 放大绘制（主图 + overlay 画线层各缩放绘制）
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(main, 0, 0, main.width, main.height, 0, 0, canvas.width, canvas.height)
+    ctx.drawImage(this.overlay, 0, 0, this.overlay.width, this.overlay.height, 0, 0, canvas.width, canvas.height)
     if (rect) {
       const dpr = window.devicePixelRatio || 1
-      const sx = Math.max(0, Math.round(rect.x * dpr))
-      const sy = Math.max(0, Math.round(rect.y * dpr))
-      const sw = Math.min(canvas.width - sx, Math.round(rect.w * dpr))
-      const sh = Math.min(canvas.height - sy, Math.round(rect.h * dpr))
+      const sx = Math.max(0, Math.round(rect.x * dpr * factor))
+      const sy = Math.max(0, Math.round(rect.y * dpr * factor))
+      const sw = Math.min(canvas.width - sx, Math.round(rect.w * dpr * factor))
+      const sh = Math.min(canvas.height - sy, Math.round(rect.h * dpr * factor))
       if (sw <= 0 || sh <= 0) return canvas.toDataURL('image/png')
       const out = document.createElement('canvas')
       out.width = sw
