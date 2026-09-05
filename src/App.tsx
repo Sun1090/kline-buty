@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- O3 治理基线：App 为应用根组件，聚合布局/行情/画线/交易等全部面板，行数已超新代码阈值；复杂度与行数上限对新文件生效，App 内新增逻辑应抽到 hooks/utils 层。 */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { PERIODS, PERIOD_MS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
@@ -19,11 +19,8 @@ import { PositionPanel } from './components/PositionPanel'
 import { AlertPanel } from './components/AlertPanel'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
-import { DepthChart } from './components/DepthChart'
 import { OrderBook } from './components/OrderBook'
 import { QuickOrderWithDepth } from './components/QuickOrder'
-import { SentimentPanel } from './components/SentimentPanel'
-import { VolumeProfileChart } from './components/VolumeProfileChart'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
 import { calcPnl, checkHit } from './position/pnl'
@@ -98,6 +95,11 @@ const STATUS_TEXT: Record<string, MessageKey> = {
   closed: 'status.closed',
   error: 'status.error',
 }
+
+// N6 首屏优化：非首屏面板组件代码分割（深度图/情绪/筹码分布仅打开时加载）
+const DepthChart = lazy(() => import('./components/DepthChart').then((m) => ({ default: m.DepthChart })))
+const VolumeProfileChart = lazy(() => import('./components/VolumeProfileChart').then((m) => ({ default: m.VolumeProfileChart })))
+const SentimentPanel = lazy(() => import('./components/SentimentPanel').then((m) => ({ default: m.SentimentPanel })))
 
 export function App() {
   const { t, lang, setLang } = useI18n()
@@ -1434,11 +1436,23 @@ export function App() {
             flexDirection: 'column',
           }}
         >
-          {depthOpen && <DepthChart symbol={symbol} depth={depth} />}
+          {depthOpen && (
+            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+              <DepthChart symbol={symbol} depth={depth} />
+            </Suspense>
+          )}
           {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
             onQuickOrder={(price, side) => setQuickOrder({ side, price })} onRefresh={() => setDepthReload((n) => n + 1)} />}
-          {volumeProfileOpen && <VolumeProfileChart symbol={symbol} candles={candles} />}
-          {sentimentOpen && <SentimentPanel data={sentiment} />}
+          {volumeProfileOpen && (
+            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+              <VolumeProfileChart symbol={symbol} candles={candles} />
+            </Suspense>
+          )}
+          {sentimentOpen && (
+            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+              <SentimentPanel data={sentiment} />
+            </Suspense>
+          )}
         </div>
       )}
       {replay && (
