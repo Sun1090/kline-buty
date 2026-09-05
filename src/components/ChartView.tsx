@@ -99,6 +99,8 @@ interface ChartViewProps {
   replay: { cursor: number } | null
   hasMore: boolean
   onLoadMore: () => void
+  /** N15 演示数据降级：网络不可用时注入合成 K 线（可交互演示） */
+  onLoadDemo?: () => void
   /** 可见区间变化上报（多图时间轴同步用） */
   onViewRangeChange?: (range: { from: number; to: number }) => void
   /** 外部可见区间指令（多图同步时写入） */
@@ -173,6 +175,7 @@ export function ChartView({
   replay,
   hasMore,
   onLoadMore,
+  onLoadDemo,
   onViewRangeChange,
   externalRange,
   onCrosshairChange,
@@ -1044,25 +1047,44 @@ export function ChartView({
           ) : status === 'error' ? (
             <>
               <div>{t('status.chartError')}</div>
-              {onRetry && (
-                <button
-                  data-testid="chart-retry"
-                  onClick={onRetry}
-                  style={{
-                    pointerEvents: 'auto',
-                    marginTop: 8,
-                    padding: '4px 12px',
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: '1px solid var(--accent)',
-                    background: 'transparent',
-                    color: 'var(--accent)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('common.retry')}
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                {onRetry && (
+                  <button
+                    data-testid="chart-retry"
+                    onClick={onRetry}
+                    style={{
+                      pointerEvents: 'auto',
+                      padding: '4px 12px',
+                      fontSize: 12,
+                      borderRadius: 4,
+                      border: '1px solid var(--accent)',
+                      background: 'transparent',
+                      color: 'var(--accent)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t('common.retry')}
+                  </button>
+                )}
+                {onLoadDemo && (
+                  <button
+                    data-testid="chart-load-demo"
+                    onClick={onLoadDemo}
+                    style={{
+                      pointerEvents: 'auto',
+                      padding: '4px 12px',
+                      fontSize: 12,
+                      borderRadius: 4,
+                      border: '1px solid var(--text-dim)',
+                      background: 'transparent',
+                      color: 'var(--text-dim)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t('status.loadDemo')}
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             t('status.noData')

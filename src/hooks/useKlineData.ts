@@ -163,6 +163,16 @@ export function useKlineData(symbol: string, period: Period) {
   /** E14 错误重试：递增计数，触发整段数据重载 */
   const retry = useCallback(() => setRetryNonce((n) => n + 1), [])
 
+  /** N15 演示数据降级：网络不可用时注入合成 K 线（不阻塞、可交互演示） */
+  const loadDemo = useCallback(() => {
+    const store = storeRef.current
+    if (!store || !aliveRef.current) return
+    const demo = generateSyntheticCandles(800)
+    store.upsertAll(demo)
+    setHasMore(false)
+    setState((prev) => ({ ...prev, candles: store.all().slice(), status: 'live', error: undefined }))
+  }, [])
+
   /** 向左分页：以最早一根的 openTime 为终点，往前取一页 */
   const loadMore = useCallback(async () => {
     const store = storeRef.current
@@ -185,5 +195,5 @@ export function useKlineData(symbol: string, period: Period) {
     }
   }, [symbol, period])
 
-  return { state, hasMore, loadMore, retry }
+  return { state, hasMore, loadMore, retry, loadDemo }
 }
