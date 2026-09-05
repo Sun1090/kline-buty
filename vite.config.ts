@@ -59,6 +59,13 @@ export default defineConfig({
       // O7 覆盖率基线：adapter 渲染层依赖 canvas（jsdom 无法创建 2d 上下文），由 E2E 覆盖；不计入单测覆盖率
       exclude: ['**/adapter.ts', '**/__tests__/**', '**/e2e/**', '**/perf.test.ts', '**/node_modules/**', '**/dist/**', '**/shell-app.ts', '**/shell-compat.ts'],
       reporter: ['text', 'json-summary'],
+      // O7 门禁：低于阈值 coverage 命令即失败（防回退；当前基线 ~80%，后续继续提升到 85%）
+      thresholds: {
+        statements: 80,
+        branches: 70,
+        functions: 70,
+        lines: 80,
+      },
     },
   },
 })
