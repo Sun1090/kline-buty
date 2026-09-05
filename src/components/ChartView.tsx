@@ -296,6 +296,8 @@ export function ChartView({
   const onEditTextRef = useRef(onEditText)
   onEditTextRef.current = onEditText
   const [regionSelecting, setRegionSelecting] = useState(false)
+  // N5 截图分辨率倍数（1x/2x/3x 循环）
+  const [screenshotScale, setScreenshotScale] = useState<1 | 2 | 3>(1)
   // T27：右键菜单（复制价格 / 添加提醒 / 清空画线）；触屏为主设备时不启用
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number } | null>(null)
   /** H12 副图 Y 轴固定范围（有界指标）：true 锁定到理论极值，false 自动缩放 */
@@ -1069,11 +1071,11 @@ export function ChartView({
       )}
       <button
         onClick={() => {
-          const dataUrl = apiRef.current?.takeScreenshot()
+          const dataUrl = apiRef.current?.takeScreenshot(undefined, screenshotScale)
           if (!dataUrl) return
           void exportScreenshotWithDisclaimer(
             dataUrl,
-            `${symbol}_${period}.png`,
+            `${symbol}_${period}@${screenshotScale}x.png`,
             chartLabelsFor(lang).watermark,
           )
         }}
@@ -1095,6 +1097,27 @@ export function ChartView({
         {t('drawing.screenshot')}
       </button>
       <button
+        data-testid="screenshot-scale-toggle"
+        onClick={() => setScreenshotScale((s) => (s === 1 ? 2 : s === 2 ? 3 : 1))}
+        title={t('drawing.screenshotScale')}
+        aria-pressed={screenshotScale !== 1}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 92,
+          padding: '3px 8px',
+          fontSize: 11,
+          border: '1px solid #2a2e39',
+          borderRadius: 4,
+          cursor: 'pointer',
+          background: screenshotScale !== 1 ? 'rgba(41,98,255,0.18)' : 'var(--panel)',
+          color: screenshotScale !== 1 ? 'var(--accent)' : 'var(--text-dim)',
+          zIndex: 6,
+        }}
+      >
+        {screenshotScale}x
+      </button>
+      <button
         onClick={() => {
           if (regionSelecting) {
             apiRef.current?.cancelRegionSelect()
@@ -1108,7 +1131,7 @@ export function ChartView({
         style={{
           position: 'absolute',
           top: 8,
-          right: 92,
+          right: 176,
           padding: '3px 10px',
           fontSize: 11,
           border: '1px solid #2a2e39',
