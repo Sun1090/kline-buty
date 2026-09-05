@@ -27,6 +27,7 @@ export function calcBOLL(candles: Candle[], period = 20, mult = 2): BollPoint[] 
   return out
 }
 
+/** 布林带点集 → 三条可渲染线（上轨/中轨/下轨，适配线条序列） */
 export function bollToLines(boll: BollPoint[]) {
   return {
     upper: boll.map((p) => ({ time: p.time, value: p.upper })) satisfies ValuePoint[],

@@ -33,6 +33,7 @@ export function findGaps(candles: Candle[], period: Period, tolerance = 1.5): Ga
 /** G6 健康度档位：0 缺口 → healthy；1-2 → partial；≥3 → degraded */
 export type GapHealth = 'healthy' | 'partial' | 'degraded'
 
+/** G6 汇总缺口列表为健康度档位（0/1-2/≥3 分级） */
 export function gapHealth(gaps: GapRange[]): GapHealth {
   if (gaps.length === 0) return 'healthy'
   if (gaps.length <= 2) return 'partial'
