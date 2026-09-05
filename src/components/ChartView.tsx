@@ -926,6 +926,20 @@ export function ChartView({
     apiRef.current?.setDrawingTool(drawingTool ?? 'none')
   }, [drawingTool])
 
+  // M8 键盘画线：画线工具激活时 Enter 在当前十字光标处放置锚点（Esc 取消由 App 全局处理）
+  useEffect(() => {
+    if (!drawingTool || drawingTool === 'none') return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
+      e.preventDefault()
+      apiRef.current?.keyboardPlaceAnchorAtCrosshair()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [drawingTool])
+
   // 选中画线同步（拖拽判定依赖）
   useEffect(() => {
     apiRef.current?.setSelectedDrawing?.(selectedDrawingId ?? null)
