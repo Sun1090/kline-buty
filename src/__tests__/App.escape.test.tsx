@@ -21,6 +21,7 @@ vi.mock('../hooks/useKlineData', () => ({
     loadMore: vi.fn(),
     retry: vi.fn(),
     loadDemo: vi.fn(),
+    frameStats: null,
   })),
 }))
 
@@ -78,6 +79,7 @@ beforeEach(() => {
     loadMore: vi.fn(),
     retry: vi.fn(),
     loadDemo: vi.fn(),
+    frameStats: null,
   })
 })
 

@@ -101,6 +101,8 @@ interface ChartViewProps {
   onLoadMore: () => void
   /** N15 演示数据降级：网络不可用时注入合成 K 线（可交互演示） */
   onLoadDemo?: () => void
+  /** N14 实时帧丢帧统计（压测/诊断时显示高丢帧角标） */
+  frameStats?: { rate: number; dropped: number; total: number } | null
   /** 可见区间变化上报（多图时间轴同步用） */
   onViewRangeChange?: (range: { from: number; to: number }) => void
   /** 外部可见区间指令（多图同步时写入） */
@@ -202,6 +204,7 @@ export function ChartView({
   colorPreset = 'classic',
   showWatermark = true,
   lineColors = {},
+  frameStats,
 }: ChartViewProps) {
   const { t, lang } = useI18n()
   const theme = themeFor(themeMode, colorPreset)
@@ -1139,6 +1142,27 @@ export function ChartView({
       >
         {screenshotScale}x
       </button>
+      {frameStats && frameStats.total >= 4 && frameStats.rate > 0.1 && (
+        <div
+          data-testid="frame-drop-badge"
+          title={t('status.frameDrop', { rate: `${Math.round(frameStats.rate * 100)}%` })}
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 140,
+            padding: '3px 8px',
+            fontSize: 11,
+            border: '1px solid rgba(245,192,47,0.6)',
+            borderRadius: 4,
+            background: 'rgba(245,192,47,0.15)',
+            color: 'var(--yellow)',
+            zIndex: 6,
+            pointerEvents: 'none',
+          }}
+        >
+          🐢 {Math.round(frameStats.rate * 100)}% {t('status.frameDropUnit')}
+        </div>
+      )}
       <button
         onClick={() => {
           if (regionSelecting) {
