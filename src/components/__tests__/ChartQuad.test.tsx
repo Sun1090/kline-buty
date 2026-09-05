@@ -153,4 +153,16 @@ describe('ChartQuad 组件渲染（O7）', () => {
     })
     expect(onCellPeriod).toHaveBeenCalled()
   })
+
+  it('periods 数组短于 symbols 时，其余格回退到全局 period', () => {
+    render(
+      <ChartQuad
+        {...quadProps}
+        periods={['1m']} // 仅第 1 格指定，其余回退 '1h'
+      />,
+    )
+    expect((screen.getByLabelText('period: BTCUSDT') as HTMLSelectElement).value).toBe('1m')
+    expect((screen.getByLabelText('period: ETHUSDT') as HTMLSelectElement).value).toBe('1h')
+    expect((screen.getByLabelText('period: SOLUSDT') as HTMLSelectElement).value).toBe('1h')
+  })
 })
