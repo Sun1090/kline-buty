@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { buildApiUrl, buildDepthWsUrls, buildWsUrl, detectMode, toCoinMPair, toCoinMSymbol, __resetModeForTests } from '../endpoints'
+import { buildApiUrl, buildDepthWsUrls, buildWsUrl, detectMode, readCustomBases, toCoinMPair, toCoinMSymbol, writeCustomBases, __resetModeForTests } from '../endpoints'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -97,5 +97,45 @@ describe('buildDepthWsUrls', () => {
   })
   it('proxy 模式：单一相对路径', () => {
     expect(buildDepthWsUrls('proxy', 'btcusdt@depth20@100ms')[0]).toContain('/ws/btcusdt@depth20@100ms')
+  })
+})
+
+describe('P12 自定义数据源', () => {
+  it('readCustomBases：未配置 → null', () => {
+    const storage = { getItem: () => null }
+    expect(readCustomBases(storage)).toBeNull()
+  })
+  it('writeCustomBases + readCustomBases：写读往返', () => {
+    const m = new Map<string, string>()
+    const storage = {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => {
+        m.set(k, v)
+      },
+    }
+    expect(writeCustomBases({ api: 'https://my-gw.example', ws: 'wss://my-gw.example' }, storage)).toBe(true)
+    expect(readCustomBases(storage)).toEqual({ api: 'https://my-gw.example', ws: 'wss://my-gw.example' })
+  })
+  it('readCustomBases：损坏 JSON → null', () => {
+    const storage = { getItem: () => '{bad' }
+    expect(readCustomBases(storage)).toBeNull()
+  })
+  it('buildApiUrl：自定义 api 基址覆盖 direct 默认', () => {
+    const custom = { api: 'https://my-gw.example/' }
+    expect(buildApiUrl('direct', '/api/v3/klines?a=1', custom)).toBe('https://my-gw.example/api/v3/klines?a=1')
+  })
+  it('buildWsUrl：自定义 ws 基址覆盖 direct 默认', () => {
+    const custom = { ws: 'wss://my-gw.example/' }
+    expect(buildWsUrl('direct', 'btcusdt@kline_1m', custom)).toBe('wss://my-gw.example/ws/btcusdt@kline_1m')
+  })
+  it('buildDepthWsUrls：自定义 ws 基址只生成单候选', () => {
+    const custom = { ws: 'wss://my-gw.example' }
+    expect(buildDepthWsUrls('direct', 'btcusdt@depth20@100ms', undefined, custom)).toEqual([
+      'wss://my-gw.example/ws/btcusdt@depth20@100ms',
+    ])
+  })
+  it('不传 custom → 行为不变（向后兼容）', () => {
+    expect(buildApiUrl('direct', '/api/v3/klines')).toBe('https://data-api.binance.vision/api/v3/klines')
+    expect(buildWsUrl('direct', 'btcusdt@kline_1m')).toBe('wss://stream.binance.com:9443/ws/btcusdt@kline_1m')
   })
 })

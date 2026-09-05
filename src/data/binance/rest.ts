@@ -1,6 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKline } from './types'
-import { DAPI_BASE, buildApiUrl, detectMode, toCoinMPair, toCoinMSymbol } from './endpoints'
+import { DAPI_BASE, buildApiUrl, detectMode, readCustomBases, toCoinMPair, toCoinMSymbol } from './endpoints'
 
 /** 币安 K 线 → 领域类型（openTime 毫秒 → 秒） */
 export function mapKline(raw: RawKline): Candle {
@@ -34,8 +34,9 @@ const FETCH_TIMEOUT_MS = 8000
  */
 async function binanceGet(path: string, fallback?: string, signal?: AbortSignal): Promise<Response> {
   const mode = await detectMode()
+  const custom = readCustomBases()
   const candidates =
-    mode === 'proxy' ? [path] : [buildApiUrl(mode, path), ...(fallback ? [fallback] : [])]
+    mode === 'proxy' ? [path] : [buildApiUrl(mode, path, custom), ...(fallback ? [fallback] : [])]
   let lastErr: unknown
   for (const url of candidates) {
     const ctrl = new AbortController()
