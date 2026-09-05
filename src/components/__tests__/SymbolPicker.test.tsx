@@ -157,4 +157,24 @@ describe('SymbolPicker', () => {
     const saved = localStorage.getItem('kline-buty:favorites')
     expect(saved).toBeTruthy()
   })
+
+  it('O7：搜索无结果 → 显示空态提示', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    const input = await screen.findByPlaceholderText(/搜索|Search/)
+    fireEvent.change(input, { target: { value: 'ZZZZ_NONEXISTENT_SYMBOL' } })
+    await waitFor(() => {
+      expect(screen.getByText(/无匹配|No match/)).toBeDefined()
+    })
+  })
+
+  it('O7：搜索匹配 → 显示结果计数', async () => {
+    render(<SymbolPicker value="BTCUSDT" onChange={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button'))
+    const input = await screen.findByPlaceholderText(/搜索|Search/)
+    fireEvent.change(input, { target: { value: 'ETH' } })
+    await waitFor(() => {
+      expect(screen.getByText(/结果|results|件/)).toBeDefined()
+    })
+  })
 })
