@@ -168,6 +168,25 @@ describe('MobileHeader（移动端工具栏整合）', () => {
     expect(h.onToggleWatermark).toHaveBeenCalledTimes(1)
   })
 
+  it('O7：更多弹层主题切换按钮 → 触发 onToggleTheme（dark→light 文案）', () => {
+    const h = setup({ themeMode: 'dark' })
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    const themeBtns = screen.getAllByTitle('切换主题')
+    expect(themeBtns.length).toBeGreaterThan(0)
+    const themeBtn = themeBtns[themeBtns.length - 1] // 更多菜单内的那个
+    fireEvent.click(themeBtn)
+    expect(h.onToggleTheme).toHaveBeenCalledTimes(1)
+  })
+
+  it('O7：更多弹层语言按钮 → 触发 onCycleLang 并显示语言标签', () => {
+    const h = setup({ langLabel: '中文' })
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    const langBtn = screen.getByTitle(/切换语言/)
+    expect(langBtn.textContent).toContain('中文')
+    fireEvent.click(langBtn)
+    expect(h.onCycleLang).toHaveBeenCalledTimes(1)
+  })
+
   it('外部点击收起弹层', () => {
     setup()
     fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
