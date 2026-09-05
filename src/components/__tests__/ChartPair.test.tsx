@@ -24,6 +24,7 @@ vi.mock('../../hooks/useKlineData', () => ({
 
 type MockAdapterInstance = {
   onRange: ((from: number, to: number) => void) | null
+  onCrosshair: ((t: number | null) => void) | null
   setVisibleRange: ReturnType<typeof vi.fn>
 }
 
@@ -32,6 +33,7 @@ const instances: MockAdapterInstance[] = []
 vi.mock('../../chart/adapter', () => {
   class MockAdapter {
     onRange: ((from: number, to: number) => void) | null = null
+    onCrosshair: ((t: number | null) => void) | null = null
     setVisibleRange = vi.fn()
     setCandles = vi.fn()
     updateCandle = vi.fn()
@@ -59,7 +61,8 @@ vi.mock('../../chart/adapter', () => {
     constructor() {
       instances.push(this)
     }
-    subscribeCrosshairMove() {
+    subscribeCrosshairMove(cb: (t: number | null) => void) {
+      this.onCrosshair = cb
       return () => {}
     }
     subscribeVisibleRange(cb: (from: number, to: number) => void) {
@@ -125,5 +128,17 @@ describe('ChartPair 时间轴联动', () => {
     // 此处直接断言组件渲染稳定：两个实例均已创建并订阅范围
     expect(instances[0].onRange).not.toBeNull()
     expect(instances[1].onRange).not.toBeNull()
+  })
+
+  it('G8 十字光标联动：A/B 互报新值；回显同值跳过不覆写', () => {
+    render(<ChartPair {...props} />)
+    const [a, b] = instances
+    act(() => a.onCrosshair!(100)) // fromCrossA 新值 → 写 B
+    act(() => b.onCrosshair!(100)) // fromCrossB 回显同值 → seen 跳过（不覆写 A）
+    act(() => b.onCrosshair!(200)) // fromCrossB 新值 → 写 A
+    act(() => a.onCrosshair!(200)) // fromCrossA 回显同值 → seen 跳过
+    expect(instances).toHaveLength(2)
+    expect(a.onCrosshair).not.toBeNull()
+    expect(b.onCrosshair).not.toBeNull()
   })
 })
