@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { DEFAULT_BINDINGS, findConflicts, keyLabel, type ShortcutActionType, type ShortcutKey, type ShortcutKeyMap } from '../shortcuts'
 import { ACTION_LABELS } from './ShortcutsHelp'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { MessageKey } from '../i18n/messages'
 
 interface ShortcutsSettingsProps {
@@ -41,6 +42,9 @@ export function ShortcutsSettings({ keys, onChange, onClose }: ShortcutsSettings
   const [recording, setRecording] = useState<ShortcutActionType | null>(null)
   // M10 冲突提示：最近一次录制后检测到的冲突（空=无）
   const [conflict, setConflict] = useState<{ actions: ShortcutActionType[]; label: string } | null>(null)
+  // M5 焦点陷阱：对话框内 Tab 循环
+  const rootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, rootRef)
 
   const bindingFor = (type: ShortcutActionType): ShortcutKey[] => keys[type] ?? DEFAULT_BINDINGS[type] ?? []
   const labelOf = (type: ShortcutActionType) => bindingFor(type).map(keyLabel).join(' / ') || '—'
@@ -75,6 +79,7 @@ export function ShortcutsSettings({ keys, onChange, onClose }: ShortcutsSettings
 
   return (
     <div
+      ref={rootRef}
       data-testid="shortcuts-settings"
       role="dialog"
       aria-label={t('shortcuts.configTitle')}
