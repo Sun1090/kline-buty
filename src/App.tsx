@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- O3 治理基线：App 为应用根组件，聚合布局/行情/画线/交易等全部面板，行数已超新代码阈值；复杂度与行数上限对新文件生效，App 内新增逻辑应抽到 hooks/utils 层。 */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PERIODS, PERIOD_MS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
