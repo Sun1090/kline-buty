@@ -204,4 +204,17 @@ describe('MarketList', () => {
     render(<MarketList {...baseProps} />)
     expect(screen.queryByTestId('market-rotate')).toBeNull()
   })
+
+  it('搜索过滤：输入关键词 → 只显示匹配行；Escape 清空恢复全部', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    const search = screen.getByPlaceholderText('过滤交易对…') as HTMLInputElement
+    fireEvent.change(search, { target: { value: 'ETH' } })
+    const rowsAfter = screen.getAllByTestId(/^market-row-/)
+    expect(rowsAfter).toHaveLength(1)
+    expect(rowsAfter[0].getAttribute('data-testid')).toBe('market-row-ETHUSDT')
+    fireEvent.keyDown(search, { key: 'Escape' })
+    expect(search.value).toBe('')
+    expect(screen.getAllByTestId(/^market-row-/)).toHaveLength(3)
+  })
 })
