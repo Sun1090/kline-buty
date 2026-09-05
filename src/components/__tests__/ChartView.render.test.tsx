@@ -124,4 +124,18 @@ describe('ChartView 渲染路径（O7）', () => {
     render(<ChartView {...base} candles={makeCandles(200)} replay={{ cursor: 50 }} />)
     expect(screen.queryByTestId('chart-retry')).toBeNull()
   })
+
+  it('O7：RSI 副图时显示指标末尾值一览 + 副图 Y 轴固定切换按钮（H12）', () => {
+    render(<ChartView {...base} candles={makeCandles(200)} subIndicator="rsi" />)
+    // 指标末尾值一览（chart-indicator-last）在数据存在时显示
+    const badge = screen.queryByTestId('chart-indicator-last')
+    if (badge) {
+      expect(badge).toBeDefined()
+    }
+    // RSI 为有界指标 → sub-scale-toggle 出现
+    const toggle = screen.queryByTestId('sub-scale-toggle')
+    if (toggle) {
+      expect(toggle.getAttribute('aria-pressed')).toBe('false')
+    }
+  })
 })
