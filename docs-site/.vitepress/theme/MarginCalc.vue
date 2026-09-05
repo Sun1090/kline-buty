@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { calcMargin } from './kbCalc'
 
 const capital = ref(10000)
 const leverage = ref(20)
@@ -7,21 +8,7 @@ const entry = ref(60000)
 const side = ref('long')
 const mmr = ref(0.5) // 维持保证金率 %
 
-const result = computed(() => {
-  const c = Number(capital.value) || 0
-  const lev = Math.max(1, Number(leverage.value) || 1)
-  const e = Number(entry.value) || 0
-  const m = Number(mmr.value) / 100
-  const notional = c * lev
-  const margin = c
-  const mm = notional * m
-  // 简化线性模型（未含阶梯维持保证金与手续费）
-  const liq = side.value === 'long'
-    ? e * (1 - 1 / lev + m)
-    : e * (1 + 1 / lev - m)
-  const liqMove = e > 0 ? ((liq - e) / e) * 100 : 0
-  return { notional, mm, liq, liqMove }
-})
+const result = computed(() => calcMargin(capital.value, leverage.value, entry.value, mmr.value, side.value))
 </script>
 
 <template>

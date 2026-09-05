@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { blackScholes } from './kbCalc'
 
 const spot = ref(60000)
 const strike = ref(62000)
@@ -7,54 +8,7 @@ const vol = ref(50) // 年化波动率 %
 const rate = ref(3) // 无风险利率 %
 const days = ref(30) // 距到期天数
 
-/** Abramowitz-Stegun 7.1.26 误差函数近似（|ε| < 1.5e-7） */
-function erf(x) {
-  const s = Math.sign(x)
-  x = Math.abs(x)
-  const t = 1 / (1 + 0.3275911 * x)
-  const y =
-    1 -
-    ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t +
-      0.254829592) *
-      t *
-      Math.exp(-x * x)
-  return s * y
-}
-const normCdf = (x) => 0.5 * (1 + erf(x / Math.SQRT2))
-const normPdf = (x) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
-
-const bs = computed(() => {
-  const S = Math.max(1e-9, Number(spot.value) || 0)
-  const K = Math.max(1e-9, Number(strike.value) || 0)
-  const sigma = Math.max(1e-4, Number(vol.value) / 100)
-  const r = Number(rate.value) / 100
-  const T = Math.max(1 / 365 / 24, Number(days.value) / 365) // 至少留 1 小时避免 T=0 奇点
-
-  const sqrtT = Math.sqrt(T)
-  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrtT)
-  const d2 = d1 - sigma * sqrtT
-  const disc = Math.exp(-r * T)
-
-  const call = S * normCdf(d1) - K * disc * normCdf(d2)
-  const put = K * disc * normCdf(-d2) - S * normCdf(-d1)
-  const deltaC = normCdf(d1)
-  const deltaP = deltaC - 1
-  const gamma = normPdf(d1) / (S * sigma * sqrtT)
-  // Theta（年化）/365 → 每自然日；Vega（每 1.0 波动率）/100 → 每 1 个百分点
-  const thetaC =
-    (-(S * normPdf(d1) * sigma) / (2 * sqrtT) - r * K * disc * normCdf(d2)) / 365
-  const thetaP =
-    (-(S * normPdf(d1) * sigma) / (2 * sqrtT) + r * K * disc * normCdf(-d2)) / 365
-  const vega = (S * normPdf(d1) * sqrtT) / 100
-
-  const intrinsicC = Math.max(0, S - K)
-  const intrinsicP = Math.max(0, K - S)
-  return {
-    call, put, deltaC, deltaP, gamma, thetaC, thetaP, vega,
-    intrinsicC, timeC: call - intrinsicC,
-    intrinsicP, timeP: put - intrinsicP,
-  }
-})
+const bs = computed(() => blackScholes(spot.value, strike.value, vol.value, rate.value, days.value))
 const fmt = (v) =>
   v.toLocaleString(undefined, { maximumFractionDigits: v >= 100 ? 1 : 2 })
 </script>
