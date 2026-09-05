@@ -17,9 +17,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // vite 8（rolldown 内核）不再支持对象形式 manualChunks，改函数形式；
-        // lightweight-charts 拆为独立 vendor chunk，利用浏览器缓存减少重复下载
+        // 第三方库按域拆为独立 chunk，利用浏览器缓存减少重复下载（O6 体积优化）
         manualChunks(id: string) {
-          if (id.includes('lightweight-charts')) return 'vendor'
+          if (id.includes('lightweight-charts')) return 'vendor-charts'
+          if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'vendor-react'
         },
       },
     },
