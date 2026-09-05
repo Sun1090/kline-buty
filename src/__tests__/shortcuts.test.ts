@@ -112,6 +112,11 @@ describe('shortcutFor', () => {
     expect(shortcutFor(ev('1'), false, keys)).toEqual({ type: 'set-layout', layout: 'single' })
   })
 
+  it('M12 语言切换：⇧⌘L 触发 cycle-lang', () => {
+    expect(shortcutFor(ev('l', { metaKey: true, shiftKey: true }), false)).toEqual({ type: 'cycle-lang' })
+    expect(shortcutFor(ev('L', { ctrlKey: true, shiftKey: true }), false)).toEqual({ type: 'cycle-lang' })
+  })
+
   it('L1 默认多绑定：/ 与 ⌘K 都触发搜索', () => {
     expect(shortcutFor(ev('/'), false)).toEqual({ type: 'open-search' })
     expect(shortcutFor(ev('k', { metaKey: true }), false)).toEqual({ type: 'open-search' })

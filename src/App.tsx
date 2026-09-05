@@ -791,6 +791,11 @@ export function App() {
           e.preventDefault()
           setShortcutsOpen((v) => !v)
           break
+        case 'cycle-lang':
+          // M12 语言切换快捷键：循环切换 UI 语言
+          e.preventDefault()
+          setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])
+          break
         case 'escape':
           // Esc：关闭模态/侧栏面板 → 关闭快捷键浮层 → 退出文本编辑 → 取消画线进度 → 取消选中画线
           if (settingsOpen) setSettingsOpen(false)
@@ -825,6 +830,7 @@ export function App() {
     textDraft,
     shortcutsOpen,
     shortcutKeys,
+    lang,
     settingsOpen,
     alertsOpen,
     positionOpen,

@@ -14,7 +14,7 @@ interface ShortcutsHelpProps {
 const GROUPS: { titleKey: MessageKey; types: ShortcutActionType[] }[] = [
   {
     titleKey: 'shortcuts.groupNav',
-    types: ['open-search', 'period-prev', 'period-next', 'set-layout', 'toggle-fullscreen'],
+    types: ['open-search', 'period-prev', 'period-next', 'set-layout', 'toggle-fullscreen', 'cycle-lang'],
   },
   {
     titleKey: 'shortcuts.groupIndicators',
@@ -47,6 +47,7 @@ export const ACTION_LABELS: Record<ShortcutActionType, MessageKey> = {
   'toggle-shortcuts': 'shortcuts.help',
   'copy-drawing': 'shortcuts.copyDrawing',
   'paste-drawing': 'shortcuts.pasteDrawing',
+  'cycle-lang': 'shortcuts.cycleLang',
 }
 
 /** L1 快捷键帮助浮层：按分组显示当前生效键位 + 过滤 + 配置入口；Esc 关闭由全局快捷键处理 */
