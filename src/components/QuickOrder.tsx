@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface QuickOrderProps {
   symbol: string
@@ -46,6 +47,9 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
   const { t } = useI18n()
   const [priceStr, setPriceStr] = useState(String(price))
   const [qtyStr, setQtyStr] = useState('1')
+  // M5 焦点陷阱：下单弹层内 Tab 循环
+  const rootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, rootRef)
 
   const priceNum = Number(priceStr)
   const qtyNum = Number(qtyStr)
@@ -60,6 +64,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
 
   return (
     <div
+      ref={rootRef}
       data-testid="quick-order"
       style={{
         position: 'absolute',
