@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { render, fireEvent, screen, cleanup } from '@testing-library/react'
+import { render, fireEvent, screen, cleanup, act } from '@testing-library/react'
 import { DrawingLayers } from '../DrawingLayers'
 import { createDrawing, type Drawing } from '../../drawings/logic'
 import { createTemplate } from '../../drawings/templates'
@@ -276,4 +276,90 @@ describe('DrawingLayers（图层管理面板）', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(onRename).toHaveBeenCalledWith('h1', '斐波那契')
   })
+  it('C4 组头：组名计数 + 组级显隐/锁定 + 折叠切换', () => {
+    const h = setup({
+      drawings: [
+        { ...createDrawing('horizontal', [{ time: 1, price: 100 }], 'd1'), group: 'A组' },
+        { ...createDrawing('trend', [{ time: 0, price: 100 }, { time: 10, price: 90 }], 'd2'), group: 'A组' },
+        createDrawing('horizontal', [{ time: 1, price: 100 }], 'd3'),
+      ],
+    })
+    const aHeader = document.querySelector('[data-group="A组"]') as HTMLElement
+    expect(aHeader.textContent).toContain('A组')
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(3)
+    // 组级隐藏：组内全未隐藏 → 调 onGroupHidden(group, true)
+    fireEvent.click(screen.getByTestId('drawing-group-eye-A组'))
+    expect(h.onGroupHidden).toHaveBeenCalledWith('A组', true)
+    fireEvent.click(screen.getByTestId('drawing-group-lock-A组'))
+    expect(h.onGroupLocked).toHaveBeenCalledWith('A组', true)
+    // 折叠组 → 组内行不渲染（未分组仍在）
+    fireEvent.click(aHeader)
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(1)
+    fireEvent.click(aHeader)
+    expect(screen.getAllByTestId('drawing-layer-row')).toHaveLength(3)
+  })
+
+  it('显示全部/隐藏全部按钮 → onSetAllHidden(false/true)', () => {
+    const h = setup({ drawings: [h1, t1] })
+    fireEvent.click(screen.getByTestId('drawing-layer-show-all'))
+    expect(h.onSetAllHidden).toHaveBeenCalledWith(false)
+    fireEvent.click(screen.getByTestId('drawing-layer-hide-all'))
+    expect(h.onSetAllHidden).toHaveBeenCalledWith(true)
+  })
+
+  it('I12 撤销深度输入 → onUndoDepthChange(钳制)', () => {
+    const onUndoDepthChange = vi.fn()
+    setup({ drawings: [h1], undoDepth: 60, onUndoDepthChange })
+    const input = screen.getByLabelText('撤销步数') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '300' } }) // 超上限 → 钳到 200
+    expect(onUndoDepthChange).toHaveBeenCalledWith(200)
+  })
+
+  it('导入错误 → 显示错误信息', () => {
+    setup({ drawings: [h1], importError: '格式无效' })
+    expect(screen.getByTestId('drawing-import-error').textContent).toBe('格式无效')
+  })
+
+  it('导入文件：按钮触发选择器，选文件 → onImportFile', () => {
+    const h = setup({ drawings: [h1] })
+    const fileClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {})
+    fireEvent.click(screen.getByTestId('drawing-layer-import'))
+    expect(fileClickSpy).toHaveBeenCalled()
+    fileClickSpy.mockRestore()
+    const file = new File(['[]'], 'd.json', { type: 'application/json' })
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [file] } })
+    expect(h.onImportFile).toHaveBeenCalledWith(file)
+  })
+
+  it('C15 position 工具跟随最新价：选中时显示开关，切换触发 onSetFollowLatest', () => {
+    const pos = createDrawing('position', [{ time: 1, price: 100 }], 'p1')
+    const h = setup({ drawings: [pos], selectedId: 'p1' })
+    expect(screen.getByTestId('drawing-follow-latest-row')).toBeDefined()
+    fireEvent.click(screen.getByTestId('drawing-follow-latest-checkbox'))
+    expect(h.onSetFollowLatest).toHaveBeenCalledWith('p1', true)
+  })
+
+  it('C15 position 工具：非 position 类型选中 → 不显示跟随开关', () => {
+    setup({ drawings: [h1], selectedId: 'h1' })
+    expect(screen.queryByTestId('drawing-follow-latest-row')).toBeNull()
+  })
+
+  it('I2 统计：线/面数量与量度汇总显示', () => {
+    const len = createDrawing('measure', [{ time: 0, price: 100 }, { time: 100, price: 100 }], 'm1')
+    setup({ drawings: [h1, t1, len] })
+    expect(screen.getByTestId('drawing-stats')).toBeDefined()
+  })
+
+  it('C6 保存模板后闪现「已保存模板」提示', () => {
+    vi.useFakeTimers()
+    const h = setup({ drawings: [h1], templates: [] })
+    fireEvent.change(screen.getByTestId('drawing-template-name'), { target: { value: '我的组合' } })
+    fireEvent.click(screen.getByTestId('drawing-template-save'))
+    expect(h.onSaveTemplate).toHaveBeenCalledWith('我的组合')
+    expect(screen.getByText('已保存模板')).toBeDefined()
+    act(() => vi.advanceTimersByTime(1600))
+    expect(screen.queryByText('已保存模板')).toBeNull()
+    vi.useRealTimers()
+  })
+
 })
