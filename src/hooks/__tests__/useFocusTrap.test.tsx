@@ -21,6 +21,19 @@ function Trap({ open = true }: { open?: boolean }) {
   )
 }
 
+/** 弹层内无可聚焦元素的场景 */
+function EmptyTrap({ open = true }: { open?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useFocusTrap(open, ref)
+  return (
+    <div>
+      <div ref={ref} data-testid="empty-trap">
+        <p>无按钮的弹层</p>
+      </div>
+    </div>
+  )
+}
+
 describe('focusableElements（M5 弹层焦点陷阱）', () => {
   it('收集弹层内可聚焦元素（排除 disabled/隐藏）', () => {
     render(
@@ -47,5 +60,13 @@ describe('useFocusTrap（M5）', () => {
     // 模拟焦点逃逸到弹层外的 outside 按钮 → focusin 监听触发拉回首个元素
     fireEvent.focusOut(screen.getByTestId('b'))
     expect(document.activeElement?.getAttribute('data-testid')).toBe('a')
+  })
+
+  it('弹层内无可聚焦元素：焦点移出不拉回（不抛错，O7）', () => {
+    render(<EmptyTrap />)
+    // 触发 focusin 到外部元素，弹层内无按钮 → 不拉回
+    fireEvent.focusIn(screen.getByTestId('empty-trap'))
+    expect(() => fireEvent.focusOut(screen.getByTestId('empty-trap').querySelector('p')!)).not.toThrow()
+    expect(document.activeElement).not.toBeNull()
   })
 })
