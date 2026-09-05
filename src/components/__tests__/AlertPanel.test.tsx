@@ -176,4 +176,26 @@ describe('AlertPanel', () => {
     render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
     expect(screen.getByTestId('alert-group-趋势')).toBeDefined()
   })
+
+  it('O7：D9 时间窗口输入 → 创建时透传 time', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.change(screen.getByPlaceholderText('63000.00'), { target: { value: '65000' } })
+    fireEvent.change(screen.getByTestId('alert-time-from'), { target: { value: '09:30' } })
+    fireEvent.change(screen.getByTestId('alert-time-to'), { target: { value: '15:00' } })
+    fireEvent.click(screen.getByText('添加提醒'))
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'above', 65000, false, { start: 570, end: 900 }, undefined, undefined)
+  })
+
+  it('O7：重复间隔非法（负数）→ 确认按钮禁用', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.change(screen.getByPlaceholderText('63000.00'), { target: { value: '65000' } })
+    fireEvent.click(screen.getByTestId('alert-repeat-toggle').querySelector('input')!)
+    fireEvent.change(screen.getByTestId('alert-repeat-interval-input'), { target: { value: '-5' } })
+    const btn = screen.getByText('添加提醒') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+    fireEvent.click(btn)
+    expect(api.addAlert).not.toHaveBeenCalled()
+  })
 })
