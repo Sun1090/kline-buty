@@ -20,7 +20,8 @@
     "docs:build": "node scripts/docs-build.mjs",
     "precheck": "node scripts/precheck.mjs",
     "precheck:skip-build": "node scripts/precheck.mjs --skip-build",
-    "bundle:report": "node scripts/bundle-report.mjs"
+    "bundle:report": "node scripts/bundle-report.mjs",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "lightweight-charts": "^5.0.0",

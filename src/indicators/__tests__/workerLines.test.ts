@@ -57,6 +57,19 @@ describe('workerSubLines（H13 worker 可序列化指标线）', () => {
     expect(lines![0].id).toBe('AO')
   })
 
+  it('O7 覆盖：ATR/MFI/TRIX/DPO 单线分支', () => {
+    for (const [kind, id] of [['atr', 'ATR'], ['mfi', 'MFI'], ['trix', 'TRIX'], ['dpo', 'DPO']] as const) {
+      const lines = workerSubLines(kind, data, DEFAULT_INDICATOR_PARAMS)
+      expect(lines).toHaveLength(1)
+      expect(lines![0].id).toBe(id)
+    }
+  })
+
+  it('O7 覆盖：Vortex → VI+/VI- 双线', () => {
+    const lines = workerSubLines('vortex', data, DEFAULT_INDICATOR_PARAMS)
+    expect(lines!.map((l) => l.id)).toEqual(['VI+', 'VI-'])
+  })
+
   it('不支持（volume/bbw/dmi/cci 等未纳入线集）→ null', () => {
     for (const k of ['volume', 'bbw', 'dmi', 'cci', 'stoch', 'obv', 'wr', 'psy', 'roc', 'mom']) {
       expect(workerSubLines(k, data, DEFAULT_INDICATOR_PARAMS)).toBeNull()
