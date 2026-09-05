@@ -57,4 +57,31 @@ describe('PeriodBar', () => {
       expect(b.getAttribute('aria-label')).toBeTruthy()
     }
   })
+
+  it('M9 键盘导航：roving tabindex——选中周期获焦，其余 -1', () => {
+    render(<PeriodBar value="1m" onChange={vi.fn()} />)
+    const bar = screen.getByTestId('period-bar')
+    const active = screen.getByTestId('period-1m')
+    expect(active.getAttribute('tabindex')).toBe('0')
+    expect(bar.querySelectorAll('button[tabindex="0"]').length).toBe(1)
+  })
+
+  it('M9 键盘导航：ArrowRight 移动焦点到下一周期（1m → 3m）', () => {
+    render(<PeriodBar value="1m" onChange={vi.fn()} />)
+    const cur = screen.getByTestId('period-1m')
+    cur.focus()
+    fireEvent.keyDown(cur, { key: 'ArrowRight' })
+    const next = screen.getByTestId('period-3m') // 周期顺序：1s,1m,3m,5m...
+    expect(next.getAttribute('tabindex')).toBe('0')
+  })
+
+  it('M9 键盘导航：ArrowLeft 从首周期回绕到末周期', () => {
+    render(<PeriodBar value="1s" onChange={vi.fn()} />)
+    const cur = screen.getByTestId('period-1s')
+    cur.focus()
+    fireEvent.keyDown(cur, { key: 'ArrowLeft' })
+    // 末周期获得焦点索引（wrap 到尾）
+    const bar = screen.getByTestId('period-bar')
+    expect(bar.querySelectorAll('button[tabindex="0"]').length).toBe(1)
+  })
 })
