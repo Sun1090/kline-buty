@@ -151,4 +151,23 @@ describe('createKlineWs', () => {
     expect(statuses[statuses.length - 1]).toBe('live')
     expect(env.sockets.length).toBe(1)
   })
+
+  it('O7：onerror → 内部调用 close → 触发 onclose → 重连', () => {
+    const env = makeEnv()
+    const statuses: string[] = []
+    const ws = createKlineWs('BTCUSDT', '1m', {
+      onStatus: (s) => statuses.push(s),
+      onKline: () => {},
+    }, env.deps)
+
+    env.sockets[0].emitOpen()
+    expect(statuses[statuses.length - 1]).toBe('live')
+    // 触发真实 onerror：ws.ts 处理器调用 s.close()（FakeSocket close→onclose），
+    // onclose 置 reconnecting 并调度重连
+    env.sockets[0].onerror?.()
+    expect(statuses[statuses.length - 1]).toBe('reconnecting')
+    vi.advanceTimersByTime(1000)
+    expect(env.sockets.length).toBe(2) // 已发起第 2 次连接
+    ws.close()
+  })
 })
