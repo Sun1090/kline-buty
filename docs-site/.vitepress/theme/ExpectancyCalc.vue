@@ -1,24 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { calcExpectancy } from './kbCalc'
 
 const winRate = ref(40) // %
 const avgWin = ref(2) // R 倍数
 const avgLoss = ref(1) // R 倍数
 const risk = ref(1000) // 每次风险额
 
-const result = computed(() => {
-  const p = Math.min(100, Math.max(0, Number(winRate.value) / 100))
-  const w = Math.max(0, Number(avgWin.value) || 0)
-  const l = Math.max(0, Number(avgLoss.value) || 0)
-  const r = Math.max(0, Number(risk.value) || 0)
-  const rr = l > 0 ? w / l : Infinity
-  const expectancy = p * w - (1 - p) * l // 单次期望，R 为单位
-  const expectancyMoney = expectancy * r
-  const kelly = w > 0 ? Math.max(0, p - (1 - p) * (l / w)) : 0
-  const halfKelly = kelly / 2
-  const viable = expectancy > 0
-  return { rr, expectancy, expectancyMoney, kelly, halfKelly, viable }
-})
+const result = computed(() => calcExpectancy(winRate.value, avgWin.value, avgLoss.value, risk.value))
 </script>
 
 <template>

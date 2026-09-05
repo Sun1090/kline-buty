@@ -1,21 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { calcLeverage } from './kbCalc'
 
 const capital = ref(10000)
 const leverage = ref(10)
 const priceChange = ref(-10) // %
 
-const result = computed(() => {
-  const c = Number(capital.value) || 0
-  const lev = Number(leverage.value) || 1
-  const chg = Number(priceChange.value) / 100
-  const notional = c * lev
-  const pnl = notional * chg
-  const pnlPct = (pnl / c) * 100
-  const liquidated = pnl <= -c
-  const remaining = Math.max(0, c + pnl)
-  return { notional, pnl, pnlPct, liquidated, remaining }
-})
+const result = computed(() => calcLeverage(capital.value, leverage.value, priceChange.value))
 </script>
 
 <template>
