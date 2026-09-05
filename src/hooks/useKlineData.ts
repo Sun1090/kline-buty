@@ -9,6 +9,7 @@ import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/
 import { readCachedCandles, writeCachedCandles } from '../data/cache'
 import { gapFillRanges, GAP_PAGE_SIZE } from '../data/gapFill'
 import { createBatchScheduler } from '../utils/batchScheduler'
+import { FrameGauge, type FrameStats } from '../utils/frameGauge'
 
 const PAGE_SIZE = 500
 /** 压测模式模拟实时帧的间隔（ms） */
@@ -46,6 +47,8 @@ export function useKlineData(symbol: string, period: Period) {
   const [hasMore, setHasMore] = useState(true)
   /** E14 错误重试：重试计数，作为 effect 依赖触发整段重载 */
   const [retryNonce, setRetryNonce] = useState(0)
+  /** N14 帧丢帧统计（压测模式/实时帧） */
+  const [frameStats, setFrameStats] = useState<FrameStats | null>(null)
   const aliveRef = useRef(true)
   const storeRef = useRef<MarketStore | null>(null)
   const loadingMoreRef = useRef(false)
@@ -76,8 +79,15 @@ export function useKlineData(symbol: string, period: Period) {
       setHasMore(false)
       setState((prev) => ({ ...prev, status: 'live' }))
       let tick = 0
+      const gauge = new FrameGauge({ expectedMs: PERF_TICK_MS })
+      // N14 周期性上报丢帧统计（每 8 帧一次，避免高频 setState）
+      const statsTimer = window.setInterval(() => {
+        if (!aliveRef.current) return
+        setFrameStats(gauge.stats())
+      }, PERF_TICK_MS * 8)
       const timer = window.setInterval(() => {
         if (!aliveRef.current) return
+        gauge.tick(Date.now())
         const all = store.all()
         if (all.length === 0) return
         tick += 1
@@ -90,6 +100,7 @@ export function useKlineData(symbol: string, period: Period) {
       return () => {
         aliveRef.current = false
         window.clearInterval(timer)
+        window.clearInterval(statsTimer)
         storeRef.current = null
       }
     }
@@ -212,5 +223,5 @@ export function useKlineData(symbol: string, period: Period) {
     }
   }, [symbol, period])
 
-  return { state, hasMore, loadMore, retry, loadDemo }
+  return { state, hasMore, loadMore, retry, loadDemo, frameStats }
 }

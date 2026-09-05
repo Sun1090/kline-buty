@@ -424,7 +424,7 @@ export function App() {
       void document.documentElement.requestFullscreen().catch(() => {})
     }
   }
-  const { state, hasMore, loadMore, retry, loadDemo } = useKlineData(symbol, period)
+  const { state, hasMore, loadMore, retry, loadDemo, frameStats } = useKlineData(symbol, period)
   const { candles, status, error } = state
   // L3 对比模式：叠加品种 K 线（仅单图布局使用）
   const compareData = useKlineData(compareSymbol ?? symbol, period)
@@ -1388,6 +1388,7 @@ export function App() {
             hasMore={hasMore}
             onLoadMore={loadMore}
             onLoadDemo={loadDemo}
+            frameStats={frameStats}
             positionLines={position.long ?? position.short}
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
