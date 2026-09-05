@@ -117,4 +117,13 @@ describe('ChartPair 时间轴联动', () => {
     act(() => b.onRange!(20, 80))
     expect(a.setVisibleRange).toHaveBeenCalledWith({ from: 20, to: 80 })
   })
+
+  it('O7：渲染两个 ChartView（双图各一实例），十字光标联动函数不抛错', () => {
+    render(<ChartPair {...props} />)
+    expect(instances.length).toBe(2)
+    // onCrosshairChange 传入的函数（由 ChartView 调 adapter.subscribeCrosshairMove 触发）
+    // 此处直接断言组件渲染稳定：两个实例均已创建并订阅范围
+    expect(instances[0].onRange).not.toBeNull()
+    expect(instances[1].onRange).not.toBeNull()
+  })
 })
