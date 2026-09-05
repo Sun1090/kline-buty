@@ -134,4 +134,19 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByTestId('shortcuts-help')).toBeNull()
   })
+
+  it('更多菜单打开仓位/提醒/参数浮动面板（覆盖 App 浮动面板渲染路径）', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('仓位'))
+    expect(screen.getByText('暂无持仓')).toBeDefined() // PositionPanel 空态
+
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('提醒'))
+    expect(screen.getByTestId('alert-sound-toggle')).toBeDefined() // AlertPanel
+
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('参数'))
+    expect(screen.getByTestId('indicator-import')).toBeDefined() // IndicatorSettings
+  })
 })
