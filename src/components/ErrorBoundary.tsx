@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react'
 import { makeT } from '../i18n/translate'
 import { DICTIONARIES, type Lang } from '../i18n/messages'
+import { reportRenderError } from '../utils/errorReport'
 
 function readLang(): Lang {
   try {
@@ -26,6 +27,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { error }
+  }
+
+  /** O1 渲染错误上报（错误监控：不采集用户数据，仅错误摘要） */
+  componentDidCatch(error: Error) {
+    reportRenderError(error)
   }
 
   render() {
