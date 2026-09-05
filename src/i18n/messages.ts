@@ -502,6 +502,10 @@ export const zh = {
   offline: {
     text: '网络已断开，行情暂停更新，恢复后自动重连',
   },
+  update: {
+    banner: '发现新版本，点击刷新加载最新功能',
+    reload: '刷新',
+  },
   errorBoundary: {
     title: '图表渲染出错',
   },
@@ -538,7 +542,7 @@ export const zh = {
     configHint: '点击某项后按下新键',
     reset: '恢复默认',
   },
-  app: {
+   app: {
     titleZh: 'Kline Buty · 实时 K 线',
     titleEn: 'Kline Buty · Live Candles',
     titleJa: 'Kline Buty · リアルタイム K 線',
@@ -550,6 +554,10 @@ export const zh = {
 export type Messages = typeof zh
 
 export const en: Messages = {
+  update: {
+    banner: 'New version available - refresh to get the latest',
+    reload: 'Refresh',
+  },
   common: {
     none: 'None',
     price: 'Price',
@@ -1092,6 +1100,10 @@ export const en: Messages = {
 }
 
 export const ja: Messages = {
+  update: {
+    banner: '新しいバージョンがあります——更新して最新版を読み込みます',
+    reload: '更新',
+  },
   common: {
     none: 'なし',
     price: '価格',
@@ -1635,6 +1647,10 @@ export const ja: Messages = {
 
 
 export const ko: Messages = {
+  update: {
+    banner: '새 버전이 있습니다 — 새로고침하여 최신 기능을 불러오세요',
+    reload: '새로고침',
+  },
   common: {
     none: '없음',
     price: '가격',
@@ -2190,6 +2206,10 @@ type LeafKeyOf<T, Prefix extends string = ''> = {
 export type MessageKey = LeafKeyOf<Messages>
 
 export const es: Messages = {
+  update: {
+    banner: 'Nueva versión disponible — actualiza para cargar lo último',
+    reload: 'Actualizar',
+  },
   common: {
     none: 'Ninguno',
     price: 'Precio',

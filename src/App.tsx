@@ -77,6 +77,7 @@ import { MAIN_OPTIONS, SUB_OPTIONS } from './components/headerOptions'
 import { useI18n } from './i18n/useI18n'
 import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
+import { checkVersionUpdate, readMetaVersion } from './utils/versionCheck'
 import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
 import { nextBackTarget } from './chart/backNavigation'
 
@@ -265,6 +266,8 @@ export function App() {
   const [volumeProfileOpen, setVolumeProfileOpen] = usePersistedState('volumeProfileOpen', false)
   const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
   const [copied, setCopied] = useState(false)
+  // P4 更新提示：版本升级时显示可关闭横幅
+  const [updateBanner, setUpdateBanner] = useState(false)
   const [exported, setExported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
@@ -352,6 +355,15 @@ export function App() {
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', onResize)
+    }
+  }, [])
+
+  // P4 更新提示：版本升级时显示横幅（纯函数判定见 versionCheck）
+  useEffect(() => {
+    const current = readMetaVersion(document)
+    if (current) {
+      const { hasUpdate } = checkVersionUpdate(current, localStorage)
+      if (hasUpdate) setUpdateBanner(true)
     }
   }, [])
 
@@ -841,6 +853,46 @@ export function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? 'min(380px, 88vw)' : '0px' }}>
+      {/* P4 更新提示横幅：版本升级时提示刷新 */}
+      {updateBanner && (
+        <div
+          data-testid="update-banner"
+          role="status"
+          style={{
+            position: 'fixed',
+            top: 8,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 14px',
+            background: 'var(--accent)',
+            color: '#fff',
+            borderRadius: 8,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            fontSize: 12,
+          }}
+        >
+          <span>{t('update.banner')}</span>
+          <button
+            data-testid="update-reload"
+            onClick={() => window.location.reload()}
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 10px', fontSize: 11, cursor: 'pointer' }}
+          >
+            {t('update.reload')}
+          </button>
+          <button
+            data-testid="update-dismiss"
+            onClick={() => setUpdateBanner(false)}
+            aria-label={t('common.close')}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {isMobile ? (
         <MobileHeader
           headerRef={headerRef}
