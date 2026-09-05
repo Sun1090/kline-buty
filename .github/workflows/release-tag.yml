@@ -1,0 +1,42 @@
+name: Release Tag
+
+# O14 发布版本标签自动化：push main 时按 package.json version 自动打 vX.Y.Z 标签。
+# 幂等：标签已存在则跳过，绝不覆盖/强推；不触发部署，仅打标供发布流程引用。
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create version tag if missing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { readFileSync } = require('fs')
+            const pkg = JSON.parse(readFileSync('./package.json', 'utf8'))
+            const tag = `v${pkg.version}`
+            const { data: refs } = await github.rest.git.listMatchingRefs({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `tags/${tag}`,
+            })
+            if (refs.length > 0) {
+              console.log(`tag ${tag} already exists — skip`)
+              return
+            }
+            const sha = context.sha
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha,
+            })
+            console.log(`created tag ${tag} @ ${sha}`)
