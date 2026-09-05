@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { DepthRow } from '../depth/aggregate'
-import { buildDepthWsUrls, detectMode, toCoinMSymbol } from '../data/binance/endpoints'
+import { buildDepthWsUrls, detectMode, readCustomBases, toCoinMSymbol } from '../data/binance/endpoints'
 
 export interface DepthSnapshot {
   bids: DepthRow[]
@@ -53,7 +53,7 @@ export function useDepth(symbol: string, reloadNonce = 0): DepthSnapshot | null 
       void detectMode().then((mode) => {
         if (closed || !alive) return
         const coinm = `${toCoinMSymbol(symbol).toLowerCase()}@depth20@100ms`
-        connectTo(buildDepthWsUrls(mode, `${symbol.toLowerCase()}@depth20@100ms`, coinm), 0)
+        connectTo(buildDepthWsUrls(mode, `${symbol.toLowerCase()}@depth20@100ms`, coinm, readCustomBases()), 0)
       })
     }
 

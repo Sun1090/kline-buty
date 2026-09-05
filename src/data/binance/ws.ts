@@ -1,6 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKlineWsMessage } from './types'
-import { buildWsUrl, type EndpointMode } from './endpoints'
+import { buildWsUrl, readCustomBases, type EndpointMode } from './endpoints'
 
 export type WsStatus = 'connecting' | 'live' | 'reconnecting' | 'closed'
 
@@ -79,7 +79,7 @@ export function createKlineWs(
   let watchdogTimer: number | undefined
   let lastMsgAt = 0
 
-  const url = buildWsUrl(mode, `${symbol.toLowerCase()}@kline_${period}`)
+  const url = buildWsUrl(mode, `${symbol.toLowerCase()}@kline_${period}`, readCustomBases())
 
   function startWatchdog() {
     stopWatchdog()
