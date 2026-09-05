@@ -1,12 +1,19 @@
 name: CI
 
+# O13 CI 并行化：把原先单一顺序 job（typecheck→lint→validate→test→build ~4-5min）
+# 拆为 4 个相互独立、并行执行的 job，墙钟时间 ≈ 最慢单 job（~2min）。
+
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  verify:
+  typecheck-lint:
+    name: Typecheck + Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,14 +26,53 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+
+  unit-tests:
+    name: Unit Tests + Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+        if: always()
+
+  docs:
+    name: Knowledge base validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Validate knowledge base
         run: python3 docs/knowledge/scripts/validate-knowledge.py
       - name: Knowledge base structure lint
         run: npm run docs:lint
       - name: Knowledge base anchor check
         run: npm run docs:anchor
-      - name: Unit tests
-        run: npm test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Build
         run: npm run build
       - name: Upload artifact
@@ -34,3 +80,4 @@ jobs:
         with:
           name: dist
           path: dist/
+        if: always()
