@@ -186,6 +186,10 @@ export interface ChartApi {
   updateCandle(candle: Candle): void
   /** 键盘微移十字光标：dir=1 下一根 K 线 / -1 上一根（无光标时从最新 K 线开始） */
   nudgeCrosshair(dir: 1 | -1): void
+  /** M8 键盘画线：在指定 (time,price) 放置一个锚点（复用点击提交逻辑，按工具所需锚点数推进） */
+  keyboardPlaceAnchor(time: number, price: number): void
+  /** M8 键盘画线：在当前十字光标处放置锚点（无光标时取最新 K 线）；返回是否已提交 */
+  keyboardPlaceAnchorAtCrosshair(): boolean
   /** 屏幕坐标 → 图表 (time, price)；越界/映射失败返回 null（右键菜单用） */
   priceAt(clientX: number, clientY: number): { time: number; price: number } | null
   /** G8 多格十字光标同步：按时间戳在本地数据上定位十字光标（null 清除） */
@@ -2667,6 +2671,54 @@ export class LightweightChartAdapter implements ChartApi {
     this.setPanEnabled(true)
     this.container.style.cursor = this.drawingTool === 'none' ? '' : 'crosshair'
     this.draw()
+  }
+
+  /**
+   * M8 键盘画线：无指针坐标时由键盘十字光标提供 (time,price) 锚点。
+   * 复用 pointerup 的提交语义——按工具所需锚点数推进，集满触发 onCommit。
+   * 返回是否已提交（UI 层据此提示用户继续/完成）。
+   */
+  keyboardPlaceAnchor(time: number, price: number): boolean {
+    if (this.drawingTool === 'none') return false
+    const tool = this.drawingTool as Drawing['type']
+    const need = requiredPoints(tool)
+    const snapped = this.snapPoint(time, price)
+    if (need === 1) {
+      this.drawingCallbacks?.onCommit({ type: tool, points: [snapped] })
+      this.resetDrawing()
+      return true
+    }
+    if (need === 2 && this.drawingPoints.length === 0) {
+      this.drawingPoints.push(snapped)
+      this.drawingDown = null
+      this.setPanEnabled(true)
+      this.draw()
+      return false
+    }
+    // 两点第二点 / 多锚点推进
+    this.drawingPoints.push(snapped)
+    if (this.drawingPoints.length >= need) {
+      this.drawingCallbacks?.onCommit({ type: tool, points: this.drawingPoints })
+      this.resetDrawing()
+      return true
+    }
+    this.drawingPreview = this.drawingPoints[this.drawingPoints.length - 1]
+    this.drawingDown = null
+    this.setPanEnabled(true)
+    this.draw()
+    return false
+  }
+
+  /** M8 键盘画线：在当前十字光标位置放置锚点；无光标回退到最新 K 线收盘价 */
+  keyboardPlaceAnchorAtCrosshair(): boolean {
+    if (this.drawingTool === 'none') return false
+    if (this.crosshairTime != null) {
+      const c = this.lastCandles.find((k) => k.time === this.crosshairTime)
+      if (c) return this.keyboardPlaceAnchor(c.time, c.close)
+    }
+    const last = this.lastCandles[this.lastCandles.length - 1]
+    if (!last) return false
+    return this.keyboardPlaceAnchor(last.time, last.close)
   }
 
   /**

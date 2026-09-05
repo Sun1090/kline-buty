@@ -105,4 +105,19 @@ test.describe('2026-09 新功能回归（J/K/L 阶段）', () => {
     // 持久化写入非默认值
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:fontScale'))).not.toBeNull()
   })
+
+  test('M8 键盘画线：选水平线工具 → Enter 在十字光标处画线', async ({ page }) => {
+    // 打开画线面板选水平线
+    const drawingToggle = page.getByTestId('drawing-toggle')
+    if ((await drawingToggle.getAttribute('aria-expanded')) !== 'true') await drawingToggle.click()
+    await page.getByRole('button', { name: '水平线', exact: true }).click()
+    // 十字光标定位到某根 K 线（方向键微移），Enter 放置锚点提交
+    await page.keyboard.press('ArrowLeft')
+    await page.keyboard.press('Enter')
+    // 画线提交后落库
+    await expect.poll(() => page.evaluate(() => {
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      return Object.values(all).flat().length
+    })).toBeGreaterThan(0)
+  })
 })
