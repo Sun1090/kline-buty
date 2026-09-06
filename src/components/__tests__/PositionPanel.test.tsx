@@ -151,4 +151,29 @@ describe('PositionPanel', () => {
     expect(_fromLegacy(longPosition)).toEqual({ long: longPosition, short: null })
     expect(_fromLegacy(shortPosition)).toEqual({ long: null, short: shortPosition })
   })
+
+  it('D9 开仓记录所选杠杆（强平预警数据源）', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={63000} onChange={onChange} />)
+    fireEvent.click(screen.getByText('20x'))
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: '100' } })
+    fireEvent.change(inputs[1], { target: { value: '2' } })
+    fireEvent.click(screen.getByText('开仓'))
+    const p = onChange.mock.calls[0][0] as { long: Position | null }
+    expect(p.long!.leverage).toBe(20)
+  })
+
+  it('D9 强平预警：低保证金率显示警示徽标；安全时不显示', () => {
+    // 100x 杠杆 long 持仓 entry=100 qty=2：现价 99 → 保证金率 0（临界）
+    const risky: Position = { entry: 100, quantity: 2, direction: 'long', leverage: 100 }
+    render(<PositionPanel positions={{ long: risky, short: null }} currentPrice={99} onChange={vi.fn()} />)
+    expect(screen.getByTestId('position-liq-warn-long')).toBeTruthy()
+  })
+
+  it('D9 高保证金率持仓不显示强平预警', () => {
+    const safe: Position = { entry: 100, quantity: 2, direction: 'long', leverage: 10 }
+    render(<PositionPanel positions={{ long: safe, short: null }} currentPrice={100} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-liq-warn-long')).toBeNull()
+  })
 })

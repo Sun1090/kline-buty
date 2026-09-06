@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
-import { calcPnl, calcLiquidationPrice, calcMargin, marginRate, suggestLevels } from '../position/pnl'
+import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
 import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
 import { useI18n } from '../i18n/useI18n'
 
@@ -69,13 +69,14 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
 
   const apply = () => {
     if (!valid || !canApply) return
-    // J1 开仓：仅写对应方向槽位（hedge：buy→long、sell→short）
+    // J1 开仓：仅写对应方向槽位（hedge：buy→long、sell→short）；D9 记录杠杆用于强平预警
     const pos: Position = {
       entry: entryNum,
       quantity: qtyNum,
       direction,
       takeProfit: levelMode === 'pct' ? levels!.takeProfit : tpNum,
       stopLoss: levelMode === 'pct' ? levels!.stopLoss : slNum,
+      leverage,
     }
     onChange({ ...positions, [direction]: pos })
     setEntry('')
@@ -123,7 +124,9 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
           const active = currentPrice !== null ? calcPnl(p, currentPrice) : null
           const color = active ? (active.pnl >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--text-faint)'
           // D2 动态保证金率：全额保证金口径下随盈亏实时变化（无现价时隐藏）
-          const rate = currentPrice !== null ? marginRate(p, currentPrice) : null
+          const rate = currentPrice !== null ? marginRate(p, currentPrice, p.leverage) : null
+          // D9 强平预警：保证金率低于阈值（剩 50%/20% 以内）显示警示徽标
+          const risk = rate !== null ? liquidationRisk(rate) : 'safe'
           return (
             <div
               key={key}
@@ -156,6 +159,15 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
                   style={{ fontSize: 10, color: rate < 0.8 ? 'var(--down)' : 'var(--text-faint)' }}
                 >
                   {(rate * 100).toFixed(0)}%
+                </span>
+              )}
+              {risk !== 'safe' && (
+                <span
+                  data-testid={`position-liq-warn-${key}`}
+                  title={risk === 'critical' ? t('position.liqCritical') : t('position.liqWarn')}
+                  style={{ fontSize: 10, fontWeight: 600, color: 'var(--down)' }}
+                >
+                  {risk === 'critical' ? '⚠⚠' : '⚠'} {t('position.liqWarn')}
                 </span>
               )}
               <button

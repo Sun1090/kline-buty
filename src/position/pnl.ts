@@ -4,6 +4,8 @@ export interface Position {
   direction: 'long' | 'short'
   takeProfit?: number
   stopLoss?: number
+  /** D9 开仓杠杆（可选）：用于动态保证金率与强平预警（未存杠杆的旧仓按 1x 全额口径） */
+  leverage?: number
 }
 
 export interface PnlResult {
@@ -80,4 +82,17 @@ export function marginRate(p: Position, price: number, leverage?: number): numbe
   if (initial <= 0) return 0
   const unrealized = calcPnl(p, price).pnl
   return (initial + unrealized) / initial
+}
+
+/** D9 强平预警档位：基于动态保证金率（1=满额，0=全部保证金耗尽即强平）。 */
+export type LiquidationRisk = 'safe' | 'warn' | 'critical'
+
+/**
+ * D9 强平预警分级：保证金率剩余 <50% → critical（接近强平）、<80% → warn、其余 safe。
+ * 纯函数，阈值便于单测。
+ */
+export function liquidationRisk(rate: number): LiquidationRisk {
+  if (rate < 0.5) return 'critical'
+  if (rate < 0.8) return 'warn'
+  return 'safe'
 }

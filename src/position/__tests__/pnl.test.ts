@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcPnl, suggestLevels, checkHit, calcLiquidationPrice, calcMargin, marginRate, type Position } from '../pnl'
+import { calcPnl, suggestLevels, checkHit, calcLiquidationPrice, calcMargin, marginRate, liquidationRisk, type Position } from '../pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 110, stopLoss: 95 }
 const shortPos: Position = { entry: 100, quantity: 2, direction: 'short', takeProfit: 90, stopLoss: 105 }
@@ -139,5 +139,20 @@ describe('marginRate（D2 动态保证金率随盈亏变化）', () => {
     const short: Position = { entry: 100, quantity: 10, direction: 'short' }
     expect(marginRate(short, 90)).toBeCloseTo(1.1)
     expect(marginRate(short, 110)).toBeCloseTo(0.9)
+  })
+})
+
+describe('liquidationRisk（D9 强平预警分级）', () => {
+  it('rate ≥0.8 → safe', () => {
+    expect(liquidationRisk(1)).toBe('safe')
+    expect(liquidationRisk(0.8)).toBe('safe')
+  })
+  it('0.5 ≤ rate < 0.8 → warn', () => {
+    expect(liquidationRisk(0.79)).toBe('warn')
+    expect(liquidationRisk(0.5)).toBe('warn')
+  })
+  it('rate < 0.5 → critical', () => {
+    expect(liquidationRisk(0.49)).toBe('critical')
+    expect(liquidationRisk(0)).toBe('critical')
   })
 })

@@ -28,12 +28,20 @@ function setup(overrides: Partial<Parameters<typeof TradeHistoryPanel>[0]> = {})
     onReset: vi.fn(),
     onTakerFeeRatePctChange: vi.fn(),
     onSlippagePctChange: vi.fn(),
+    onProfitTargetChange: vi.fn(),
+    onSaveSnapshot: vi.fn(() => true),
+    onLoadSnapshot: vi.fn(),
+    onDeleteSnapshot: vi.fn(),
+    onExportJson: vi.fn(),
+    onImportJson: vi.fn(() => true),
   }
   const props: Parameters<typeof TradeHistoryPanel>[0] = {
     trades: [],
     stats: tradeStats([]),
     takerFeeRatePct: 0.1,
     slippagePct: 0.02,
+    profitTarget: 0,
+    snapshots: [],
     ...handlers,
     ...overrides,
   }
@@ -95,5 +103,61 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     const handlers = setup({ trades })
     fireEvent.click(screen.getByLabelText('关闭'))
     expect(handlers.onClose).toHaveBeenCalled()
+  })
+
+  it('D14 收益目标：输入目标显示进度，达标显示达成提示', () => {
+    const handlers = setup({ trades, stats: tradeStats(trades), profitTarget: 100 })
+    // trades 中平仓 pnl 18.58 → 进度约 19%
+    expect(screen.getByTestId('trade-target-progress')).toBeTruthy()
+    expect(screen.queryByTestId('trade-target-achieved')).toBeNull()
+    fireEvent.change(screen.getByTestId('trade-target-input'), { target: { value: '50' } })
+    expect(handlers.onProfitTargetChange).toHaveBeenCalledWith(50)
+    // 重设为小目标 → 累计 18.58 未达 50，仍无达成徽标；用已达成状态渲染验证
+  })
+
+  it('D14 收益目标达成时显示达成徽标', () => {
+    setup({ trades, stats: tradeStats(trades), profitTarget: 10 }) // 累计 18.58 ≥ 10
+    expect(screen.getByTestId('trade-target-achieved')).toBeTruthy()
+  })
+
+  it('D13 账户快照：保存触发 onSaveSnapshot 并清空输入；载入/删除触发回调', () => {
+    const handlers = setup({ snapshots: ['快照A'] })
+    fireEvent.change(screen.getByTestId('trade-snapshot-name'), { target: { value: '快照B' } })
+    fireEvent.click(screen.getByTestId('trade-snapshot-save'))
+    expect(handlers.onSaveSnapshot).toHaveBeenCalledWith('快照B')
+    expect((screen.getByTestId('trade-snapshot-name') as HTMLInputElement).value).toBe('') // 成功后清空
+    expect(screen.getByTestId('trade-snapshot-load-快照A')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('trade-snapshot-load-快照A'))
+    expect(handlers.onLoadSnapshot).toHaveBeenCalledWith('快照A')
+    fireEvent.click(screen.getByTestId('trade-snapshot-del-快照A'))
+    expect(handlers.onDeleteSnapshot).toHaveBeenCalledWith('快照A')
+  })
+
+  it('D13 保存失败（重名/空名）时输入保留', () => {
+    const handlers = setup()
+    handlers.onSaveSnapshot.mockReturnValue(false)
+    fireEvent.change(screen.getByTestId('trade-snapshot-name'), { target: { value: '重复' } })
+    fireEvent.click(screen.getByTestId('trade-snapshot-save'))
+    expect(handlers.onSaveSnapshot).toHaveBeenCalledWith('重复')
+    expect((screen.getByTestId('trade-snapshot-name') as HTMLInputElement).value).toBe('重复')
+  })
+
+  it('D15 JSON 导出/导入按钮：导出触发 onExportJson；导入走文件', () => {
+    const handlers = setup()
+    fireEvent.click(screen.getByTestId('trade-history-export-json'))
+    expect(handlers.onExportJson).toHaveBeenCalled()
+    expect(screen.getByTestId('trade-history-import-json')).toBeTruthy()
+    expect(screen.getByTestId('trade-history-import-file')).toBeTruthy()
+  })
+
+  it('D10 手续费拆分：点击行展开按钮显示明细', () => {
+    setup({ trades })
+    expect(screen.queryByTestId('trade-history-detail')).toBeNull()
+    const toggle = screen.getAllByTestId('trade-history-detail-toggle-open')[0]
+    fireEvent.click(toggle)
+    expect(screen.getByTestId('trade-history-detail')).toBeTruthy()
+    // 明细含费率与手续费标签
+    expect(screen.getByText('手续费')).toBeTruthy()
+    expect(screen.getByText('费率')).toBeTruthy()
   })
 })
