@@ -149,11 +149,15 @@ describe('StatsBar', () => {
     expect(el.textContent).toContain('数据延迟')
   })
 
-  it('G11 数据延迟：滞后 ≤5s 或无 live → 不显示', () => {
+  it('A5 数据延迟：常态显示滞后秒数；无 live → 不显示', () => {
     const stats = { ...EMPTY, price: 65000 }
     const fresh: LiveTick = { price: 65000, dir: 0, ts: Date.now() - 1000 }
     const { rerender } = render(<StatsBar stats={stats} live={fresh} />)
-    expect(screen.queryByTestId('data-latency')).toBeNull()
+    // 常态显示（≤5s 也显示），文案含秒数
+    const el = screen.getByTestId('data-latency')
+    expect(el.textContent).toContain('数据延迟')
+    expect(el.textContent).toMatch(/\d+\s*s/)
+    // 无 live（离线/首帧未到）→ 不显示
     rerender(<StatsBar stats={stats} />)
     expect(screen.queryByTestId('data-latency')).toBeNull()
   })
