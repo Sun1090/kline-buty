@@ -22,10 +22,12 @@ import { useDepth } from './hooks/useDepth'
 import { OrderBook } from './components/OrderBook'
 import { QuickOrderWithDepth } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
-import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from './trade/order'
+import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, checkHit } from './position/pnl'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount } from './hooks/usePaperAccount'
+import { useTradeSettings } from './hooks/useTradeSettings'
+import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
@@ -208,6 +210,8 @@ export function App() {
   const [tradesOpen, setTradesOpen] = useState(false)
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
+  // D5/D8：吃单费率 + 市价滑点（持久化，影响下单估算与平仓计费）
+  const tradeSettings = useTradeSettings()
   // J2 每品种上次结算快照：切换品种不互相误结算
   const prevPositionRef = useRef<Record<string, Positions>>({})
   // T27：图表右键菜单动作（提醒/清空画线）
@@ -240,7 +244,8 @@ export function App() {
         if (!p) continue
         const hit = checkHit(p, price)
         if (hit) {
-          const fee = p.entry * p.quantity * TAKER_FEE_RATE
+          // D5：平仓手续费按用户配置费率计
+          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
           const { pnl } = calcPnl(p, price)
           paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
           setPosition((cur) => settleSlot(cur, slot).next)
@@ -248,7 +253,7 @@ export function App() {
         }
         // 显式平仓：上一帧该方向有仓、当前帧已置空 → 结算
         if (position[slot] === null) {
-          const fee = p.entry * p.quantity * TAKER_FEE_RATE
+          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
           const { pnl } = calcPnl(p, price)
           paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
         }
@@ -1278,8 +1283,8 @@ export function App() {
           balance={paper.balance}
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
-            // 市价单含模拟滑点：成交价相对盘口小幅偏移
-            const est = estimateOrder(order.price, order.qty, order.side, DEFAULT_SLIPPAGE_RATIO)
+            // D8 市价单含模拟滑点（可配置）：成交价相对盘口小幅偏移；D5 费率可配置
+            const est = estimateOrder(order.price, order.qty, order.side, tradeSettings.slippageRatio, tradeSettings.takerFeeRate)
             if (!paper.canOpen(est.notional, est.fee)) return
             paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee })
             // J1 双向持仓（hedge）：buy 只影响 long 槽、sell 只影响 short 槽
@@ -1293,6 +1298,11 @@ export function App() {
       {tradesOpen && (
         <TradeHistoryPanel
           trades={paper.trades}
+          stats={tradeStats(paper.trades)}
+          takerFeeRatePct={tradeSettings.takerFeeRate * 100}
+          slippagePct={tradeSettings.slippageRatio * 100}
+          onTakerFeeRatePctChange={(pct) => tradeSettings.setTakerFeeRate(pct / 100)}
+          onSlippagePctChange={(pct) => tradeSettings.setSlippageRatio(pct / 100)}
           onClose={() => setTradesOpen(false)}
           onClear={paper.clearTrades}
           onExport={exportTradesCsv}
@@ -1310,7 +1320,11 @@ export function App() {
             setSymbol(s)
             setPositionOpen(true)
           }}
-          onSettleSymbol={(s) => setPositionsBySymbol((prev) => ({ ...prev, [s]: EMPTY_POSITIONS }))}
+          onSettleSymbol={(s) => {
+            // D7 一键平仓（含其他品种）：切换到该品种后置空 → 结算 effect 按其最新价记账平仓（含 PnL/手续费）
+            if (s !== symbol) setSymbol(s)
+            setPositionsBySymbol((prev) => ({ ...prev, [s]: EMPTY_POSITIONS }))
+          }}
         />
       )}
       {alertsOpen && (

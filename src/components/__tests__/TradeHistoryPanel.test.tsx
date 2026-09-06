@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 import { render, fireEvent, screen, cleanup, act } from '@testing-library/react'
 import { TradeHistoryPanel } from '../TradeHistoryPanel'
+import { tradeStats } from '../../trade/stats'
 import type { TradeRecord } from '../../hooks/usePaperAccount'
 
 afterEach(() => {
@@ -25,8 +26,17 @@ function setup(overrides: Partial<Parameters<typeof TradeHistoryPanel>[0]> = {})
     onExport: vi.fn(),
     onExportEquity: vi.fn(),
     onReset: vi.fn(),
+    onTakerFeeRatePctChange: vi.fn(),
+    onSlippagePctChange: vi.fn(),
   }
-  const props: Parameters<typeof TradeHistoryPanel>[0] = { trades: [], ...handlers, ...overrides }
+  const props: Parameters<typeof TradeHistoryPanel>[0] = {
+    trades: [],
+    stats: tradeStats([]),
+    takerFeeRatePct: 0.1,
+    slippagePct: 0.02,
+    ...handlers,
+    ...overrides,
+  }
   render(<TradeHistoryPanel {...props} />)
   return handlers
 }

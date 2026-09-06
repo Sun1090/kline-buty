@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcPnl, suggestLevels, checkHit, calcLiquidationPrice, calcMargin, type Position } from '../pnl'
+import { calcPnl, suggestLevels, checkHit, calcLiquidationPrice, calcMargin, marginRate, type Position } from '../pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 110, stopLoss: 95 }
 const shortPos: Position = { entry: 100, quantity: 2, direction: 'short', takeProfit: 90, stopLoss: 105 }
@@ -119,5 +119,25 @@ describe('calcMargin', () => {
     expect(calcMargin(1000, 0)).toBe(1000)
     expect(calcMargin(1000, -3)).toBe(1000)
     expect(calcMargin(1000, NaN)).toBe(1000)
+  })
+})
+
+describe('marginRate（D2 动态保证金率随盈亏变化）', () => {
+  const long: Position = { entry: 100, quantity: 10, direction: 'long' }
+  it('现价 = 开仓价 → 保证金率 1（不赚不亏）', () => {
+    expect(marginRate(long, 100)).toBeCloseTo(1)
+  })
+  it('盈利上涨 → 保证金率 > 1（权益增厚）', () => {
+    const rate = marginRate(long, 110) // 名义 1000，浮盈 100
+    expect(rate).toBeCloseTo(1.1)
+  })
+  it('亏损下跌 → 保证金率 < 1', () => {
+    const rate = marginRate(long, 90) // 名义 1000，浮亏 100
+    expect(rate).toBeCloseTo(0.9)
+  })
+  it('空头盈利方向相反', () => {
+    const short: Position = { entry: 100, quantity: 10, direction: 'short' }
+    expect(marginRate(short, 90)).toBeCloseTo(1.1)
+    expect(marginRate(short, 110)).toBeCloseTo(0.9)
   })
 })

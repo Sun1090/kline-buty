@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { TradeRecord } from '../hooks/usePaperAccount'
+import type { TradeStats } from '../trade/stats'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
@@ -7,6 +8,13 @@ import { buildSparkPath } from '../utils/sparkPath'
 
 interface TradeHistoryPanelProps {
   trades: TradeRecord[]
+  /** D6 盈亏统计（App 层用 tradeStats 计算后传入） */
+  stats: TradeStats
+  /** D5/D8 交易设置（费率/滑点，百分比显示） */
+  takerFeeRatePct: number
+  slippagePct: number
+  onTakerFeeRatePctChange: (pct: number) => void
+  onSlippagePctChange: (pct: number) => void
   onClose: () => void
   onClear: () => void
   /** D14 导出流水 CSV */
@@ -17,8 +25,8 @@ interface TradeHistoryPanelProps {
   onReset: () => void
 }
 
-/** 交易流水面板：模拟成交记录（新在前），含清空/导出/重置；空态引导 */
-export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onExportEquity, onReset }: TradeHistoryPanelProps) {
+/** 交易流水面板：模拟成交记录（新在前），含统计/设置/清空/导出/重置；空态引导 */
+export function TradeHistoryPanel({ trades, stats, takerFeeRatePct, slippagePct, onTakerFeeRatePctChange, onSlippagePctChange, onClose, onClear, onExport, onExportEquity, onReset }: TradeHistoryPanelProps) {
   const { t } = useI18n()
   // D15 重置两步确认：首次点击进入确认态，3s 未二次确认自动复位
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -119,6 +127,66 @@ export function TradeHistoryPanel({ trades, onClose, onClear, onExport, onExport
             ✕
           </button>
         </span>
+      </div>
+      {/* D6 交易统计：胜率 / 累计盈亏 / 盈亏比（有平仓记录时显示） */}
+      {stats.closed > 0 && (
+        <div
+          data-testid="trade-history-stats"
+          style={{ display: 'flex', gap: 12, padding: '4px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap' }}
+        >
+          <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>
+            {t('trade.stats')}:
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text)' }}>
+            {t('trade.winRate')} <b style={{ color: stats.winRate >= 0.5 ? 'var(--up)' : 'var(--down)' }}>{(stats.winRate * 100).toFixed(0)}%</b>
+          </span>
+          <span style={{ fontSize: 11 }}>
+            {t('trade.totalPnl')} <b style={{ color: stats.totalPnl >= 0 ? 'var(--up)' : 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>{stats.totalPnl >= 0 ? '+' : ''}{stats.totalPnl.toFixed(2)}</b>
+          </span>
+          <span style={{ fontSize: 11 }}>
+            {t('trade.profitFactor')}{' '}
+            <b style={{ color: stats.profitFactor >= 1 ? 'var(--up)' : 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+              {Number.isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
+            </b>
+          </span>
+          <span style={{ fontSize: 11 }}>
+            {t('trade.avgWin')} <b style={{ color: 'var(--up)', fontVariantNumeric: 'tabular-nums' }}>{stats.avgWin.toFixed(2)}</b>
+          </span>
+          <span style={{ fontSize: 11 }}>
+            {t('trade.avgLoss')} <b style={{ color: 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>{stats.avgLoss.toFixed(2)}</b>
+          </span>
+        </div>
+      )}
+      {/* D5/D8 交易设置：吃单费率 + 市价滑点（百分比输入，持久化） */}
+      <div
+        data-testid="trade-history-settings"
+        style={{ display: 'flex', gap: 10, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, alignItems: 'center' }}
+      >
+        <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{t('trade.settings')}</span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-dim)' }}>
+          {t('trade.feeRate')}
+          <input
+            data-testid="trade-fee-rate"
+            type="number"
+            min={0}
+            step={0.01}
+            value={takerFeeRatePct}
+            onChange={(e) => onTakerFeeRatePctChange(Number(e.target.value))}
+            style={{ width: 56, padding: '2px 4px', fontSize: 11, borderRadius: 4, border: '1px solid #2a2e39', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-dim)' }}>
+          {t('trade.slippage')}
+          <input
+            data-testid="trade-slippage"
+            type="number"
+            min={0}
+            step={0.001}
+            value={slippagePct}
+            onChange={(e) => onSlippagePctChange(Number(e.target.value))}
+            style={{ width: 56, padding: '2px 4px', fontSize: 11, borderRadius: 4, border: '1px solid #2a2e39', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+        </label>
       </div>
       {trades.length === 0 ? (
         <div style={{ padding: '12px 4px', color: 'var(--text-faint)', textAlign: 'center' }}>{t('paper.empty')}</div>
