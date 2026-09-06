@@ -25,6 +25,34 @@
 - B2–B15 核对完成：全部承接 v0.3 H 系列已实现（信号打点 findCrossovers/annotateCrossovers、阈值着色、W%R/TRIX/DPO/Vortex 指标、参数导入导出、主副图叠加、线色自定义、Y 轴定标、worker 化、回测标注、指标收藏、CSV 值导出），代码核查 + 单测确认，逐项标注 ✅（B 阶段 15 项闭合）
 - C1–C15 核对完成：全部承接 v0.3 I 系列已实现（截图导出 takeScreenshot、组锁、批量操作、模板跨品种、吸附四态、缩略图、统计汇总、样式复制、拖拽预览、文字底色、命名搜索、全局透明度、撤销深度、坐标角标），逐项标注 ✅（C 阶段 15 项闭合）
 
+## D 阶段 - 模拟交易与账户（D1–D15 全部闭合）
+- D5/D8 费率与滑点可配：`useTradeSettings` 持久化（吃单费率 + 市价滑点），`estimateOrder(feeRate)` 下单估算 + 平仓计费接线；E2E `trade-settings.spec.ts` 改后持久化刷新保留
+- D6 盈亏统计：`trade/stats.ts` 纯函数（胜率/盈亏比/累计/均盈均亏），TradeHistoryPanel 统计行
+- D7 一键平仓：`onSettleSymbol` 切品种 + 置空 → 结算 effect 记账（PnL/手续费），含其他品种一键全平
+- D2 补强：`marginRate` 全额保证金口径动态保证金率（随盈亏变化）+ 持仓行实时显示
+- D9 强平预警：Position 存开仓杠杆，`liquidationRisk` 按保证金率分级（<50% 临界 / <80% 警示），持仓行 ⚠ 徽标
+- D10 手续费拆分：TradeRecord 记录 `feeRate`，流水行展开显示成交额/费率/手续费/价差盈亏/净盈亏
+- D13 账户快照：`save/load/deleteSnapshot` 命名快照 + 面板保存/载入/删除
+- D14 收益目标：`profitTargetStatus` 纯函数 + 面板输入/进度条/达成徽标（持久化）
+- D15 账户导入/导出：`export/importAccountJson`（版本+余额+流水，严格校验）+ 文件下载/导入
+- 五语 i18n 全量同步；unit 1471 全绿，coverage lines 86.46%，build 全通
+
+## E 阶段 - 提醒与通知（E1–E15 批一完成）
+- E1（★）推送渠道：channel system/web/both 持久化；web 渠道站内横幅事件 → App toast
+- E2（★）多品种监控：prices 表覆盖全部提醒品种；无外部表时内部按提醒品种轮询 ticker（30s，直连 data-api 带 CORS）
+- E3 组级一键开关：`setGroupEnabled` + 组头 🟢/🔴 切换
+- E4 提醒模板：`save/load/deleteTemplate` 持久化 + 面板保存/套用/删除
+- E6 到期时间：`expiresAt` 字段 + `shouldTrigger/stepAlert` 过期失效 + 面板 datetime-local + 已过期标记
+- E7 批量操作：多选复选框 + 删除/停用/启用所选（操作后清空选择）
+- E8 触发次数：`triggerCounts` 由历史聚合行内展示
+- E10 价格精度：`pricePrecision` 字段 + 面板精度选择 + 目标价按精度展示
+- E12 待触发角标：`pendingCount` 排除停用/过期 + DesktopHeader 提醒项徽标
+- E13 提醒快捷键：`toggle-alerts`（按 a）+ 快捷键帮助面板展示
+- E14 提醒导入/导出：`export/importAlertsJson`（严格校验）+ 面板按钮
+- E15 备注字段：`note` 输入与行内展示
+- 测试：engine 停用/到期/批量/分组单测 + hook 多品种/模板/JSON/渠道/角标单测 + AlertPanel 面板单测 + E2E `alerts-features.spec.ts`；unit 1490 全绿，build 全通
+- 修复：`recent-features` 画线吸附 E2E 陈旧断言（C6 四态循环 ohlc→grid→off→time）
+
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
 承接 30 项 P0–P2 之后的功能深化，共 34 提交，全部推送 `origin/main`。完成状态逐项见 `docs/11-P3P4-完成状态盘点.md`。
