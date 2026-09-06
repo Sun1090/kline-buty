@@ -1,6 +1,47 @@
 import type { Period } from '../chart/types'
 import { alignTimeToPeriod, periodSpanMs } from './align'
 
+export interface RefillRange {
+  startTime: number
+  endTime: number
+}
+
+export interface RefillProgress {
+  /** 已完成页数（成功 + 失败） */
+  done: number
+  /** 总页数 */
+  total: number
+  /** 失败页数 */
+  failed: number
+}
+
+/**
+ * 串行执行补洞分页（A3）：逐段请求回补，前一页成功/失败都继续下一页，
+ * 每页完成后回调进度（供 UI「断线回补中 done/total」提示）。
+ * 纯编排、依赖注入 fetchPage，便于单测「不重不漏、失败跳过、进度递增」。
+ * 返回 { ok, failed } 统计。
+ */
+export async function runRefillPages(
+  ranges: RefillRange[],
+  fetchPage: (range: RefillRange) => Promise<void>,
+  onProgress?: (p: RefillProgress) => void,
+): Promise<{ ok: number; failed: number }> {
+  const total = ranges.length
+  let ok = 0
+  let failed = 0
+  onProgress?.({ done: 0, total, failed: 0 })
+  for (const r of ranges) {
+    try {
+      await fetchPage(r)
+      ok += 1
+    } catch {
+      failed += 1
+    }
+    onProgress?.({ done: ok + failed, total, failed })
+  }
+  return { ok, failed }
+}
+
 /**
  * G7 断线分段补洞：把「断线期间缺失的时间区间」切分为若干页，供逐段 REST 回补。
  *
@@ -20,7 +61,7 @@ export function gapFillRanges(
   period: Period,
   pageSize = GAP_PAGE_SIZE,
   maxPages = GAP_MAX_PAGES,
-): { startTime: number; endTime: number }[] {
+): RefillRange[] {
   if (!Number.isFinite(lastTimeSec) || !Number.isFinite(nowSec) || nowSec <= lastTimeSec) return []
   const startMs = alignTimeToPeriod(lastTimeSec, period) * 1000
   const endMs = nowSec * 1000

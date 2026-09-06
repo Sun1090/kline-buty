@@ -425,7 +425,7 @@ export function App() {
     }
   }
   const { state, hasMore, loadMore, retry, loadDemo, frameStats } = useKlineData(symbol, period)
-  const { candles, status, error } = state
+  const { candles, status, error, refill } = state
   // L3 对比模式：叠加品种 K 线（仅单图布局使用）
   const compareData = useKlineData(compareSymbol ?? symbol, period)
   // N7 数据预取：空闲时预取相邻品种 + 当前品种更早历史到本地缓存
@@ -1200,6 +1200,28 @@ export function App() {
             setTextColor('')
           }}
         />
+      )}
+      {/* A3 断线补洞进度：重连期间分段 REST 回补缺失区间，显示 done/total */}
+      {refill && (
+        <div
+          data-testid="refill-indicator"
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 40,
+            padding: '3px 10px',
+            borderRadius: 12,
+            fontSize: 11,
+            background: 'var(--accent)',
+            color: '#fff',
+            pointerEvents: 'none',
+          }}
+        >
+          {t('status.refilling' as MessageKey, { done: refill.done, total: refill.total })}
+        </div>
       )}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {!isMobile && (

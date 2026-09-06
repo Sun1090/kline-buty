@@ -79,7 +79,7 @@ beforeEach(() => {
   scaleModes.length = 0
   vi.useFakeTimers()
   mockUseKlineData.mockReturnValue({
-    state: { candles: makeCandles(800), status: 'live', live: null },
+    state: { candles: makeCandles(800), status: 'live', live: null, refill: null },
     hasMore: true,
     loadMore: vi.fn(),
     retry: vi.fn(),
@@ -112,6 +112,22 @@ describe('价格坐标轴（线性/对数）', () => {
     expect(btn.textContent).toBe('对数')
     // 挂载即应用对数模式
     expect(scaleModes).toContain('log')
+  })
+
+  it('A3：断线补洞进度非空时渲染「断线回补中 done/total」指示', () => {
+    mockUseKlineData.mockReturnValue({
+      state: { candles: makeCandles(800), status: 'live', live: null, refill: { done: 1, total: 3, failed: 0 } },
+      hasMore: true,
+      loadMore: vi.fn(),
+      retry: vi.fn(),
+      loadDemo: vi.fn(),
+      frameStats: null,
+    })
+    render(<App />)
+    const badge = screen.getByTestId('refill-indicator')
+    expect(badge).toBeTruthy()
+    expect(badge.textContent).toContain('1/3') // 插值 done/total
+    expect(badge.textContent).toContain('断线回补中')
   })
 
   it('移动端：更多面板可切坐标轴（线性 → 对数）', () => {

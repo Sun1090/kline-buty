@@ -13,6 +13,8 @@
 - A2（★）周期切换右侧锚定：修复三处真实缺陷——① `symChanged` 死守卫（`keyRef` 先被覆盖致恒 false，换品种也走锚定而非 fitContent）；② 可见区间订阅用 lightweight-charts 浮点逻辑索引直接取数据致 `tFrom/tTo` 恒 null，`lastVisibleTimeRef` 永不更新（锚定输入丢失→回落 fitContent 跳最新，A11 可视范围显示/loadMore 左缘判定同步失效）；③ 锚定对「旧周期位置索引裁出的新切片」做二分，位置×周期错位致回看跨周期跳最新
 - A2 修复内容：可见区间索引先取整并 clamp（`from ≤ to` 防 lightweight-charts 断言崩溃）；周期切换锚定改为在**全量新数据**上按时间定位并重建裁剪窗口；`anchorRangeForSwitch` 最少 2 根保底 + 目标早于数据起点时从最左展示跨度；合成 K 线改为**向后生成**（终点对齐 now、各周期终点一致，与真实行情语义一致）
 - A2 连带：A11「图表可视时间范围」显示修复、pair/quad 时间轴同步索引清洁化；E2E `period-anchor.spec.ts`（最新处切周期不越界 / 回看处切周期不跳最新）
+- A3（★）断线分段补洞：抽 `runRefillPages` 纯编排（串行逐段 REST 回补、失败页跳过继续、进度回调可单测）；useKlineData 暴露 `refill {done,total,failed}` 状态，重连补洞全程上报进度
+- A3 交互：顶栏右上角「断线回补中 done/total」指示（`aria-live` 状态徽标，五语 i18n `status.refilling`）；单测覆盖串行/失败跳过/进度递增 + App 组件级指示渲染测试
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
