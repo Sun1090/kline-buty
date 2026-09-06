@@ -44,4 +44,20 @@ describe('gapFillRanges（G7 断线分段补洞）', () => {
     expect(r.length).toBe(GAP_MAX_PAGES)
     expect(r[r.length - 1].endTime).toBeLessThan(now * 1000) // 被截断，未覆盖到 now
   })
+
+  it('A1 lastTime 非对齐 → 起点先对齐到周期边界', () => {
+    // last 01:30 → 起点对齐到 01:00（自定义源/缓存非对齐时间戳不再造成游标错位）
+    const r = gapFillRanges(base + 90, base + 30 * 60, '1m')
+    expect(r[0].startTime).toBe((base + 60) * 1000)
+  })
+
+  it('A1 1M 页宽用 31 天上界（防 30 天近似使页宽过窄）', () => {
+    // last 取月初（2026-09-01），断线 40 个月 → 31 天上界页宽(500×31d) > 跨度 → 恰好 1 段
+    const last = Date.UTC(2026, 8, 1) / 1000
+    const now = last + 40 * 30 * 86_400
+    const r = gapFillRanges(last, now, '1M')
+    expect(r).toHaveLength(1)
+    expect(r[0].startTime).toBe(last * 1000)
+    expect(r[0].endTime).toBe(now * 1000)
+  })
 })

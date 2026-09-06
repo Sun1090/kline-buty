@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Candle, Period } from '../chart/types'
-import { PERIOD_MS } from '../chart/types'
 import { MarketStore } from '../data/market'
 import { fetchKlines } from '../data/binance/rest'
 import { createKlineWs, type WsStatus } from '../data/binance/ws'
@@ -8,6 +7,7 @@ import { detectMode } from '../data/binance/endpoints'
 import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
 import { readCachedCandles, writeCachedCandles } from '../data/cache'
 import { gapFillRanges, GAP_PAGE_SIZE } from '../data/gapFill'
+import { alignTimeToPeriod, normalizeCandles, periodSpanMs } from '../data/align'
 import { createBatchScheduler } from '../utils/batchScheduler'
 import { FrameGauge, type FrameStats } from '../utils/frameGauge'
 
@@ -73,9 +73,25 @@ export function useKlineData(symbol: string, period: Period) {
     // 压测模式：合成大数据量 + 模拟实时帧，不依赖交易所网络
     const perfCount = readPerfParam()
     if (perfCount > 0) {
-      const perf = generateSyntheticCandles(perfCount)
-      store.upsertAll(perf)
+      // A1 周期感知：合成步长与起点对齐当前周期（切周期后重新生成对应间隔），
+      // 供压测/切周期稳定性验证（E2E 依 window.__klineButyPerf 断言边界对齐与序列间隔）
+      const perf = generateSyntheticCandles(perfCount, { period })
+      store.upsertAll(normalizeCandles(perf, period))
+      const syncPerfHook = () => {
+        window.__klineButyPerf = {
+          period,
+          candles: store.all().map((c: { time: number; open: number; high: number; low: number; close: number; volume: number }) => ({
+            time: c.time,
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close,
+            volume: c.volume,
+          })),
+        }
+      }
       publish()
+      syncPerfHook()
       setHasMore(false)
       setState((prev) => ({ ...prev, status: 'live' }))
       let tick = 0
@@ -96,28 +112,33 @@ export function useKlineData(symbol: string, period: Period) {
         store.upsert(next)
         const dir: -1 | 0 | 1 = next.close > last.close ? 1 : next.close < last.close ? -1 : 0
         publish({ price: next.close, ts: Date.now(), dir })
+        syncPerfHook()
       }, PERF_TICK_MS)
       return () => {
         aliveRef.current = false
         window.clearInterval(timer)
         window.clearInterval(statsTimer)
         storeRef.current = null
+        delete window.__klineButyPerf
       }
     }
 
-    // A13：冷启动先读本地缓存秒开（校验失败/过期自动返回 null，静默降级）
+    // A13：冷启动先读本地缓存秒开（校验失败/过期自动返回 null，静默降级）。
+    // A1：读入即归一化——坏缓存/历史版本的非对齐时间戳在此被修复，不进图表。
     const cached = readCachedCandles(symbol, period)
     if (cached && cached.length > 0) {
-      store.upsertAll(cached)
+      store.upsertAll(normalizeCandles(cached, period))
       publish()
     }
 
     fetchKlines(symbol, period, 800, undefined, undefined, abortCtrl.signal)
       .then((hist) => {
-        store.upsertAll(hist)
+        // A1：归一化后再入 store 与缓存（自定义源非对齐时间戳在此修正）
+        const norm = normalizeCandles(hist, period)
+        store.upsertAll(norm)
         publish()
-        // REST 首次成功：回写缓存供下次冷启动加速
-        writeCachedCandles(symbol, period, hist)
+        // REST 首次成功：回写缓存供下次冷启动加速（写入即对齐，二次冷启动不再需修复）
+        writeCachedCandles(symbol, period, norm)
       })
       .catch((e: unknown) => {
         if (aliveRef.current && storeRef.current === store) {
@@ -141,14 +162,16 @@ export function useKlineData(symbol: string, period: Period) {
       if (!aliveRef.current) return
       ws = createKlineWs(symbol, period, {
         onKline: (c) => {
-          store.upsert(c)
+          // A1：实时帧单根对齐周期边界（币安本身对齐，防御自定义源/缓存中的非对齐帧）
+          const aligned = c.time === alignTimeToPeriod(c.time, period) ? c : { ...c, time: alignTimeToPeriod(c.time, period) }
+          store.upsert(aligned)
           // 同帧内合并方向与最新 tick，统一在下一帧 publish
           if (!batchLast) batchLast = { closes: [], frames: [] }
-          batchLast.closes.push(c.close)
+          batchLast.closes.push(aligned.close)
           batchLast.frames.push({
-            price: c.close,
+            price: aligned.close,
             ts: Date.now(),
-            dir: prevClose == null ? 0 : c.close > prevClose ? 1 : c.close < prevClose ? -1 : 0,
+            dir: prevClose == null ? 0 : aligned.close > prevClose ? 1 : aligned.close < prevClose ? -1 : 0,
           })
           batcher.schedule()
         },
@@ -167,7 +190,8 @@ export function useKlineData(symbol: string, period: Period) {
               fetchKlines(symbol, period, GAP_PAGE_SIZE, r.startTime, r.endTime, abortCtrl.signal)
                 .then((hist) => {
                   if (!aliveRef.current || storeRef.current !== store) return
-                  store.upsertAll(hist)
+                  // A1：补洞数据同样归一化后入 store（游标按对齐起点计算，返回序列对齐）
+                  store.upsertAll(normalizeCandles(hist, period))
                   // 每段补完后发布：缺口区数据逐步浮现（末段即最新）
                   publish()
                 })
@@ -196,12 +220,13 @@ export function useKlineData(symbol: string, period: Period) {
     const store = storeRef.current
     if (!store || !aliveRef.current) return
     const demo = generateSyntheticCandles(800)
-    store.upsertAll(demo)
+    // A1：演示数据同样归一化（生成器缺省对齐 1m，防御自定义步长来源的非对齐时间戳）
+    store.upsertAll(normalizeCandles(demo, period))
     setHasMore(false)
     setState((prev) => ({ ...prev, candles: store.all().slice(), status: 'live', error: undefined }))
-  }, [])
+  }, [period])
 
-  /** 向左分页：以最早一根的 openTime 为终点，往前取一页 */
+  /** 向左分页：以最早一根的 openTime 为终点（排除首根自身），往前取一页新数据 */
   const loadMore = useCallback(async () => {
     const store = storeRef.current
     if (!store || loadingMoreRef.current) return
@@ -209,10 +234,13 @@ export function useKlineData(symbol: string, period: Period) {
     if (!first) return
     loadingMoreRef.current = true
     try {
-      const endTime = first.time * 1000
-      const hist = await fetchKlines(symbol, period, PAGE_SIZE, endTime - PAGE_SIZE * PERIOD_MS[period], endTime)
+      // A1：endTime 取 first.time-1ms（排除已存在的首根 → 翻满一页新数据）；
+      // startTime 用 periodSpanMs（1M 取 31 天上界，防 30 天近似导致窗口偏窄误判 hasMore=false）
+      const endTime = first.time * 1000 - 1
+      const hist = await fetchKlines(symbol, period, PAGE_SIZE, endTime - periodSpanMs(period, PAGE_SIZE), endTime)
       if (aliveRef.current && hist.length > 0) {
-        store.upsertAll(hist)
+        // A1：分页数据归一化后入 store（游标基于已对齐首根，返回序列对齐）
+        store.upsertAll(normalizeCandles(hist, period))
         setState((prev) => ({ ...prev, candles: store.all().slice() }))
       }
       if (aliveRef.current && hist.length < PAGE_SIZE) setHasMore(false)
