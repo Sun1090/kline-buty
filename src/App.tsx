@@ -290,6 +290,18 @@ export function App() {
   const [marketListMobileOpen, setMarketListMobileOpen] = useState(false)
   // F14 右侧边栏宽度（持久化，桌面端可拖拽调宽；240–720px 钳制）
   const [sidePanelWidth, setSidePanelWidth] = usePersistedState<number>('sidePanelWidth', 380)
+  // F16 侧栏面板顺序（持久化）：depth/orderBook/vp/sentiment 拖拽换位
+  const [panelOrder, setPanelOrder] = usePersistedState<('depth' | 'orderBook' | 'vp' | 'sentiment')[]>('panelOrder', ['depth', 'orderBook', 'vp', 'sentiment'])
+  const movePanel = (key: 'depth' | 'orderBook' | 'vp' | 'sentiment', dir: -1 | 1) => {
+    setPanelOrder((prev) => {
+      const idx = prev.indexOf(key)
+      const target = idx + dir
+      if (idx < 0 || target < 0 || target >= prev.length) return prev
+      const next = [...prev]
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
   // F18 面板布局方案（命名快照：图表布局 + 侧栏面板开合 + 面板宽度）
   const [layoutPresets, setLayoutPresets] = usePersistedState<Record<string, { layout: string; depthOpen: boolean; orderBookOpen: boolean; volumeProfileOpen: boolean; sentimentOpen: boolean; marketListOpen: boolean; sidePanelWidth: number }>>('layoutPresets', {})
   const saveLayoutPreset = (name: string) => {
@@ -1143,6 +1155,8 @@ export function App() {
           onSaveLayoutPreset={saveLayoutPreset}
           onApplyLayoutPreset={applyLayoutPreset}
           onDeleteLayoutPreset={deleteLayoutPreset}
+          panelOrder={panelOrder}
+          onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1267,6 +1281,8 @@ export function App() {
           onSaveLayoutPreset={saveLayoutPreset}
           onApplyLayoutPreset={applyLayoutPreset}
           onDeleteLayoutPreset={deleteLayoutPreset}
+          panelOrder={panelOrder}
+          onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1639,23 +1655,37 @@ export function App() {
               }}
             />
           )}
-          {depthOpen && (
-            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
-              <DepthChart symbol={symbol} depth={depth} />
-            </Suspense>
-          )}
-          {orderBookOpen && <OrderBook symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
-            onQuickOrder={(price, side) => setQuickOrder({ side, price })} onRefresh={() => setDepthReload((n) => n + 1)} />}
-          {volumeProfileOpen && (
-            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
-              <VolumeProfileChart symbol={symbol} candles={candles} />
-            </Suspense>
-          )}
-          {sentimentOpen && (
-            <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
-              <SentimentPanel data={sentiment} />
-            </Suspense>
-          )}
+          {/* F16 按持久化顺序渲染已开启的侧栏面板 */}
+          {panelOrder.map((k) => {
+            if (k === 'depth' && depthOpen) {
+              return (
+                <Suspense key="depth" fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+                  <DepthChart symbol={symbol} depth={depth} />
+                </Suspense>
+              )
+            }
+            if (k === 'orderBook' && orderBookOpen) {
+              return (
+                <OrderBook key="orderBook" symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
+                  onQuickOrder={(price, side) => setQuickOrder({ side, price })} onRefresh={() => setDepthReload((n) => n + 1)} />
+              )
+            }
+            if (k === 'vp' && volumeProfileOpen) {
+              return (
+                <Suspense key="vp" fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+                  <VolumeProfileChart symbol={symbol} candles={candles} />
+                </Suspense>
+              )
+            }
+            if (k === 'sentiment' && sentimentOpen) {
+              return (
+                <Suspense key="sentiment" fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+                  <SentimentPanel data={sentiment} />
+                </Suspense>
+              )
+            }
+            return null
+          })}
         </div>
       )}
       {replay && (

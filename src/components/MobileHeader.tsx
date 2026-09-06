@@ -149,6 +149,9 @@ export interface MobileHeaderProps {
   onSaveLayoutPreset?: (name: string) => void
   onApplyLayoutPreset?: (name: string) => void
   onDeleteLayoutPreset?: (name: string) => void
+  /** F16 侧栏面板顺序（桌面端使用；移动端忽略） */
+  panelOrder?: string[]
+  onMovePanel?: (key: string, dir: -1 | 1) => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

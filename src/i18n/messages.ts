@@ -131,6 +131,10 @@ export const zh = {
     sentimentTitle: '衍生品情绪（多空比/主动买卖/未平仓）',
     statsTitle: '行情概览（最新价/涨跌/资金费率/未平仓）',
     resizeTitle: '拖拽调整侧边栏宽度',
+    orderTitle: '侧栏面板顺序',
+    moveUp: '上移',
+    moveDown: '下移',
+
   },
   sentiment: {
     globalRatio: '全账户多空比',
@@ -754,6 +758,10 @@ export const en: Messages = {
     sentimentTitle: 'Derivatives sentiment (long/short, taker, OI)',
     statsTitle: 'Market overview (last price / change / funding / OI)',
     resizeTitle: 'Drag to resize side panel',
+    orderTitle: 'Side panel order',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+
   },
   sentiment: {
     globalRatio: 'Global long/short',
@@ -1368,6 +1376,10 @@ export const ja: Messages = {
     sentimentTitle: 'デリバティブセンチメント（ロング/ショート、テイカー、OI）',
     statsTitle: '市場概況（最新値/変動/資金費率/未決済）',
     resizeTitle: 'ドラッグでサイドバー幅を調整',
+    orderTitle: 'サイドパネル順序',
+    moveUp: '上へ',
+    moveDown: '下へ',
+
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -1983,6 +1995,10 @@ export const ko: Messages = {
     sentimentTitle: '파생 심리 (롱/숏, 테이커, 미청산)',
     statsTitle: '시장 개요 (최근가/등락/자금비용/미청산)',
     resizeTitle: '드래그로 사이드 패널 너비 조정',
+    orderTitle: '사이드 패널 순서',
+    moveUp: '위로',
+    moveDown: '아래로',
+
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -2609,6 +2625,10 @@ export const es: Messages = {
     sentimentTitle: 'Sentimiento de derivados (largo/corto, taker, OI)',
     statsTitle: 'Resumen de mercado (último / variación / fondeo / OI)',
     resizeTitle: 'Arrastrar para ajustar el panel',
+    orderTitle: 'Orden del panel',
+    moveUp: 'Subir',
+    moveDown: 'Bajar',
+
   },
   sentiment: {
     globalRatio: 'Largo/corto global',
