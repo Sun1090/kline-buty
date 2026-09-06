@@ -78,9 +78,11 @@ test.describe('2026-08 新功能回归', () => {
   test('画线：吸附三态循环、批量显隐、JSON 导出和去重导入', async ({ page }) => {
     await openDrawings(page)
     const snap = page.getByTestId('drawing-snap-toggle')
-    // C3：默认 ohlc，点击循环 off → time → ohlc（持久化为 JSON 字符串，需 parse）
+    // C6 四态循环：默认 ohlc → grid → off → time（持久化为 JSON 字符串，需 parse）
     const snapMode = () => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawingSnap') ?? '""') as string)
     await expect.poll(snapMode).toBe('ohlc')
+    await snap.click()
+    await expect.poll(snapMode).toBe('grid')
     await snap.click()
     await expect.poll(snapMode).toBe('off')
     await snap.click()

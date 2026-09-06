@@ -139,6 +139,8 @@ export interface MobileHeaderProps {
   onTogglePosition: () => void
   alertsActive: boolean
   onToggleAlerts: () => void
+  /** E12 待触发提醒数（桌面角标） */
+  alertsPending?: number
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

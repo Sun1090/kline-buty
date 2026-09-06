@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createAlert, evaluateAlert, evaluateTime, evaluateAlertCombo, shouldTrigger, isCurrentlyTrue, stepAlert, type PriceAlert } from '../engine'
+import { createAlert, evaluateAlert, evaluateTime, evaluateAlertCombo, shouldTrigger, isCurrentlyTrue, stepAlert, isExpired, setAlertsDisabled, setGroupDisabled, type PriceAlert } from '../engine'
 
 const above = createAlert('BTCUSDT', 'above', 65000)
 const below = createAlert('BTCUSDT', 'below', 60000)
@@ -189,5 +189,42 @@ describe('shouldTrigger 时间窗口参与', () => {
     expect(shouldTrigger({ ...above, triggered: true }, 66000)).toBe(false) // 已触发
     expect(shouldTrigger({ ...above, triggered: false }, 66000)).toBe(true)
     expect(shouldTrigger(createAlert('E', 'above', 1), 2)).toBe(true)
+  })
+})
+
+describe('E3/E7 停用与批量', () => {
+  it('disabled → shouldTrigger false，stepAlert 保持原样', () => {
+    const off = { ...above, disabled: true }
+    expect(shouldTrigger(off, 66000)).toBe(false)
+    expect(stepAlert(off, 66000)).toEqual(off)
+  })
+  it('setAlertsDisabled 按 id 集合统一启用/停用', () => {
+    const a = createAlert('BTCUSDT', 'above', 65000)
+    const b = createAlert('ETHUSDT', 'above', 3000)
+    const next = setAlertsDisabled([a, b], new Set([a.id]), true)
+    expect(next[0].disabled).toBe(true)
+    expect(next[1].disabled).toBeUndefined()
+    expect(next).not.toBe([a, b]) // 返回新数组
+  })
+  it('setGroupDisabled 组内全部停用，未分组不受影响', () => {
+    const g1 = { ...above, group: '趋势' }
+    const g2 = { ...below, group: '趋势' }
+    const other = { ...above, id: 'x2' }
+    const next = setGroupDisabled([g1, g2, other], '趋势', true)
+    expect(next.every((x) => (x.group === '趋势' ? x.disabled === true : x.disabled === undefined))).toBe(true)
+  })
+})
+
+describe('E6 到期时间', () => {
+  it('isExpired：now ≥ expiresAt → true', () => {
+    expect(isExpired({ ...above, expiresAt: 1000 }, 1000)).toBe(true)
+    expect(isExpired({ ...above, expiresAt: 2000 }, 1000)).toBe(false)
+    expect(isExpired(above)).toBe(false)
+  })
+  it('过期提醒不触发且不重新武装', () => {
+    const expired = { ...above, repeat: true, triggered: true, expiresAt: 1000 }
+    expect(shouldTrigger(expired, 66000, undefined, 1000)).toBe(false)
+    // 过期后价格回落再上涨也不重触发
+    expect(stepAlert({ ...expired, triggered: false }, 66000, undefined, 1000).triggered).toBe(false)
   })
 })
