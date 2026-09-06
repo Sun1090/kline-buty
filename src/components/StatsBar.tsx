@@ -11,6 +11,9 @@ import { formatRemaining } from '../utils/countdown'
 import { isVolumeSurge } from '../chart/volumeSurge'
 import type { GapHealth } from '../chart/dataHealth'
 
+/** F15 信息条可配置项：marketType/volumeSurge/latency/health/price/summary/countdown */
+export type StatsBarItemKey = 'marketType' | 'volumeSurge' | 'latency' | 'health' | 'price' | 'summary' | 'countdown'
+
 interface StatsBarProps {
   stats: MarketStats
   /** WS 实时帧（最新价 + 方向）：非空时覆盖轮询价并做跳动高亮 */
@@ -25,6 +28,10 @@ interface StatsBarProps {
   gapHealth?: GapHealth | null
   /** G6 缺口段数（degraded 文案用） */
   gapCount?: number
+  /** F15 显示项开关：缺省项默认显示；false 隐藏 */
+  config?: Partial<Record<StatsBarItemKey, boolean>>
+  /** F15 切换回调 */
+  onToggleItem?: (key: StatsBarItemKey) => void
 }
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
@@ -36,8 +43,20 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gapHealth, gapCount }: StatsBarProps) {
+export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gapHealth, gapCount, config, onToggleItem }: StatsBarProps) {
   const { t, lang } = useI18n()
+  // F15 信息条配置下拉
+  const [configOpen, setConfigOpen] = useState(false)
+  const show = (k: StatsBarItemKey) => config?.[k] !== false
+  const configItems: { key: StatsBarItemKey; label: string }[] = [
+    { key: 'marketType', label: t('stats.marketType') },
+    { key: 'volumeSurge', label: t('stats.volumeSurge') },
+    { key: 'latency', label: t('stats.dataLatencyTitle') },
+    { key: 'health', label: t('stats.health') },
+    { key: 'price', label: t('stats.lastPrice') },
+    { key: 'summary', label: t('stats.summary') },
+    { key: 'countdown', label: t('stats.countdown') },
+  ]
   // M7 减少动效：系统偏好开启时禁用实时跳动闪烁
   const reducedMotion = useReducedMotion()
   // E8 千分位国际化：大数字（未平仓）按当前语言 locale 分组
@@ -87,21 +106,23 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
       }}
     >
       {/* G3 市场类型徽标：合约/现货（现货隐藏费率/强平/未平仓口径） */}
-      <span
-        data-testid="market-type"
-        style={{
-          fontSize: 11,
-          padding: '1px 6px',
-          borderRadius: 4,
-          flexShrink: 0,
-          color: isPerp ? 'var(--accent)' : 'var(--text-dim)',
-          border: isPerp ? '1px solid var(--accent)' : '1px solid var(--border)',
-        }}
-      >
-        {marketLabel}
-      </span>
+      {show('marketType') && (
+        <span
+          data-testid="market-type"
+          style={{
+            fontSize: 11,
+            padding: '1px 6px',
+            borderRadius: 4,
+            flexShrink: 0,
+            color: isPerp ? 'var(--accent)' : 'var(--text-dim)',
+            border: isPerp ? '1px solid var(--accent)' : '1px solid var(--border)',
+          }}
+        >
+          {marketLabel}
+        </span>
+      )}
       {/* G5 量能异动：最新成交量 / 前 N 根均量 ≥ 3× 时高亮警示 */}
-      {volumeSurge !== null && volumeSurge !== undefined && (
+      {show('volumeSurge') && volumeSurge !== null && volumeSurge !== undefined && (
         <span
           data-testid="volume-surge"
           title={t('stats.volumeSurgeTitle')}
@@ -121,7 +142,7 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
       )}
       {/* A5/G11 数据延迟：信息条常态显示滞后秒数（帧到达 vs 系统时间）；
           ≤5s 低调样式，>5s 黄色警示（弱网/停更） */}
-      {latencyMs != null && (
+      {show('latency') && latencyMs != null && (
         <span
           data-testid="data-latency"
           title={t('stats.dataLatencyTitle')}
@@ -140,7 +161,7 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
         </span>
       )}
       {/* G6 数据健康度：缺口档位徽标（无缺口正常显示，有缺口降级警示） */}
-      {gapHealth !== null && gapHealth !== undefined && gapHealth !== 'healthy' && (
+      {show('health') && gapHealth !== null && gapHealth !== undefined && gapHealth !== 'healthy' && (
         <span
           data-testid="data-health"
           title={t('stats.gapDegraded', { n: gapCount ?? 0 })}
@@ -158,7 +179,7 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
           {gapHealth === 'partial' ? t('stats.gapPartial') : t('stats.gapDegraded', { n: gapCount ?? 0 })}
         </span>
       )}
-      {price !== null && (
+      {show('price') && price !== null && (
         <Item label={t('stats.lastPrice')}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
             {live && (
@@ -192,48 +213,95 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
           </span>
         </Item>
       )}
-      {stats.changePct !== null && (
+      {show('summary') && stats.changePct !== null && (
         <Item label={t('stats.change24h')}>
           <span style={{ color: changeColor }}>{stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%</span>
         </Item>
       )}
-      {stats.high !== null && (
+      {show('summary') && stats.high !== null && (
         <Item label={t('stats.high24h')}>
           <span style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(stats.high)}</span>
         </Item>
       )}
-      {stats.low !== null && (
+      {show('summary') && stats.low !== null && (
         <Item label={t('stats.low24h')}>
           <span style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(stats.low)}</span>
         </Item>
       )}
-      {stats.quoteVolume !== null && (
+      {show('summary') && stats.quoteVolume !== null && (
         <Item label={t('stats.volume24h')}>
           <span style={{ color: 'var(--text)' }}>{fmtVolume(stats.quoteVolume)} USDT</span>
         </Item>
       )}
-      {isPerp && stats.fundingRate !== null && (
+      {show('summary') && isPerp && stats.fundingRate !== null && (
         <Item label={t('stats.fundingRate')}>
           <span style={{ color: fundingColor }}>{fundingPct.toFixed(4)}%</span>
         </Item>
       )}
-      {isPerp && stats.openInterest !== null && (
+      {show('summary') && isPerp && stats.openInterest !== null && (
         <Item label={t('stats.openInterest')}>
           <span style={{ color: 'var(--text)' }}>{fmtPriceLocale(stats.openInterest, locale)}</span>
         </Item>
       )}
-      {isPerp && stats.markPrice !== null && (
+      {show('summary') && isPerp && stats.markPrice !== null && (
         <Item label={t('stats.markPrice')}>
           <span style={{ color: 'var(--text-dim)' }}>{fmtPrice(stats.markPrice)}</span>
         </Item>
       )}
-      {remainingMs != null && (
+      {show('countdown') && remainingMs != null && (
         <Item label={t('stats.countdown')}>
           <span data-testid="period-countdown" style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
             {formatRemaining(remainingMs)}
           </span>
         </Item>
       )}
+      {/* F15 信息条显示项配置：齿轮弹出勾选 */}
+      <span style={{ position: 'relative', flexShrink: 0, marginLeft: 'auto' }}>
+        <button
+          data-testid="statsbar-config-toggle"
+          onClick={() => setConfigOpen((v) => !v)}
+          aria-expanded={configOpen}
+          aria-label={t('stats.barConfig')}
+          title={t('stats.barConfig')}
+          style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12, padding: 0 }}
+        >
+          ⚙
+        </button>
+        {configOpen && (
+          <div
+            data-testid="statsbar-config-menu"
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 0,
+              zIndex: 1200,
+              background: 'var(--panel)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '8px 10px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              fontSize: 11,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              minWidth: 150,
+            }}
+          >
+            {configItems.map(({ key, label }) => (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  data-testid={`statsbar-config-${key}`}
+                  checked={config?.[key] !== false}
+                  onChange={() => onToggleItem?.(key)}
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        )}
+      </span>
     </div>
   )
 }

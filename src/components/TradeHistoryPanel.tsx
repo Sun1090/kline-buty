@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { TradeRecord } from '../hooks/usePaperAccount'
 import type { TradeStats } from '../trade/stats'
 import { profitTargetStatus } from '../trade/stats'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
@@ -75,6 +76,9 @@ export function TradeHistoryPanel({
   // D15 导入结果提示
   const [importStatus, setImportStatus] = useState<'' | 'ok' | 'fail'>('')
   const fileRef = useRef<HTMLInputElement>(null)
+  // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
+  const rootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, rootRef)
 
   const handleReset = () => {
     if (!confirmingReset) {
@@ -107,6 +111,7 @@ export function TradeHistoryPanel({
   }
   return (
     <div
+      ref={rootRef}
       role="region"
       aria-label={t('paper.title')}
       data-testid="trade-history-panel"

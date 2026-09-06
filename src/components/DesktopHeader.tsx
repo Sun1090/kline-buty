@@ -164,6 +164,8 @@ export function DesktopHeader(props: DesktopHeaderProps) {
   // H15 指标收藏快速切换：常用副图指标置顶显示
   const { favorites: subFavorites, toggleFavorite: toggleSubFavorite } = useIndicatorFavorites()
   const [menu, setMenu] = useState<MenuId>(null)
+  // F18 布局方案命名输入
+  const [presetName, setPresetName] = useState('')
   // 交易对搜索下拉是否打开：它是顶栏最上层，Esc 层进链路里先于菜单关闭
   const [searchOpen, setSearchOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -714,9 +716,59 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
             </PanelButton>
             <ThemePicker value={props.colorPreset} onChange={props.onColorPreset} />
+            <PanelButton onClick={props.onToggleHighContrast ?? (() => {})} title={t('theme.highContrastTitle')} active={props.highContrast} testId="high-contrast-toggle">
+              {props.highContrast ? t('theme.highContrastOn') : t('theme.highContrastOff')}
+            </PanelButton>
             <PanelButton onClick={props.onToggleWatermark} title={t('settings.watermarkTitle')} active={props.showWatermark} testId="watermark-toggle">
               {t('settings.watermark')}
             </PanelButton>
+          </div>
+          <SectionTitle>{t('layout.presets')}</SectionTitle>
+          <div data-testid="layout-presets" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            <input
+              data-testid="layout-preset-name"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              placeholder={t('layout.presetName')}
+              style={{
+                width: 90,
+                padding: '3px 6px',
+                fontSize: 11,
+                borderRadius: 4,
+                border: '1px solid #2a2e39',
+                background: 'var(--bg)',
+                color: 'var(--text)',
+              }}
+            />
+            <PanelButton
+              onClick={() => {
+                props.onSaveLayoutPreset?.(presetName)
+                setPresetName('')
+              }}
+              title={t('layout.savePreset')}
+              testId="layout-preset-save"
+            >
+              {t('layout.savePreset')}
+            </PanelButton>
+            {(props.layoutPresets ?? []).map((name) => (
+              <span key={name} data-testid={`layout-preset-${name}`} style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
+                <PanelButton
+                  onClick={() => props.onApplyLayoutPreset?.(name)}
+                  title={t('layout.applyPreset')}
+                  active={false}
+                >
+                  {name}
+                </PanelButton>
+                <button
+                  data-testid={`layout-preset-del-${name}`}
+                  onClick={() => props.onDeleteLayoutPreset?.(name)}
+                  aria-label={`${t('common.delete')} ${name}`}
+                  style={{ border: 'none', background: 'none', color: 'var(--text-faint)', fontSize: 10, cursor: 'pointer', padding: '0 2px' }}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
           </div>
           <SectionTitle>{t('common.more')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>

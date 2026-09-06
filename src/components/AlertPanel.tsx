@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { AlertsApi, AlertSoundKind, AlertChannel, AlertTemplate } from '../hooks/usePriceAlerts'
 import { playAlertBeep } from '../hooks/usePriceAlerts'
 import { isExpired } from '../alerts/engine'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
 
 interface AlertPanelProps {
@@ -48,6 +49,9 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   /** E14 导入结果提示 */
   const [importStatus, setImportStatus] = useState<'' | 'ok' | 'fail'>('')
   const fileRef = useRef<HTMLInputElement>(null)
+  // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
+  const rootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, rootRef)
   const {
     alerts,
     permission,
@@ -228,6 +232,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
 
   return (
     <div
+      ref={rootRef}
       role="region"
       aria-label={t('alert.title', { symbol: symbol.replace('USDT', '/USDT') })}
       style={{
@@ -457,6 +462,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           data-testid="alert-expiry-input"
           type="datetime-local"
           value={expiresAt}
+          aria-label={t('alert.expiresAt')}
           onChange={(e) => setExpiresAt(e.target.value)}
           style={{ ...inputStyle, width: 165, fontSize: 11 }}
         />

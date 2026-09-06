@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { describe, expect, it, vi, afterEach } from 'vitest'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { StatsBar } from '../StatsBar'
 import type { MarketStats } from '../../hooks/useMarketStats'
 import type { LiveTick } from '../../hooks/useKlineData'
@@ -160,5 +160,36 @@ describe('StatsBar', () => {
     // 无 live（离线/首帧未到）→ 不显示
     rerender(<StatsBar stats={stats} />)
     expect(screen.queryByTestId('data-latency')).toBeNull()
+  })
+})
+
+describe('StatsBar F15 显示项配置', () => {
+  it('config 对应项 false → 隐藏该项', () => {
+    const s = { ...EMPTY, price: 65000, changePct: 1.2, high: 66000 }
+    const { rerender } = render(<StatsBar stats={s} config={{ price: false }} />)
+    expect(screen.queryByTestId('live-price')).toBeNull()
+    // 默认项仍显示
+    rerender(<StatsBar stats={s} config={{ marketType: false }} />)
+    expect(screen.getByTestId('live-price')).toBeTruthy()
+    expect(screen.queryByTestId('market-type')).toBeNull()
+  })
+
+  it('config 缺省项默认显示（config 未涉及的键不受影响）', () => {
+    const s = { ...EMPTY, price: 65000, changePct: 1.2, high: 66000 }
+    render(<StatsBar stats={s} config={{ marketType: false }} />)
+    expect(screen.getByTestId('live-price')).toBeTruthy()
+    expect(screen.getByText('+1.20%')).toBeDefined()
+    expect(screen.queryByTestId('market-type')).toBeNull()
+  })
+
+  it('点击齿轮展开配置菜单，勾选触发 onToggleItem', () => {
+    const onToggleItem = vi.fn()
+    const s = { ...EMPTY, price: 65000 }
+    render(<StatsBar stats={s} config={{}} onToggleItem={onToggleItem} />)
+    expect(screen.queryByTestId('statsbar-config-menu')).toBeNull()
+    fireEvent.click(screen.getByTestId('statsbar-config-toggle'))
+    expect(screen.getByTestId('statsbar-config-menu')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('statsbar-config-price'))
+    expect(onToggleItem).toHaveBeenCalledWith('price')
   })
 })
