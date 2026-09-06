@@ -91,6 +91,14 @@ export function anchorRangeForSwitch(
   }
   const right = lo
   const spanRoots = Math.max(1, Math.round(spanMs / periodMs))
-  const left = Math.max(0, right - spanRoots + 1)
+  // 目标时间早于全部数据（回看跨周期后新数据未覆盖到该时点）→ 从最左展示 spanRoots 根，
+  // 避免 right clamp 到 0 后 span 丢失退化成单根（也不应跳到最新之外）
+  if (right === 0 && newCandles[0].time > toTimeSec) {
+    return { from: 0, to: Math.min(newCandles.length - 1, spanRoots - 1) }
+  }
+  let left = Math.max(0, right - spanRoots + 1)
+  // 单根区间（跨度远小于新周期，如 1m→5m 的 60s 窗口）在 lightweight-charts 的
+  // setVisibleLogicalRange 下不稳定（内部归一化引发裁剪窗口竞态振荡），保底扩展为至少 2 根
+  if (left === right) left = Math.max(0, left - 1)
   return { from: left, to: right }
 }
