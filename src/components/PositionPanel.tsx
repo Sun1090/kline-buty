@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Position } from '../position/pnl'
-import { calcPnl, calcLiquidationPrice, calcMargin, suggestLevels } from '../position/pnl'
+import { calcPnl, calcLiquidationPrice, calcMargin, marginRate, suggestLevels } from '../position/pnl'
 import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
 import { useI18n } from '../i18n/useI18n'
 
@@ -122,6 +122,8 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
           if (!p) return null
           const active = currentPrice !== null ? calcPnl(p, currentPrice) : null
           const color = active ? (active.pnl >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--text-faint)'
+          // D2 动态保证金率：全额保证金口径下随盈亏实时变化（无现价时隐藏）
+          const rate = currentPrice !== null ? marginRate(p, currentPrice) : null
           return (
             <div
               key={key}
@@ -145,6 +147,15 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
                 <span style={{ color, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
                   {active.pnl >= 0 ? '+' : ''}
                   {active.pnl.toFixed(2)}
+                </span>
+              )}
+              {rate !== null && (
+                <span
+                  data-testid={`position-margin-rate-${key}`}
+                  title={t('position.marginRate')}
+                  style={{ fontSize: 10, color: rate < 0.8 ? 'var(--down)' : 'var(--text-faint)' }}
+                >
+                  {(rate * 100).toFixed(0)}%
                 </span>
               )}
               <button

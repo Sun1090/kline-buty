@@ -69,3 +69,15 @@ export function calcMargin(notional: number, leverage: number): number {
   if (!Number.isFinite(leverage) || leverage <= 0) return notional
   return notional / leverage
 }
+
+/**
+ * D2 动态保证金率（随盈亏变化）：模拟盘为全额保证金模型（初始保证金 = 名义金额/杠杆），
+ * 当前保证金率 = (初始保证金 + 未实现盈亏) / 初始保证金。
+ * 无杠杆（null）→ 按 1x 全保证金口径。返回百分比数值（如 1.12 = 112%）。
+ */
+export function marginRate(p: Position, price: number, leverage?: number): number {
+  const initial = calcMargin(p.entry * p.quantity, leverage ?? 1)
+  if (initial <= 0) return 0
+  const unrealized = calcPnl(p, price).pnl
+  return (initial + unrealized) / initial
+}

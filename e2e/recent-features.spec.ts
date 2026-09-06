@@ -57,11 +57,15 @@ test.describe('2026-08 新功能回归', () => {
     await expect(order.getByTestId('qo-qty')).not.toHaveValue('')
     const balanceBefore = Number((await order.getByTestId('qo-balance').textContent())?.replace(/[^\d.]/g, ''))
     await order.getByTestId('qo-confirm').click()
-    await expect(page.getByText('浮动盈亏')).toBeVisible()
+    // 持仓面板出现开多行且含浮动盈亏数值（「浮动盈亏」标签早已移除，改为断言数值存在）
+    const posRow = page.getByTestId('position-row-long')
+    await expect(posRow).toBeVisible()
+    await expect(posRow).toContainText(/-?\d+(\.\d+)?/)
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(1)
     expect(Number(await page.evaluate(() => localStorage.getItem('kline-buty:paperBalance')))).toBeLessThan(balanceBefore)
 
-    await page.getByRole('button', { name: '平仓' }).click()
+    // 平掉开多行（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
+    await page.getByTestId('position-row-long').getByRole('button').click()
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(2)
     await openMore(page)
     await page.getByRole('button', { name: '流水' }).click()

@@ -23,13 +23,25 @@ export const DEFAULT_SLIPPAGE_RATIO = 0.0002
  * 买盘（buy）：fillPrice = price×(1+滑点)（对手方被迫吃更高价）；
  * 卖盘（sell）：fillPrice = price×(1−滑点）。默认不滑点（slippageRatio=0，
  * 保持既有 pure 契约；UI 层调用时按需传 DEFAULT_SLIPPAGE_RATIO）。
+ * D5 费率可配置：feeRate 默认 TAKER_FEE_RATE，UI 层传用户设置值。
  */
-export function estimateOrder(price: number, qty: number, side: OrderSide = 'buy', slippageRatio = 0): OrderEstimate {
+export function estimateOrder(
+  price: number,
+  qty: number,
+  side: OrderSide = 'buy',
+  slippageRatio = 0,
+  feeRate = TAKER_FEE_RATE,
+): OrderEstimate {
   const dir = side === 'buy' ? 1 : -1
   const fillPrice = price * (1 + dir * slippageRatio)
   const notional = fillPrice * qty
-  const fee = notional * TAKER_FEE_RATE
+  const fee = notional * feeRate
   return { notional, fillPrice, fee, total: notional + fee }
+}
+
+/** D5/D7 平仓手续费（entry 口径，除曲线与滑点后按原价）；费率可配置。 */
+export function feeForPrice(price: number, qty: number, feeRate: number): number {
+  return price * qty * feeRate
 }
 
 /** 快速下单 → 模拟仓位：买=做多、卖=做空，止盈/止损参考百分比自动生成 */
