@@ -27,9 +27,13 @@ export function generateSyntheticCandles(count: number, opts: SyntheticOptions =
     base = 50_000,
     vol = 5_000,
   } = opts
-  // A1 时间戳对齐：提供 period 时对齐该周期边界（首根即边界），否则对齐 1m（默认步长 60s）
+  // A1 时间戳对齐：提供 period 时对齐该周期边界（终点即边界），否则对齐 1m（默认步长 60s）。
+  // A2 修正：从「起始时间」向历史方向生成——终点对齐周期边界、序列升序（最旧在前、最新在末尾），
+  // 与真实行情一致（各周期数据终点 = now，最新一根在末尾）。此前向前生成会让不同周期
+  // 的终点各不相同（now+周期跨度），导致切周期右侧锚定按时间映射时失真。
   const alignPeriod: Period = period ?? '1m'
-  const start = alignTimeToPeriod(startTime, alignPeriod)
+  const end = alignTimeToPeriod(startTime, alignPeriod)
+  const start = end - (count - 1) * stepSeconds
   const out: Candle[] = new Array(count)
   for (let i = 0; i < count; i++) {
     const drift = Math.sin(i / 200) * vol + Math.sin(i / 7) * 30

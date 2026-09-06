@@ -107,14 +107,24 @@ describe('anchorRangeForSwitch（G2 周期切换锚定）', () => {
     expect(r).toEqual({ from: 41, to: 50 })
   })
 
-  it('跨度不足一根 → 根数最小为 1', () => {
+  it('跨度不足一根 → A2 保底扩展为至少 2 根（单根区间在 setVisibleLogicalRange 下不稳定）', () => {
+    // 跨度 500ms < 1 根 → 原本 {10,10}，现在左缘扩展一根保证 from < to
     const r = anchorRangeForSwitch(candles1m, base + 10 * 60, 500, 60_000)
-    expect(r).toEqual({ from: 10, to: 10 })
+    expect(r).toEqual({ from: 9, to: 10 })
   })
 
   it('跨度远大于数据量 → 左缘 clamp 到 0', () => {
     const r = anchorRangeForSwitch(candles1m, base + 10 * 60, 60 * 60_000, 60_000)
     expect(r!.from).toBe(0)
     expect(r!.to).toBe(10)
+  })
+
+  it('A2 目标时间早于全部数据（回看跨周期新数据未覆盖）→ 从最左展示 spanRoots 根而非退化单根', () => {
+    // toTime 早于 data[0]：右缘 clamp 到 0 后 span 应保留（5 根）
+    const r = anchorRangeForSwitch(candles1m, base - 3_600, 5 * 60_000, 60_000)
+    expect(r).toEqual({ from: 0, to: 4 })
+    // 若 spanRoots 超出数据量 → 右缘 clamp 到数据末尾
+    const r2 = anchorRangeForSwitch(candles1m, base - 3_600, 200 * 60_000, 60_000)
+    expect(r2).toEqual({ from: 0, to: candles1m.length - 1 })
   })
 })

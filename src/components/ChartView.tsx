@@ -414,10 +414,17 @@ export function ChartView({
     let lastLoadAt = 0
     const unsubRange = api.subscribeVisibleRange((from, to) => {
       const now = Date.now()
-      // 局部索引 → 全局索引（叠加裁剪窗口偏移）
+      // 局部索引 → 全局索引（叠加裁剪窗口偏移）。
+      // A2 修复：lightweight-charts 的 visibleLogicalRange 是浮点逻辑索引且含 rightOffset 越界
+      // （to 可 > len-1）。此前直接用浮点索引取 allCandlesRef 得 undefined → tFrom/tTo 恒 null →
+      // lastVisibleTimeRef 不更新 → 切周期锚定拿不到旧右缘时间而回落 fitContent 跳回最新，
+      // A11 可视范围显示、loadMore 左缘判定、pair/quad 时间轴同步同样受影响。先取整并 clamp 到数据范围。
       const base = cullRef.current?.start ?? 0
-      const gFrom = base + from
-      const gTo = base + to
+      const len = dataLenRef.current
+      const lastIdx = Math.max(0, len - 1)
+      const gFrom = Math.min(base + Math.max(0, Math.floor(from)), lastIdx)
+      // max(gFrom, …) 兜底：空数据初始区间 {0,-1} / base 越界时也能保证 from ≤ to，避免 setVisibleLogicalRange 断言崩溃
+      const gTo = Math.max(gFrom, Math.min(base + Math.floor(to), lastIdx))
       lastVisibleRef.current = { from: gFrom, to: gTo }
       // A11 可视起止时间戳（索引 → 时间，数据不足时显示 null）
       const tFrom = allCandlesRef.current[gFrom]?.time ?? null
@@ -427,7 +434,6 @@ export function ChartView({
       if (tFrom != null && tTo != null) {
         lastVisibleTimeRef.current = { toTime: tTo, spanMs: Math.max((tTo - tFrom) * 1000, 1) }
       }
-      const len = dataLenRef.current
       setAtLatest(!isAwayFromLatest(gTo, len))
       // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
       if (shouldCull(len)) {
@@ -809,7 +815,8 @@ export function ChartView({
     const api = apiRef.current
     if (!api) return
     const key = `${symbol}:${period}`
-    const keyChanged = key !== keyRef.current
+    const prevKey = keyRef.current
+    const keyChanged = key !== prevKey
     keyRef.current = key
     const prev = prevDataRef.current
     const prevReplay = prevReplayRef.current
@@ -834,14 +841,35 @@ export function ChartView({
       api.setCandles(windowData)
       // 换品种 / 进入回放 / 退出回放 / 首个裁剪窗口 → 适配全量
       if (keyChanged || enteringReplay || exitingReplay || (!cur && shouldCull(fullLen))) {
-        // G2 周期切换锚定：仅 period 变化（symbol 不变）且此前有可见区间时，
-        // 按旧右缘时间戳 + 时间跨度映射到新周期根数，保持相对位置而非跳到最新之外
-        const symChanged = keyRef.current.slice(0, keyRef.current.indexOf(':')) !== symbol
+        // G2 周期切换右侧锚定：仅 period 变化（symbol 不变）且此前有可见区间时，
+        // 按旧右缘时间戳 + 时间跨度在「全量新数据」上定位目标区间，再重建裁剪窗口装载。
+        // 修复一（A2）：此前 keyRef.current 已被覆盖，symChanged 恒 false，换品种也走锚定。
+        // 修复二（A2）：此前对 windowData（旧周期位置索引裁出的新周期切片）做二分，
+        // 位置×周期会错位，旧右缘时间常落新窗口之外被 clamp 到错误位置甚至跳回最新；
+        // 改为对全量 replayData 按时间定位，并同步重建 cullRef 保证本次 subscribe 用新 base。
+        const symChanged = prevKey.slice(0, prevKey.indexOf(':')) !== symbol
         const vt = lastVisibleTimeRef.current
-        if (!symChanged && !enteringReplay && !exitingReplay && vt && windowData.length > 0) {
-          const anchor = anchorRangeForSwitch(windowData, vt.toTime, vt.spanMs, PERIOD_MS[period])
-          if (anchor) api.setVisibleRange(anchor)
-          else api.fitContent()
+        const periodChanged = keyChanged && !symChanged
+        if (periodChanged && !enteringReplay && !exitingReplay && vt && replayData.length > 0) {
+          // 在「全量新数据」上按旧右缘时间戳 + 时间跨度计算锚定区间（全局索引，已保证 ≥2 根）
+          const anchor = anchorRangeForSwitch(replayData, vt.toTime, vt.spanMs, PERIOD_MS[period])
+          if (anchor) {
+            const len = replayData.length
+            const useCull = shouldCull(len)
+            const target = useCull ? cullWindow(len, anchor) : null
+            api.setCandles(target ? replayData.slice(target.start, target.end) : replayData)
+            if (target) {
+              // 同步更新 cullRef：setVisibleRange 触发 subscribe 时 base 用新窗口起点
+              // （否则旧 base 会把锚定区间换算到错误全局位置，引发窗口漂移振荡）
+              setCull(target)
+              cullRef.current = target
+              api.setVisibleRange(localRange(target, anchor))
+            } else {
+              api.setVisibleRange(anchor)
+            }
+          } else {
+            api.fitContent()
+          }
         } else {
           api.fitContent()
         }

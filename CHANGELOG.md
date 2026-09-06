@@ -10,6 +10,9 @@
 ### A 阶段 - 行情与数据深化
 - A1（★）K 线时间戳对齐周期边界：修正 `1w`（UTC 周一）与 `1M`（月初）边界对齐（此前按固定 epoch 倍数会落到周四/30 天近似错位）；新增 `normalizeCandles` 数据流唯一入口，REST/WS/缓存/补洞/分页/合成数据全部归一化后入仓
 - A1 附带：`1M` 分页游标改 31 天上界（修复 30 天近似致首翻页不足 500 根、误判 `hasMore=false` 漏页）；loadMore 游标排除首根自身（翻满一页新数据）；perf 压测周期感知（合成步长/起点对齐当前周期，配合 `window.__klineButyPerf` E2E 断言切周期边界对齐与序列间隔稳定）
+- A2（★）周期切换右侧锚定：修复三处真实缺陷——① `symChanged` 死守卫（`keyRef` 先被覆盖致恒 false，换品种也走锚定而非 fitContent）；② 可见区间订阅用 lightweight-charts 浮点逻辑索引直接取数据致 `tFrom/tTo` 恒 null，`lastVisibleTimeRef` 永不更新（锚定输入丢失→回落 fitContent 跳最新，A11 可视范围显示/loadMore 左缘判定同步失效）；③ 锚定对「旧周期位置索引裁出的新切片」做二分，位置×周期错位致回看跨周期跳最新
+- A2 修复内容：可见区间索引先取整并 clamp（`from ≤ to` 防 lightweight-charts 断言崩溃）；周期切换锚定改为在**全量新数据**上按时间定位并重建裁剪窗口；`anchorRangeForSwitch` 最少 2 根保底 + 目标早于数据起点时从最左展示跨度；合成 K 线改为**向后生成**（终点对齐 now、各周期终点一致，与真实行情语义一致）
+- A2 连带：A11「图表可视时间范围」显示修复、pair/quad 时间轴同步索引清洁化；E2E `period-anchor.spec.ts`（最新处切周期不越界 / 回看处切周期不跳最新）
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
