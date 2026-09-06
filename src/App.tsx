@@ -212,6 +212,8 @@ export function App() {
   const paper = usePaperAccount()
   // D5/D8：吃单费率 + 市价滑点（持久化，影响下单估算与平仓计费）
   const tradeSettings = useTradeSettings()
+  // D14：收益目标（USDT，持久化）——累计盈亏达目标时提示
+  const [profitTarget, setProfitTarget] = usePersistedState<number>('profitTarget', 0)
   // J2 每品种上次结算快照：切换品种不互相误结算
   const prevPositionRef = useRef<Record<string, Positions>>({})
   // T27：图表右键菜单动作（提醒/清空画线）
@@ -244,10 +246,10 @@ export function App() {
         if (!p) continue
         const hit = checkHit(p, price)
         if (hit) {
-          // D5：平仓手续费按用户配置费率计
+          // D5：平仓手续费按用户配置费率计；D10 流水记录费率用于手续费拆分
           const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
           const { pnl } = calcPnl(p, price)
-          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
           setPosition((cur) => settleSlot(cur, slot).next)
           continue
         }
@@ -255,7 +257,7 @@ export function App() {
         if (position[slot] === null) {
           const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
           const { pnl } = calcPnl(p, price)
-          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, pnl })
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
         }
       }
     }
@@ -751,6 +753,19 @@ export function App() {
     const a = document.createElement('a')
     a.href = url
     a.download = equityCsvFileName()
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  // D15 导出模拟账户 JSON（余额+流水）：Blob + <a download> 触发下载
+  const exportAccountJson = (json: string) => {
+    if (!json) return
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'paper-account.json'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -1286,7 +1301,7 @@ export function App() {
             // D8 市价单含模拟滑点（可配置）：成交价相对盘口小幅偏移；D5 费率可配置
             const est = estimateOrder(order.price, order.qty, order.side, tradeSettings.slippageRatio, tradeSettings.takerFeeRate)
             if (!paper.canOpen(est.notional, est.fee)) return
-            paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee })
+            paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee, feeRate: tradeSettings.takerFeeRate })
             // J1 双向持仓（hedge）：buy 只影响 long 槽、sell 只影响 short 槽
             setPosition((prev) => applyHedgeOrder(prev, order.side, est.fillPrice, order.qty))
             setPositionOpen(true)
@@ -1308,6 +1323,14 @@ export function App() {
           onExport={exportTradesCsv}
           onExportEquity={exportEquityCsv}
           onReset={paper.reset}
+          profitTarget={profitTarget}
+          onProfitTargetChange={setProfitTarget}
+          snapshots={paper.snapshots}
+          onSaveSnapshot={(name) => paper.saveSnapshot(name)}
+          onLoadSnapshot={(name) => paper.loadSnapshot(name)}
+          onDeleteSnapshot={(name) => paper.deleteSnapshot(name)}
+          onExportJson={() => exportAccountJson(paper.exportAccountJson())}
+          onImportJson={paper.importAccountJson}
         />
       )}
       {positionOpen && (

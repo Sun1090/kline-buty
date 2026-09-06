@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tradeStats } from '../stats'
+import { tradeStats, profitTargetStatus } from '../stats'
 import type { TradeRecord } from '../../hooks/usePaperAccount'
 
 const close = (pnl: number): TradeRecord => ({
@@ -50,5 +50,20 @@ describe('tradeStats（D6 交易盈亏统计）', () => {
   it('只统计平仓记录，开仓记录忽略', () => {
     const open: TradeRecord = { id: 'o', at: 0, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 1, qty: 1, fee: 0.1 }
     expect(tradeStats([open, close(50)]).closed).toBe(1)
+  })
+})
+
+describe('profitTargetStatus（D14 收益目标达成）', () => {
+  it('目标 ≤0 → 未设置，progress 0', () => {
+    expect(profitTargetStatus(500, 0)).toEqual({ progress: 0, achieved: false })
+    expect(profitTargetStatus(500, -1)).toEqual({ progress: 0, achieved: false })
+  })
+  it('未达成 → progress = 累计/目标 且钳制 [0,1]', () => {
+    expect(profitTargetStatus(50, 100)).toEqual({ progress: 0.5, achieved: false })
+    expect(profitTargetStatus(-50, 100)).toEqual({ progress: 0, achieved: false })
+  })
+  it('达成 → achieved true（≥ 目标）', () => {
+    expect(profitTargetStatus(100, 100)).toEqual({ progress: 1, achieved: true })
+    expect(profitTargetStatus(150, 100)).toEqual({ progress: 1, achieved: true })
   })
 })

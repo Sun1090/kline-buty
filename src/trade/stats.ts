@@ -47,3 +47,12 @@ export function tradeStats(trades: TradeRecord[]): TradeStats {
     profitFactor: lossSum === 0 ? (wins > 0 ? winSum : 0) : winSum / lossSum,
   }
 }
+
+/** D14 收益目标达成状态：目标 >0 且累计盈亏 ≥ 目标 → 达成；progress 为完成度（0–1 钳制）。 */
+export function profitTargetStatus(totalPnl: number, target: number): { progress: number; achieved: boolean } {
+  if (!Number.isFinite(target) || target <= 0) return { progress: 0, achieved: false }
+  return {
+    progress: Math.min(1, Math.max(0, totalPnl / target)),
+    achieved: totalPnl >= target,
+  }
+}
