@@ -15,6 +15,14 @@ export interface PriceAlert {
   group?: string
   /** D9 时间窗口（本地时区，分钟自 00:00）：可选，设置后仅在窗口内触发 */
   time?: { start: number; end: number }
+  /** E6 到期时间戳（ms）：到达后提醒失效（不再触发，UI 显示已过期） */
+  expiresAt?: number
+  /** E3/E7 停用标记：组级一键开关与批量停用共用；停用后不触发 */
+  disabled?: boolean
+  /** E15 备注字段（可选，展示在提醒行） */
+  note?: string
+  /** E10 价格精度（小数位）：UI 显示提醒目标价的小数位数；缺省按价段自适应 */
+  pricePrecision?: number
 }
 
 /** 条件是否满足（价格方向） */
@@ -36,8 +44,14 @@ export function evaluateAlertCombo(a: PriceAlert, currentPrice: number, minuteOf
   return evaluateAlert(a, currentPrice) && evaluateTime(a, minuteOfDay)
 }
 
-/** 应触发（条件满足且未触发过）。可选 minuteOfDay 参与时间窗口复合判定 */
-export function shouldTrigger(a: PriceAlert, currentPrice: number, minuteOfDay?: number): boolean {
+/** E6 是否已到期（当前时间 ≥ expiresAt；无到期时间恒 false） */
+export function isExpired(a: PriceAlert, now = Date.now()): boolean {
+  return a.expiresAt !== undefined && a.expiresAt <= now
+}
+
+/** 应触发（条件满足且未触发过）。可选 minuteOfDay 参与时间窗口复合判定。E3/E6：停用或过期提醒不触发 */
+export function shouldTrigger(a: PriceAlert, currentPrice: number, minuteOfDay?: number, now = Date.now()): boolean {
+  if (a.disabled || isExpired(a, now)) return false
   const cond = minuteOfDay === undefined ? evaluateAlert(a, currentPrice) : evaluateAlertCombo(a, currentPrice, minuteOfDay)
   return !a.triggered && cond
 }
@@ -50,7 +64,9 @@ export function shouldTrigger(a: PriceAlert, currentPrice: number, minuteOfDay?:
  * - 其余保持原样。可选 minuteOfDay 参与时间窗口复合判定。
  */
 export function stepAlert(a: PriceAlert, currentPrice: number, minuteOfDay?: number, now = Date.now()): PriceAlert {
-  if (shouldTrigger(a, currentPrice, minuteOfDay)) {
+  // E3/E6：停用或过期不触发也不重新武装
+  if (a.disabled || isExpired(a, now)) return a
+  if (shouldTrigger(a, currentPrice, minuteOfDay, now)) {
     // K10 间隔保护：repeatInterval 分钟内的重复条件（含首次触发后）不二次触发
     if (a.lastTriggeredAt !== undefined && a.repeatInterval && now - a.lastTriggeredAt < a.repeatInterval * 60_000) {
       return a
@@ -62,7 +78,22 @@ export function stepAlert(a: PriceAlert, currentPrice: number, minuteOfDay?: num
   return a
 }
 
-export function createAlert(symbol: string, direction: 'above' | 'below', price: number, repeat = false, time?: { start: number; end: number }, repeatInterval?: number, group?: string): PriceAlert {
+export interface AlertCreateOptions {
+  repeat?: boolean
+  time?: { start: number; end: number }
+  repeatInterval?: number
+  group?: string
+  /** E6 到期时间戳（ms） */
+  expiresAt?: number
+  /** E15 备注 */
+  note?: string
+  /** E10 价格精度（小数位） */
+  pricePrecision?: number
+  /** E3/E7 初始停用标记 */
+  disabled?: boolean
+}
+
+export function createAlert(symbol: string, direction: 'above' | 'below', price: number, repeat = false, time?: { start: number; end: number }, repeatInterval?: number, group?: string, opts?: AlertCreateOptions): PriceAlert {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     symbol,
@@ -73,7 +104,21 @@ export function createAlert(symbol: string, direction: 'above' | 'below', price:
     repeatInterval,
     group,
     time,
+    disabled: opts?.disabled,
+    note: opts?.note,
+    expiresAt: opts?.expiresAt,
+    pricePrecision: opts?.pricePrecision,
   }
+}
+
+/** E7 批量停用/启用：按 id 集合统一改写 disabled。纯函数，返回新数组 */
+export function setAlertsDisabled(alerts: PriceAlert[], ids: Set<string>, disabled: boolean): PriceAlert[] {
+  return alerts.map((a) => (ids.has(a.id) && a.disabled !== disabled ? { ...a, disabled } : a))
+}
+
+/** E3 组级一键开关：组内全部提醒停用/启用（未分组不受影响）。返回新数组 */
+export function setGroupDisabled(alerts: PriceAlert[], group: string, disabled: boolean): PriceAlert[] {
+  return alerts.map((a) => (a.group === group && a.disabled !== disabled ? { ...a, disabled } : a))
 }
 
 /** 已触发的提醒是否仍满足（用于显示"已触发"状态） */

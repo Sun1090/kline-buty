@@ -187,11 +187,13 @@ describe('usePriceAlerts', () => {
     expect(result.current.alerts).toEqual([])
   })
 
-  it('permission 非 granted → 最新价到达不通知', () => {
+  it('permission 非 granted → 不弹系统通知，但站内横幅事件照常触发（E1 web 渠道）', () => {
     ;(globalThis as Record<string, unknown>).Notification = class {
       static permission = 'denied'
       static requestPermission = vi.fn(async () => 'denied')
     }
+    const dispatchMock = vi.fn()
+    window.dispatchEvent = dispatchMock
     const { result, rerender } = renderHook(({ price }) => usePriceAlerts(price), {
       initialProps: { price: null as { symbol: string; price: number } | null },
     })
@@ -200,7 +202,10 @@ describe('usePriceAlerts', () => {
     })
     rerender({ price: { symbol: 'BTCUSDT', price: 65100 } })
     expect(notifyMock).not.toHaveBeenCalled()
-    expect(result.current.alerts[0].triggered).toBe(false)
+    // 默认渠道 both：无系统权限跳过系统通知，但 web 横幅事件仍派发且标记 triggered
+    expect(dispatchMock).toHaveBeenCalled()
+    expect(result.current.alerts[0].triggered).toBe(true)
+    expect(result.current.history).toHaveLength(1)
   })
 
   it('Notification 构造失败 → 不阻塞标记 triggered', () => {
@@ -221,3 +226,71 @@ describe('usePriceAlerts', () => {
     expect(result.current.alerts[0].triggered).toBe(true)
   })
 })
+
+  it('E2 多品种监控：prices 表中其他品种价格到达触发其提醒', () => {
+    const { result, rerender } = renderHook(
+      ({ price, prices }) => usePriceAlerts(price, prices),
+      {
+        initialProps: {
+          price: { symbol: 'BTCUSDT', price: 50000 } as { symbol: string; price: number },
+          prices: { ETHUSDT: 3000 } as Record<string, number>,
+        },
+      },
+    )
+    act(() => {
+      result.current.addAlert('ETHUSDT', 'above', 2990)
+    })
+    expect(result.current.pendingCount).toBe(1)
+    rerender({ price: { symbol: 'BTCUSDT', price: 50000 }, prices: { ETHUSDT: 2995 } })
+    expect(result.current.alerts[0].triggered).toBe(true)
+    expect(result.current.history[0]).toMatchObject({ symbol: 'ETHUSDT' })
+  })
+
+  it('E12 pendingCount：未触发/未停用/未过期才计入待触发', () => {
+    const { result } = renderHook(() => usePriceAlerts(null))
+    act(() => result.current.addAlert('BTCUSDT', 'above', 65000))
+    expect(result.current.pendingCount).toBe(1)
+    act(() => result.current.updateAlert(result.current.alerts[0].id, { disabled: true }))
+    expect(result.current.pendingCount).toBe(0)
+    act(() => result.current.updateAlert(result.current.alerts[0].id, { disabled: false, expiresAt: 1 }))
+    expect(result.current.pendingCount).toBe(0)
+  })
+
+  it('E14 exportAlertsJson / importAlertsJson：往返恢复；非法输入拒绝', () => {
+    const { result } = renderHook(() => usePriceAlerts(null))
+    act(() => result.current.addAlert('BTCUSDT', 'above', 65000))
+    const json = result.current.exportAlertsJson()
+    const parsed = JSON.parse(json)
+    expect(parsed.version).toBe(1)
+    expect(parsed.alerts).toHaveLength(1)
+    expect(result.current.importAlertsJson('{bad')).toBe(false)
+    expect(result.current.importAlertsJson('{"alerts":[{"id":1}]}')).toBe(false)
+    act(() => result.current.removeAlert(result.current.alerts[0].id))
+    expect(result.current.alerts).toHaveLength(0)
+    act(() => {
+      expect(result.current.importAlertsJson(json)).toBe(true)
+    })
+    expect(result.current.alerts).toHaveLength(1)
+  })
+
+  it('E4 模板：保存/读取/删除（重名与空名拒绝）', () => {
+    const { result } = renderHook(() => usePriceAlerts(null))
+    act(() => {
+      expect(result.current.saveTemplate({ name: '突破', direction: 'above', price: 65000 })).toBe(true)
+      expect(result.current.saveTemplate({ name: '突破', direction: 'below', price: 1 })).toBe(false)
+      expect(result.current.saveTemplate({ name: '  ', direction: 'above', price: 1 })).toBe(false)
+    })
+    expect(result.current.templates).toEqual(['突破'])
+    expect(result.current.loadTemplate('突破')).toMatchObject({ direction: 'above', price: 65000 })
+    act(() => result.current.deleteTemplate('突破'))
+    expect(result.current.templates).toEqual([])
+    expect(result.current.loadTemplate('突破')).toBeNull()
+  })
+
+  it('E1 推送渠道设置并持久化（默认 both）', () => {
+    const { result } = renderHook(() => usePriceAlerts(null))
+    expect(result.current.channel).toBe('both')
+    act(() => result.current.setChannel('web'))
+    expect(result.current.channel).toBe('web')
+    expect(localStorage.getItem('kline-buty:alertChannel')).toBe('web')
+  })

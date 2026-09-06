@@ -266,6 +266,18 @@ export function App() {
   }, [position, symbol])
   // E4 面板折叠/展开记忆：市场数据面板状态持久化（刷新后恢复上次开合）
   const [alertsOpen, setAlertsOpen] = usePersistedState('alertsOpen', false)
+  // E1 站内横幅：监听提醒触发事件（web 渠道由 usePriceAlerts dispatch），4s 自动消失
+  const [alertToast, setAlertToast] = useState<{ id: number; symbol: string; direction: 'above' | 'below'; price: number; triggeredPrice: number } | null>(null)
+  useEffect(() => {
+    const onAlert = (e: Event) => {
+      const d = (e as CustomEvent<{ symbol: string; direction: 'above' | 'below'; price: number; triggeredPrice: number }>).detail
+      if (!d || typeof d.symbol !== 'string') return
+      setAlertToast({ id: Date.now(), symbol: d.symbol, direction: d.direction, price: d.price, triggeredPrice: d.triggeredPrice })
+      window.setTimeout(() => setAlertToast(null), 4000)
+    }
+    window.addEventListener('price-alert-triggered', onAlert)
+    return () => window.removeEventListener('price-alert-triggered', onAlert)
+  }, [])
   const [depthOpen, setDepthOpen] = usePersistedState('depthOpen', false)
   const [orderBookOpen, setOrderBookOpen] = usePersistedState('orderBookOpen', false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
@@ -836,6 +848,11 @@ export function App() {
           e.preventDefault()
           setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])
           break
+        case 'toggle-alerts':
+          // E13 提醒快捷键：快速打开/关闭提醒面板
+          e.preventDefault()
+          setAlertsOpen((v) => !v)
+          break
         case 'escape':
           // Esc：关闭模态/侧栏面板 → 关闭快捷键浮层 → 退出文本编辑 → 取消画线进度 → 取消选中画线
           if (settingsOpen) setSettingsOpen(false)
@@ -934,6 +951,45 @@ export function App() {
             onClick={() => setUpdateBanner(false)}
             aria-label={t('common.close')}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {/* E1 站内横幅：提醒触发时底部居中 toast（web/both 渠道触发，4s 自动消失） */}
+      {alertToast && (
+        <div
+          data-testid="alert-toast"
+          role="status"
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 14px',
+            background: 'var(--panel)',
+            border: '1px solid var(--accent)',
+            color: 'var(--text)',
+            borderRadius: 8,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            fontSize: 12,
+            maxWidth: 'min(92vw, 420px)',
+          }}
+        >
+          <span>🔔</span>
+          <span>
+            <b>{alertToast.symbol.replace('USDT', '/USDT')}</b> {alertToast.direction === 'above' ? '≥' : '≤'} {alertToast.price.toFixed(2)} →{' '}
+            {alertToast.triggeredPrice.toFixed(2)}
+          </span>
+          <button
+            data-testid="alert-toast-dismiss"
+            onClick={() => setAlertToast(null)}
+            aria-label={t('common.close')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12 }}
           >
             ✕
           </button>
@@ -1063,6 +1119,7 @@ export function App() {
           })}
           alertsActive={alertsOpen}
           onToggleAlerts={() => setAlertsOpen((v) => !v)}
+          alertsPending={alertsApi.pendingCount}
           depthActive={depthOpen}
           onToggleDepth={() => setDepthOpen((v) => !v)}
           orderBookActive={orderBookOpen}
@@ -1180,6 +1237,7 @@ export function App() {
           })}
           alertsActive={alertsOpen}
           onToggleAlerts={() => setAlertsOpen((v) => !v)}
+          alertsPending={alertsApi.pendingCount}
           depthActive={depthOpen}
           onToggleDepth={() => setDepthOpen((v) => !v)}
           orderBookActive={orderBookOpen}

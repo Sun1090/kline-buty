@@ -217,9 +217,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     fn()
     setMenu(null)
   }
-  const moreToggles: { label: string; active: boolean; onToggle: () => void; title?: string; disabled?: boolean }[] = [
+  const moreToggles: { label: string; active: boolean; onToggle: () => void; title?: string; disabled?: boolean; badge?: number }[] = [
     { label: t('panel.position'), active: props.positionActive, onToggle: closeMore(props.onTogglePosition), title: t('panel.positionTitle') },
-    { label: t('panel.alerts'), active: props.alertsActive, onToggle: closeMore(props.onToggleAlerts), title: t('panel.alertsTitle') },
+    { label: t('panel.alerts'), active: props.alertsActive, onToggle: closeMore(props.onToggleAlerts), title: t('panel.alertsTitle'), badge: props.alertsPending },
     { label: t('panel.depth'), active: props.depthActive, onToggle: closeMore(props.onToggleDepth), title: t('panel.depthTitle') },
     { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: closeMore(props.onToggleOrderBook), title: t('panel.orderBookTitle') },
     { label: t('panel.vp'), active: props.vpActive, onToggle: closeMore(props.onToggleVp), title: t('panel.vpTitle') },
@@ -723,6 +723,29 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             {moreToggles.map((it) => (
               <PanelButton key={it.label} onClick={it.onToggle} title={it.title} active={it.active} disabled={it.disabled}>
                 {it.label}
+                {it.badge ? (
+                  <span
+                    data-testid="alerts-pending-badge"
+                    title={t('alert.pending')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 14,
+                      height: 14,
+                      padding: '0 3px',
+                      marginLeft: 5,
+                      borderRadius: 7,
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      fontSize: 9,
+                      fontWeight: 600,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {it.badge > 99 ? '99+' : it.badge}
+                  </span>
+                ) : null}
               </PanelButton>
             ))}
           </div>

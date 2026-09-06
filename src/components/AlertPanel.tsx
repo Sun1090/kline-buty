@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
-import type { AlertsApi, AlertSoundKind } from '../hooks/usePriceAlerts'
+import { useMemo, useRef, useState } from 'react'
+import type { AlertsApi, AlertSoundKind, AlertChannel, AlertTemplate } from '../hooks/usePriceAlerts'
 import { playAlertBeep } from '../hooks/usePriceAlerts'
+import { isExpired } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
 
 interface AlertPanelProps {
@@ -33,7 +34,45 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   /** D9 时间窗口：空=全天；格式 HH:MM（本地时区） */
   const [timeFrom, setTimeFrom] = useState('')
   const [timeTo, setTimeTo] = useState('')
-  const { alerts, permission, addAlert, removeAlert, resetAlert, requestPermission, soundEnabled, setSoundEnabled, soundKind, setSoundKind, history, clearHistory } = alertsApi
+  /** E15 备注 */
+  const [note, setNote] = useState('')
+  /** E6 到期时间（datetime-local；空=永久有效） */
+  const [expiresAt, setExpiresAt] = useState('')
+  /** E10 价格精度：空=自动；可选 2/4/6/8 位小数 */
+  const [precision, setPrecision] = useState('')
+  /** E7 批量模式：勾选多行后统一删除/停用/启用 */
+  const [batchMode, setBatchMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  /** E4 模板名输入 + 当前模板选中 */
+  const [templateName, setTemplateName] = useState('')
+  /** E14 导入结果提示 */
+  const [importStatus, setImportStatus] = useState<'' | 'ok' | 'fail'>('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const {
+    alerts,
+    permission,
+    addAlert,
+    removeAlert,
+    resetAlert,
+    requestPermission,
+    soundEnabled,
+    setSoundEnabled,
+    soundKind,
+    setSoundKind,
+    channel,
+    setChannel,
+    history,
+    clearHistory,
+    triggerCounts,
+    setAlertsDisabled,
+    setGroupEnabled,
+    exportAlertsJson,
+    importAlertsJson,
+    templates,
+    saveTemplate,
+    loadTemplate,
+    deleteTemplate,
+  } = alertsApi
 
   /** HH:MM → 分钟自 0:00；非法返回 null */
   const parseHm = (v: string): number | null => {
@@ -43,6 +82,14 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
     const min = Number(m[2])
     if (h > 23 || min > 59) return null
     return h * 60 + min
+  }
+  /** 分钟自 0:00 → HH:MM（本地，补零） */
+  const toHm = (minutes: number): string => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+  /** 时间戳 → datetime-local 值（本地时区，供 E6 到期回填） */
+  const toLocalInput = (ms: number): string => {
+    const d = new Date(ms)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
   const timeWindow =
     timeFrom.trim() === '' && timeTo.trim() === ''
@@ -60,6 +107,102 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   const valid = Number.isFinite(priceNum) && priceNum > 0
   const intervalNum = Number(repeatInterval)
   const intervalValid = Number.isFinite(intervalNum) && intervalNum >= 0
+  // E6 到期时间戳（datetime-local → ms；空=无到期）
+  const expiryMs = expiresAt.trim() === '' ? undefined : new Date(expiresAt).getTime()
+  // E10 价格精度：空=自动
+  const precisionNum = precision === '' ? undefined : Number(precision)
+  /** 提醒目标价展示：按价格精度格式化（缺省 2 位） */
+  const displayPrice = (a: { price: number; pricePrecision?: number }) => a.price.toFixed(a.pricePrecision ?? 2)
+  /** 提交提醒：含 E15 备注 / E6 到期 / E10 精度 */
+  const submitAlert = () => {
+    if (!valid || !intervalValid) return
+    addAlert(
+      symbol,
+      direction,
+      priceNum,
+      repeat,
+      timeWindow,
+      repeat ? intervalNum || undefined : undefined,
+      group.trim() || undefined,
+      { note: note.trim() || undefined, expiresAt: expiryMs, pricePrecision: precisionNum },
+    )
+    setPrice('')
+    setRepeat(false)
+    setRepeatInterval('0')
+    setGroup('')
+    setTimeFrom('')
+    setTimeTo('')
+    setNote('')
+    setExpiresAt('')
+    setPrecision('')
+  }
+  /** E4 保存当前条件为模板（重名/空名拒绝） */
+  const saveCurrentTemplate = () => {
+    if (!valid || !templateName.trim()) return
+    const tpl: AlertTemplate = {
+      name: templateName.trim(),
+      direction,
+      price: priceNum,
+      repeat,
+      repeatInterval: repeat ? intervalNum || undefined : undefined,
+      group: group.trim() || undefined,
+      note: note.trim() || undefined,
+      expiresAt: expiryMs,
+      pricePrecision: precisionNum,
+      time: timeWindow,
+    }
+    if (saveTemplate(tpl)) setTemplateName('')
+  }
+  /** E4 套用模板到表单（含到期时间、时间窗口回填） */
+  const applyTemplate = (name: string) => {
+    const tpl = loadTemplate(name)
+    if (!tpl) return
+    setDirection(tpl.direction)
+    setPrice(String(tpl.price))
+    setRepeat(!!tpl.repeat)
+    setRepeatInterval(tpl.repeatInterval ? String(tpl.repeatInterval) : '0')
+    setGroup(tpl.group ?? '')
+    setNote(tpl.note ?? '')
+    setExpiresAt(tpl.expiresAt ? toLocalInput(tpl.expiresAt) : '')
+    setPrecision(tpl.pricePrecision !== undefined ? String(tpl.pricePrecision) : '')
+    if (tpl.time) {
+      setTimeFrom(toHm(tpl.time.start))
+      setTimeTo(toHm(tpl.time.end))
+    }
+  }
+  /** E7 批量勾选 */
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  /** E14 导入：读文件 → 校验 → 恢复；成功/失败给短提示 */
+  const handleImportFile = (file: File | undefined) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const ok = importAlertsJson(String(reader.result ?? ''))
+      setImportStatus(ok ? 'ok' : 'fail')
+      window.setTimeout(() => setImportStatus(''), 2500)
+    }
+    reader.readAsText(file)
+  }
+  /** E14 导出：Blob + <a download> 触发下载 */
+  const downloadAlerts = () => {
+    const json = exportAlertsJson()
+    if (!json) return
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'alerts.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   // K13 排序：按价格 / 创建时间 / 品种
   const symbolAlerts = [...alerts.filter((a) => a.symbol === symbol)].sort((x, y) => {
@@ -169,6 +312,55 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         )}
       </div>
 
+      {/* E1 推送渠道 + E14 JSON 导入/导出 */}
+      <div data-testid="alert-tools" style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+        <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('alert.channel')}</span>
+        <select
+          data-testid="alert-channel"
+          value={channel}
+          onChange={(e) => setChannel(e.target.value as AlertChannel)}
+          aria-label={t('alert.channel')}
+          title={t('alert.channel')}
+          style={{ background: 'var(--bg)', color: 'var(--text)', border: '1px solid #2a2e39', borderRadius: 4, fontSize: 11, padding: '2px 4px' }}
+        >
+          {(['both', 'system', 'web'] as const).map((c) => (
+            <option key={c} value={c}>
+              {t(`alert.channel${c[0].toUpperCase()}${c.slice(1)}` as never)}
+            </option>
+          ))}
+        </select>
+        <span style={{ flex: 1 }} />
+        <button
+          data-testid="alert-export-json"
+          onClick={downloadAlerts}
+          title={t('paper.exportJson')}
+          style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+        >
+          {t('paper.exportJson')}
+        </button>
+        <button
+          data-testid="alert-import-json"
+          onClick={() => fileRef.current?.click()}
+          title={t('paper.importJson')}
+          style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+        >
+          {t('paper.importJson')}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: 'none' }}
+          data-testid="alert-import-file"
+          onChange={(e) => {
+            handleImportFile(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
+        {importStatus === 'ok' && <span style={{ color: 'var(--up)', fontSize: 11 }}>{t('paper.importDone')}</span>}
+        {importStatus === 'fail' && <span style={{ color: 'var(--down)', fontSize: 11 }}>{t('paper.importFail')}</span>}
+      </div>
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         {(['above', 'below'] as const).map((d) => (
           <button
@@ -198,17 +390,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           onChange={(e) => setPrice(e.target.value)}
         />
         <button
-          onClick={() => {
-            if (valid && intervalValid) {
-              addAlert(symbol, direction, priceNum, repeat, timeWindow, repeat ? intervalNum || undefined : undefined, group.trim() || undefined)
-              setPrice('')
-              setRepeat(false)
-              setRepeatInterval('0')
-              setGroup('')
-              setTimeFrom('')
-              setTimeTo('')
-            }
-          }}
+          onClick={submitAlert}
           disabled={!valid || !intervalValid}
           style={{
             flex: 1,
@@ -256,6 +438,85 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           placeholder={t('alert.groupPlaceholder')}
           style={{ ...inputStyle, width: 110 }}
         />
+      </div>
+      {/* E15 备注字段 */}
+      <div data-testid="alert-note-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>{t('alert.note')}</span>
+        <input
+          data-testid="alert-note-input"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={t('alert.notePlaceholder')}
+          style={{ ...inputStyle, width: 170 }}
+        />
+      </div>
+      {/* E6 到期时间：datetime-local，空=永久有效 */}
+      <div data-testid="alert-expiry-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>{t('alert.expiresAt')}</span>
+        <input
+          data-testid="alert-expiry-input"
+          type="datetime-local"
+          value={expiresAt}
+          onChange={(e) => setExpiresAt(e.target.value)}
+          style={{ ...inputStyle, width: 165, fontSize: 11 }}
+        />
+      </div>
+      {/* E10 价格精度：空=自动，可选小数位 */}
+      <div data-testid="alert-precision-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>{t('alert.precision')}</span>
+        <select
+          data-testid="alert-precision"
+          value={precision}
+          onChange={(e) => setPrecision(e.target.value)}
+          aria-label={t('alert.precision')}
+          style={{ background: 'var(--bg)', color: 'var(--text)', border: '1px solid #2a2e39', borderRadius: 4, fontSize: 11, padding: '2px 4px' }}
+        >
+          <option value="">{t('alert.precisionAuto')}</option>
+          {[2, 4, 6, 8].map((p) => (
+            <option key={p} value={String(p)}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* E4 提醒模板：保存当前条件 / 一键套用 / 删除 */}
+      <div data-testid="alert-template-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
+        <span>{t('alert.template')}</span>
+        <input
+          data-testid="alert-template-name"
+          value={templateName}
+          onChange={(e) => setTemplateName(e.target.value)}
+          placeholder={t('alert.templateName')}
+          style={{ ...inputStyle, width: 76 }}
+        />
+        <button
+          data-testid="alert-template-save"
+          onClick={saveCurrentTemplate}
+          title={t('alert.saveTemplate')}
+          style={{ border: 'none', background: 'rgba(41,98,255,0.15)', color: 'var(--accent)', borderRadius: 4, padding: '1px 6px', fontSize: 11, cursor: 'pointer' }}
+        >
+          {t('alert.saveTemplate')}
+        </button>
+        {templates.map((name) => (
+          <span key={name} data-testid={`alert-template-${name}`} style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
+            <button
+              data-testid={`alert-template-load-${name}`}
+              onClick={() => applyTemplate(name)}
+              title={t('alert.applyTemplate')}
+              style={{ border: 'none', background: 'rgba(38,166,154,0.12)', color: 'var(--up)', borderRadius: 3, padding: '1px 5px', fontSize: 10, cursor: 'pointer' }}
+            >
+              {name}
+            </button>
+            <button
+              data-testid={`alert-template-del-${name}`}
+              onClick={() => deleteTemplate(name)}
+              aria-label={`${t('common.delete')} ${name}`}
+              style={{ border: 'none', background: 'none', color: 'var(--text-faint)', borderRadius: 3, fontSize: 10, cursor: 'pointer', padding: '0 2px' }}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
       </div>
       {/* K13 排序：价格 / 时间 / 品种 */}
       <div data-testid="alert-sort" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
@@ -307,51 +568,170 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
         </div>
       )}
 
+      {/* E7 批量操作：勾选多行后统一删除/停用/启用 */}
+      <div data-testid="alert-batch" style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+        <button
+          data-testid="alert-batch-toggle"
+          onClick={() => {
+            setBatchMode((v) => !v)
+            setSelected(new Set())
+          }}
+          aria-pressed={batchMode}
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: batchMode ? 'rgba(41,98,255,0.18)' : 'transparent',
+            color: batchMode ? 'var(--accent)' : 'var(--text-dim)',
+          }}
+        >
+          {t('alert.batch')}
+        </button>
+        {batchMode && (
+          <>
+            <button
+              data-testid="alert-batch-select-all"
+              onClick={() => setSelected(new Set(symbolAlerts.map((a) => a.id)))}
+              style={{ border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            >
+              {t('alert.selectAll')}
+            </button>
+            <button
+              data-testid="alert-batch-clear"
+              onClick={() => setSelected(new Set())}
+              style={{ border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            >
+              {t('alert.clearSelection')}
+            </button>
+            <button
+              data-testid="alert-batch-enable"
+              onClick={() => {
+                setAlertsDisabled([...selected], false)
+                setSelected(new Set())
+              }}
+              style={{ border: 'none', background: 'transparent', color: 'var(--up)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            >
+              {t('alert.enableSelected')}
+            </button>
+            <button
+              data-testid="alert-batch-disable"
+              onClick={() => {
+                setAlertsDisabled([...selected], true)
+                setSelected(new Set())
+              }}
+              style={{ border: 'none', background: 'transparent', color: 'var(--yellow)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            >
+              {t('alert.disableSelected')}
+            </button>
+            <button
+              data-testid="alert-batch-delete"
+              onClick={() => {
+                selected.forEach((id) => removeAlert(id))
+                setSelected(new Set())
+              }}
+              style={{ border: 'none', background: 'transparent', color: 'var(--down)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            >
+              {t('alert.deleteSelected')}
+            </button>
+          </>
+        )}
+      </div>
+
       {symbolAlerts.length === 0 ? (
         <div style={{ color: 'var(--text-faint)' }}>{t('alert.none')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {groupedAlerts.map(([g, items]) => (
             <div key={g || '__ungrouped__'}>
-              {/* K2 分组头 */}
+              {/* K2 分组头 + E3 组级一键开关 */}
               {g !== '' && (
-                <div data-testid={`alert-group-${g}`} style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, margin: '2px 0' }}>
+                <div data-testid={`alert-group-${g}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--accent)', fontWeight: 600, margin: '2px 0' }}>
+                  <button
+                    data-testid={`alert-group-toggle-${g}`}
+                    onClick={() => setGroupEnabled(g, items.some((x) => x.disabled))}
+                    title={t('alert.groupToggle')}
+                    aria-pressed={!items.every((x) => x.disabled)}
+                    style={{
+                      border: 'none',
+                      background: items.every((x) => x.disabled) ? 'rgba(239,83,80,0.2)' : 'rgba(38,166,154,0.15)',
+                      color: items.every((x) => x.disabled) ? 'var(--down)' : 'var(--up)',
+                      borderRadius: 3,
+                      fontSize: 10,
+                      cursor: 'pointer',
+                      padding: '0 5px',
+                    }}
+                  >
+                    {items.every((x) => x.disabled) ? '🔴' : '🟢'}
+                  </button>
                   {g}
                 </div>
               )}
-              {items.map((a) => (
-                <div
-                  key={a.id}
-                  data-testid="alert-row"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    marginBottom: 4,
-                    background: a.triggered ? 'rgba(245,192,47,0.08)' : 'transparent',
-                    border: '1px solid #2a2e39',
-                  }}
-                >
-                  <span style={{ color: a.triggered ? 'var(--yellow)' : 'var(--text)' }}>
-                    {a.direction === 'above' ? '≥' : '≤'} {a.price.toFixed(2)}
-                    {a.repeat && <span style={{ color: 'var(--accent)', fontSize: 10 }}> ↻</span>}
-                    {a.repeatInterval ? <span style={{ color: 'var(--text-faint)', fontSize: 10 }}> {a.repeatInterval}′</span> : null}
-                    {a.triggered && ` · ${t('alert.triggered')}`}
-                  </span>
-                  <span style={{ display: 'flex', gap: 6 }}>
-                    {a.triggered && (
-                      <button onClick={() => resetAlert(a.id)} style={{ background: 'none', border: 'none', color: '#4e9cf5', cursor: 'pointer', fontSize: 11 }}>
-                        {t('alert.reset')}
-                      </button>
+              {items.map((a) => {
+                const expired = isExpired(a)
+                const count = triggerCounts[a.id] ?? 0
+                const checked = selected.has(a.id)
+                return (
+                  <div
+                    key={a.id}
+                    data-testid="alert-row"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      marginBottom: 4,
+                      background: expired ? 'rgba(245,192,47,0.05)' : a.triggered ? 'rgba(245,192,47,0.08)' : 'transparent',
+                      border: '1px solid #2a2e39',
+                      opacity: a.disabled ? 0.55 : 1,
+                    }}
+                  >
+                    {batchMode && (
+                      <input
+                        type="checkbox"
+                        data-testid={`alert-select-${a.id}`}
+                        checked={checked}
+                        onChange={() => toggleSelect(a.id)}
+                        aria-label={t('alert.select')}
+                        style={{ accentColor: 'var(--accent)', margin: 0, flexShrink: 0 }}
+                      />
                     )}
-                    <button onClick={() => removeAlert(a.id)} style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 11 }}>
-                      {t('common.delete')}
-                    </button>
-                  </span>
-                </div>
-              ))}
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 }}>
+                      <span style={{ color: a.triggered ? 'var(--yellow)' : 'var(--text)', fontSize: 11 }}>
+                        {a.direction === 'above' ? '≥' : '≤'} {displayPrice(a)}
+                        {a.repeat && <span style={{ color: 'var(--accent)', fontSize: 10 }}> ↻</span>}
+                        {a.repeatInterval ? <span style={{ color: 'var(--text-faint)', fontSize: 10 }}> {a.repeatInterval}′</span> : null}
+                        {expired && <span style={{ color: 'var(--yellow)', fontSize: 10 }}> · {t('alert.expired')}</span>}
+                        {a.triggered && ` · ${t('alert.triggered')}`}
+                        {count > 0 && <span style={{ color: 'var(--text-faint)', fontSize: 10 }}> · {t('alert.triggerCount')} {count}</span>}
+                      </span>
+                      {a.note && (
+                        <span
+                          data-testid={`alert-note-${a.id}`}
+                          style={{ color: 'var(--text-faint)', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}
+                        >
+                          {a.note}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      {!batchMode && a.triggered && (
+                        <button onClick={() => resetAlert(a.id)} style={{ background: 'none', border: 'none', color: '#4e9cf5', cursor: 'pointer', fontSize: 11 }}>
+                          {t('alert.reset')}
+                        </button>
+                      )}
+                      {!batchMode && (
+                        <button onClick={() => removeAlert(a.id)} style={{ background: 'none', border: 'none', color: 'var(--down)', cursor: 'pointer', fontSize: 11 }}>
+                          {t('common.delete')}
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
