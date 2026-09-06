@@ -1,11 +1,14 @@
-import type { Candle } from '../chart/types'
+import type { Candle, Period } from '../chart/types'
+import { PERIOD_MS } from '../chart/types'
 import { alignTimeToPeriod } from './align'
 
 export interface SyntheticOptions {
   /** 起始时间（秒），默认从当前时间倒推 */
   startTime?: number
-  /** 每根 K 线间隔（秒），默认 60 */
+  /** 每根 K 线间隔（秒），默认 60；与 period 同时提供时由 period 推导 */
   stepSeconds?: number
+  /** 周期（可选）：提供时起点对齐到该周期边界、步长 = 该周期毫秒/1000（切周期压测用） */
+  period?: Period
   /** 基准价 */
   base?: number
   /** 波动幅度 */
@@ -17,9 +20,16 @@ export interface SyntheticOptions {
  * 与离线演示（?perf=N 进入压测模式，不依赖交易所网络）。
  */
 export function generateSyntheticCandles(count: number, opts: SyntheticOptions = {}): Candle[] {
-  const { startTime = Math.floor(Date.now() / 1000), stepSeconds = 60, base = 50_000, vol = 5_000 } = opts
-  // G1 时间戳对齐：起始时间对齐到 1m 周期边界（默认步长 60s），保证首根即整分、时间轴刻度一致
-  const start = alignTimeToPeriod(startTime, '1m')
+  const {
+    startTime = Math.floor(Date.now() / 1000),
+    period,
+    stepSeconds = period ? PERIOD_MS[period] / 1000 : 60,
+    base = 50_000,
+    vol = 5_000,
+  } = opts
+  // A1 时间戳对齐：提供 period 时对齐该周期边界（首根即边界），否则对齐 1m（默认步长 60s）
+  const alignPeriod: Period = period ?? '1m'
+  const start = alignTimeToPeriod(startTime, alignPeriod)
   const out: Candle[] = new Array(count)
   for (let i = 0; i < count; i++) {
     const drift = Math.sin(i / 200) * vol + Math.sin(i / 7) * 30

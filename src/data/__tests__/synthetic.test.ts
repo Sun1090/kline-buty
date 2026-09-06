@@ -25,6 +25,21 @@ describe('generateSyntheticCandles', () => {
     const b = generateSyntheticCandles(1000, { startTime: 1, stepSeconds: 60, base: 100, vol: 10 })
     expect(a).toEqual(b)
   })
+
+  it('A1 period 感知：步长 = 周期毫秒/1000，且起点对齐该周期边界', () => {
+    // startTime 非 5m 边界 → 首根落到边界，间隔 300s
+    const t = 1_700_000_000 + 42
+    const cs = generateSyntheticCandles(100, { startTime: t, period: '5m' })
+    expect(cs[0].time % 300).toBe(0)
+    expect(cs[0].time).toBeLessThanOrEqual(t)
+    for (let i = 1; i < cs.length; i++) expect(cs[i].time - cs[i - 1].time).toBe(300)
+  })
+
+  it('A1 period 感知：1d 步长 86400s 且首根 UTC 零点', () => {
+    const cs = generateSyntheticCandles(10, { startTime: 1_700_000_000, period: '1d' })
+    expect(cs[0].time % 86_400).toBe(0)
+    expect(cs[1].time - cs[0].time).toBe(86_400)
+  })
 })
 
 describe('tickSynthetic', () => {
