@@ -22,6 +22,7 @@
 ## B 阶段 - 指标引擎扩展
 - B1（★）十字光标显示副图指标当前值：新增 `valuesAtTime`/`histValueAtTime` 二分纯函数（指标线在光标时刻精确取值，预热期省略）；`chart-indicator-last` 信息条在光标激活时按时刻取值、移出回落最新；近光标 tooltip 原已按时刻取副图值
 - B1 测试：取值纯函数单测 4 例（命中/未命中/升序二分/空）；E2E `indicator-crosshair.spec.ts`（设 RSI → hover 左区取历史时刻值 ≠ 右缘最新值 → 移出回落）
+- B2–B15 核对完成：全部承接 v0.3 H 系列已实现（信号打点 findCrossovers/annotateCrossovers、阈值着色、W%R/TRIX/DPO/Vortex 指标、参数导入导出、主副图叠加、线色自定义、Y 轴定标、worker 化、回测标注、指标收藏、CSV 值导出），代码核查 + 单测确认，逐项标注 ✅（B 阶段 15 项闭合）
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
