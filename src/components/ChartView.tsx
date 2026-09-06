@@ -31,7 +31,7 @@ import { annotateCrossovers, findCrossovers } from '../indicators/crossovers'
 import { calcTRIX } from '../indicators/trix'
 import { calcDPO } from '../indicators/dpo'
 import { calcVortex } from '../indicators/vortex'
-import { lastHistValue, lastValuesOfLines } from '../indicators/lastValues'
+import { histValueAtTime, lastHistValue, lastValuesOfLines, valuesAtTime } from '../indicators/lastValues'
 import type { IndicatorParams } from '../indicators/params'
 import type { SubIndicatorData } from '../chart/adapter'
 import { useSubIndicatorWorker } from '../hooks/useSubIndicatorWorker'
@@ -1345,11 +1345,21 @@ export function ChartView({
           {fmtRangeTime(visibleRange.to, timezoneMode, localeFor(lang))}
         </div>
       )}
-      {/* H9 指标末尾值一览（主图线 + 副图线/柱，随数据更新） */}
+      {/* B1/H9 指标值一览（主图线 + 副图线/柱）：
+          十字光标激活时按光标时刻取值（跟随光标），否则显示最新值 */}
       {(() => {
-        const main = lastValuesOfLines(mainData.lines)
-        const sub = subData ? lastValuesOfLines(subData.lines ?? []) : []
-        const subHist = subData ? lastHistValue(subData.hist) : null
+        const crosshairTime = tooltip?.time ?? null
+        const main = crosshairTime != null ? valuesAtTime(mainData.lines, crosshairTime) : lastValuesOfLines(mainData.lines)
+        const sub = subData
+          ? crosshairTime != null
+            ? valuesAtTime(subData.lines ?? [], crosshairTime)
+            : lastValuesOfLines(subData.lines ?? [])
+          : []
+        const subHist = subData
+          ? crosshairTime != null
+            ? histValueAtTime(subData.hist, crosshairTime)
+            : lastHistValue(subData.hist)
+          : null
         if (main.length === 0 && sub.length === 0 && subHist === null) return null
         const rows: { id: string; value: string }[] = [
           ...main.map((v) => ({ id: v.id, value: fmtPrice(v.value) })),
