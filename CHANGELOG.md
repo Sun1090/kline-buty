@@ -15,6 +15,7 @@
 - A2 连带：A11「图表可视时间范围」显示修复、pair/quad 时间轴同步索引清洁化；E2E `period-anchor.spec.ts`（最新处切周期不越界 / 回看处切周期不跳最新）
 - A3（★）断线分段补洞：抽 `runRefillPages` 纯编排（串行逐段 REST 回补、失败页跳过继续、进度回调可单测）；useKlineData 暴露 `refill {done,total,failed}` 状态，重连补洞全程上报进度
 - A3 交互：顶栏右上角「断线回补中 done/total」指示（`aria-live` 状态徽标，五语 i18n `status.refilling`）；单测覆盖串行/失败跳过/进度递增 + App 组件级指示渲染测试
+- A4（★）多周期十字光标时间同步：核对 pair/quad 双通道同步链路完备（`ChartPair` 双向防回环、`useChartSync` 多点广播 + 回显抑制、adapter `setCrosshairTime` 按时间戳二分定位→跨周期天然对齐）；新增 E2E `period-crosshair.spec.ts` 端到端验证 hover 一格 → 四格同步绘制（canvas 快照指纹法，颜色无关、确定性）
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
