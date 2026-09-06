@@ -770,6 +770,32 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               </span>
             ))}
           </div>
+          <SectionTitle>{t('panel.orderTitle')}</SectionTitle>
+          <div data-testid="panel-order" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            {(props.panelOrder ?? []).map((k, i) => (
+              <span key={k} data-testid={`panel-order-${k}`} style={{ display: 'inline-flex', gap: 3, alignItems: 'center', fontSize: 11, color: 'var(--text)' }}>
+                {k === 'depth' ? t('panel.depth') : k === 'orderBook' ? t('panel.orderBook') : k === 'vp' ? t('panel.vp') : t('panel.sentiment')}
+                <button
+                  data-testid={`panel-order-up-${k}`}
+                  onClick={() => props.onMovePanel?.(k, -1)}
+                  disabled={i === 0}
+                  aria-label={`${t('panel.moveUp')} ${k}`}
+                  style={{ border: 'none', background: 'rgba(41,98,255,0.12)', color: 'var(--accent)', borderRadius: 3, fontSize: 10, cursor: 'pointer', padding: '0 4px', opacity: i === 0 ? 0.4 : 1 }}
+                >
+                  ↑
+                </button>
+                <button
+                  data-testid={`panel-order-down-${k}`}
+                  onClick={() => props.onMovePanel?.(k, 1)}
+                  disabled={i === (props.panelOrder?.length ?? 0) - 1}
+                  aria-label={`${t('panel.moveDown')} ${k}`}
+                  style={{ border: 'none', background: 'rgba(41,98,255,0.12)', color: 'var(--accent)', borderRadius: 3, fontSize: 10, cursor: 'pointer', padding: '0 4px', opacity: i === (props.panelOrder?.length ?? 0) - 1 ? 0.4 : 1 }}
+                >
+                  ↓
+                </button>
+              </span>
+            ))}
+          </div>
           <SectionTitle>{t('common.more')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             {moreToggles.map((it) => (
