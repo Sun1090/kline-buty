@@ -85,6 +85,16 @@ test.describe('A1 周期边界对齐（openTime 归一化）', () => {
     await page.addInitScript(() => localStorage.clear())
   })
 
+  test('A5 数据延迟：压测实时帧常态显示滞后秒数', async ({ page }) => {
+    // perf 模式每 1.5s 推一帧 → 信息条恒定显示「数据延迟 Xs」（非仅 >5s 警示）
+    await page.goto('/?perf=320&period=1m')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
+    const badge = page.getByTestId('data-latency')
+    await expect(badge).toBeVisible({ timeout: 15_000 })
+    // 文案含滞后秒数（zh-CN「数据延迟 Xs」，弱网时可能到 5s 内常态；值区间放宽）
+    await expect.poll(() => badge.textContent()).toMatch(/延迟\s*\d+\s*s/)
+  })
+
   test('非整点起始 → 首根对齐周期边界，切 5m→1h→1m 序列间隔稳定且往返一致', async ({ page }) => {
     // 起始时间落在非周期边界（perf 合成 startTime 默认 now，非整 5m/1h；归一化后首根即边界）
     await page.goto('/?perf=320&period=5m')

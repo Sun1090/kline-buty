@@ -119,8 +119,9 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
           {t('stats.volumeSurge')} {volumeSurge.toFixed(1)}×
         </span>
       )}
-      {/* G11 数据延迟：实时帧滞后超过 5s 显示（弱网/停更提示） */}
-      {latencyMs != null && latencyMs > 5000 && (
+      {/* A5/G11 数据延迟：信息条常态显示滞后秒数（帧到达 vs 系统时间）；
+          ≤5s 低调样式，>5s 黄色警示（弱网/停更） */}
+      {latencyMs != null && (
         <span
           data-testid="data-latency"
           title={t('stats.dataLatencyTitle')}
@@ -130,9 +131,9 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
             borderRadius: 4,
             flexShrink: 0,
             fontWeight: 600,
-            color: 'var(--yellow)',
-            background: 'rgba(245,192,47,0.12)',
-            border: '1px solid rgba(245,192,47,0.4)',
+            color: latencyMs > 5000 ? 'var(--yellow)' : 'var(--text-dim)',
+            background: latencyMs > 5000 ? 'rgba(245,192,47,0.12)' : 'transparent',
+            border: latencyMs > 5000 ? '1px solid rgba(245,192,47,0.4)' : '1px solid var(--border)',
           }}
         >
           {t('stats.dataLatency')} {Math.floor(latencyMs / 1000)}s
