@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
 import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
 
 interface PositionPanelProps {
@@ -48,6 +49,9 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
   const [levelMode, setLevelMode] = useState<'pct' | 'price'>('pct')
   const [tpPrice, setTpPrice] = useState<string>('')
   const [slPrice, setSlPrice] = useState<string>('')
+  // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
+  const rootRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, rootRef)
 
   const entryNum = Number(entry)
   const qtyNum = Number(quantity)
@@ -93,6 +97,7 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
 
   return (
     <div
+      ref={rootRef}
       role="region"
       aria-label={t('position.title')}
       style={{

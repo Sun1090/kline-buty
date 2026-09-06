@@ -94,15 +94,27 @@ export function themeFor(mode: ThemeMode, presetId: ColorPresetId = 'classic'): 
   return { ...base, up: p.up, down: p.down, yellow: p.yellow, accent: p.accent }
 }
 
-/** 应用主题到 html[data-theme]：模式切 CSS 变量；预设色以内联变量覆盖 --accent/--up/--down/--yellow */
-export function applyTheme(mode: ThemeMode, presetId: ColorPresetId = 'classic') {
+/** F7 高对比配色的强调/涨跌色（更饱和、对比更强；文本/边框对比由 CSS [data-hc] 变量接管） */
+const HIGH_CONTRAST_COLORS: Record<ThemeMode, Pick<ColorPreset, 'accent' | 'up' | 'down' | 'yellow'>> = {
+  dark: { accent: '#4d8dff', up: '#2ee6d6', down: '#ff6b6b', yellow: '#ffd54f' },
+  light: { accent: '#1a4fd8', up: '#008f7a', down: '#d32f2f', yellow: '#8a6d00' },
+}
+
+/**
+ * 应用主题到 html[data-theme]：模式切 CSS 变量；预设色以内联变量覆盖 --accent/--up/--down/--yellow。
+ * F7 highContrast：设置 html[data-hc]（CSS 以更强对比的文本/边框/背景覆盖），并改用高对比强调/涨跌色。
+ */
+export function applyTheme(mode: ThemeMode, presetId: ColorPresetId = 'classic', highContrast = false) {
   document.documentElement.setAttribute('data-theme', mode)
   const p = presetFor(presetId)
+  const hc = HIGH_CONTRAST_COLORS[mode]
   const root = document.documentElement.style
-  root.setProperty('--accent', p.accent)
-  root.setProperty('--up', p.up)
-  root.setProperty('--down', p.down)
-  root.setProperty('--yellow', p.yellow)
+  root.setProperty('--accent', highContrast ? hc.accent : p.accent)
+  root.setProperty('--up', highContrast ? hc.up : p.up)
+  root.setProperty('--down', highContrast ? hc.down : p.down)
+  root.setProperty('--yellow', highContrast ? hc.yellow : p.yellow)
+  if (highContrast) document.documentElement.setAttribute('data-hc', '')
+  else document.documentElement.removeAttribute('data-hc')
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', THEMES[mode].background)
 }

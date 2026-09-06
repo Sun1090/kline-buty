@@ -141,6 +141,14 @@ export interface MobileHeaderProps {
   onToggleAlerts: () => void
   /** E12 待触发提醒数（桌面角标） */
   alertsPending?: number
+  /** F7 高对比模式开关 */
+  highContrast?: boolean
+  onToggleHighContrast?: () => void
+  /** F18 面板布局方案（桌面端使用；移动端忽略） */
+  layoutPresets?: string[]
+  onSaveLayoutPreset?: (name: string) => void
+  onApplyLayoutPreset?: (name: string) => void
+  onDeleteLayoutPreset?: (name: string) => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

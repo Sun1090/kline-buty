@@ -55,3 +55,22 @@ describe('applyTheme', () => {
     expect(html.style.getPropertyValue('--accent')).toBe('#2962ff')
   })
 })
+
+describe('applyTheme F7 高对比模式', () => {
+  it('highContrast=true：设置 data-hc 并用高对比强调/涨跌色', () => {
+    applyTheme('dark', 'classic', true)
+    const html = document.documentElement
+    expect(html.getAttribute('data-hc')).toBe('')
+    expect(html.style.getPropertyValue('--accent')).toBe('#4d8dff')
+    expect(html.style.getPropertyValue('--up')).toBe('#2ee6d6')
+    expect(html.style.getPropertyValue('--down')).toBe('#ff6b6b')
+  })
+  it('highContrast=false：移除 data-hc 并恢复预设色', () => {
+    applyTheme('dark', 'classic', true)
+    applyTheme('dark', 'classic', false)
+    const html = document.documentElement
+    expect(html.getAttribute('data-hc')).toBeNull()
+    expect(html.style.getPropertyValue('--up')).toBe('#26a69a')
+    expect(html.style.getPropertyValue('--accent')).toBe('#2962ff')
+  })
+})

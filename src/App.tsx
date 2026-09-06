@@ -165,6 +165,10 @@ export function App() {
   }, [])
   const themeMode: ThemeMode = themeSetting === 'auto' ? (systemDark ? 'dark' : 'light') : themeSetting
   const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
+  // F7 高对比模式（更强的文本/边框对比 + 饱和强调色）
+  const [highContrast, setHighContrast] = usePersistedState<boolean>('highContrast', false)
+  // F15 信息条显示项开关（持久化；缺省全部显示）
+  const [statsBarConfig, setStatsBarConfig] = usePersistedState<Partial<Record<string, boolean>>>('statsBarConfig', {})
   const [showWatermark, setShowWatermark] = usePersistedState('watermark', true)
   const [drawingsBySymbol, setDrawingsBySymbol] = usePersistedState<Record<string, Drawing[]>>('drawings', {})
   /** 撤销/重做：按交易对隔离的会话内历史栈（不持久化）；按钮态在渲染期由 canUndo/canRedo 派生 */
@@ -284,6 +288,36 @@ export function App() {
   const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
   const [marketListOpen, setMarketListOpen] = usePersistedState('marketListOpen', true)
   const [marketListMobileOpen, setMarketListMobileOpen] = useState(false)
+  // F14 右侧边栏宽度（持久化，桌面端可拖拽调宽；240–720px 钳制）
+  const [sidePanelWidth, setSidePanelWidth] = usePersistedState<number>('sidePanelWidth', 380)
+  // F18 面板布局方案（命名快照：图表布局 + 侧栏面板开合 + 面板宽度）
+  const [layoutPresets, setLayoutPresets] = usePersistedState<Record<string, { layout: string; depthOpen: boolean; orderBookOpen: boolean; volumeProfileOpen: boolean; sentimentOpen: boolean; marketListOpen: boolean; sidePanelWidth: number }>>('layoutPresets', {})
+  const saveLayoutPreset = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed || layoutPresets[trimmed]) return
+    setLayoutPresets((prev) => ({
+      ...prev,
+      [trimmed]: { layout, depthOpen, orderBookOpen, volumeProfileOpen, sentimentOpen, marketListOpen, sidePanelWidth },
+    }))
+  }
+  const applyLayoutPreset = (name: string) => {
+    const p = layoutPresets[name]
+    if (!p) return
+    setLayout(p.layout as typeof layout)
+    setDepthOpen(p.depthOpen)
+    setOrderBookOpen(p.orderBookOpen)
+    setVolumeProfileOpen(p.volumeProfileOpen)
+    setSentimentOpen(p.sentimentOpen)
+    setMarketListOpen(p.marketListOpen)
+    setSidePanelWidth(p.sidePanelWidth)
+  }
+  const deleteLayoutPreset = (name: string) => {
+    setLayoutPresets((prev) => {
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }
   const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = usePersistedState('volumeProfileOpen', false)
   const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
@@ -427,8 +461,8 @@ export function App() {
 
   // 主题应用（模式 + 色预设 → CSS 变量 + meta）
   useEffect(() => {
-    applyTheme(themeMode, colorPreset)
-  }, [themeMode, colorPreset])
+    applyTheme(themeMode, colorPreset, highContrast)
+  }, [themeMode, colorPreset, highContrast])
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
@@ -915,7 +949,7 @@ export function App() {
     replay !== null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? 'min(380px, 88vw)' : '0px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', ['--header-h' as string]: `${headerH}px`, ['--side-panel-w' as string]: sidePanelOpen && !isMobile ? `min(${sidePanelWidth}px, 88vw)` : '0px' }}>
       {/* P4 更新提示横幅：版本升级时提示刷新 */}
       {updateBanner && (
         <div
@@ -1105,11 +1139,17 @@ export function App() {
           compareSymbol={compareSymbol}
           onCycleCompare={cycleCompare}
           fontScale={fontScale}
+          layoutPresets={Object.keys(layoutPresets)}
+          onSaveLayoutPreset={saveLayoutPreset}
+          onApplyLayoutPreset={applyLayoutPreset}
+          onDeleteLayoutPreset={deleteLayoutPreset}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
+          highContrast={highContrast}
+          onToggleHighContrast={() => setHighContrast((v) => !v)}
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position.long !== null || position.short !== null}
@@ -1223,11 +1263,17 @@ export function App() {
           compareSymbol={compareSymbol}
           onCycleCompare={cycleCompare}
           fontScale={fontScale}
+          layoutPresets={Object.keys(layoutPresets)}
+          onSaveLayoutPreset={saveLayoutPreset}
+          onApplyLayoutPreset={applyLayoutPreset}
+          onDeleteLayoutPreset={deleteLayoutPreset}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
+          highContrast={highContrast}
+          onToggleHighContrast={() => setHighContrast((v) => !v)}
           showWatermark={showWatermark}
           onToggleWatermark={() => setShowWatermark((v) => !v)}
           positionActive={positionOpen || position.long !== null || position.short !== null}
@@ -1346,6 +1392,8 @@ export function App() {
             volumeSurge={volumeSurgeRatio(state.candles, 20)}
             gapHealth={gapHealth(dataGaps)}
             gapCount={dataGaps.length}
+            config={statsBarConfig}
+            onToggleItem={(k) => setStatsBarConfig((prev) => ({ ...prev, [k]: prev[k] === false }))}
           />
       <OfflineBanner />
       {quickOrder && (
@@ -1555,6 +1603,42 @@ export function App() {
             flexDirection: 'column',
           }}
         >
+          {/* F14 右侧边栏拖拽调宽：左缘细手柄（桌面端），pointer 事件全局跟踪 */}
+          {!isMobile && (
+            <div
+              data-testid="side-panel-resize"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={t('panel.resizeTitle')}
+              title={t('panel.resizeTitle')}
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const startX = e.clientX
+                const startW = sidePanelWidth
+                const onMove = (ev: PointerEvent) => {
+                  const next = Math.min(720, Math.max(240, startW - (ev.clientX - startX)))
+                  setSidePanelWidth(next)
+                }
+                const onUp = () => {
+                  window.removeEventListener('pointermove', onMove)
+                  window.removeEventListener('pointerup', onUp)
+                }
+                window.addEventListener('pointermove', onMove)
+                window.addEventListener('pointerup', onUp)
+              }}
+              style={{
+                position: 'absolute',
+                left: -4,
+                top: 0,
+                bottom: 0,
+                width: 8,
+                cursor: 'col-resize',
+                zIndex: 5,
+                background: 'transparent',
+                touchAction: 'none',
+              }}
+            />
+          )}
           {depthOpen && (
             <Suspense fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
               <DepthChart symbol={symbol} depth={depth} />
