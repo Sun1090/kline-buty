@@ -5,7 +5,24 @@
 
 ## 当前阶段
 
-**阶段 E · 提醒与通知（进行中）** — docs/13 阶段 E（E1–E15）
+**阶段 F · UI / 主题 / 可访问性（进行中）** — docs/13 阶段 F（F1–F20）
+- F4 弹层焦点陷阱 ✅（AlertPanel/PositionPanel/TradeHistoryPanel 接入 useFocusTrap）
+- F7 高对比模式 ✅（applyTheme highContrast + data-hc CSS + 头部开关持久化）
+- F14 侧边栏宽度可调 ✅（persisted width + col-resize 手柄 240–720）
+- F15 信息条显示项配置 ✅（StatsBar 齿轮下拉，7 项开关持久化）
+- F18 面板布局方案保存 ✅（命名快照 保存/套用/删除）
+- F5 焦点可见性 ✅（既有 focus-visible）/ F8 减少动效 ✅（useReducedMotion）/ F9 键盘选择器 ✅ /
+  F10 快捷键冲突检测 ✅ / F11 语言切换快捷键 ✅ / F12 a11y 自动化断言 ✅ / F13 顶栏可折叠 ✅（More 设计既定）/
+  F17 对比模式 ✅ / F19 骨架屏 ✅ / F20 弱网降级 ✅
+- F1 图表键盘导航 ◐（方向键十字光标漫游既有，平移/缩放待增强）
+- F2 键盘画线 ✳ **待实现**
+- F3 全面板 Tab 可达性 ◐（a11yAudit 覆盖 6 面板，扩充中）
+- F6 屏幕阅读器标签 ◐（随组件审计）
+- F16 面板拖拽排序 ✳ **待实现**
+- 状态：F 批一已提交（a3f60d7），E2E 验证中
+
+## 阶段 E · 提醒与通知（已闭合，E 批一 f38d594）
+
 - E1 推送渠道 ✅（channel system/web/both 持久化 + 站内横幅 toast）
 - E2 多品种同时监控 ✅（prices 表覆盖全部提醒品种，内部轮询 30s）
 - E3 提醒组同组一键开关 ✅（setGroupEnabled + 组头切换）
