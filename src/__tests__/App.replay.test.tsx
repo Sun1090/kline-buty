@@ -75,7 +75,7 @@ beforeEach(() => {
   localStorage.clear()
   vi.useFakeTimers()
   mockUseKlineData.mockReturnValue({
-    state: { candles: makeCandles(800), status: 'live', live: null },
+    state: { candles: makeCandles(800), status: 'live', live: null, refill: null },
     hasMore: true,
     loadMore: vi.fn(),
     retry: vi.fn(),
@@ -132,7 +132,7 @@ describe('回放集成', () => {
 
   it('数据不足时回放按钮禁用', () => {
     mockUseKlineData.mockReturnValue({
-      state: { candles: makeCandles(10), status: 'live', live: null },
+      state: { candles: makeCandles(10), status: 'live', live: null, refill: null },
       hasMore: true,
       loadMore: vi.fn(),
       retry: vi.fn(),

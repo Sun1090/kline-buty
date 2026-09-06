@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { gapFillRanges, GAP_PAGE_SIZE, GAP_MAX_PAGES } from '../gapFill'
+import { describe, expect, it, vi } from 'vitest'
+import { gapFillRanges, GAP_PAGE_SIZE, GAP_MAX_PAGES, runRefillPages } from '../gapFill'
 
 describe('gapFillRanges（G7 断线分段补洞）', () => {
   const base = 1_788_307_200 // 2026-09-02 00:00:00 UTC
@@ -59,5 +59,60 @@ describe('gapFillRanges（G7 断线分段补洞）', () => {
     expect(r).toHaveLength(1)
     expect(r[0].startTime).toBe(last * 1000)
     expect(r[0].endTime).toBe(now * 1000)
+  })
+})
+
+describe('runRefillPages（A3 断线分段补洞编排）', () => {
+  const ranges = [
+    { startTime: 1000, endTime: 2000 },
+    { startTime: 2000, endTime: 3000 },
+    { startTime: 3000, endTime: 4000 },
+  ]
+
+  it('串行逐段执行，进度从 0 递增到 total', async () => {
+    const calls: number[] = []
+    const progress: number[][] = []
+    const { ok, failed } = await runRefillPages(
+      ranges,
+      (r) => {
+        calls.push(r.startTime)
+        return Promise.resolve()
+      },
+      (p) => progress.push([p.done, p.total]),
+    )
+    expect(calls).toEqual([1000, 2000, 3000]) // 严格串行、按序
+    expect(progress).toEqual([
+      [0, 3],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]) // 起始 0 + 每页完成后递增
+    expect(ok).toBe(3)
+    expect(failed).toBe(0)
+  })
+
+  it('失败页跳过继续下一页，进度含失败计数', async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(undefined)
+    const progress: number[][] = []
+    const { ok, failed } = await runRefillPages(ranges, fetchPage, (p) => progress.push([p.done, p.failed]))
+    expect(ok).toBe(2)
+    expect(failed).toBe(1)
+    expect(progress).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 1],
+      [3, 1],
+    ]) // 失败页仍占 done，failed 累计
+    expect(fetchPage).toHaveBeenCalledTimes(3) // 失败不中断
+  })
+
+  it('空区间立即完成', async () => {
+    const { ok, failed } = await runRefillPages([], () => Promise.resolve())
+    expect(ok).toBe(0)
+    expect(failed).toBe(0)
   })
 })

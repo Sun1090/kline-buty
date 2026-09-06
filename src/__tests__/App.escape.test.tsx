@@ -74,7 +74,7 @@ afterEach(cleanup)
 beforeEach(() => {
   localStorage.clear()
   mockUseKlineData.mockReturnValue({
-    state: { candles: makeCandles(800), status: 'live', live: null },
+    state: { candles: makeCandles(800), status: 'live', live: null, refill: null },
     hasMore: true,
     loadMore: vi.fn(),
     retry: vi.fn(),

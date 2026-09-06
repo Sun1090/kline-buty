@@ -6,7 +6,7 @@ import { createKlineWs, type WsStatus } from '../data/binance/ws'
 import { detectMode } from '../data/binance/endpoints'
 import { generateSyntheticCandles, readPerfParam, tickSynthetic } from '../data/synthetic'
 import { readCachedCandles, writeCachedCandles } from '../data/cache'
-import { gapFillRanges, GAP_PAGE_SIZE } from '../data/gapFill'
+import { gapFillRanges, GAP_PAGE_SIZE, runRefillPages, type RefillProgress } from '../data/gapFill'
 import { alignTimeToPeriod, normalizeCandles, periodSpanMs } from '../data/align'
 import { createBatchScheduler } from '../utils/batchScheduler'
 import { FrameGauge, type FrameStats } from '../utils/frameGauge'
@@ -29,6 +29,8 @@ export interface KlineDataState {
   status: 'loading' | 'error' | WsStatus
   error?: string
   live: LiveTick | null
+  /** A3 断线补洞进度：非空时表示正在分段 REST 回补缺失区间（UI 提示 done/total） */
+  refill: RefillProgress | null
 }
 
 /**
@@ -43,7 +45,7 @@ export interface KlineDataState {
  * - `?perf=N`：合成数据压测模式（不联网），含模拟实时帧，供大数据量滚动/渲染验证。
  */
 export function useKlineData(symbol: string, period: Period) {
-  const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading', live: null })
+  const [state, setState] = useState<KlineDataState>({ candles: [], status: 'loading', live: null, refill: null })
   const [hasMore, setHasMore] = useState(true)
   /** E14 错误重试：重试计数，作为 effect 依赖触发整段重载 */
   const [retryNonce, setRetryNonce] = useState(0)
@@ -68,7 +70,7 @@ export function useKlineData(symbol: string, period: Period) {
       // 复制数组：新引用驱动 ChartView 增量装载（updateCandle），而非全量 setData
       setState((prev) => ({ ...prev, candles: store.all().slice(), live: live ?? prev.live }))
     }
-    setState({ candles: [], status: 'loading', live: null })
+    setState({ candles: [], status: 'loading', live: null, refill: null })
 
     // 压测模式：合成大数据量 + 模拟实时帧，不依赖交易所网络
     const perfCount = readPerfParam()
@@ -142,7 +144,7 @@ export function useKlineData(symbol: string, period: Period) {
       })
       .catch((e: unknown) => {
         if (aliveRef.current && storeRef.current === store) {
-          setState({ candles: [], status: 'error', error: e instanceof Error ? e.message : String(e), live: null })
+          setState({ candles: [], status: 'error', error: e instanceof Error ? e.message : String(e), live: null, refill: null })
         }
       })
 
@@ -179,25 +181,35 @@ export function useKlineData(symbol: string, period: Period) {
           if (aliveRef.current) setState((prev) => ({ ...prev, status: s }))
         },
         onReconnect: () => {
-          // G7 断线分段补洞：从本地最后时间戳起，按缺失区间逐段 REST 回补（串行）
+          // A3 断线分段补洞：从本地最后时间戳起，按缺失区间逐段 REST 回补（串行）。
+          // 每段补完上报进度（done/total），UI 显示「断线回补中」；失败页跳过继续；完成后归零。
           const all = store.all()
           const last = all[all.length - 1]
           if (!last) return
           const ranges = gapFillRanges(last.time, Date.now() / 1000, period)
           if (ranges.length === 0) return
-          void ranges.reduce((p, r) => {
-            return p.then(() =>
-              fetchKlines(symbol, period, GAP_PAGE_SIZE, r.startTime, r.endTime, abortCtrl.signal)
-                .then((hist) => {
+          setState((prev) => ({ ...prev, refill: { done: 0, total: ranges.length, failed: 0 } }))
+          const finish = () => {
+            if (aliveRef.current) setState((prev) => ({ ...prev, refill: null }))
+          }
+          void runRefillPages(
+            ranges,
+            (r) =>
+              fetchKlines(symbol, period, GAP_PAGE_SIZE, r.startTime, r.endTime, abortCtrl.signal).then(
+                (hist) => {
                   if (!aliveRef.current || storeRef.current !== store) return
                   // A1：补洞数据同样归一化后入 store（游标按对齐起点计算，返回序列对齐）
                   store.upsertAll(normalizeCandles(hist, period))
                   // 每段补完后发布：缺口区数据逐步浮现（末段即最新）
                   publish()
-                })
-                .catch(() => {}),
-            )
-          }, Promise.resolve())
+                },
+              ),
+            (p) => {
+              if (aliveRef.current) setState((prev) => ({ ...prev, refill: p }))
+            },
+          )
+            .then(finish)
+            .catch(finish)
         },
       }, undefined, mode)
     })
