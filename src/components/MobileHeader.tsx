@@ -155,6 +155,9 @@ export interface MobileHeaderProps {
   /** G15 数据量自适应渲染上限（0=关闭；桌面端使用） */
   renderCandleCap?: number
   onCycleRenderCandleCap?: () => void
+  /** G10 卡顿诊断面板开关 */
+  perfActive?: boolean
+  onTogglePerf?: () => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean
