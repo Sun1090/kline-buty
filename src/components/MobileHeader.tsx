@@ -167,6 +167,9 @@ export interface MobileHeaderProps {
   /** I4 自选价格实时面板 */
   pinnedActive?: boolean
   onTogglePinned?: () => void
+  /** I13 导出范围（最近 N 根；0=全部） */
+  exportBarRange?: number
+  onSetExportBarRange?: (n: number) => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

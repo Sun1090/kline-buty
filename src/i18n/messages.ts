@@ -182,6 +182,10 @@ export const zh = {
     export: '导出',
     exported: '已导出',
   },
+  csv: {
+    exportRange: '导出范围',
+    all: '全部',
+  },
   replay: {
     start: '回放',
     title: '历史逐根回放',
@@ -840,6 +844,10 @@ export const en: Messages = {
     export: 'Export',
     exported: 'Exported',
   },
+  csv: {
+    exportRange: 'Export range',
+    all: 'All',
+  },
   replay: {
     start: 'Replay',
     title: 'Step-by-step history replay',
@@ -1488,6 +1496,10 @@ export const ja: Messages = {
     exportTitle: '現在の銘柄/時間足の K 線 CSV をエクスポート（有効な指標列を含む）',
     export: 'エクスポート',
     exported: 'エクスポート済み',
+  },
+  csv: {
+    exportRange: '出力範囲',
+    all: 'すべて',
   },
   replay: {
     start: 'リプレイ',
@@ -2138,6 +2150,10 @@ export const ko: Messages = {
     exportTitle: '현재 종목/주기의 K라인 CSV 내보내기 (활성 지표 열 포함)',
     export: '내보내기',
     exported: '내보냄',
+  },
+  csv: {
+    exportRange: '내보내기 범위',
+    all: '전체',
   },
   replay: {
     start: '다시보기',
@@ -2799,6 +2815,10 @@ export const es: Messages = {
     exportTitle: 'Exportar CSV OHLCV de la moneda/período actuales (con columnas de indicadores activos)',
     export: 'Exportar',
     exported: 'Exportado',
+  },
+  csv: {
+    exportRange: 'Rango de exportación',
+    all: 'Todo',
   },
   replay: {
     start: 'Reproducción',
