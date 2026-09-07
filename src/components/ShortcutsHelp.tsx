@@ -69,7 +69,7 @@ export function printShortcuts(title: string, rows: { group: string; label: stri
   win.document.write(`<!doctype html><html><head><title>${title}</title></head><body>
     <h2>${title}</h2>
     <table style="border-collapse:collapse;width:100%;font-size:12px;">${rowsHtml}</table>
-    <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script>
+    <script>window.onload=()=>setTimeout(()=>window.print(),200)</script>
   </body></html>`)
   win.document.close()
 }
