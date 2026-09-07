@@ -6,22 +6,22 @@
 ## 当前阶段
 
 **阶段 G · 性能 / 质量 / 工程（进行中）** — docs/13 阶段 G（G1–G15）
-- G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs 配置 + CI）
+- G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
 - G2 视觉回归测试 ✳ **待实现**
-- G3 大屏 K 线数优化 ◐（worker 化既有 B12，5000+ 待压测）
+- G3 大屏 K 线数优化 ◐（B12 worker + G15 降采样 + 视口 cull 覆盖；5000+ 压测待补）
 - G4 指标 worker 化 ✅（B12 既有）
-- G5 首屏加载优化 ◐（懒加载部分组件，待代码分割审计）
-- G6 渲染性能基准 ◐（vitest.perf.config 既有）
-- G7 内存泄漏检查 ✳ **待审计**
-- G8 WS 消息批处理 ◐
+- G5 首屏加载优化 ✅（3 重组件 lazy 代码分割：DepthChart/VolumeProfile/Sentiment + Suspense）
+- G6 渲染性能基准 ◐（vitest.perf.config + indicators perf.test 既有）
+- G7 内存泄漏检查 ✅（本批：WS close 清理重连定时器 + 重复开闭不累积 2 例审计）
+- G8 WS 消息批处理 ✅（createBatchScheduler rAF 合帧既有 + 单测）
 - G9 数据预取 ✅（usePrefetch 既有）
 - G10 图表卡顿诊断工具 ✅（本批：PerfPanel 实时帧/丢帧率诊断）
-- G11 实时帧丢帧统计 ✅（frameStats 既有 + PerfPanel 展示）
+- G11 实时帧丢帧统计 ✅（frameStats + PerfPanel）
 - G12 localStorage 容量监控 ✅（storage-banner 既有）
 - G13 资源加载失败降级 ✅（OfflineBanner 既有）
 - G14 构建体积报告 ✅（bundle-report 既有）
-- G15 数据量自适应（降采样）✅（本批：downsampleCandles + renderCandleCap 开关）
-- 状态：G 批一/批二已提交（68a788d/f21b748），下一步 G2/G7/G8 或 H 阶段
+- G15 数据量自适应（降采样）✅（本批：downsampleCandles + renderCandleCap）
+- 状态：G 剩 G2/G3/G6；下一步 H 阶段（★ H1 离线包 / H2 搜索增强）
 
 ## 阶段 F · UI / 主题 / 可访问性（已闭合，F 批一 a3f60d7 + F16 d5f7f91）
 - F1 图表键盘导航 ✅（方向键十字光标漫游 + 回放步进，既有）
