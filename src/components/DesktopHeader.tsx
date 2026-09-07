@@ -901,6 +901,27 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             >
               📚 {t('common.knowledge')}
             </a>
+            <a
+              data-testid="feedback-link"
+              href="https://github.com/sun1090/kline-buty/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t('common.feedbackTitle')}
+              style={{
+                flex: '0 0 auto',
+                padding: '7px 10px',
+                fontSize: 12,
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-dim)',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              💬 {t('common.feedback')}
+            </a>
           </div>
         </div>
       )}
