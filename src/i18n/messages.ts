@@ -158,6 +158,13 @@ export const zh = {
   changelog: {
     title: '版本历史',
   },
+  pinned: {
+    title: '自选实时行情',
+    titleShort: '自选行情',
+    empty: '暂无钉选品种——在自选列表点击★钉选',
+    unpin: '取消钉选',
+    add: '钉选',
+  },
   sentiment: {
     globalRatio: '全账户多空比',
     topTraderRatio: '大户持仓多空比',
@@ -809,6 +816,13 @@ export const en: Messages = {
   changelog: {
     title: 'Version history',
   },
+  pinned: {
+    title: 'Pinned live prices',
+    titleShort: 'Pinned',
+    empty: 'No pinned symbols — tap ★ in the watchlist to pin',
+    unpin: 'Unpin',
+    add: 'Pin',
+  },
   sentiment: {
     globalRatio: 'Global long/short',
     topTraderRatio: 'Top trader ratio',
@@ -1450,6 +1464,13 @@ export const ja: Messages = {
   },
   changelog: {
     title: 'バージョン履歴',
+  },
+  pinned: {
+    title: 'ピン留めリアルタイム行情',
+    titleShort: 'ピン留め',
+    empty: 'ピン留め銘柄なし——ウォッチリストの★でピン留め',
+    unpin: 'ピン解除',
+    add: 'ピン留め',
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -2093,6 +2114,13 @@ export const ko: Messages = {
   },
   changelog: {
     title: '버전 기록',
+  },
+  pinned: {
+    title: '고정 실시간 시세',
+    titleShort: '고정',
+    empty: '고정 종목 없음 — 관심목록의 ★로 고정',
+    unpin: '고정 해제',
+    add: '고정',
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -2747,6 +2775,13 @@ export const es: Messages = {
   },
   changelog: {
     title: 'Historial de versiones',
+  },
+  pinned: {
+    title: 'Precios fijos en vivo',
+    titleShort: 'Fijados',
+    empty: 'Sin símbolos fijados — toca ★ en la lista para fijar',
+    unpin: 'Desfijar',
+    add: 'Fijar',
   },
   sentiment: {
     globalRatio: 'Largo/corto global',
