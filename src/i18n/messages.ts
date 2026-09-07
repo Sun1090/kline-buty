@@ -18,6 +18,8 @@ export const zh = {
     knowledgeTitle: '打开交易知识库（新标签页）',
     close: '关闭',
     backToLatest: '回到最新',
+    feedback: '反馈',
+    feedbackTitle: '报告问题 / 反馈建议（打开 GitHub Issues）',
   },
   scale: { linear: '线性', log: '对数', title: '价格坐标轴：线性 / 对数' },
   status: {
@@ -666,6 +668,8 @@ export const en: Messages = {
     knowledgeTitle: 'Open the trading knowledge base (new tab)',
     close: 'Close',
     backToLatest: 'Back to latest',
+    feedback: 'Feedback',
+    feedbackTitle: 'Report issues / suggestions (open GitHub Issues)',
   },
   scale: { linear: 'Linear', log: 'Log', title: 'Price scale: Linear / Log' },
   status: {
@@ -1305,6 +1309,8 @@ export const ja: Messages = {
     knowledgeTitle: '取引ナレッジベースを開く（新しいタブ）',
     close: '閉じる',
     backToLatest: '最新へ戻る',
+    feedback: 'フィードバック',
+    feedbackTitle: '問題報告 / 提案（GitHub Issues を開く）',
   },
   scale: { linear: '線形', log: '対数', title: '価格軸：線形 / 対数' },
   status: {
@@ -1945,6 +1951,8 @@ export const ko: Messages = {
     knowledgeTitle: '거래 지식 베이스 열기 (새 탭)',
     close: '닫기',
     backToLatest: '최신으로',
+    feedback: '피드백',
+    feedbackTitle: '문제 보고 / 제안 (GitHub Issues 열기)',
   },
   scale: { linear: '선형', log: '로그', title: '가격 축: 선형 / 로그' },
   status: {
@@ -2597,6 +2605,8 @@ export const es: Messages = {
     knowledgeTitle: 'Abrir la base de conocimiento (nueva pestaña)',
     close: 'Cerrar',
     backToLatest: 'Volver al último',
+    feedback: 'Retroalimentación',
+    feedbackTitle: 'Reportar problema / sugerencia (abrir GitHub Issues)',
   },
   scale: { linear: 'Lineal', log: 'Log', title: 'Escala de precios: Lineal / Log' },
   status: {
