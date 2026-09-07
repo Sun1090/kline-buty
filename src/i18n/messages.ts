@@ -136,6 +136,11 @@ export const zh = {
     moveDown: '下移',
 
   },
+  perf: {
+    candleCap: '图表K线上限',
+    candleCapTitle: '超过该数量时降采样渲染（0=关闭）',
+    off: '自适应关',
+  },
   sentiment: {
     globalRatio: '全账户多空比',
     topTraderRatio: '大户持仓多空比',
@@ -763,6 +768,11 @@ export const en: Messages = {
     moveDown: 'Move down',
 
   },
+  perf: {
+    candleCap: 'Candle cap',
+    candleCapTitle: 'Downsample rendering beyond this count (0=off)',
+    off: 'Auto off',
+  },
   sentiment: {
     globalRatio: 'Global long/short',
     topTraderRatio: 'Top trader ratio',
@@ -1380,6 +1390,11 @@ export const ja: Messages = {
     moveUp: '上へ',
     moveDown: '下へ',
 
+  },
+  perf: {
+    candleCap: 'ローソク上限',
+    candleCapTitle: 'この数を超えるとダウンサンプリング（0=オフ）',
+    off: '自動オフ',
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -1999,6 +2014,11 @@ export const ko: Messages = {
     moveUp: '위로',
     moveDown: '아래로',
 
+  },
+  perf: {
+    candleCap: '캔들 상한',
+    candleCapTitle: '이 수를 초과하면 다운샘플링 (0=끄기)',
+    off: '자동 끄기',
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -2629,6 +2649,11 @@ export const es: Messages = {
     moveUp: 'Subir',
     moveDown: 'Bajar',
 
+  },
+  perf: {
+    candleCap: 'Límite de velas',
+    candleCapTitle: 'Reducir muestras más allá de esta cantidad (0=apagado)',
+    off: 'Auto apagado',
   },
   sentiment: {
     globalRatio: 'Largo/corto global',

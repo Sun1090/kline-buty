@@ -62,6 +62,8 @@ jobs:
         run: npm run docs:lint
       - name: Knowledge base anchor check
         run: npm run docs:anchor
+      - name: Docs-site component tests (G1)
+        run: npm run test:docs
 
   build:
     name: Production build
