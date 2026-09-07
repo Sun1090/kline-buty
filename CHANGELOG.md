@@ -53,6 +53,17 @@
 - 测试：engine 停用/到期/批量/分组单测 + hook 多品种/模板/JSON/渠道/角标单测 + AlertPanel 面板单测 + E2E `alerts-features.spec.ts`；unit 1490 全绿，build 全通
 - 修复：`recent-features` 画线吸附 E2E 陈旧断言（C6 四态循环 ohlc→grid→off→time）
 
+## F 阶段 - UI / 主题 / 可访问性（F1–F20 全部闭合）
+- F4 弹层焦点陷阱：AlertPanel/PositionPanel/TradeHistoryPanel 接入既有 `useFocusTrap`（Tab 不逃逸、关闭恢复焦点）
+- F7 高对比模式：`applyTheme(highContrast)` 设 `html[data-hc]` CSS 变量 + 高饱和强调/涨跌色；头部开关持久化
+- F14 侧边栏宽度可调：persisted `sidePanelWidth` + 侧栏左缘 `col-resize` 手柄（240–720px 钳制）
+- F15 信息条显示项配置：StatsBar `config`（marketType/volumeSurge/latency/health/price/summary/countdown）+ 齿轮下拉持久化
+- F16 侧栏面板顺序：persisted `panelOrder` 按序渲染 + 头部 ↑/↓ 换位
+- F18 面板布局方案：命名快照（图表布局 + 侧栏面板开合 + 宽度）保存/套用/删除
+- F1/F2 核对：键盘十字光标漫游 + M8 键盘画线（Enter 放锚点）均有实现与测试
+- F3/F5/F6/F8/F9/F10/F11/F12/F13/F17/F19/F20 核对：承接 v0.3 M1/O9 等既有实现（a11yAudit/useReducedMotion/compare/Skeleton/OfflineBanner）
+- 五语 i18n 全量同步；unit 1495 全绿，build 全通，CI ✅
+
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
 承接 30 项 P0–P2 之后的功能深化，共 34 提交，全部推送 `origin/main`。完成状态逐项见 `docs/11-P3P4-完成状态盘点.md`。
