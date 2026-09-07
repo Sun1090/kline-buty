@@ -53,7 +53,7 @@ export default defineConfig({
   },
   test: {
     setupFiles: ['vitest.setup.ts'],
-    exclude: ['**/perf.test.ts', '**/e2e/**', '**/node_modules/**', '**/dist/**'],
+    exclude: ['**/perf.test.ts', '**/e2e/**', '**/node_modules/**', '**/dist/**', 'docs-site/**'],
     coverage: {
       provider: 'v8',
       // O7 覆盖率基线：adapter 渲染层依赖 canvas（jsdom 无法创建 2d 上下文），由 E2E 覆盖；不计入单测覆盖率

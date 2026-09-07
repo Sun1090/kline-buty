@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- O3 治理基线：App 为应用根组件，聚合布局/行情/画线/交易等全部面板，行数已超新代码阈值；复杂度与行数上限对新文件生效，App 内新增逻辑应抽到 hooks/utils 层。 */
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PERIODS, PERIOD_MS, type Period } from './chart/types'
 import { ChartView, type ChartType, type MainIndicatorKind, type SubIndicatorKind } from './components/ChartView'
 import { ChartPair } from './components/ChartPair'
@@ -9,6 +9,7 @@ import { ReplayBar } from './components/ReplayBar'
 import { useKlineData } from './hooks/useKlineData'
 import { SYMBOL_LIST } from './hooks/useSymbolList'
 import { useMarketStats } from './hooks/useMarketStats'
+import { downsampleCandles } from './chart/downsample'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
@@ -290,6 +291,8 @@ export function App() {
   const [marketListMobileOpen, setMarketListMobileOpen] = useState(false)
   // F14 右侧边栏宽度（持久化，桌面端可拖拽调宽；240–720px 钳制）
   const [sidePanelWidth, setSidePanelWidth] = usePersistedState<number>('sidePanelWidth', 380)
+  // G15 数据量自适应：超过渲染上限时对传入图表的蜡烛降采样（0=关闭自适应）
+  const [renderCandleCap, setRenderCandleCap] = usePersistedState<number>('renderCandleCap', 3000)
   // F16 侧栏面板顺序（持久化）：depth/orderBook/vp/sentiment 拖拽换位
   const [panelOrder, setPanelOrder] = usePersistedState<('depth' | 'orderBook' | 'vp' | 'sentiment')[]>('panelOrder', ['depth', 'orderBook', 'vp', 'sentiment'])
   const movePanel = (key: 'depth' | 'orderBook' | 'vp' | 'sentiment', dir: -1 | 1) => {
@@ -491,6 +494,11 @@ export function App() {
   }
   const { state, hasMore, loadMore, retry, loadDemo, frameStats } = useKlineData(symbol, period)
   const { candles, status, error, refill } = state
+  // G15 数据量自适应：超过渲染上限时对传入图表的蜡烛降采样（0=关闭）
+  const renderCandles = useMemo(() => {
+    if (renderCandleCap > 0 && candles.length > renderCandleCap) return downsampleCandles(candles, renderCandleCap)
+    return candles
+  }, [candles, renderCandleCap])
   // L3 对比模式：叠加品种 K 线（仅单图布局使用）
   const compareData = useKlineData(compareSymbol ?? symbol, period)
   // N7 数据预取：空闲时预取相邻品种 + 当前品种更早历史到本地缓存
@@ -1157,6 +1165,8 @@ export function App() {
           onDeleteLayoutPreset={deleteLayoutPreset}
           panelOrder={panelOrder}
           onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
+          renderCandleCap={renderCandleCap}
+          onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1283,6 +1293,8 @@ export function App() {
           onDeleteLayoutPreset={deleteLayoutPreset}
           panelOrder={panelOrder}
           onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
+          renderCandleCap={renderCandleCap}
+          onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1547,7 +1559,7 @@ export function App() {
           <ChartView
             symbol={symbol}
             period={period}
-            candles={candles}
+            candles={renderCandles}
             status={status}
             onRetry={retry}
             themeMode={themeMode}

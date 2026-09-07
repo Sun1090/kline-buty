@@ -772,6 +772,14 @@ export function DesktopHeader(props: DesktopHeaderProps) {
           </div>
           <SectionTitle>{t('panel.orderTitle')}</SectionTitle>
           <div data-testid="panel-order" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            <PanelButton
+              onClick={props.onCycleRenderCandleCap ?? (() => {})}
+              title={t('perf.candleCapTitle')}
+              testId="candle-cap-toggle"
+              active={props.renderCandleCap !== 0}
+            >
+              {t('perf.candleCap')} {props.renderCandleCap === 0 ? t('perf.off') : props.renderCandleCap}
+            </PanelButton>
             {(props.panelOrder ?? []).map((k, i) => (
               <span key={k} data-testid={`panel-order-${k}`} style={{ display: 'inline-flex', gap: 3, alignItems: 'center', fontSize: 11, color: 'var(--text)' }}>
                 {k === 'depth' ? t('panel.depth') : k === 'orderBook' ? t('panel.orderBook') : k === 'vp' ? t('panel.vp') : t('panel.sentiment')}

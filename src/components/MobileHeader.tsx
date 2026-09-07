@@ -152,6 +152,9 @@ export interface MobileHeaderProps {
   /** F16 侧栏面板顺序（桌面端使用；移动端忽略） */
   panelOrder?: string[]
   onMovePanel?: (key: string, dir: -1 | 1) => void
+  /** G15 数据量自适应渲染上限（0=关闭；桌面端使用） */
+  renderCandleCap?: number
+  onCycleRenderCandleCap?: () => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean
