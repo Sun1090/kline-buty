@@ -222,6 +222,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
   const moreToggles: { label: string; active: boolean; onToggle: () => void; title?: string; disabled?: boolean; badge?: number }[] = [
     { label: t('panel.position'), active: props.positionActive, onToggle: closeMore(props.onTogglePosition), title: t('panel.positionTitle') },
     { label: t('panel.alerts'), active: props.alertsActive, onToggle: closeMore(props.onToggleAlerts), title: t('panel.alertsTitle'), badge: props.alertsPending },
+    { label: t('perf.panelTitle'), active: props.perfActive === true, onToggle: closeMore(props.onTogglePerf ?? (() => {})), title: t('perf.panelTitle') },
     { label: t('panel.depth'), active: props.depthActive, onToggle: closeMore(props.onToggleDepth), title: t('panel.depthTitle') },
     { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: closeMore(props.onToggleOrderBook), title: t('panel.orderBookTitle') },
     { label: t('panel.vp'), active: props.vpActive, onToggle: closeMore(props.onToggleVp), title: t('panel.vpTitle') },

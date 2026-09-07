@@ -30,6 +30,7 @@ import { usePaperAccount } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
+import { PerfPanel } from './components/PerfPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
@@ -336,6 +337,8 @@ export function App() {
   const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = usePersistedState('volumeProfileOpen', false)
   const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
+  // G10 卡顿诊断面板开关
+  const [perfOpen, setPerfOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   // P4 更新提示：版本升级时显示可关闭横幅
   const [updateBanner, setUpdateBanner] = useState(false)
@@ -1167,6 +1170,8 @@ export function App() {
           onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
           renderCandleCap={renderCandleCap}
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
+          perfActive={perfOpen}
+          onTogglePerf={() => setPerfOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1295,6 +1300,8 @@ export function App() {
           onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
           renderCandleCap={renderCandleCap}
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
+          perfActive={perfOpen}
+          onTogglePerf={() => setPerfOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1490,6 +1497,9 @@ export function App() {
           currentPrice={candles[candles.length - 1]?.close ?? null}
           alertsApi={alertsApi}
         />
+      )}
+      {perfOpen && (
+        <PerfPanel frameStats={frameStats} onClose={() => setPerfOpen(false)} />
       )}
       {settingsOpen && (
         <IndicatorSettings
