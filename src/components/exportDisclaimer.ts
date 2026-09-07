@@ -109,3 +109,49 @@ export async function exportScreenshotWithDisclaimer(
   a.download = fileName
   a.click()
 }
+
+/** I2 一键分享：Web Share API（带文件）分享带免责声明的 PNG，不支持时降级下载 */
+export async function shareScreenshotWithDisclaimer(
+  dataUrl: string,
+  fileName: string,
+  disclaimer: string,
+): Promise<boolean> {
+  let output = dataUrl
+  try {
+    const image = new Image()
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve()
+      image.onerror = () => reject(new Error('screenshot decode failed'))
+      image.src = dataUrl
+    })
+    if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+      const canvas = document.createElement('canvas')
+      canvas.width = image.naturalWidth
+      canvas.height = image.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('canvas unavailable')
+      ctx.drawImage(image, 0, 0)
+      drawExportDisclaimer(canvas, disclaimer)
+      output = canvas.toDataURL('image/png')
+    }
+  } catch {
+    output = dataUrl
+  }
+  const blob = await (await fetch(output)).blob()
+  const file = new File([blob], fileName, { type: 'image/png' })
+  if (navigator.share && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: fileName })
+      return true
+    } catch {
+      /* 用户取消分享 → 不降级下载 */
+      return false
+    }
+  }
+  // 降级：下载
+  const a = document.createElement('a')
+  a.href = output
+  a.download = fileName
+  a.click()
+  return true
+}

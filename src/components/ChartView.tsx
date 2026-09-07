@@ -39,7 +39,7 @@ import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
 import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/format'
-import { exportScreenshotWithDisclaimer } from './exportDisclaimer'
+import { exportScreenshotWithDisclaimer, shareScreenshotWithDisclaimer } from './exportDisclaimer'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'supertrend' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon' | 'trix' | 'dpo' | 'vortex' | 'none'
@@ -1149,6 +1149,35 @@ export function ChartView({
       >
         {t('drawing.screenshot')}
       </button>
+      {/* I2 一键分享：Web Share API 带文件，不支持时降级下载 */}
+      <button
+        data-testid="screenshot-share"
+        onClick={() => {
+          const dataUrl = apiRef.current?.takeScreenshot(undefined, screenshotScale)
+          if (!dataUrl) return
+          void shareScreenshotWithDisclaimer(
+            dataUrl,
+            `${symbol}_${period}@${screenshotScale}x.png`,
+            chartLabelsFor(lang).watermark,
+          )
+        }}
+        title={t('drawing.shareTitle')}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 92,
+          padding: '3px 8px',
+          fontSize: 11,
+          border: '1px solid #2a2e39',
+          borderRadius: 4,
+          cursor: 'pointer',
+          background: 'var(--panel)',
+          color: 'var(--text-dim)',
+          zIndex: 6,
+        }}
+      >
+        {t('drawing.share')}
+      </button>
       <button
         data-testid="screenshot-scale-toggle"
         onClick={() => setScreenshotScale((s) => (s === 1 ? 2 : s === 2 ? 3 : 1))}
@@ -1157,7 +1186,7 @@ export function ChartView({
         style={{
           position: 'absolute',
           top: 8,
-          right: 92,
+          right: 160,
           padding: '3px 8px',
           fontSize: 11,
           border: '1px solid #2a2e39',
