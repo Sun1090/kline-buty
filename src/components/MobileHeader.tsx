@@ -164,6 +164,9 @@ export interface MobileHeaderProps {
   /** H5 应用内版本历史 */
   changelogActive?: boolean
   onToggleChangelog?: () => void
+  /** I4 自选价格实时面板 */
+  pinnedActive?: boolean
+  onTogglePinned?: () => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

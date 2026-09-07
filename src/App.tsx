@@ -32,6 +32,7 @@ import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
+import { PinnedPanel } from './components/PinnedPanel'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
@@ -342,6 +343,15 @@ export function App() {
   const [perfOpen, setPerfOpen] = useState(false)
   // H5 应用内版本历史
   const [changelogOpen, setChangelogOpen] = useState(false)
+  // I4 自选价格实时面板（钉选品种迷你图）
+  const [pinnedSymbols, setPinnedSymbols] = usePersistedState<string[]>('pinnedSymbols', [])
+  const [pinnedOpen, setPinnedOpen] = useState(false)
+  const addPinned = (sym: string) => {
+    const s = sym.trim().toUpperCase()
+    if (!s) return
+    setPinnedSymbols((prev) => (prev.includes(s) ? prev : [...prev, s]))
+  }
+  const removePinned = (sym: string) => setPinnedSymbols((prev) => prev.filter((s) => s !== sym))
   const [copied, setCopied] = useState(false)
   // P4 更新提示：版本升级时显示可关闭横幅
   const [updateBanner, setUpdateBanner] = useState(false)
@@ -1214,6 +1224,8 @@ export function App() {
           onImportSettings={importSettingsJson}
           changelogActive={changelogOpen}
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
+          pinnedActive={pinnedOpen}
+          onTogglePinned={() => setPinnedOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1348,6 +1360,8 @@ export function App() {
           onImportSettings={importSettingsJson}
           changelogActive={changelogOpen}
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
+          pinnedActive={pinnedOpen}
+          onTogglePinned={() => setPinnedOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1549,6 +1563,18 @@ export function App() {
       )}
       {changelogOpen && (
         <ChangelogModal onClose={() => setChangelogOpen(false)} />
+      )}
+      {pinnedOpen && (
+        <PinnedPanel
+          symbols={pinnedSymbols}
+          onSelect={(s) => {
+            setSymbol(s)
+            setPinnedOpen(false)
+          }}
+          onAdd={addPinned}
+          onRemove={removePinned}
+          onClose={() => setPinnedOpen(false)}
+        />
       )}
       {settingsOpen && (
         <IndicatorSettings
