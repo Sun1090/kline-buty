@@ -153,6 +153,9 @@ export const zh = {
     window: '窗口帧数',
     warn: '⚠ 丢帧率超 10%——图表可能卡顿（弱网/数据量过大）',
   },
+  changelog: {
+    title: '版本历史',
+  },
   sentiment: {
     globalRatio: '全账户多空比',
     topTraderRatio: '大户持仓多空比',
@@ -798,6 +801,9 @@ export const en: Messages = {
     window: 'Window',
     warn: '⚠ Drop rate > 10% — chart may stutter (weak network / too much data)',
   },
+  changelog: {
+    title: 'Version history',
+  },
   sentiment: {
     globalRatio: 'Global long/short',
     topTraderRatio: 'Top trader ratio',
@@ -1433,6 +1439,9 @@ export const ja: Messages = {
     avgInterval: '平均間隔',
     window: '窓フレーム数',
     warn: '⚠ ドロップ率 10% 超——チャートがカクつく可能性（弱回線/データ過多）',
+  },
+  changelog: {
+    title: 'バージョン履歴',
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -2070,6 +2079,9 @@ export const ko: Messages = {
     avgInterval: '평균 간격',
     window: '창 프레임 수',
     warn: '⚠ 드롭률 10% 초과 — 차트 버벅임 가능 (약한 네트워크/데이터 과다)',
+  },
+  changelog: {
+    title: '버전 기록',
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -2718,6 +2730,9 @@ export const es: Messages = {
     avgInterval: 'Intervalo medio',
     window: 'Ventana',
     warn: '⚠ Tasa de caída > 10% — el gráfico puede tartamudear (red débil / demasiados datos)',
+  },
+  changelog: {
+    title: 'Historial de versiones',
   },
   sentiment: {
     globalRatio: 'Largo/corto global',

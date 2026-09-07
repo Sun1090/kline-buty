@@ -31,6 +31,7 @@ import { useTradeSettings } from './hooks/useTradeSettings'
 import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
+import { ChangelogModal } from './components/ChangelogModal'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
@@ -339,6 +340,8 @@ export function App() {
   const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
   // G10 卡顿诊断面板开关
   const [perfOpen, setPerfOpen] = useState(false)
+  // H5 应用内版本历史
+  const [changelogOpen, setChangelogOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   // P4 更新提示：版本升级时显示可关闭横幅
   const [updateBanner, setUpdateBanner] = useState(false)
@@ -1209,6 +1212,8 @@ export function App() {
           onTogglePerf={() => setPerfOpen((v) => !v)}
           onExportSettings={exportSettingsJson}
           onImportSettings={importSettingsJson}
+          changelogActive={changelogOpen}
+          onToggleChangelog={() => setChangelogOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1341,6 +1346,8 @@ export function App() {
           onTogglePerf={() => setPerfOpen((v) => !v)}
           onExportSettings={exportSettingsJson}
           onImportSettings={importSettingsJson}
+          changelogActive={changelogOpen}
+          onToggleChangelog={() => setChangelogOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1539,6 +1546,9 @@ export function App() {
       )}
       {perfOpen && (
         <PerfPanel frameStats={frameStats} onClose={() => setPerfOpen(false)} />
+      )}
+      {changelogOpen && (
+        <ChangelogModal onClose={() => setChangelogOpen(false)} />
       )}
       {settingsOpen && (
         <IndicatorSettings

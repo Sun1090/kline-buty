@@ -161,6 +161,9 @@ export interface MobileHeaderProps {
   /** H7/H8 设置快照导出/导入（桌面端使用） */
   onExportSettings?: () => void
   onImportSettings?: (json: string) => boolean
+  /** H5 应用内版本历史 */
+  changelogActive?: boolean
+  onToggleChangelog?: () => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean
