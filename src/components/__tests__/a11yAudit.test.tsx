@@ -103,6 +103,8 @@ function makeAlertsApi(overrides: Partial<AlertsApi> = {}): AlertsApi {
     clearHistory: vi.fn(),
     requestPermission: vi.fn(async () => 'granted' as const),
     pendingCount: 0,
+    voiceEnabled: false,
+    setVoiceEnabled: vi.fn(),
     triggerCounts: {},
     setAlertsDisabled: vi.fn(),
     setGroupEnabled: vi.fn(),
