@@ -294,3 +294,11 @@ describe('usePriceAlerts', () => {
     expect(result.current.channel).toBe('web')
     expect(localStorage.getItem('kline-buty:alertChannel')).toBe('web')
   })
+
+  it('I7 语音播报：默认关闭，可切换并持久化', () => {
+    const { result } = renderHook(() => usePriceAlerts(null))
+    expect(result.current.voiceEnabled).toBe(false)
+    act(() => result.current.setVoiceEnabled(true))
+    expect(result.current.voiceEnabled).toBe(true)
+    expect(localStorage.getItem('kline-buty:alertVoice')).toBe('true')
+  })

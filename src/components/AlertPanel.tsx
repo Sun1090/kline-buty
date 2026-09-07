@@ -63,6 +63,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
     setSoundEnabled,
     soundKind,
     setSoundKind,
+    voiceEnabled,
+    setVoiceEnabled,
     channel,
     setChannel,
     history,
@@ -267,6 +269,23 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           }}
         >
           {soundEnabled ? '🔔' : '🔕'}
+        </button>
+        <button
+          data-testid="alert-voice-toggle"
+          onClick={() => setVoiceEnabled(!voiceEnabled)}
+          aria-pressed={voiceEnabled}
+          title={t('alert.voice')}
+          aria-label={t('alert.voice')}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontSize: 13,
+            marginLeft: 6,
+            color: voiceEnabled ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
+          {voiceEnabled ? '🗣' : '🔇'}
         </button>
         {soundEnabled && (
           <>

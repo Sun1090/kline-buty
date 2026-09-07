@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createAlert, shouldTrigger, stepAlert, setAlertsDisabled as setAlertsDisabledIds, setGroupDisabled, isExpired, type PriceAlert } from '../alerts/engine'
 import { fetchTickers24h } from '../data/binance/rest'
 import { useI18n } from '../i18n/useI18n'
+import { localeFor } from '../i18n/messages'
 import { usePersistedState } from './usePersistedState'
 
 const STORAGE_KEY = 'kline-buty:alerts'
@@ -64,6 +65,9 @@ export interface AlertsApi {
   clearHistory: () => void
   /** E12 未触发（待触发）提醒数：桌面角标用 */
   pendingCount: number
+  /** I7 语音播报开关（价格异动朗读） */
+  voiceEnabled: boolean
+  setVoiceEnabled: (v: boolean) => void
   /** E8 各提醒触发次数（由历史推导，alertId → 次数） */
   triggerCounts: Record<string, number>
   /** E7 批量停用/启用 */
@@ -180,9 +184,11 @@ export function usePriceAlerts(
   latestPrice: { symbol: string; price: number } | null,
   prices?: Record<string, number> | null,
 ): AlertsApi {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [soundEnabled, setSoundEnabled] = usePersistedState<boolean>('alertSound', true)
   const [soundKind, setSoundKind] = usePersistedState<AlertSoundKind>('alertSoundKind', 'beep')
+  // I7 语音播报（WebSpeech，按当前 UI 语言朗读触发信息）
+  const [voiceEnabled, setVoiceEnabled] = usePersistedState<boolean>('alertVoice', false)
   const [channel, setChannelState] = useState<AlertChannel>(loadChannel)
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
   const [history, setHistory] = useState<AlertTriggerEvent[]>(loadHistory)
@@ -251,6 +257,8 @@ export function usePriceAlerts(
   soundOnRef.current = soundEnabled
   const soundKindRef = useRef(soundKind)
   soundKindRef.current = soundKind
+  const voiceRef = useRef(voiceEnabled)
+  voiceRef.current = voiceEnabled
   const channelRef = useRef(channel)
   channelRef.current = channel
 
@@ -412,6 +420,22 @@ export function usePriceAlerts(
       }
     }
     if (soundOnRef.current) playAlertBeep(soundKindRef.current)
+    // I7 语音播报：切换 UI 语言朗读触发信息（浏览器不支持的场合静默）
+    if (voiceRef.current && typeof speechSynthesis !== 'undefined') {
+      try {
+        const first = due[0]
+        const text = t(
+          first.direction === 'above' ? 'alert.notifyAbove' : 'alert.notifyBelow',
+          { symbol: first.symbol, price: first.price },
+        )
+        const utter = new SpeechSynthesisUtterance(text)
+        utter.lang = localeFor(lang)
+        speechSynthesis.cancel()
+        speechSynthesis.speak(utter)
+      } catch {
+        /* 语音不可用静默 */
+      }
+    }
     // 统一 stepAlert 推进（含 repeatInterval 间隔保护、repeat 重新武装；停用/过期保持原样）
     persistRef.current(
       alertsRef.current.map((a) => {
@@ -429,7 +453,7 @@ export function usePriceAlerts(
         at: now,
       })),
     )
-  }, [latestPrice, prices, feedPrices, permission, t, appendHistory])
+  }, [latestPrice, prices, feedPrices, permission, t, lang, appendHistory])
 
   return {
     alerts,
@@ -447,6 +471,8 @@ export function usePriceAlerts(
     history,
     clearHistory,
     pendingCount,
+    voiceEnabled,
+    setVoiceEnabled,
     triggerCounts,
     setAlertsDisabled,
     setGroupEnabled,
