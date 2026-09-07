@@ -33,6 +33,7 @@ import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
 import { PinnedPanel } from './components/PinnedPanel'
+import { DocsIndexModal } from './components/DocsIndexModal'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
@@ -343,6 +344,8 @@ export function App() {
   const [perfOpen, setPerfOpen] = useState(false)
   // H5 应用内版本历史
   const [changelogOpen, setChangelogOpen] = useState(false)
+  // H3 应用内文档索引
+  const [docsOpen, setDocsOpen] = useState(false)
   // I4 自选价格实时面板（钉选品种迷你图）
   const [pinnedSymbols, setPinnedSymbols] = usePersistedState<string[]>('pinnedSymbols', [])
   const [pinnedOpen, setPinnedOpen] = useState(false)
@@ -1231,6 +1234,8 @@ export function App() {
           onTogglePinned={() => setPinnedOpen((v) => !v)}
           exportBarRange={exportBarRange}
           onSetExportBarRange={setExportBarRange}
+          docsActive={docsOpen}
+          onToggleDocs={() => setDocsOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1369,6 +1374,8 @@ export function App() {
           onTogglePinned={() => setPinnedOpen((v) => !v)}
           exportBarRange={exportBarRange}
           onSetExportBarRange={setExportBarRange}
+          docsActive={docsOpen}
+          onToggleDocs={() => setDocsOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1570,6 +1577,9 @@ export function App() {
       )}
       {changelogOpen && (
         <ChangelogModal onClose={() => setChangelogOpen(false)} />
+      )}
+      {docsOpen && (
+        <DocsIndexModal onClose={() => setDocsOpen(false)} />
       )}
       {pinnedOpen && (
         <PinnedPanel
