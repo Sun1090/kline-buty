@@ -170,6 +170,9 @@ export interface MobileHeaderProps {
   /** I13 导出范围（最近 N 根；0=全部） */
   exportBarRange?: number
   onSetExportBarRange?: (n: number) => void
+  /** H3 应用内文档索引 */
+  docsActive?: boolean
+  onToggleDocs?: () => void
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean

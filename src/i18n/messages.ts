@@ -186,6 +186,17 @@ export const zh = {
     exportRange: '导出范围',
     all: '全部',
   },
+  docs: {
+    title: '文档索引',
+    knowledge: '交易知识库',
+    knowledgeDesc: '27 章 201 篇：现货/期货/股票/加密/外汇/期权/宏观/量化',
+    readme: '项目 README',
+    readmeDesc: '功能特性、技术栈、快速开始',
+    repo: 'GitHub 仓库',
+    repoDesc: '源码、Issue、Pull Request',
+    changelog: 'CHANGELOG',
+    changelogDesc: '完整变更历史',
+  },
   replay: {
     start: '回放',
     title: '历史逐根回放',
@@ -850,6 +861,17 @@ export const en: Messages = {
     exportRange: 'Export range',
     all: 'All',
   },
+  docs: {
+    title: 'Documentation',
+    knowledge: 'Knowledge base',
+    knowledgeDesc: '27 chapters, 201 articles: spot/futures/stocks/crypto/forex/options/macro/quant',
+    readme: 'Project README',
+    readmeDesc: 'Features, tech stack, quick start',
+    repo: 'GitHub repo',
+    repoDesc: 'Source, Issues, Pull Requests',
+    changelog: 'CHANGELOG',
+    changelogDesc: 'Full change history',
+  },
   replay: {
     start: 'Replay',
     title: 'Step-by-step history replay',
@@ -1504,6 +1526,17 @@ export const ja: Messages = {
   csv: {
     exportRange: '出力範囲',
     all: 'すべて',
+  },
+  docs: {
+    title: 'ドキュメント索引',
+    knowledge: '取引ナレッジベース',
+    knowledgeDesc: '27 章 201 記事：現物/先物/株式/暗号/為替/オプション/マクロ/クオンツ',
+    readme: 'プロジェクト README',
+    readmeDesc: '機能、技術スタック、クイックスタート',
+    repo: 'GitHub リポジトリ',
+    repoDesc: 'ソース、Issue、Pull Request',
+    changelog: 'CHANGELOG',
+    changelogDesc: '完全な変更履歴',
   },
   replay: {
     start: 'リプレイ',
@@ -2160,6 +2193,17 @@ export const ko: Messages = {
   csv: {
     exportRange: '내보내기 범위',
     all: '전체',
+  },
+  docs: {
+    title: '문서 색인',
+    knowledge: '거래 지식 베이스',
+    knowledgeDesc: '27장 201편: 현물/선물/주식/암호화폐/외환/옵션/매크로/퀀트',
+    readme: '프로젝트 README',
+    readmeDesc: '기능, 기술 스택, 빠른 시작',
+    repo: 'GitHub 저장소',
+    repoDesc: '소스, Issue, Pull Request',
+    changelog: 'CHANGELOG',
+    changelogDesc: '전체 변경 기록',
   },
   replay: {
     start: '다시보기',
@@ -2827,6 +2871,17 @@ export const es: Messages = {
   csv: {
     exportRange: 'Rango de exportación',
     all: 'Todo',
+  },
+  docs: {
+    title: 'Índice de documentos',
+    knowledge: 'Base de conocimiento',
+    knowledgeDesc: '27 capítulos, 201 artículos: spot/futuros/acciones/cripto/forex/opciones/macro/cuantitativo',
+    readme: 'README del proyecto',
+    readmeDesc: 'Funciones, stack, inicio rápido',
+    repo: 'Repositorio GitHub',
+    repoDesc: 'Código, Issues, Pull Requests',
+    changelog: 'CHANGELOG',
+    changelogDesc: 'Historial completo de cambios',
   },
   replay: {
     start: 'Reproducción',
