@@ -64,6 +64,21 @@
 - F3/F5/F6/F8/F9/F10/F11/F12/F13/F17/F19/F20 核对：承接 v0.3 M1/O9 等既有实现（a11yAudit/useReducedMotion/compare/Skeleton/OfflineBanner）
 - 五语 i18n 全量同步；unit 1495 全绿，build 全通，CI ✅
 
+## H 阶段 - 生态 / 部署 / 文档 + I 阶段 - 新特性 + G 收尾
+- H3 应用内文档索引：DocsIndexModal 知识库/README/仓库/CHANGELOG 快捷入口（More 菜单）
+- H5 版本历史：ChangelogModal 应用内版本要点（v0.1–v0.4）
+- H7/H8 设置快照：全量 `kline-buty:*` 持久化键导出/导入（主题/自选/画线/账户一次迁移）
+- H9 快捷键速查卡：printShortcuts 独立打印窗口生成分组表
+- H11 多浏览器：playwright projects chromium/firefox/webkit（chromium/webkit 通过）
+- H12 反馈入口：GitHub Issues 链接
+- I2 一键分享：Web Share API 带文件分享图表 PNG（不支持降级下载）
+- I4 自选实时行情：PinnedPanel 钉选品种最新价/涨跌/日线迷你图 + 新增/取消钉选
+- I7 语音播报：WebSpeech 按 UI 语言朗读价格异动（面板开关）
+- I13 区间导出：CSV 导出范围最近 N 根（全部/100/500/1000）
+- G6 渲染性能基准：指标/降采样/裁剪管线预算（perf.test 扩充）
+- 工程：vitest 主配置隔离 docs-site（React/Vue 两套测试环境），CI 集成 test:docs；lint 修复
+- 五语 i18n 全量同步；unit 1494 + test:docs 21 + perf 10 全绿，build 全通，CI ✅
+
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
 承接 30 项 P0–P2 之后的功能深化，共 34 提交，全部推送 `origin/main`。完成状态逐项见 `docs/11-P3P4-完成状态盘点.md`。
