@@ -170,4 +170,36 @@ describe('createKlineWs', () => {
     expect(env.sockets.length).toBe(2) // 已发起第 2 次连接
     ws.close()
   })
+
+  it('G7 泄漏审计：close() 后重连定时器被清除，不再发起新连接', () => {
+    const env = makeEnv()
+    const statuses: string[] = []
+    const ws = createKlineWs('BTCUSDT', '1m', {
+      onStatus: (s) => statuses.push(s),
+      onKline: () => {},
+    }, env.deps)
+    env.sockets[0].emitOpen()
+    expect(statuses[statuses.length - 1]).toBe('live')
+    // 触发断线 → reconnecting（调度重连定时器）
+    env.sockets[0].emitClose()
+    expect(statuses[statuses.length - 1]).toBe('reconnecting')
+    const socketsAfterClose = env.sockets.length
+    // 关闭后推进时间：不应发起新连接（定时器已清除，无泄漏）
+    ws.close()
+    vi.advanceTimersByTime(60_000)
+    expect(env.sockets.length).toBe(socketsAfterClose)
+  })
+
+  it('G7 泄漏审计：重复打开/关闭同一实例不累积连接', () => {
+    const env = makeEnv()
+    const ws = createKlineWs('BTCUSDT', '1m', { onStatus: () => {}, onKline: () => {} }, env.deps)
+    for (let i = 0; i < 5; i++) {
+      env.sockets[0].emitOpen()
+      ws.close()
+      // 重新调度（模拟切品种后再次打开同一实例）——这里实例一次生命周期，验证 close 幂等
+    }
+    vi.advanceTimersByTime(60_000)
+    // close 幂等：不因重复 close 额外创建连接
+    expect(env.sockets.length).toBe(1)
+  })
 })
