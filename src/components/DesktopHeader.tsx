@@ -833,6 +833,28 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               }}
             />
           </div>
+          <div data-testid="export-range" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('csv.exportRange')}</span>
+            {[0, 100, 500, 1000].map((n) => (
+              <button
+                key={n}
+                data-testid={`export-range-${n}`}
+                onClick={() => props.onSetExportBarRange?.(n)}
+                aria-pressed={(props.exportBarRange ?? 0) === n}
+                style={{
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: (props.exportBarRange ?? 0) === n ? 'rgba(41,98,255,0.18)' : 'transparent',
+                  color: (props.exportBarRange ?? 0) === n ? 'var(--accent)' : 'var(--text-dim)',
+                }}
+              >
+                {n === 0 ? t('csv.all') : n}
+              </button>
+            ))}
+          </div>
           <SectionTitle>{t('common.more')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             {moreToggles.map((it) => (

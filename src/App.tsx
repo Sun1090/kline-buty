@@ -795,10 +795,13 @@ export function App() {
     window.setTimeout(() => setCopied(false), 1500)
   }
 
+  // I13 导出范围：最近 N 根（0=全部；持久化）
+  const [exportBarRange, setExportBarRange] = usePersistedState<number>('exportBarRange', 0)
   // 导出当前品种/周期的 K 线 CSV（含当前主/副图指标列），BOM + <a download> 触发下载
   const exportCsv = () => {
     if (candles.length === 0) return
-    const csv = buildCsv(candles, { symbol, period, mainIndicator, subIndicator, params: indicatorParams })
+    const src = exportBarRange > 0 ? candles.slice(-exportBarRange) : candles
+    const csv = buildCsv(src, { symbol, period, mainIndicator, subIndicator, params: indicatorParams })
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -1226,6 +1229,8 @@ export function App() {
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
           pinnedActive={pinnedOpen}
           onTogglePinned={() => setPinnedOpen((v) => !v)}
+          exportBarRange={exportBarRange}
+          onSetExportBarRange={setExportBarRange}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1362,6 +1367,8 @@ export function App() {
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
           pinnedActive={pinnedOpen}
           onTogglePinned={() => setPinnedOpen((v) => !v)}
+          exportBarRange={exportBarRange}
+          onSetExportBarRange={setExportBarRange}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
