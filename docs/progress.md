@@ -5,7 +5,25 @@
 
 ## 当前阶段
 
-**阶段 G · 性能 / 质量 / 工程（进行中）** — docs/13 阶段 G（G1–G15）
+**阶段 H · 生态 / 部署 / 文档（进行中）** — docs/13 阶段 H（H1–H15）
+- H1 知识库离线包 ✅（SW runtime 缓存 /knowledge 已访问页面离线可读）
+- H2 知识库搜索增强 ✅（VitePress local 全文搜索既有）
+- H3 应用内文档索引 ◐（头部知识库链接 + 快捷键帮助 + 版本历史入口）
+- H4 更新提示 ✅（versionCheck + 横幅既有）
+- H5 版本历史页面 ✅（本批：ChangelogModal 应用内版本要点）
+- H6 多语言部署 ✅（en/zh 双语知识库既有）
+- H7 自选列表云同步 ✅（本批：设置快照导出导入覆盖自选/主题/画线/账户）
+- H8 主题与设置导出 ✅（本批：settings snapshot 全量 kline-buty:* 迁移）
+- H9 快捷键速查卡 ✅（本批：printShortcuts 打印窗口 + 头部按钮）
+- H10 数据源可配置 ✅（endpoints custom bases 既有）
+- H11 多浏览器兼容 ◐（本批：playwright 三浏览器 projects chromium/firefox/webkit，smoke 验证中）
+- H12 反馈入口 ✅（本批：GitHub Issues 链接）
+- H13 项目路线图页 ◐（README roadmap + 文档站）
+- H14 Docker 部署镜像更新 ◐（Dockerfile + nginx 既有，待镜像验证）
+- H15 部署健康检查 ◐（vercel 配 rewrites/headers，状态页待补）
+- 状态：H 批一已提交（857faa1/c9391b8/350a6b1/f8d3556），H11 三浏览器验证中
+
+## 阶段 G · 性能 / 质量 / 工程（剩余 G2/G3/G6，已闭合 G1/G4/G5/G7/G8/G9/G10/G11/G12/G13/G14/G15）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
 - G2 视觉回归测试 ✳ **待实现**
 - G3 大屏 K 线数优化 ◐（B12 worker + G15 降采样 + 视口 cull 覆盖；5000+ 压测待补）

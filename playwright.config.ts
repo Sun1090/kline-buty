@@ -1,10 +1,16 @@
-import { defineConfig } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   retries: 2,
   workers: 1,
+  // H11 多浏览器兼容：chromium/firefox/webkit 三浏览器跑同一套用例
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ],
   use: {
     baseURL: 'http://localhost:5173',
     viewport: { width: 1280, height: 800 },
