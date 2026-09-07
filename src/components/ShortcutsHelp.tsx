@@ -51,6 +51,29 @@ export const ACTION_LABELS: Record<ShortcutActionType, MessageKey> = {
   'toggle-alerts': 'shortcuts.toggleAlerts',
 }
 
+/**
+ * H9 快捷键速查卡打印：生成只含快捷键分组的打印窗口并调用 print()。
+ * 独立窗口避免污染主页面打印样式。
+ */
+export function printShortcuts(title: string, rows: { group: string; label: string; keys: string }[]) {
+  const win = window.open('', '_blank', 'width=640,height=900')
+  if (!win) return
+  const rowsHtml = rows
+    .map(
+      (r) =>
+        `<tr><td style="padding:6px 8px;border:1px solid #d0d0d0;">${r.group}</td>` +
+        `<td style="padding:6px 8px;border:1px solid #d0d0d0;">${r.label}</td>` +
+        `<td style="padding:6px 8px;border:1px solid #d0d0d0;font-family:monospace;">${r.keys}</td></tr>`,
+    )
+    .join('')
+  win.document.write(`<!doctype html><html><head><title>${title}</title></head><body>
+    <h2>${title}</h2>
+    <table style="border-collapse:collapse;width:100%;font-size:12px;">${rowsHtml}</table>
+    <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script>
+  </body></html>`)
+  win.document.close()
+}
+
 /** L1 快捷键帮助浮层：按分组显示当前生效键位 + 过滤 + 配置入口；Esc 关闭由全局快捷键处理 */
 export function ShortcutsHelp({ onConfigure, configuring }: ShortcutsHelpProps) {
   const { t } = useI18n()
@@ -67,6 +90,18 @@ export function ShortcutsHelp({ onConfigure, configuring }: ShortcutsHelpProps) 
     ...g,
     items: g.types.filter((ty) => !q || t(ACTION_LABELS[ty]).toLowerCase().includes(q)),
   })).filter((g) => g.items.length > 0)
+  // H9 打印速查卡：收集分组/名称/键位行
+  const handlePrint = () =>
+    printShortcuts(
+      t('shortcuts.title'),
+      groups.flatMap((g) =>
+        g.items.map((ty) => ({
+          group: t(g.titleKey),
+          label: t(ACTION_LABELS[ty]),
+          keys: labelFor(ty),
+        })),
+      ),
+    )
 
   return (
     <div
@@ -105,6 +140,23 @@ export function ShortcutsHelp({ onConfigure, configuring }: ShortcutsHelpProps) 
           }}
         >
           {t('shortcuts.configTitle')}
+        </button>
+        <button
+          data-testid="shortcuts-print"
+          onClick={handlePrint}
+          title={t('shortcuts.print')}
+          style={{
+            background: 'none',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            color: 'var(--text-dim)',
+            cursor: 'pointer',
+            fontSize: 11,
+            padding: '2px 8px',
+            marginLeft: 6,
+          }}
+        >
+          {t('shortcuts.print')}
         </button>
       </div>
       <input

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup } from '@testing-library/react'
-import { ShortcutsHelp } from '../ShortcutsHelp'
+import { ShortcutsHelp, printShortcuts } from '../ShortcutsHelp'
 import { ShortcutsSettings, eventToKey } from '../ShortcutsSettings'
 
 afterEach(cleanup)
@@ -72,5 +72,25 @@ describe('eventToKey（L1 按键归一化）', () => {
   })
   it('方向键保留原值', () => {
     expect(eventToKey(mk({ key: 'ArrowLeft' }))).toEqual({ key: 'ArrowLeft', mod: false, shift: false })
+  })
+})
+
+describe('H9 快捷键速查卡打印', () => {
+  it('printShortcuts：生成打印窗口并写入快捷键表格', () => {
+    const writeSpy = vi.fn()
+    const closeSpy = vi.fn()
+    const win = { document: { write: writeSpy, close: closeSpy } }
+    vi.spyOn(window, 'open').mockReturnValue(win as unknown as Window)
+    printShortcuts('Shortcuts', [
+      { group: '导航', label: '搜索', keys: '⌘K' },
+      { group: '画线', label: '删除', keys: 'Del' },
+    ])
+    expect(window.open).toHaveBeenCalled()
+    const html = writeSpy.mock.calls[0][0] as string
+    expect(html).toContain('Shortcuts')
+    expect(html).toContain('⌘K')
+    expect(html).toContain('</table>')
+    expect(closeSpy).toHaveBeenCalled()
+    vi.restoreAllMocks()
   })
 })
