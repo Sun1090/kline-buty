@@ -840,6 +840,41 @@ export function App() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
+  // H7/H8 设置快照导出：收集全部 kline-buty:* 持久化键 → JSON 文件（主题/自选/画线/账户等一次迁移）
+  const exportSettingsJson = () => {
+    const settings: Record<string, unknown> = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (!key || !key.startsWith('kline-buty:')) continue
+      const raw = localStorage.getItem(key)
+      if (raw !== null) settings[key] = JSON.parse(raw)
+    }
+    const json = JSON.stringify({ version: 1, settings, savedAt: Date.now() }, null, 2)
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'kline-buty-settings.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  // H7/H8 设置快照导入：校验 shape 后逐键恢复并重载（失败返回 false）
+  const importSettingsJson = (text: string): boolean => {
+    try {
+      const parsed = JSON.parse(text) as { version?: number; settings?: Record<string, unknown> }
+      if (parsed.version !== 1 || !parsed.settings || typeof parsed.settings !== 'object') return false
+      for (const [key, value] of Object.entries(parsed.settings)) {
+        if (!key.startsWith('kline-buty:')) continue
+        localStorage.setItem(key, JSON.stringify(value))
+      }
+      window.location.reload()
+      return true
+    } catch {
+      return false
+    }
+  }
 
   // 键盘快捷键（纯逻辑见 src/shortcuts.ts）：[ ] 周期、Space 回放、Delete 删画线、Esc 取消、
   // ⌘K / 打开搜索、F 全屏、1/2/3 布局、M/N 循环指标、? 帮助
@@ -1172,6 +1207,8 @@ export function App() {
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           perfActive={perfOpen}
           onTogglePerf={() => setPerfOpen((v) => !v)}
+          onExportSettings={exportSettingsJson}
+          onImportSettings={importSettingsJson}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
@@ -1302,6 +1339,8 @@ export function App() {
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           perfActive={perfOpen}
           onTogglePerf={() => setPerfOpen((v) => !v)}
+          onExportSettings={exportSettingsJson}
+          onImportSettings={importSettingsJson}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
           onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
