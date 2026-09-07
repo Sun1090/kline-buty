@@ -169,6 +169,8 @@ export function DesktopHeader(props: DesktopHeaderProps) {
   // 交易对搜索下拉是否打开：它是顶栏最上层，Esc 层进链路里先于菜单关闭
   const [searchOpen, setSearchOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  // H7/H8 设置快照导入文件
+  const settingsFileRef = useRef<HTMLInputElement>(null)
 
   // 点击弹层外部 → 收起
   useEffect(() => {
@@ -804,6 +806,30 @@ export function DesktopHeader(props: DesktopHeaderProps) {
                 </button>
               </span>
             ))}
+          </div>
+          <SectionTitle>{t('settings.snapshot')}</SectionTitle>
+          <div data-testid="settings-snapshot" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            <PanelButton onClick={props.onExportSettings ?? (() => {})} title={t('settings.snapshotExportTitle')} testId="settings-export">
+              {t('settings.snapshotExport')}
+            </PanelButton>
+            <PanelButton onClick={() => settingsFileRef.current?.click()} title={t('settings.snapshotImportTitle')} testId="settings-import">
+              {t('settings.snapshotImport')}
+            </PanelButton>
+            <input
+              ref={settingsFileRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              data-testid="settings-import-file"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = () => props.onImportSettings?.(String(reader.result ?? ''))
+                reader.readAsText(file)
+                e.target.value = ''
+              }}
+            />
           </div>
           <SectionTitle>{t('common.more')}</SectionTitle>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>

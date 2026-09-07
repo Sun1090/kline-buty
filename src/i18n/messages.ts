@@ -44,6 +44,11 @@ export const zh = {
   settings: {
     watermark: '图表水印',
     watermarkTitle: '显示/隐藏图表免责声明水印',
+    snapshot: '设置快照',
+    snapshotExport: '导出设置',
+    snapshotExportTitle: '导出全部设置（主题/自选/画线/账户等）为 JSON',
+    snapshotImport: '导入设置',
+    snapshotImportTitle: '从 JSON 快照恢复设置（刷新生效）',
   },
 
   chartType: {
@@ -683,6 +688,11 @@ export const en: Messages = {
   settings: {
     watermark: 'Chart watermark',
     watermarkTitle: 'Show/hide the disclaimer watermark on the chart',
+    snapshot: 'Settings snapshot',
+    snapshotExport: 'Export settings',
+    snapshotExportTitle: 'Export all settings (theme/favorites/drawings/account) as JSON',
+    snapshotImport: 'Import settings',
+    snapshotImportTitle: 'Restore settings from a JSON snapshot (reloads)',
   },
 
   chartType: {
@@ -1313,6 +1323,11 @@ export const ja: Messages = {
   settings: {
     watermark: 'チャート透かし',
     watermarkTitle: 'チャートの免責事項透かしを表示/非表示',
+    snapshot: '設定スナップショット',
+    snapshotExport: '設定をエクスポート',
+    snapshotExportTitle: 'すべての設定（テーマ/お気に入り/描画/口座）を JSON で出力',
+    snapshotImport: '設定をインポート',
+    snapshotImportTitle: 'JSON スナップショットから復元（再読み込み）',
   },
 
   chartType: {
@@ -1944,6 +1959,11 @@ export const ko: Messages = {
   settings: {
     watermark: '차트 워터마크',
     watermarkTitle: '차트 면책 워터마크 표시/숨기기',
+    snapshot: '설정 스냅샷',
+    snapshotExport: '설정 내보내기',
+    snapshotExportTitle: '모든 설정(테마/즐겨찾기/그림/계정)을 JSON으로 내보내기',
+    snapshotImport: '설정 가져오기',
+    snapshotImportTitle: 'JSON 스냅샷에서 복원(새로고침)',
   },
 
   chartType: {
@@ -2587,6 +2607,11 @@ export const es: Messages = {
   settings: {
     watermark: 'Marca de agua',
     watermarkTitle: 'Mostrar/ocultar la marca de agua de exención en el gráfico',
+    snapshot: 'Instantánea de ajustes',
+    snapshotExport: 'Exportar ajustes',
+    snapshotExportTitle: 'Exportar todos los ajustes (tema/favoritos/dibujos/cuenta) como JSON',
+    snapshotImport: 'Importar ajustes',
+    snapshotImportTitle: 'Restaurar desde instantánea JSON (recarga)',
   },
 
   chartType: {

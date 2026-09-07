@@ -158,6 +158,9 @@ export interface MobileHeaderProps {
   /** G10 卡顿诊断面板开关 */
   perfActive?: boolean
   onTogglePerf?: () => void
+  /** H7/H8 设置快照导出/导入（桌面端使用） */
+  onExportSettings?: () => void
+  onImportSettings?: (json: string) => boolean
   depthActive: boolean
   onToggleDepth: () => void
   orderBookActive: boolean
