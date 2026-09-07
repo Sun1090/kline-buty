@@ -16,12 +16,22 @@
 - H8 主题与设置导出 ✅（本批：settings snapshot 全量 kline-buty:* 迁移）
 - H9 快捷键速查卡 ✅（本批：printShortcuts 打印窗口 + 头部按钮）
 - H10 数据源可配置 ✅（endpoints custom bases 既有）
-- H11 多浏览器兼容 ◐（本批：playwright 三浏览器 projects chromium/firefox/webkit，smoke 验证中）
+- H11 多浏览器兼容 ◐（本批：playwright 三浏览器 projects；chromium/webkit smoke 通过；
+  firefox headless 在本机有 SWGL 合成器环境缺陷（非应用 bug），待正常环境确认）
 - H12 反馈入口 ✅（本批：GitHub Issues 链接）
 - H13 项目路线图页 ◐（README roadmap + 文档站）
 - H14 Docker 部署镜像更新 ◐（Dockerfile + nginx 既有，待镜像验证）
 - H15 部署健康检查 ◐（vercel 配 rewrites/headers，状态页待补）
-- 状态：H 批一已提交（857faa1/c9391b8/350a6b1/f8d3556），H11 三浏览器验证中
+- 状态：H 批已提交（857faa1/c9391b8/350a6b1/f8d3556），H11 chrom/webkit 通过
+
+## 阶段 I · 新特性构想（进行中）
+- I1★ PWA 离线可安装 ✅（sw.js + manifest 既有）
+- I2★ 画线一键分享 ◐（截图导出含水印既有，系统分享入口待补）
+- I4 自选价格实时面板 ✅（本批：PinnedPanel 钉选迷你图 + 新增/取消）
+- I7 多语言语音播报 ✅（本批：WebSpeech 按 UI 语言朗读触发）
+- I8 图表面板深链 ✅（?symbol=&period= URL 解析既有）
+- I9 深色浅色自动切换 ✅（theme auto 既有）
+- I3/I5/I6/I10/I11/I12/I13/I14/I15 ✳ 待实现（云同步/语义识别/智能提醒/推荐/Widget/笔记/区间导出/画廊/模板市场）
 
 ## 阶段 G · 性能 / 质量 / 工程（剩余 G2/G3/G6，已闭合 G1/G4/G5/G7/G8/G9/G10/G11/G12/G13/G14/G15）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
