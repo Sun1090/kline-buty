@@ -28,12 +28,14 @@
 - I1★ PWA 离线可安装 ✅（sw.js + manifest 既有）
 - I2★ 画线一键分享 ✅（本批：Web Share API 带文件分享 + 降级下载）
 - I4 自选价格实时面板 ✅（本批：PinnedPanel 钉选迷你图 + 新增/取消）
+- I6 智能提醒（波动率阈值自适应）✅（本批：atrPercent + adaptiveThreshold ATR% 波动带）
 - I7 多语言语音播报 ✅（本批：WebSpeech 按 UI 语言朗读触发）
 - I8 图表面板深链 ✅（?symbol=&period= URL 解析既有）
 - I9 深色浅色自动切换 ✅（theme auto 既有）
+- I10 指标智能推荐 ✅（本批：recommendIndicators 趋势/波动率分析 + 参数面板一键应用）
 - I12 交易策略笔记 ✅（既有 note 便签画线工具落图）
 - I13 数据导出增强 ✅（本批：导出范围最近 N 根 0/100/500/1000）
-- I3/I5/I6/I10/I11/I14/I15 ✳ 待实现（云同步/语义识别/智能提醒/推荐/Widget/画廊/模板市场，多为后端/复杂依赖）
+- I3/I5/I11/I14/I15 ✳ 待实现（云同步/语义识别/Widget/画廊/模板市场，多为后端/原生平台依赖）
 
 ## 阶段 G · 性能 / 质量 / 工程（剩余 G2/G3，已闭合 G1/G4/G5/G6/G7/G8/G9/G10/G11/G12/G13/G14/G15）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
