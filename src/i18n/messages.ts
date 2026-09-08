@@ -541,6 +541,7 @@ export const zh = {
     triggerCount: '触发',
     groupToggle: '组开关',
     voice: '语音播报（价格异动朗读）',
+    adaptive: '波动率自适应（ATR 阈值）',
     pending: '待触发',
   },
   tooltip: {
@@ -1216,6 +1217,7 @@ export const en: Messages = {
     triggerCount: 'hits',
     groupToggle: 'Toggle group',
     voice: 'Voice alerts (read price moves aloud)',
+    adaptive: 'Adaptive (ATR) threshold',
     pending: 'Pending',
   },
   tooltip: {
@@ -1882,6 +1884,7 @@ export const ja: Messages = {
     triggerCount: '発動回数',
     groupToggle: 'グループ切替',
     voice: '音声アラート（価格変動を読み上げ）',
+    adaptive: 'ボラティリティ適応（ATR 閾値）',
     pending: '待機中',
   },
   tooltip: {
@@ -2549,6 +2552,7 @@ export const ko: Messages = {
     triggerCount: '발동 횟수',
     groupToggle: '그룹 전환',
     voice: '음성 알림 (가격 변동 읽어주기)',
+    adaptive: '변동성 적응(ATR 임계값)',
     pending: '대기 중',
   },
   tooltip: {
@@ -3227,6 +3231,7 @@ export const es: Messages = {
     triggerCount: 'disparos',
     groupToggle: 'Alternar grupo',
     voice: 'Alertas por voz (leer movimientos)',
+    adaptive: 'Umbral adaptativo (ATR)',
     pending: 'Pendiente',
   },
   tooltip: {

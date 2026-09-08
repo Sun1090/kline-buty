@@ -10,6 +10,7 @@ import { useKlineData } from './hooks/useKlineData'
 import { SYMBOL_LIST } from './hooks/useSymbolList'
 import { useMarketStats } from './hooks/useMarketStats'
 import { downsampleCandles } from './chart/downsample'
+import { atrPercent } from './chart/volatility'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
@@ -541,6 +542,8 @@ export function App() {
   const alertsApi = usePriceAlerts(
     candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,
   )
+  // I6 波动率自适应提醒：以最近 K 线 ATR% 估计波动带
+  const volatilityPct = useMemo(() => atrPercent(candles, 14), [candles])
 
   // 提醒数据同步到 SW（后台提醒尽力版）
   useEffect(() => {
@@ -1570,6 +1573,7 @@ export function App() {
           symbol={symbol}
           currentPrice={candles[candles.length - 1]?.close ?? null}
           alertsApi={alertsApi}
+          volatilityPct={volatilityPct}
         />
       )}
       {perfOpen && (
