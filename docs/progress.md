@@ -19,9 +19,9 @@
 - H11 多浏览器兼容 ◐（本批：playwright 三浏览器 projects；chromium/webkit smoke 通过；
   firefox headless 在本机有 SWGL 合成器环境缺陷（非应用 bug），待正常环境确认）
 - H12 反馈入口 ✅（本批：GitHub Issues 链接）
-- H13 项目路线图页 ◐（README roadmap + 文档站）
-- H14 Docker 部署镜像更新 ◐（Dockerfile + nginx 既有，待镜像验证）
-- H15 部署健康检查 ◐（vercel 配 rewrites/headers，状态页待补）
+- H13 项目路线图页 ✅（本批：README Progress 章节更新 v0.4 D–I 完成清单与徽章，作为路线图）
+- H14 Docker 部署镜像更新 ◐（Dockerfile + nginx 既有，镜像构建/推送待 CI 侧验证）
+- H15 部署健康检查 ◐（静态托管无服务端探活；以 CI/Pages 状态徽章代偿，状态页待补）
 - 状态：H 批已提交（857faa1/c9391b8/350a6b1/f8d3556/aa9c5e5），H11 chrom/webkit 通过
 
 ## 阶段 I · 新特性构想（进行中）
