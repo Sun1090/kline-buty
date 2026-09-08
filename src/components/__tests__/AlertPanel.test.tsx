@@ -320,4 +320,15 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
     render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
     expect(screen.getByText(/已过期/)).toBeTruthy()
   })
+
+  it('I6 波动率自适应：开启后按 ATR% 计算阈值（above → 现价+ATR%）', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} volatilityPct={2} />)
+    fireEvent.change(screen.getByPlaceholderText('63000.00'), { target: { value: '99999' } })
+    fireEvent.click(screen.getByTestId('alert-adaptive-toggle').querySelector('input')!)
+    fireEvent.click(screen.getByText('添加提醒'))
+    // 63000 × (1 + 2%) = 64260（adaptiveThreshold 覆盖手输价）
+    const args = vi.mocked(api.addAlert).mock.calls[0] as unknown[]
+    expect(args[2]).toBeCloseTo(64260)
+  })
 })

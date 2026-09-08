@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createAlert, evaluateAlert, evaluateTime, evaluateAlertCombo, shouldTrigger, isCurrentlyTrue, stepAlert, isExpired, setAlertsDisabled, setGroupDisabled, type PriceAlert } from '../engine'
+import { createAlert, evaluateAlert, evaluateTime, evaluateAlertCombo, shouldTrigger, isCurrentlyTrue, stepAlert, isExpired, setAlertsDisabled, setGroupDisabled, adaptiveThreshold, type PriceAlert } from '../engine'
 
 const above = createAlert('BTCUSDT', 'above', 65000)
 const below = createAlert('BTCUSDT', 'below', 60000)
@@ -226,5 +226,18 @@ describe('E6 到期时间', () => {
     expect(shouldTrigger(expired, 66000, undefined, 1000)).toBe(false)
     // 过期后价格回落再上涨也不重触发
     expect(stepAlert({ ...expired, triggered: false }, 66000, undefined, 1000).triggered).toBe(false)
+  })
+})
+
+describe('I6 波动率自适应阈值', () => {
+  it('above → 现价 + ATR%×倍数；below → 现价 − 波动带', () => {
+    expect(adaptiveThreshold(100, 'above', 2, 1)).toBeCloseTo(102)
+    expect(adaptiveThreshold(100, 'below', 2, 1)).toBeCloseTo(98)
+    expect(adaptiveThreshold(100, 'above', 2, 2)).toBeCloseTo(104)
+  })
+  it('atrPct ≤0 或 mult 过小 → 钳制不产生反向/零带宽', () => {
+    expect(adaptiveThreshold(100, 'above', 0, 1)).toBe(100)
+    expect(adaptiveThreshold(100, 'below', -1, 1)).toBe(100)
+    expect(adaptiveThreshold(100, 'above', 2, 0)).toBeGreaterThan(100)
   })
 })

@@ -125,3 +125,17 @@ export function setGroupDisabled(alerts: PriceAlert[], group: string, disabled: 
 export function isCurrentlyTrue(a: PriceAlert, currentPrice: number): boolean {
   return evaluateAlert(a, currentPrice)
 }
+
+/**
+ * I6 波动率自适应阈值：以当前价 × ATR% × 倍数 计算上下阈值。
+ * above → price + 波动带；below → price − 波动带。纯函数便于单测。
+ */
+export function adaptiveThreshold(
+  price: number,
+  direction: 'above' | 'below',
+  atrPct: number,
+  mult = 1,
+): number {
+  const delta = price * Math.max(0, atrPct / 100) * Math.max(0.1, mult)
+  return direction === 'above' ? price + delta : price - delta
+}

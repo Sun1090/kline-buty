@@ -3,12 +3,15 @@ import type { AlertsApi, AlertSoundKind, AlertChannel, AlertTemplate } from '../
 import { playAlertBeep } from '../hooks/usePriceAlerts'
 import { isExpired } from '../alerts/engine'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { adaptiveThreshold } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
 
 interface AlertPanelProps {
   symbol: string
   currentPrice: number | null
   alertsApi: AlertsApi
+  /** I6 波动率自适应：最近 K 线 ATR%（0 表示无数据） */
+  volatilityPct?: number
 }
 
 const inputStyle: React.CSSProperties = {
@@ -21,8 +24,10 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--text)',
 }
 
-export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps) {
+export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 }: AlertPanelProps) {
   const { t } = useI18n()
+  // I6 波动率自适应：开启后以当前价 ± ATR% 计算阈值（无价格时回落普通输入）
+  const [adaptive, setAdaptive] = useState(false)
   const [direction, setDirection] = useState<'above' | 'below'>('above')
   const [price, setPrice] = useState('')
   const [repeat, setRepeat] = useState(false)
@@ -122,10 +127,15 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
   /** 提交提醒：含 E15 备注 / E6 到期 / E10 精度 */
   const submitAlert = () => {
     if (!valid || !intervalValid) return
+    // I6 波动率自适应：开启且有现价时用 ATR% 波动带阈值替换手输价
+    const adaptivePrice =
+      adaptive && currentPrice !== null && volatilityPct > 0
+        ? adaptiveThreshold(currentPrice, direction, volatilityPct)
+        : priceNum
     addAlert(
       symbol,
       direction,
-      priceNum,
+      adaptivePrice,
       repeat,
       timeWindow,
       repeat ? intervalNum || undefined : undefined,
@@ -452,6 +462,17 @@ export function AlertPanel({ symbol, currentPrice, alertsApi }: AlertPanelProps)
           <span>{t('alert.minutes')}</span>
         </div>
       )}
+      {/* I6 波动率自适应：以当前价 ± ATR% 波动带计算阈值 */}
+      <label
+        data-testid="alert-adaptive-toggle"
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)', marginBottom: 8, cursor: 'pointer' }}
+      >
+        <input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+        {t('alert.adaptive')}
+        {adaptive && volatilityPct > 0 && (
+          <span style={{ color: 'var(--text-faint)', fontSize: 10 }}>ATR {volatilityPct.toFixed(2)}%</span>
+        )}
+      </label>
       {/* K2 提醒分组：可选命名分组 */}
       <div data-testid="alert-group-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.group')}</span>
