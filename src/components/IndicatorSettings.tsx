@@ -32,6 +32,9 @@ interface IndicatorSettingsProps {
   /** H11 指标线颜色自定义：line id → 覆盖色 */
   lineColors?: Record<string, string>
   onLineColorChange?: (id: string, color: string) => void
+  /** I10 智能推荐（按趋势/波动率）：点按钮一键应用 */
+  recommendation?: { main: MainIndicatorKind; sub: SubIndicatorKind; rationale: string }
+  onApplyRecommendation?: () => void
 }
 
 function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction): Field[] {
@@ -126,6 +129,8 @@ export function IndicatorSettings({
   onClose,
   lineColors = {},
   onLineColorChange,
+  recommendation,
+  onApplyRecommendation,
 }: IndicatorSettingsProps) {
   const { t } = useI18n()
   const fields = fieldsFor(mainIndicator, subIndicator, t)
@@ -225,6 +230,27 @@ export function IndicatorSettings({
           ✕
         </button>
       </div>
+      {/* I10 智能推荐：一键按趋势/波动率应用主副图指标 */}
+      {recommendation && (
+        <button
+          data-testid="indicator-recommend"
+          onClick={onApplyRecommendation}
+          title={t('indicator.recommendTitle')}
+          style={{
+            width: '100%',
+            padding: '5px 0',
+            marginBottom: 10,
+            fontSize: 11,
+            border: '1px solid rgba(41,98,255,0.4)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: 'rgba(41,98,255,0.1)',
+            color: 'var(--accent)',
+          }}
+        >
+          💡 {t('indicator.recommend')}: {recommendation.main.toUpperCase()} + {recommendation.sub.toUpperCase()} · {t(`indicator.rec${recommendation.rationale}` as never)}
+        </button>
+      )}
       {fields.length === 0 && <div style={{ color: 'var(--text-faint)' }}>{t('indicator.noParams')}</div>}
       {fields.map((f) => (
         <div key={String(f.key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
