@@ -11,6 +11,7 @@ import { SYMBOL_LIST } from './hooks/useSymbolList'
 import { useMarketStats } from './hooks/useMarketStats'
 import { downsampleCandles } from './chart/downsample'
 import { atrPercent } from './chart/volatility'
+import { recommendIndicators } from './indicators/recommend'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
@@ -544,6 +545,8 @@ export function App() {
   )
   // I6 波动率自适应提醒：以最近 K 线 ATR% 估计波动带
   const volatilityPct = useMemo(() => atrPercent(candles, 14), [candles])
+  // I10 指标智能推荐：按趋势/波动率给出主副图建议
+  const indicatorRec = useMemo(() => recommendIndicators(candles), [candles])
 
   // 提醒数据同步到 SW（后台提醒尽力版）
   useEffect(() => {
@@ -1605,6 +1608,11 @@ export function App() {
           onChange={setIndicatorParams}
           onClose={() => setSettingsOpen(false)}
           lineColors={lineColors}
+          recommendation={indicatorRec}
+          onApplyRecommendation={() => {
+            setMainIndicator(indicatorRec.main)
+            setSubIndicator(indicatorRec.sub)
+          }}
           onLineColorChange={(id, color) =>
             setLineColors((prev) => {
               const next = { ...prev }

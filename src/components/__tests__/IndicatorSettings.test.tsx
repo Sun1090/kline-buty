@@ -202,3 +202,37 @@ describe('IndicatorSettings', () => {
     expect(onLineColorChange).toHaveBeenCalledWith('MA5', '')
   })
 })
+
+describe('IndicatorSettings I10 智能推荐', () => {
+  it('有推荐时显示推荐按钮；点击触发 onApplyRecommendation', () => {
+    const onChange = vi.fn()
+    const onApply = vi.fn()
+    render(
+      <IndicatorSettings
+        params={DEFAULT_INDICATOR_PARAMS}
+        mainIndicator="ma"
+        subIndicator="volume"
+        onChange={onChange}
+        onClose={vi.fn()}
+        recommendation={{ main: 'ema', sub: 'macd', rationale: 'trending' }}
+        onApplyRecommendation={onApply}
+      />,
+    )
+    expect(screen.getByTestId('indicator-recommend')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('indicator-recommend'))
+    expect(onApply).toHaveBeenCalled()
+  })
+
+  it('无推荐时不显示推荐按钮', () => {
+    const { container } = render(
+      <IndicatorSettings
+        params={DEFAULT_INDICATOR_PARAMS}
+        mainIndicator="ma"
+        subIndicator="volume"
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(container.querySelector('[data-testid="indicator-recommend"]')).toBeNull()
+  })
+})
