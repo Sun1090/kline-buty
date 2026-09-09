@@ -12,6 +12,7 @@ import { useMarketStats } from './hooks/useMarketStats'
 import { downsampleCandles } from './chart/downsample'
 import { atrPercent } from './chart/volatility'
 import { recommendIndicators } from './indicators/recommend'
+import { suggestFromDrawings } from './drawings/semantics'
 import { useSentiment } from './hooks/useSentiment'
 import { StatsBar } from './components/StatsBar'
 import { usePersistedState } from './hooks/usePersistedState'
@@ -547,6 +548,11 @@ export function App() {
   const volatilityPct = useMemo(() => atrPercent(candles, 14), [candles])
   // I10 指标智能推荐：按趋势/波动率给出主副图建议
   const indicatorRec = useMemo(() => recommendIndicators(candles), [candles])
+  // I5 画线语义建议：按当前品种已画图形建议指标
+  const drawingSuggestion = useMemo(
+    () => suggestFromDrawings((drawingsBySymbol[symbol] ?? []).map((d) => d.type)),
+    [drawingsBySymbol, symbol],
+  )
 
   // 提醒数据同步到 SW（后台提醒尽力版）
   useEffect(() => {
@@ -1612,6 +1618,11 @@ export function App() {
           onApplyRecommendation={() => {
             setMainIndicator(indicatorRec.main)
             setSubIndicator(indicatorRec.sub)
+          }}
+          drawingSuggestion={drawingSuggestion ?? undefined}
+          onApplyDrawingSuggestion={() => {
+            if (drawingSuggestion?.main) setMainIndicator(drawingSuggestion.main)
+            if (drawingSuggestion?.sub) setSubIndicator(drawingSuggestion.sub)
           }}
           onLineColorChange={(id, color) =>
             setLineColors((prev) => {

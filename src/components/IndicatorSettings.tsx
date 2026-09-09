@@ -35,6 +35,9 @@ interface IndicatorSettingsProps {
   /** I10 智能推荐（按趋势/波动率）：点按钮一键应用 */
   recommendation?: { main: MainIndicatorKind; sub: SubIndicatorKind; rationale: string }
   onApplyRecommendation?: () => void
+  /** I5 画线语义建议（按已画图形）：点按钮一键应用 */
+  drawingSuggestion?: { main?: MainIndicatorKind; sub?: SubIndicatorKind; rationale: string }
+  onApplyDrawingSuggestion?: () => void
 }
 
 function fieldsFor(main: MainIndicatorKind, sub: SubIndicatorKind, t: TFunction): Field[] {
@@ -131,6 +134,8 @@ export function IndicatorSettings({
   onLineColorChange,
   recommendation,
   onApplyRecommendation,
+  drawingSuggestion,
+  onApplyDrawingSuggestion,
 }: IndicatorSettingsProps) {
   const { t } = useI18n()
   const fields = fieldsFor(mainIndicator, subIndicator, t)
@@ -207,6 +212,7 @@ export function IndicatorSettings({
     <div
       role="region"
       aria-label={t('indicator.settings')}
+      data-testid="indicator-settings-panel"
       style={{
         position: 'absolute',
         top: 52,
@@ -249,6 +255,28 @@ export function IndicatorSettings({
           }}
         >
           💡 {t('indicator.recommend')}: {recommendation.main.toUpperCase()} + {recommendation.sub.toUpperCase()} · {t(`indicator.rec${recommendation.rationale}` as never)}
+        </button>
+      )}
+      {/* I5 画线语义建议：按已画图形一键应用 */}
+      {drawingSuggestion && (
+        <button
+          data-testid="drawing-suggest"
+          onClick={onApplyDrawingSuggestion}
+          title={t('indicator.drawingSuggestTitle')}
+          style={{
+            width: '100%',
+            padding: '5px 0',
+            marginBottom: 10,
+            fontSize: 11,
+            border: '1px solid rgba(38,166,154,0.4)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: 'rgba(38,166,154,0.1)',
+            color: 'var(--up)',
+          }}
+        >
+          ✏️ {t('indicator.drawingSuggest')}: {drawingSuggestion.main ? `${drawingSuggestion.main.toUpperCase()} + ` : ''}
+          {(drawingSuggestion.sub ?? '').toUpperCase()} · {t(`indicator.rec${drawingSuggestion.rationale}` as never)}
         </button>
       )}
       {fields.length === 0 && <div style={{ color: 'var(--text-faint)' }}>{t('indicator.noParams')}</div>}
