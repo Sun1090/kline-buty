@@ -49,7 +49,7 @@ export function ChangelogModal({ onClose }: ChangelogModalProps) {
             </div>
             <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--text-dim)', lineHeight: 1.7 }}>
               {e.rows.map((r, i) => (
-                <li key={i}>{r}</li>
+                <li key={i}>{t(`changelog.${r}` as never)}</li>
               ))}
             </ul>
           </div>

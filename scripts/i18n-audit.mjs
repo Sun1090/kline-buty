@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const EXT = new Set(['.ts', '.tsx'])
-const SKIP_FILE = new Set(['messages.ts'])
+// messages.ts：i18n 字典本体；a11yAudit.ts：零依赖测试断言库，其中文为开发者调试输出、非 UI 文案
+const SKIP_FILE = new Set(['messages.ts', 'a11yAudit.ts'])
 const ALLOW = ['XABCD', 'OKX', '币安', 'K 线', 'TradingView', 'PWA', 'A股', 'BTC', 'ETH', 'WebSocket']
 const LANG_SELF_NAMES = new Set(['中文', '日本語', '한국어'])
 
