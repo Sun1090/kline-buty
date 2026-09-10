@@ -7,6 +7,11 @@
 
 承接 `docs/13-下一版本任务清单.md`，第一优先级 A 阶段数据正确性与稳定性。完成状态见该清单（★ 标注）。
 
+### 依赖批次（2026-09-10）
+- dependabot 首批 9 个更新 PR 评估合并 8 个：eslint 10.10、@playwright/test 1.63、@vitest/coverage-v8 5.0、vitest 5.0、typescript-eslint 8.69、eslint-plugin-react-refresh 0.5.6、actions/github-script 9、@types/react-dom 19.2.7
+- 升级后全量验证：typecheck / lint 0 error / unit 1532 / build（tsc+vite+docs 47s）全绿
+- typescript 7.0.2 暂缓（#8）：TS7 与 typescript-eslint 尚不兼容致 lint 加载崩溃，待官方支持
+
 ### A 阶段 - 行情与数据深化
 - A1（★）K 线时间戳对齐周期边界：修正 `1w`（UTC 周一）与 `1M`（月初）边界对齐（此前按固定 epoch 倍数会落到周四/30 天近似错位）；新增 `normalizeCandles` 数据流唯一入口，REST/WS/缓存/补洞/分页/合成数据全部归一化后入仓
 - A1 附带：`1M` 分页游标改 31 天上界（修复 30 天近似致首翻页不足 500 根、误判 `hasMore=false` 漏页）；loadMore 游标排除首根自身（翻满一页新数据）；perf 压测周期感知（合成步长/起点对齐当前周期，配合 `window.__klineButyPerf` E2E 断言切周期边界对齐与序列间隔稳定）

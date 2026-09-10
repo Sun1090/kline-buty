@@ -49,6 +49,15 @@
   （首页 200 且 bundle 含 drawing-template-export 特征、知识库 200）
 - 随批 chore 1d0eba5：gitignore+eslint 排除 docs-site/.vitepress/.temp 构建临时目录
 
+## 阶段 K · 依赖批次（2026-09-10 收尾）
+- dependabot 首批 9 个 PR：8 个已合并（#10 eslint 10.10 / #9 @playwright/test 1.63 / #7 @vitest/coverage-v8 5.0
+  / #5 react-refresh 0.5.6 / #4 typescript-eslint 8.69 / #2 actions/github-script 9 / #6 vitest 5.0 / #3 @types/react-dom 19.2.7）
+- #8 typescript 7.0.2 ⛔ 暂缓：TS7 Go 原生编译器致 eslint 加载崩溃，typescript-eslint 8.69 尚未兼容（PR 留言记录，待官方支持后再评估）
+- 升级后本地全量验证：typecheck ✅ / lint 0 error ✅ / unit 1532 全绿 ✅ / build（tsc+vite+docs）✅，工作区干净
+- H11 firefox 复查：playwright 1.63 本机 firefox 155(nightly) 启动报 「Could not find profile folder」（playwright 临时 profile 竞态，TMPDIR 改 /tmp/kb-tmp 亦然）；
+  属本机工具链环境缺陷非应用 bug，H11 维持 ◐（chromium E2E 回归、webkit 既往通过）
+- 本批提交：@dependabot squash 合并 8 个（分支自动关闭），本地未改源码
+
 ## 阶段 G · 性能 / 质量 / 工程（G2/G3 已闭合，G 阶段全部完成）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
 - G2 视觉回归测试 ✅（本批：visual.spec.ts chromium 截图基线 + ?perf 合成数据确定性，
