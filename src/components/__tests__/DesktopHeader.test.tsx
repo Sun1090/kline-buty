@@ -92,6 +92,7 @@ function setup(overrides: Record<string, unknown> = {}) {
     onSaveDrawingTemplate: vi.fn(),
     onApplyDrawingTemplate: vi.fn(),
     onDeleteDrawingTemplate: vi.fn(),
+    onImportDrawingTemplates: vi.fn(),
     drawingCanPaste: false,
     onCopyDrawing: vi.fn(),
     onPasteDrawing: vi.fn(),

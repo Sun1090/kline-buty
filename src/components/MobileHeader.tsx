@@ -98,6 +98,8 @@ export interface MobileHeaderProps {
   onSaveDrawingTemplate: (name: string) => void
   onApplyDrawingTemplate: (name: string) => void
   onDeleteDrawingTemplate: (name: string) => void
+  /** I15 模板市场：导入模板 JSON（返回是否成功） */
+  onImportDrawingTemplates: (json: string) => boolean
   /** 批量显示/隐藏当前交易对全部画线 */
   onSetAllDrawingsHidden: (hidden: boolean) => void
   /** 画线 JSON 导出/导入 */
@@ -712,6 +714,7 @@ export function MobileHeader(props: MobileHeaderProps) {
             onSaveTemplate={props.onSaveDrawingTemplate}
             onApplyTemplate={props.onApplyDrawingTemplate}
             onDeleteTemplate={props.onDeleteDrawingTemplate}
+            onImportTemplates={props.onImportDrawingTemplates}
               onBack={() => setMenu('drawing')}
             />
           )}

@@ -209,6 +209,60 @@ test.describe('2026-08 新功能回归', () => {
     })).toBe(1)
   })
 
+  test('I15 模板市场：导出下载 JSON → 导入合并（同名自动序号化）→ 套用生效', async ({ page }) => {
+    await drawHorizontalLine(page)
+    await openLayers(page)
+    await page.getByTestId('drawing-template-name').fill('回归模板')
+    await page.getByTestId('drawing-template-save').click()
+    await expect(page.getByTestId('drawing-template-row')).toHaveCount(1)
+
+    // 导出：触发下载并读取内容校验结构
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTestId('drawing-template-export').click(),
+    ])
+    expect(download.suggestedFilename()).toBe('drawing-templates.json')
+    const stream = await download.createReadStream()
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(chunk as Buffer)
+    const exported = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as {
+      version: number
+      templates: { name: string; drawings: unknown[] }[]
+    }
+    expect(exported.version).toBe(1)
+    expect(exported.templates).toHaveLength(1)
+    expect(exported.templates[0].name).toBe('回归模板')
+
+    // 导入同一份导出内容（模拟他人分享的模板文件）：同名 → 序号化为「回归模板 (2)」
+    await page.getByTestId('drawing-template-import-file').setInputFiles({
+      name: 'shared.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(exported)),
+    })
+    await expect(page.getByText('已导入')).toBeVisible()
+    await expect(page.getByTestId('drawing-template-row')).toHaveCount(2)
+    await expect(page.getByTestId('drawing-template-row').nth(1)).toContainText('回归模板 (2)')
+
+    // 导入的模板可套用（应用后画线数 1 → 2）
+    await page.getByTestId('drawing-template-apply').nth(1).click()
+    await expect(page.getByTestId('drawing-layer-row')).toHaveCount(2)
+  })
+
+  test('I15 模板市场：导入非法 JSON → 显示失败提示，模板列表不变', async ({ page }) => {
+    await drawHorizontalLine(page)
+    await openLayers(page)
+    await page.getByTestId('drawing-template-name').fill('回归模板')
+    await page.getByTestId('drawing-template-save').click()
+    await expect(page.getByTestId('drawing-template-row')).toHaveCount(1)
+    await page.getByTestId('drawing-template-import-file').setInputFiles({
+      name: 'broken.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from('{ not-json'),
+    })
+    await expect(page.getByText('导入失败')).toBeVisible()
+    await expect(page.getByTestId('drawing-template-row')).toHaveCount(1)
+  })
+
   test('画线复制/粘贴：复制选中后粘贴生成新画线，剪贴板按钮可用', async ({ page }) => {
     await drawHorizontalLine(page)
     await openLayers(page)

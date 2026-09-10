@@ -34,6 +34,7 @@ function setup(overrides: Partial<Parameters<typeof DrawingLayers>[0]> = {}) {
     onSaveTemplate: vi.fn(),
     onApplyTemplate: vi.fn(),
     onDeleteTemplate: vi.fn(),
+    onImportTemplates: vi.fn(() => true),
     onBack: vi.fn(),
     onGlobalOpacityChange: vi.fn(),
     onBatchDelete: vi.fn(),
@@ -360,6 +361,65 @@ describe('DrawingLayers（图层管理面板）', () => {
     act(() => vi.advanceTimersByTime(1600))
     expect(screen.queryByText('已保存模板')).toBeNull()
     vi.useRealTimers()
+  })
+
+  it('I15 导出：有模板时可点击并触发 Blob 下载；空列表禁用', () => {
+    const createObjectURL = vi.fn(() => 'blob:mock-url')
+    const revokeObjectURL = vi.fn()
+    ;(URL as unknown as Record<string, unknown>).createObjectURL = createObjectURL
+    ;(URL as unknown as Record<string, unknown>).revokeObjectURL = revokeObjectURL
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    try {
+      // 空模板列表：导出禁用
+      setup({ templates: [] })
+      const emptyBtn = screen.getByTestId('drawing-template-export') as HTMLButtonElement
+      expect(emptyBtn.disabled).toBe(true)
+      cleanup()
+      // 有模板：点击 → 下载 drawing-templates.json
+      setup({ templates: [createTemplate('支撑趋势', [h1])] })
+      const btn = screen.getByTestId('drawing-template-export') as HTMLButtonElement
+      expect(btn.disabled).toBe(false)
+      clickSpy.mockClear()
+      fireEvent.click(btn)
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+    } finally {
+      clickSpy.mockRestore()
+      delete (URL as unknown as Record<string, unknown>).createObjectURL
+      delete (URL as unknown as Record<string, unknown>).revokeObjectURL
+    }
+  })
+
+  it('I15 导入：合法 JSON 文件 → onImportTemplates 收到文件文本，显示成功提示', async () => {
+    const handlers = setup({ templates: [] })
+    const json = JSON.stringify({
+      version: 1,
+      templates: [{ name: '外部模板', drawings: [{ type: 'hray', points: [{ time: 1, price: 2 }] }] }],
+      savedAt: 1,
+    })
+    const file = new File([json], 't.json', { type: 'application/json' })
+    const input = screen.getByTestId('drawing-template-import-file') as HTMLInputElement
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } })
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(handlers.onImportTemplates).toHaveBeenCalledTimes(1)
+    expect(String((handlers.onImportTemplates as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0])).toContain('外部模板')
+    expect(screen.getByText('已导入')).toBeDefined()
+  })
+
+  it('I15 导入：非法文件（onImportTemplates 返回 false）→ 显示失败提示', async () => {
+    const importMock = vi.fn(() => false)
+    setup({ templates: [], onImportTemplates: importMock })
+    const file = new File(['{ broken'], 'bad.json', { type: 'application/json' })
+    const input = screen.getByTestId('drawing-template-import-file') as HTMLInputElement
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } })
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(importMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('导入失败：文件格式无效')).toBeDefined()
   })
 
 })

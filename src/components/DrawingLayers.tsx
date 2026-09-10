@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { groupDrawings, summarizeDrawings, type Drawing } from '../drawings/logic'
 import type { DrawingTemplate } from '../drawings/templates'
+import { serializeTemplates } from '../drawings/templateMarket'
 import { DrawingThumb } from '../drawings/thumbnail'
 import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
@@ -48,6 +49,8 @@ interface DrawingLayersProps {
   onSaveTemplate: (name: string) => void
   onApplyTemplate: (name: string) => void
   onDeleteTemplate: (name: string) => void
+  /** I15 模板市场：导入模板 JSON（返回是否成功，供状态提示） */
+  onImportTemplates: (json: string) => boolean
   /** 返回画线工具选择视图 */
   onBack: () => void
   /** I13 画线全局透明度（0.15–1，与单条透明度相乘） */
@@ -100,6 +103,7 @@ export function DrawingLayers({
   onSaveTemplate,
   onApplyTemplate,
   onDeleteTemplate,
+  onImportTemplates,
   onBack,
   onRename,
   undoDepth,
@@ -121,6 +125,34 @@ export function DrawingLayers({
   // 模板保存输入（C6）：回车或按钮提交
   const [templateName, setTemplateName] = useState('')
   const [templateSavedFlash, setTemplateSavedFlash] = useState(false)
+  // I15 模板市场：导入结果短提示（'' | 'ok' | 'fail'）与隐藏 file input 引用
+  const [templateImportStatus, setTemplateImportStatus] = useState('')
+  const templateFileRef = useRef<HTMLInputElement>(null)
+  /** I15 导出：序列化全部模板 → Blob 下载（空列表静默跳过） */
+  const handleExportTemplates = () => {
+    const json = serializeTemplates(templates)
+    if (!json) return
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'drawing-templates.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  /** I15 导入：读文件 → 解析合并（App 层），成功/失败给短提示 */
+  const handleImportTemplatesFile = (file: File | undefined) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const ok = onImportTemplates(String(reader.result ?? ''))
+      setTemplateImportStatus(ok ? 'ok' : 'fail')
+      window.setTimeout(() => setTemplateImportStatus(''), 2500)
+    }
+    reader.readAsText(file)
+  }
   // C4 分组折叠：低优先级组名集合（折叠时该组画线隐藏）
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const toggleGroupCollapsed = (group: string) =>
@@ -802,6 +834,44 @@ export function DrawingLayers({
           >
             {t('layers.templateSave')}
           </button>
+        </div>
+        {/* I15 模板市场：导出全部模板为 JSON / 导入他人模板文件 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, fontSize: 11 }}>
+          <button
+            data-testid="drawing-template-export"
+            onClick={handleExportTemplates}
+            disabled={templates.length === 0}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: templates.length === 0 ? 'var(--text-faint)' : 'var(--accent)',
+              fontSize: 11,
+              cursor: templates.length === 0 ? 'not-allowed' : 'pointer',
+              padding: 0,
+            }}
+          >
+            {t('layers.templateExport')}
+          </button>
+          <button
+            data-testid="drawing-template-import"
+            onClick={() => templateFileRef.current?.click()}
+            style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+          >
+            {t('layers.templateImport')}
+          </button>
+          <input
+            ref={templateFileRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            data-testid="drawing-template-import-file"
+            onChange={(e) => {
+              handleImportTemplatesFile(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+          {templateImportStatus === 'ok' && <span style={{ color: 'var(--up)' }}>{t('layers.templateImportDone')}</span>}
+          {templateImportStatus === 'fail' && <span style={{ color: 'var(--down)' }}>{t('layers.templateImportFail')}</span>}
         </div>
         {templates.length === 0 ? (
           <div data-testid="drawing-template-empty" style={{ fontSize: 11, color: 'var(--text-faint)', padding: '4px 2px' }}>
