@@ -83,8 +83,10 @@
 - H14 Docker 镜像修复：构建阶段补 `.npmrc`（legacy-peer-deps，此前 Docker 内 npm ci EUSAGE）+ 安装 git（vitepress lastUpdated spawn ENOENT）；镜像容器健康检查（首页/SPA fallback/知识库 200）
 - H15 部署状态与健康检查：`docs/05-部署.md` 新增状态页章节（CI/Pages 徽章 + 双平台内容抽查 curl + Docker 健康清单），README 增加 pages.yml 动态徽章
 - i18n：版本历史外置五语字典（changelog.* 12 键 × 5），audit:i18n 巡检 0 发现（a11yAudit 豁免：零依赖测试断言库非 UI）
+- 安全：CodeQL（src 限定 + security-extended）、dependabot（npm + actions 周频分组）、CI 生产依赖审计门禁
+  （`npm audit --omit=dev --audit-level=high`，实测 0 漏洞）；修复 CodeQL 2 告警（SW/worker postMessage origin 校验）
 - 工程：vitest 主配置隔离 docs-site（React/Vue 两套测试环境），CI 集成 test:docs；lint 修复
-- 五语 i18n 全量同步；unit 1522 + test:docs 21 + perf 10 全绿，build 全通，CI/Pages/Android/iOS ✅
+- 五语 i18n 全量同步；unit 1522 + test:docs 21 + perf 10 全绿，build 全通，CI/Pages/CodeQL/Android/iOS ✅
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
