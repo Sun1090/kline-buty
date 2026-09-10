@@ -35,6 +35,7 @@ import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
+import { SnapshotGallery } from './components/SnapshotGallery'
 import { PinnedPanel } from './components/PinnedPanel'
 import { DocsIndexModal } from './components/DocsIndexModal'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
@@ -347,6 +348,7 @@ export function App() {
   const [perfOpen, setPerfOpen] = useState(false)
   // H5 应用内版本历史
   const [changelogOpen, setChangelogOpen] = useState(false)
+  const [galleryOpen, setGalleryOpen] = useState(false)
   // H3 应用内文档索引
   const [docsOpen, setDocsOpen] = useState(false)
   // I4 自选价格实时面板（钉选品种迷你图）
@@ -1242,6 +1244,8 @@ export function App() {
           onImportSettings={importSettingsJson}
           changelogActive={changelogOpen}
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
+          galleryActive={galleryOpen}
+          onToggleGallery={() => setGalleryOpen((v) => !v)}
           pinnedActive={pinnedOpen}
           onTogglePinned={() => setPinnedOpen((v) => !v)}
           exportBarRange={exportBarRange}
@@ -1382,6 +1386,8 @@ export function App() {
           onImportSettings={importSettingsJson}
           changelogActive={changelogOpen}
           onToggleChangelog={() => setChangelogOpen((v) => !v)}
+          galleryActive={galleryOpen}
+          onToggleGallery={() => setGalleryOpen((v) => !v)}
           pinnedActive={pinnedOpen}
           onTogglePinned={() => setPinnedOpen((v) => !v)}
           exportBarRange={exportBarRange}
@@ -1590,6 +1596,9 @@ export function App() {
       )}
       {changelogOpen && (
         <ChangelogModal onClose={() => setChangelogOpen(false)} />
+      )}
+      {galleryOpen && (
+        <SnapshotGallery onClose={() => setGalleryOpen(false)} />
       )}
       {docsOpen && (
         <DocsIndexModal onClose={() => setDocsOpen(false)} />

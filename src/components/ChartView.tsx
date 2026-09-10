@@ -40,6 +40,7 @@ import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
 import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/format'
 import { exportScreenshotWithDisclaimer, shareScreenshotWithDisclaimer } from './exportDisclaimer'
+import { saveSnapshot, defaultSnapshotName } from '../utils/snapshotGallery'
 
 export type MainIndicatorKind = 'ma' | 'ema' | 'boll' | 'vwap' | 'sar' | 'ichimoku' | 'supertrend' | 'none'
 export type SubIndicatorKind = 'volume' | 'macd' | 'kdj' | 'rsi' | 'wr' | 'obv' | 'atr' | 'dmi' | 'cci' | 'psy' | 'stoch' | 'roc' | 'mom' | 'bbw' | 'mfi' | 'ao' | 'cmf' | 'donchian' | 'aroon' | 'trix' | 'dpo' | 'vortex' | 'none'
@@ -306,6 +307,8 @@ export function ChartView({
   const [screenshotScale, setScreenshotScale] = useState<1 | 2 | 3>(1)
   // T27：右键菜单（复制价格 / 添加提醒 / 清空画线）；触屏为主设备时不启用
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number } | null>(null)
+  // I14 快照保存反馈：短暂显示「已保存到画廊」
+  const [snapSaved, setSnapSaved] = useState(false)
   /** H12 副图 Y 轴固定范围（有界指标）：true 锁定到理论极值，false 自动缩放 */
   const [subScaleFixed, setSubScaleFixed] = useState(false)
   const [ctxCopied, setCtxCopied] = useState(false)
@@ -1178,6 +1181,32 @@ export function ChartView({
       >
         {t('drawing.share')}
       </button>
+      {/* I14 存快照到本地画廊（供对比/回看），不吃截图导出与免责水印路径 */}
+      <button
+        data-testid="snapshot-save"
+        onClick={() => {
+          const dataUrl = apiRef.current?.takeScreenshot(undefined, 1)
+          if (!dataUrl) return
+          const ok = saveSnapshot({ name: defaultSnapshotName(symbol, period), symbol, period, dataUrl, width: 0, height: 0 })
+          setSnapSaved(ok != null)
+        }}
+        title={t('snap.save')}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 228,
+          padding: '3px 8px',
+          fontSize: 11,
+          border: '1px solid #2a2e39',
+          borderRadius: 4,
+          cursor: 'pointer',
+          background: 'var(--panel)',
+          color: 'var(--text-dim)',
+          zIndex: 6,
+        }}
+      >
+        {snapSaved ? t('snap.saved') : t('snap.save')}
+      </button>
       <button
         data-testid="screenshot-scale-toggle"
         onClick={() => setScreenshotScale((s) => (s === 1 ? 2 : s === 2 ? 3 : 1))}
@@ -1292,7 +1321,7 @@ export function ChartView({
             zIndex: 10,
           }}
         >
-          <div style={{ color: 'var(--text-dim)' }}>
+          <div data-testid="crosshair-time" data-time={tooltipInfo.time} style={{ color: 'var(--text-dim)' }}>
             {timezoneMode === 'utc'
               ? new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false, timeZone: 'UTC' })
               : new Date(tooltipInfo.time * 1000).toLocaleString(localeFor(lang), { hour12: false })}

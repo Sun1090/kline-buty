@@ -164,6 +164,9 @@ export interface MobileHeaderProps {
   /** H5 应用内版本历史 */
   changelogActive?: boolean
   onToggleChangelog?: () => void
+  /** I14 图表快照画廊 */
+  galleryActive?: boolean
+  onToggleGallery?: () => void
   /** I4 自选价格实时面板 */
   pinnedActive?: boolean
   onTogglePinned?: () => void
@@ -310,6 +313,7 @@ export function MobileHeader(props: MobileHeaderProps) {
       ? [{ label: t('marketList.title'), active: !!props.marketListActive, onToggle: props.onToggleMarketList, title: t('marketList.title') }]
       : []),
     { label: t('panel.settings'), active: props.settingsActive, onToggle: props.onToggleSettings },
+    { label: t('snap.title'), active: props.galleryActive === true, onToggle: props.onToggleGallery ?? (() => {}), title: t('snap.title') },
     { label: t('paper.title'), active: props.tradesActive, onToggle: props.onToggleTrades, title: t('paper.title') },
     {
       label: props.priceScaleMode === 'log' ? t('scale.log') : t('scale.linear'),
