@@ -147,7 +147,9 @@
 - 审计补测结论：A14 market-type StattsBar 合约/现货徽标测试 ✓ 已具，无需补充
 
 ## 待办审计（标记完成前的补测项）
-- B2 信号打点：crossovers.test.ts 已具 ✓；补 marker 渲染 E2E（可延后）
+- B2 信号打点 ✅（本批：crossovers.test.ts 单测 ✓ + `e2e/marker-render.spec.ts` 渲染 E2E——
+  MA 金叉/死叉：页内重算 MA5/MA10 交叉数确定性 >2 + 主图截图基线 ma-cross-markers + pageerror 守卫；
+  SAR 圆点：开启 + 十字光标漫游无异常冒烟。基线 e2e/marker-render.spec.ts-snapshots/ 入库，chromium 维护）
 - C 阶段：v0.3 O8 E2E 已覆盖图层/截图/坐标角标 ✓
 - E 批一：E2E 验证中（recent-features 吸附陈旧断言已修正 ohlc→grid→off→time）
 
