@@ -69,6 +69,7 @@ import {
   uniqueTemplateName,
   type DrawingTemplate,
 } from './drawings/templates'
+import { mergeTemplates, parseTemplatesFile } from './drawings/templateMarket'
 import {
   canRedo as drawingCanRedo,
   canUndo as drawingCanUndo,
@@ -763,6 +764,15 @@ export function App() {
       return next
     })
   }
+  // I15 模板市场：解析导入的模板 JSON 并合并到本地（同名自动序号化），返回是否成功。
+  // 导出由 DrawingLayers 组件侧 serializeTemplates 直接完成（与 alerts 导出同模式）。
+  const importDrawingTemplatesJson = (json: string): boolean => {
+    const parsed = parseTemplatesFile(json)
+    if (!parsed.ok) return false
+    const { merged } = mergeTemplates(drawingTemplates, parsed.templates)
+    setDrawingTemplates(merged)
+    return true
+  }
 
   // C7 画线复制/粘贴：复制选中画线到剪贴板，粘贴生成新 id 并按一个周期柱距右移（避免与原件重叠不可见）
   const copySelectedDrawing = () => {
@@ -1224,6 +1234,8 @@ export function App() {
           onSaveDrawingTemplate={saveDrawingTemplate}
           onApplyDrawingTemplate={applyDrawingTemplate}
           onDeleteDrawingTemplate={deleteDrawingTemplate}
+          onImportDrawingTemplates={importDrawingTemplatesJson}
+
           drawingCanPaste={hasClipboardDrawing}
           onCopyDrawing={copySelectedDrawing}
           onPasteDrawing={pasteClipboardDrawing}
@@ -1365,6 +1377,8 @@ export function App() {
           drawingTemplates={sortTemplates(drawingTemplates)}
           onSaveDrawingTemplate={saveDrawingTemplate}
           onApplyDrawingTemplate={applyDrawingTemplate}
+          onImportDrawingTemplates={importDrawingTemplatesJson}
+
           onDeleteDrawingTemplate={deleteDrawingTemplate}
           drawingCanPaste={hasClipboardDrawing}
           onCopyDrawing={copySelectedDrawing}

@@ -555,6 +555,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             onSaveTemplate={props.onSaveDrawingTemplate}
             onApplyTemplate={props.onApplyDrawingTemplate}
             onDeleteTemplate={props.onDeleteDrawingTemplate}
+            onImportTemplates={props.onImportDrawingTemplates}
             onBack={() => setMenu('drawing')}
           />
         </div>
