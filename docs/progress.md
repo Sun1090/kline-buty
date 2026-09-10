@@ -81,7 +81,8 @@
 ## 安全与依赖（本批新增）
 - CodeQL：`.github/workflows/codeql.yml`（src 限定 + security-extended，main push + 每周 + PR）；当前 0 open 告警
 - dependabot：`.github/dependabot.yml`（npm + github-actions 周频、分组更新）；首批 9 个更新 PR 待人工/CI 评估合并
-- CI 生产依赖审计门禁：`npm audit --omit=dev --audit-level=high`（本地实测 0 漏洞；dev 侧 vitepress→vite→esbuild 告警见 CHANGELOG「已知欠账」，无修复、仅 dev server）
+- CI 生产依赖审计门禁：`npm audit --omit=dev --audit-level=high`（本地实测 0 漏洞；dev 侧 vitepress→vite 告警见 CHANGELOG「已知欠账」，无修复、仅 dev server）
+- esbuild 高危闭合：`overrides: { esbuild: ^0.25.0 }` 使 vitepress 嵌套 esbuild 0.21.5 → 0.25.12（GHSA-67mh-4wv8-2f99），dev audit 3 → 2；lockfile 外科手术式合并（仅 esbuild 相关块变更，其余字节不动），npm ci / vitepress 构建 / 单测 1532 全绿
 
 ## 阶段 F · UI / 主题 / 可访问性（已闭合，F 批一 a3f60d7 + F16 d5f7f91）
 - F1 图表键盘导航 ✅（方向键十字光标漫游 + 回放步进，既有）
