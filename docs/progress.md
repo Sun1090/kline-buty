@@ -25,7 +25,6 @@
 - H15 部署健康检查 ✅（本批：docs/05-部署.md「七、部署状态与健康检查」状态页章节
   + README pages.yml 动态徽章；静态托管以徽章 + 内容抽查 curl 代偿探活）
 - 状态：H 批已提交（c7655bb/c20e176/cafcb43），CI/Pages/Android/iOS 全绿
-
 ## 阶段 I · 新特性构想（进行中，剩 I3/I11/I15）
 - I1★ PWA 离线可安装 ✅（sw.js + manifest 既有）
 - I2★ 画线一键分享 ✅（本批：Web Share API 带文件分享 + 降级下载）
@@ -61,7 +60,12 @@
 - G13 资源加载失败降级 ✅（OfflineBanner 既有）
 - G14 构建体积报告 ✅（bundle-report 既有）
 - G15 数据量自适应（降采样）✅（本批：downsampleCandles + renderCandleCap）
-- 状态：G 阶段 15 项全部闭合（本批提交 + 全量 E2E 回归）
+- 状态：G 阶段 15 项全部闭合（本批提交 + chromium/webkit 全量 E2E 回归 271 passed / 0 failed）
+
+## 安全与依赖（本批新增）
+- CodeQL：`.github/workflows/codeql.yml`（src 限定 + security-extended，main push + 每周 + PR）；当前 0 open 告警
+- dependabot：`.github/dependabot.yml`（npm + github-actions 周频、分组更新）；首批 9 个更新 PR 待人工/CI 评估合并
+- CI 生产依赖审计门禁：`npm audit --omit=dev --audit-level=high`（本地实测 0 漏洞；dev 侧 vitepress→vite→esbuild 告警见 CHANGELOG「已知欠账」，无修复、仅 dev server）
 
 ## 阶段 F · UI / 主题 / 可访问性（已闭合，F 批一 a3f60d7 + F16 d5f7f91）
 - F1 图表键盘导航 ✅（方向键十字光标漫游 + 回放步进，既有）
