@@ -33,7 +33,7 @@
   区间→BOLL+RSI/趋势→EMA+MACD/水平→RSI/十字→KDJ + 设置面板一键应用 + 单测/E2E）
 - I6 智能提醒（波动率阈值自适应）✅（本批：atrPercent + adaptiveThreshold ATR% 波动带）
 - I7 多语言语音播报 ✅（本批：WebSpeech 按 UI 语言朗读触发）
-- I8 图表面板深链 ✅（?symbol=&period= URL 解析既有）
+- I8 图表面板深链 ✅（?symbol=&period= 白名单校验打开定位 + 本批 ?drawing=<id> 打开选中指定画线：格式校验/不存在静默忽略/分享链接自动携带 id；副图刻度守卫修复 v5 竞态；E2E 深链用例，recent-features 12/12）
 - I9 深色浅色自动切换 ✅（theme auto 既有）
 - I10 指标智能推荐 ✅（本批：recommendIndicators 趋势/波动率分析 + 参数面板一键应用）
 - I12 交易策略笔记 ✅（既有 note 便签画线工具落图）
