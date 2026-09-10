@@ -25,11 +25,11 @@ jobs:
         language: ["javascript-typescript"]
     steps:
       - uses: actions/checkout@v7
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           # 只分析 src（业务代码）；docs-site 是构建产物生成器，vitepress 自身不在此审计
           config-file: .github/codeql/config.yml
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
