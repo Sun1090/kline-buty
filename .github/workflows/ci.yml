@@ -83,3 +83,18 @@ jobs:
           name: dist
           path: dist/
         if: always()
+
+  dependency-audit:
+    name: Dependency audit (prod only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # 生产依赖硬门禁：high/critical 即失败。dev 侧 vitepress 工具链告警（无修复、仅 dev server）
+      # 由 dependabot 跟进，不阻塞本 job——见 docs/13「已知欠账」与 .npmrc 注释。
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

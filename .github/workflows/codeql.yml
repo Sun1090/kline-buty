@@ -1,0 +1,35 @@
+# CodeQL JavaScript/TypeScript 分析：main 推送 + 每周 + 关键 PR。
+# 无自定义查询集：JS 默认规则集（注入/XSS/原型污染/不安全反序列化等）。
+name: "CodeQL"
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 3 * * 2"  # 每周二 03:23（避开整点高峰）
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # 只分析 src（业务代码）；docs-site 是构建产物生成器，vitepress 自身不在此审计
+          config-file: .github/codeql/config.yml
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
