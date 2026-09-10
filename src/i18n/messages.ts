@@ -170,6 +170,14 @@ export const zh = {
     v02r1: '知识库 27 章 201 篇、文档站上线、五语 i18n',
     v01r1: '实时 K 线终端：14 周期、盘口深度、多图表布局、CSV 导出、深浅主题',
   },
+  snap: {
+    title: '快照画廊',
+    save: '存快照',
+    saved: '已保存到画廊',
+    preview: '预览',
+    empty: '暂无快照——在图表右上角点击「存快照」保存对比图',
+    clearAll: '清空全部',
+  },
   pinned: {
     title: '自选实时行情',
     titleShort: '自选行情',
@@ -869,6 +877,14 @@ export const en: Messages = {
     v02r1: 'Knowledge base: 27 chapters / docs site launch / 5-language i18n',
     v01r1: 'Real-time K-line terminal: 14 periods, depth, multi-chart layouts, CSV export, themes',
   },
+  snap: {
+    title: 'Snapshot gallery',
+    save: 'Save snapshot',
+    saved: 'Saved to gallery',
+    preview: 'Preview',
+    empty: 'No snapshots yet — click “Save snapshot” (top-right of chart) to keep a comparison image',
+    clearAll: 'Clear all',
+  },
   pinned: {
     title: 'Pinned live prices',
     titleShort: 'Pinned',
@@ -1558,6 +1574,14 @@ export const ja: Messages = {
     v03r2: 'キーボードアクセシビリティ：グローバルTabフロー、roving tabindex、focus-visible、aria-pressed',
     v02r1: 'ナレッジベース全27章・201篇、ドキュメントサイト公開、5言語i18n',
     v01r1: 'リアルタイムKライン端末：14期間、板情報、マルチチャート、CSV出力、テーマ',
+  },
+  snap: {
+    title: 'スナップショットギャラリー',
+    save: 'スナップショット保存',
+    saved: 'ギャラリーに保存しました',
+    preview: 'プレビュー',
+    empty: 'スナップショットはありません——チャート右上の「スナップショット保存」で保存してください',
+    clearAll: 'すべて削除',
   },
   pinned: {
     title: 'ピン留めリアルタイム行情',
@@ -2249,6 +2273,14 @@ export const ko: Messages = {
     v03r2: '키보드 접근성: 전역 탭 흐름, roving tabindex, focus-visible, aria-pressed',
     v02r1: '지식창고 27장·201편, 문서사이트 출시, 5개국어 i18n',
     v01r1: '실시간 K-라인 터미널: 14주기, 호가창, 멀티차트, CSV 내보내기, 테마',
+  },
+  snap: {
+    title: '스냅샷 갤러리',
+    save: '스냅샷 저장',
+    saved: '갤러리에 저장됨',
+    preview: '미리보기',
+    empty: '스냅샷 없음 — 차트 오른쪽 위「스냅샷 저장」으로 비교 이미지를 저장하세요',
+    clearAll: '모두 지우기',
   },
   pinned: {
     title: '고정 실시간 시세',
@@ -2951,6 +2983,14 @@ export const es: Messages = {
     v03r2: 'Accesibilidad de teclado: flujo de tab global, roving tabindex, focus-visible, aria-pressed',
     v02r1: 'Base de conocimiento 27 capítulos / sitio de docs en línea / i18n en 5 idiomas',
     v01r1: 'Terminal K-line en tiempo real: 14 períodos, profundidad, diseños multi-gráfico, exportación CSV, temas',
+  },
+  snap: {
+    title: 'Galería de capturas',
+    save: 'Guardar captura',
+    saved: 'Guardada en la galería',
+    preview: 'Vista previa',
+    empty: 'Sin capturas — usa “Guardar captura” (arriba a la derecha del gráfico) para guardar una comparativa',
+    clearAll: 'Borrar todas',
   },
   pinned: {
     title: 'Precios fijos en vivo',

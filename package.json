@@ -13,6 +13,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:docs": "vitest run --config vitest.docs.config.ts",
+    "test:visual": "playwright test e2e/visual.spec.ts --project=chromium",
+    "test:visual:update": "playwright test e2e/visual.spec.ts --project=chromium --update-snapshots",
     "typecheck": "tsc -b --noEmit",
     "docs:prepare": "node scripts/docs-prepare.mjs",
     "docs:lint": "node scripts/kb-lint.mjs",
