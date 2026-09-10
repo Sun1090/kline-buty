@@ -7,6 +7,8 @@ import { workerSubLines, type WorkerLineRequest, type WorkerLineResponse } from 
  * 纯函数：入参可结构化克隆，返回结果可 postMessage。
  */
 self.onmessage = (e: MessageEvent<WorkerLineRequest>) => {
+  // 专用 worker 仅创建方主线程可 postMessage（无跨源注入面）；origin 校验为 CodeQL 防御性冗余
+  if (typeof e.origin === 'string' && e.origin !== self.origin) return
   const { id, kind, candles, params } = e.data
   let resp: WorkerLineResponse
   try {
