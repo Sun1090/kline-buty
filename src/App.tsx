@@ -484,6 +484,8 @@ export function App() {
     if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
     void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
     const onMsg = (e: MessageEvent) => {
+      // CodeQL: 仅接受本 SW 来源（SW 消息 origin 即 SW 脚本来源，等于站点 origin）
+      if (typeof e.origin === 'string' && e.origin !== window.location.origin) return
       if (e.data?.type === 'focus-symbol' && typeof e.data.symbol === 'string') {
         setSymbol(e.data.symbol)
       }
