@@ -17,3 +17,5 @@ docs-site/.vitepress/dist
 # 根目录 VitePress 构建缓存（误生成，勿入库）
 **/.vitepress/cache/
 **/.vitepress/dist/
+# VitePress 构建临时目录
+docs-site/.vitepress/.temp/
