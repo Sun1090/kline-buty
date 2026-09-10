@@ -1,0 +1,22 @@
+# 依赖自动更新：npm 依赖 + GitHub Actions。周频，避免更新风暴。
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    groups:
+      vite-toolchain:
+        patterns: ["vite", "vitepress", "@vitejs/*"]
+      react-toolchain:
+        patterns: ["react", "react-dom", "@types/react*", "@testing-library/*"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5

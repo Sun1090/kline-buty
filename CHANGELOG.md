@@ -133,4 +133,8 @@
 
 - TypeScript 7：等 typescript-eslint 支持
 - VitePress 2 正式版：升级后可移除 `.npmrc` legacy-peer-deps
+- **dev 依赖告警（有据可查，生产零漏洞）**：`npm audit` 报 3 条全部在 dev 工具链
+  （`vitepress→vite→esbuild`，GHSA-67mh-4wv8-2f99 dev server、高危、无修复）。仅影响本地
+  dev server，不影响生产构建/运行时；CI 新增 `npm audit --omit=dev --audit-level=high`
+  生产门禁（通过）+ dependabot 跟踪，vitepress 2 或 esbuild 修复发布后自动闭合。
 - app-shell M1–M3：需真机与上架决策

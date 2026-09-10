@@ -1,0 +1,7 @@
+# CodeQL 配置：JS 分析仅限 src/（应用代码）；node_modules/vitepress/vite 等
+# 三方依赖由 dependabot + npm audit 覆盖，不进 CodeQL 查询域。
+name: "CodeQL config"
+queries:
+  - security-extended
+paths:
+  - src
