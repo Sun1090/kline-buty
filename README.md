@@ -94,7 +94,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1500-yellow" alt="1500 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
+<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1522-yellow" alt="1522 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
 
 > 部署状态与健康检查（H15）：见 [docs/05-部署.md → 七、部署状态与健康检查](docs/05-部署.md)。
 
