@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-**阶段 H · 生态 / 部署 / 文档（本批闭合 H14/H15，剩 H11 firefox 环境确认）** — docs/13 阶段 H（H1–H15）
+**阶段 I 收尾：I15 已交付上线（0fb63ba），I3/I11 暂缓（外部依赖），I 阶段可落地项全部闭合** — docs/13 阶段 I（I1–I15）
 - H1 知识库离线包 ✅（SW runtime 缓存 /knowledge 已访问页面离线可读）
 - H2 知识库搜索增强 ✅（VitePress local 全文搜索既有）
 - H3 应用内文档索引 ✅（本批：DocsIndexModal 知识库/README/仓库/CHANGELOG 入口）
@@ -40,10 +40,14 @@
 - I13 数据导出增强 ✅（本批：导出范围最近 N 根 0/100/500/1000）
 - I14★ 图表快照画廊 ✅（本批：snapshotGallery localStorage 存储
   + ChartView「存快照」+ SnapshotGallery 缩略图/预览/删除/清空 + 单测/E2E）
-- I15★ 社区画线模板市场 ✅（本批：templateMarket 纯函数导出/严格校验导入/同名序号化合并
+- I15★ 社区画线模板市场 ✅（本批提交 0fb63ba：templateMarket 纯函数导出/严格校验导入/同名序号化合并
   + 图层面板「导出/导入」入口 + 五语 i18n + 单测 10 + E2E 导出下载→导入合并→套用）
 - I3/I11 ✳ 暂缓（多端云同步需登录态+云端 KV 后端、移动端 Widget 需原生平台；
   现有 H7/H8 设置快照 JSON 已覆盖跨设备手动迁移的 Web 端等价能力）
+- 本批验证：typecheck/lint 0 error、unit 1532 全绿、chromium E2E recent-features 11/11；
+  CI/CodeQL/Pages/Android/iOS/Release 六 workflow 全绿；Pages+Vercel 双平台抽查
+  （首页 200 且 bundle 含 drawing-template-export 特征、知识库 200）
+- 随批 chore 1d0eba5：gitignore+eslint 排除 docs-site/.vitepress/.temp 构建临时目录
 
 ## 阶段 G · 性能 / 质量 / 工程（G2/G3 已闭合，G 阶段全部完成）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
