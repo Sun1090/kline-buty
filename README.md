@@ -9,7 +9,7 @@
 ## Features
 
 - **Real-time K-line charts** — Candlestick, line, area with 14 timeframes (1s to 1M)
-- **49 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more, with undo/redo, templates, copy/paste, grouping, snap-to-OHLC alignment, per-line opacity
+- **49 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more, with undo/redo, templates (save/apply + community import/export), copy/paste, grouping, snap-to-OHLC alignment, per-line opacity
 - **26 indicators** — Main: MA, EMA, BOLL, VWAP, SAR, Ichimoku, Supertrend · Sub: VOL, MACD, KDJ, RSI, WR, OBV, ATR, DMI, CCI, PSY, STOCH, ROC, MOM, BBW, MFI, AO, CMF, Donchian, Aroon — all with customizable parameters and presets
 - **Order book & depth chart** — Real-time order book (8 bids/asks) and depth curve via WebSocket
 - **Multi-chart layout** — 1/2/4 panel layouts with synchronized time axes

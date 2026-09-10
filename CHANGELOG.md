@@ -77,6 +77,7 @@
 - I13 区间导出：CSV 导出范围最近 N 根（全部/100/500/1000）
 - G6 渲染性能基准：指标/降采样/裁剪管线预算（perf.test 扩充）
 - I3 画线语义识别：`drawingSemantics` 纯函数按已画图形建议指标（区间→BOLL+RSI / 趋势→EMA+MACD / 水平→RSI / 十字→KDJ），设置面板「画线建议」一键应用（单测 + E2E）
+- I15 社区画线模板市场：`templateMarket` 纯函数（导出序列化 / 导入严格校验：格式版本、逐条画线形状白名单、文件内按名去重）+ `mergeTemplates` 同名自动序号化合并；图层面板模板区新增「导出/导入」入口（Blob 下载 + FileReader 导入，成功/失败短提示）；单测 7 + 组件测试 3 + E2E（导出下载结构校验 → 导入合并序号化 → 套用生效；非法文件失败提示）
 - I14 图表快照画廊：`snapshotGallery` localStorage 存储（条数/字节双配额 + FIFO 淘汰），图表右上「存快照」→ SnapshotGallery 缩略图网格/全图预览/删除/清空，More 菜单入口（单测 9 + E2E）
 - G2 视觉回归：`visual.spec.ts` chromium 截图基线（?perf 合成数据确定性，基线入库，`--update-snapshots` 再生成）
 - G3 大屏压测：`stress-large-data.spec.ts` `?perf=20000` 加载/十字光标取时/多段拖动翻页（crosshair-tooltip 暴露原始时间戳断言时光倒流）
