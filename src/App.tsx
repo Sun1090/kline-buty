@@ -201,6 +201,8 @@ export function App() {
   undoDepthRef.current = undoDepth
   const cancelDrawingRef = useRef<(() => void) | null>(null)
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
+  /** I8 深链画线 id 暂存（数据就绪前解析到此）。格式校验：非空且 ≤128 字符（对应 createDrawing 生成 id 量级） */
+  const [deepLinkDrawingId, setDeepLinkDrawingId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [textDraft, setTextDraft] = useState('')
   const [textFontSize, setTextFontSize] = useState(DEFAULT_TEXT_FONT_SIZE)
@@ -797,19 +799,32 @@ export function App() {
     setSelectedDrawingId(null)
   }
 
-  // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）
+  // 分享链接：?symbol=&period= 打开时自动定位（校验白名单）；?drawing=<id> 直达某条画线（选中该画线）
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const s = params.get('symbol')
     if (s && SYMBOL_LIST.includes(s.toUpperCase())) setSymbol(s.toUpperCase())
     const p = params.get('period')
     if (p && PERIODS.some((x) => x.value === p)) setPeriod(p as Period)
+    const d = (params.get('drawing') ?? '').trim()
+    if (d.length > 0 && d.length <= 128) setDeepLinkDrawingId(d)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL 参数解析，setState 引用稳定
   }, [])
 
-  // 复制当前品种+周期的分享链接（clipboard 失败降级 execCommand）
+  // I8 画线深链还原：当前品种画线数据就绪后选中暂存 id（不存在→静默忽略）；仅首帧执行一次
+  const deepLinkAppliedRef = useRef(false)
+  useEffect(() => {
+    if (deepLinkAppliedRef.current || deepLinkDrawingId === null) return
+    const list = drawingsBySymbol[symbol] ?? []
+    if (list.length === 0) return
+    deepLinkAppliedRef.current = true
+    if (list.some((x) => x.id === deepLinkDrawingId)) setSelectedDrawingId(deepLinkDrawingId)
+  }, [deepLinkDrawingId, drawingsBySymbol, symbol])
+
+  // 复制当前品种+周期（+选中画线 id，直达深链）的分享链接（clipboard 失败降级 execCommand）
   const copyShareLink = async () => {
-    const url = `${window.location.origin}${window.location.pathname}?symbol=${encodeURIComponent(symbol)}&period=${period}`
+    const base = `${window.location.origin}${window.location.pathname}?symbol=${encodeURIComponent(symbol)}&period=${period}`
+    const url = selectedDrawingId ? `${base}&drawing=${encodeURIComponent(selectedDrawingId)}` : base
     try {
       await navigator.clipboard.writeText(url)
     } catch {

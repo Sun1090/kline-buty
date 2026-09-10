@@ -195,7 +195,7 @@ export const zh = {
     loading: '加载中…',
   },
   share: {
-    title: '复制当前品种与周期的分享链接',
+    title: '复制当前品种、周期与选中画线的分享链接',
     copy: '分享',
     copied: '已复制',
     exportTitle: '导出当前品种/周期的 K 线 CSV（含当前指标列）',
@@ -906,7 +906,7 @@ export const en: Messages = {
     loading: 'Loading…',
   },
   share: {
-    title: 'Copy share link for current symbol & period',
+    title: 'Copy share link for current symbol, period & selected drawing',
     copy: 'Share',
     copied: 'Copied',
     exportTitle: 'Export OHLCV CSV for current symbol/period (with active indicator columns)',
@@ -1608,7 +1608,7 @@ export const ja: Messages = {
     loading: '読み込み中…',
   },
   share: {
-    title: '現在の銘柄・時間足の共有リンクをコピー',
+    title: '現在の銘柄・時間足・選択中描画の共有リンクをコピー',
     copy: '共有',
     copied: 'コピー済み',
     exportTitle: '現在の銘柄/時間足の K 線 CSV をエクスポート（有効な指標列を含む）',
@@ -2311,7 +2311,7 @@ export const ko: Messages = {
     loading: '불러오는 중…',
   },
   share: {
-    title: '현재 종목/주기의 공유 링크 복사',
+    title: '현재 종목/주기/선택 도형의 공유 링크 복사',
     copy: '공유',
     copied: '복사됨',
     exportTitle: '현재 종목/주기의 K라인 CSV 내보내기 (활성 지표 열 포함)',
@@ -3025,7 +3025,7 @@ export const es: Messages = {
     loading: 'Cargando…',
   },
   share: {
-    title: 'Copiar enlace de la moneda y el período actuales',
+    title: 'Copiar enlace de la moneda, el período y el dibujo seleccionado',
     copy: 'Compartir',
     copied: 'Copiado',
     exportTitle: 'Exportar CSV OHLCV de la moneda/período actuales (con columnas de indicadores activos)',

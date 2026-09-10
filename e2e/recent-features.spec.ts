@@ -273,4 +273,22 @@ test.describe('2026-08 新功能回归', () => {
     await paste.click()
     await expect(page.getByTestId('drawing-layer-row')).toHaveCount(2)
   })
+
+  test('I8 画线深链：带 ?drawing=<id> 打开选中该画线（图层行高亮选中）', async ({ page, context }) => {
+    // 先画一条线并拿到其持久化 id
+    await drawHorizontalLine(page)
+    const drawingId = await page.evaluate(() => {
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { id: string }[]>
+      return Object.values(all).flat()[0]?.id as string
+    })
+    expect(drawingId).toBeTruthy()
+    // 带深链参数在同 context 新页面打开（page.addInitScript 的 localStorage.clear 会在原 page
+    // 每次导航时触发，用新页面绕开；context 级 localStorage 共享，画线数据保留）
+    const page2 = await context.newPage()
+    await page2.goto(`/?perf=600&symbol=BTCUSDT&period=1m&drawing=${encodeURIComponent(drawingId)}`)
+    await expect(page2.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await openLayers(page2)
+    await expect(page2.getByTestId('drawing-layer-row').first()).toHaveAttribute('data-selected', 'true')
+    await page2.close()
+  })
 })

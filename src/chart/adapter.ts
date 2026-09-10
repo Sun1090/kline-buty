@@ -3614,12 +3614,19 @@ export class LightweightChartAdapter implements ChartApi {
 
   /** H12 副图 Y 轴自动/固定：range 锁定可见范围，null 恢复自动缩放 */
   setSubScaleRange(range: { from: number; to: number } | null) {
-    const scale = this.chart.priceScale('sub', 1)
-    if (range) {
-      scale.setAutoScale(false)
-      scale.setVisibleRange({ from: range.from, to: range.to })
-    } else {
-      scale.setAutoScale(true)
+    // v5 行为：'sub' 刻度在副图序列装载前不存在，此时 priceScale() 抛错（而非返回空对象）。
+    // 数据装载 effect（setSubIndicator）与刻度 effect 存在竞态（例：深链 ?drawing 重挂载时），
+    // 用 try 包裹：刻度不存在时静默跳过，副图装载后仍是自动缩放（默认行为一致）。
+    try {
+      const scale = this.chart.priceScale('sub', 1)
+      if (range) {
+        scale.setAutoScale(false)
+        scale.setVisibleRange({ from: range.from, to: range.to })
+      } else {
+        scale.setAutoScale(true)
+      }
+    } catch {
+      /* sub 刻度尚未创建（副图序列未装载）：跳过，保持自动缩放 */
     }
   }
 
