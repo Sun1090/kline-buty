@@ -5,29 +5,33 @@
 
 ## 当前阶段
 
-**阶段 H · 生态 / 部署 / 文档（进行中）** — docs/13 阶段 H（H1–H15）
+**阶段 H · 生态 / 部署 / 文档（本批闭合 H14/H15，剩 H11 firefox 环境确认）** — docs/13 阶段 H（H1–H15）
 - H1 知识库离线包 ✅（SW runtime 缓存 /knowledge 已访问页面离线可读）
 - H2 知识库搜索增强 ✅（VitePress local 全文搜索既有）
 - H3 应用内文档索引 ✅（本批：DocsIndexModal 知识库/README/仓库/CHANGELOG 入口）
 - H4 更新提示 ✅（versionCheck + 横幅既有）
-- H5 版本历史页面 ✅（本批：ChangelogModal 应用内版本要点）
+- H5 版本历史页面 ✅（本批：ChangelogModal 应用内版本要点；i18n 后版本要点五语外置）
 - H6 多语言部署 ✅（en/zh 双语知识库既有）
 - H7 自选列表云同步 ✅（本批：设置快照导出导入覆盖自选/主题/画线/账户）
 - H8 主题与设置导出 ✅（本批：settings snapshot 全量 kline-buty:* 迁移）
 - H9 快捷键速查卡 ✅（本批：printShortcuts 打印窗口 + 头部按钮）
 - H10 数据源可配置 ✅（endpoints custom bases 既有）
-- H11 多浏览器兼容 ◐（本批：playwright 三浏览器 projects；chromium/webkit smoke 通过；
+- H11 多浏览器兼容 ◐（playwright 三浏览器 projects；chromium/webkit 通过；
   firefox headless 在本机有 SWGL 合成器环境缺陷（非应用 bug），待正常环境确认）
 - H12 反馈入口 ✅（本批：GitHub Issues 链接）
 - H13 项目路线图页 ✅（本批：README Progress 章节更新 v0.4 D–I 完成清单与徽章，作为路线图）
-- H14 Docker 部署镜像更新 ◐（Dockerfile + nginx 既有，镜像构建/推送待 CI 侧验证）
-- H15 部署健康检查 ◐（静态托管无服务端探活；以 CI/Pages 状态徽章代偿，状态页待补）
-- 状态：H 批已提交（857faa1/c9391b8/350a6b1/f8d3556/aa9c5e5），H11 chrom/webkit 通过
+- H14 Docker 部署镜像更新 ✅（本批：修复 npm ci 缺 legacy-peer-deps + alpine 缺 git 两坑；
+  镜像构建通过，容器首页/SPA fallback/知识库健康检查 200）
+- H15 部署健康检查 ✅（本批：docs/05-部署.md「七、部署状态与健康检查」状态页章节
+  + README pages.yml 动态徽章；静态托管以徽章 + 内容抽查 curl 代偿探活）
+- 状态：H 批已提交（c7655bb/c20e176/cafcb43），CI/Pages/Android/iOS 全绿
 
-## 阶段 I · 新特性构想（进行中）
+## 阶段 I · 新特性构想（进行中，剩 I3/I11/I15）
 - I1★ PWA 离线可安装 ✅（sw.js + manifest 既有）
 - I2★ 画线一键分享 ✅（本批：Web Share API 带文件分享 + 降级下载）
 - I4 自选价格实时面板 ✅（本批：PinnedPanel 钉选迷你图 + 新增/取消）
+- I5★ 画线语义识别 ✅（本批：drawingSemantics 纯函数按已画图形建议指标
+  区间→BOLL+RSI/趋势→EMA+MACD/水平→RSI/十字→KDJ + 设置面板一键应用 + 单测/E2E）
 - I6 智能提醒（波动率阈值自适应）✅（本批：atrPercent + adaptiveThreshold ATR% 波动带）
 - I7 多语言语音播报 ✅（本批：WebSpeech 按 UI 语言朗读触发）
 - I8 图表面板深链 ✅（?symbol=&period= URL 解析既有）
@@ -35,15 +39,19 @@
 - I10 指标智能推荐 ✅（本批：recommendIndicators 趋势/波动率分析 + 参数面板一键应用）
 - I12 交易策略笔记 ✅（既有 note 便签画线工具落图）
 - I13 数据导出增强 ✅（本批：导出范围最近 N 根 0/100/500/1000）
-- I3/I5/I11/I14/I15 ✳ 待实现（云同步/语义识别/Widget/画廊/模板市场，多为后端/原生平台依赖）
+- I14★ 图表快照画廊 ✅（本批：snapshotGallery localStorage 存储
+  + ChartView「存快照」+ SnapshotGallery 缩略图/预览/删除/清空 + 单测/E2E）
+- I3/I11/I15 ✳ 待实现（云同步/Widget/模板市场，多为后端/原生平台依赖）
 
-## 阶段 G · 性能 / 质量 / 工程（剩余 G2/G3，已闭合 G1/G4/G5/G6/G7/G8/G9/G10/G11/G12/G13/G14/G15）
+## 阶段 G · 性能 / 质量 / 工程（G2/G3 已闭合，G 阶段全部完成）
 - G1 文档站组件测试补全 ✅（本批：@vue/test-utils 挂载级 4 计算器 + 独立 test:docs + CI）
-- G2 视觉回归测试 ✳ **待实现**
-- G3 大屏 K 线数优化 ◐（B12 worker + G15 降采样 + 视口 cull 覆盖；5000+ 压测待补）
+- G2 视觉回归测试 ✅（本批：visual.spec.ts chromium 截图基线 + ?perf 合成数据确定性，
+  基线入库 e2e/__screenshots__，--update-snapshots 再生成）
+- G3 大屏 K 线数优化 ✅（本批：stress-large-data.spec.ts ?perf=20000 加载/十字光标取时/
+  多段拖动翻页，crosshair-tooltip 暴露原始时间戳断言时光倒流 + 数据完整无异常）
 - G4 指标 worker 化 ✅（B12 既有）
 - G5 首屏加载优化 ✅（3 重组件 lazy 代码分割：DepthChart/VolumeProfile/Sentiment + Suspense）
-- G6 渲染性能基准 ◐（vitest.perf.config + indicators perf.test 既有）
+- G6 渲染性能基准 ✅（vitest.perf.config + indicators perf.test，npm run perf 10 项全绿）
 - G7 内存泄漏检查 ✅（本批：WS close 清理重连定时器 + 重复开闭不累积 2 例审计）
 - G8 WS 消息批处理 ✅（createBatchScheduler rAF 合帧既有 + 单测）
 - G9 数据预取 ✅（usePrefetch 既有）
@@ -53,7 +61,7 @@
 - G13 资源加载失败降级 ✅（OfflineBanner 既有）
 - G14 构建体积报告 ✅（bundle-report 既有）
 - G15 数据量自适应（降采样）✅（本批：downsampleCandles + renderCandleCap）
-- 状态：G 剩 G2/G3/G6；下一步 H 阶段（★ H1 离线包 / H2 搜索增强）
+- 状态：G 阶段 15 项全部闭合（本批提交 + 全量 E2E 回归）
 
 ## 阶段 F · UI / 主题 / 可访问性（已闭合，F 批一 a3f60d7 + F16 d5f7f91）
 - F1 图表键盘导航 ✅（方向键十字光标漫游 + 回放步进，既有）
@@ -105,6 +113,11 @@
 | D 批：费率/滑点/统计/一键平仓/保证金率 | c88c828 | typecheck/lint/unit 全绿 + trade-settings E2E |
 | D 补全：强平预警/费拆分/快照/目标/JSON | 845a0ae | unit 1471 全绿，coverage lines 86.46%，build ✅ |
 | E 批一：渠道/多品种/批量/模板/到期/备注/精度/JSON/角标/快捷键 | f38d594 | unit 1490 全绿，build ✅，E2E 验证中 |
+| I5 画线语义识别 + I6/I10 回写 | c7655bb | typecheck/lint 0 error，unit 1513，drawing-semantics E2E ✅ |
+| H14 Docker 镜像修复（npm ci legacy-peer-deps / alpine git） | c20e176 | 镜像构建 ✅，容器首页/SPA fallback/知识库 200 |
+| i18n：版本历史五语外置 + a11yAudit 豁免（audit:i18n 全绿） | 03b7ebf | typecheck/unit 1513，audit:i18n 0 发现 |
+| H15 部署状态页 + README pages 徽章 | cafcb43 | docs/05-部署.md「七、部署状态与健康检查」 |
+| I14 快照画廊 + G2 视觉回归 + G3 大屏压测 | 4a81f2d | unit 1522，I14/G3 E2E ✅，G2 基线对比 4/4 |
 
 ## D 阶段（D1–D15 全闭合）
 - D1 双向持仓 / D2 保证金率动态+强平价 / D3 多品种同时持仓 / D4 加权均价 / D5 费率可配 /

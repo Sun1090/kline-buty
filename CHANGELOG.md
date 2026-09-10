@@ -76,8 +76,15 @@
 - I7 语音播报：WebSpeech 按 UI 语言朗读价格异动（面板开关）
 - I13 区间导出：CSV 导出范围最近 N 根（全部/100/500/1000）
 - G6 渲染性能基准：指标/降采样/裁剪管线预算（perf.test 扩充）
+- I3 画线语义识别：`drawingSemantics` 纯函数按已画图形建议指标（区间→BOLL+RSI / 趋势→EMA+MACD / 水平→RSI / 十字→KDJ），设置面板「画线建议」一键应用（单测 + E2E）
+- I14 图表快照画廊：`snapshotGallery` localStorage 存储（条数/字节双配额 + FIFO 淘汰），图表右上「存快照」→ SnapshotGallery 缩略图网格/全图预览/删除/清空，More 菜单入口（单测 9 + E2E）
+- G2 视觉回归：`visual.spec.ts` chromium 截图基线（?perf 合成数据确定性，基线入库，`--update-snapshots` 再生成）
+- G3 大屏压测：`stress-large-data.spec.ts` `?perf=20000` 加载/十字光标取时/多段拖动翻页（crosshair-tooltip 暴露原始时间戳断言时光倒流）
+- H14 Docker 镜像修复：构建阶段补 `.npmrc`（legacy-peer-deps，此前 Docker 内 npm ci EUSAGE）+ 安装 git（vitepress lastUpdated spawn ENOENT）；镜像容器健康检查（首页/SPA fallback/知识库 200）
+- H15 部署状态与健康检查：`docs/05-部署.md` 新增状态页章节（CI/Pages 徽章 + 双平台内容抽查 curl + Docker 健康清单），README 增加 pages.yml 动态徽章
+- i18n：版本历史外置五语字典（changelog.* 12 键 × 5），audit:i18n 巡检 0 发现（a11yAudit 豁免：零依赖测试断言库非 UI）
 - 工程：vitest 主配置隔离 docs-site（React/Vue 两套测试环境），CI 集成 test:docs；lint 修复
-- 五语 i18n 全量同步；unit 1494 + test:docs 21 + perf 10 全绿，build 全通，CI ✅
+- 五语 i18n 全量同步；unit 1522 + test:docs 21 + perf 10 全绿，build 全通，CI/Pages/Android/iOS ✅
 
 ## [P3/P4] 深化阶段（2026-09-01 ~ 09-02）
 
