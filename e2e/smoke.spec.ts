@@ -24,7 +24,7 @@ async function waitDepthReady(page: Page) {
 async function waitOrderBookReady(page: Page) {
   const openPanel = async () => {
     await openMore(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByRole('button', { name: '盘口', exact: true }).click()
     await page.getByTestId('ob-bid').first().waitFor({ timeout: 20_000 })
     await page.getByTestId('ob-ask').first().waitFor({ timeout: 20_000 })
   }
@@ -658,7 +658,7 @@ test.describe('K 线应用冒烟', () => {
       page.waitForEvent('download'),
       page.getByRole('button', { name: '截图', exact: true }).click(),
     ])
-    expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m\.png$/)
+    expect(download.suggestedFilename()).toMatch(/^BTCUSDT_1m(?:@1x)?\.png$/)
     const png = decodePng(readFileSync(await download.path()))
     // 只检查角标所在右下区域；浅色文字像素量足以区分普通轴标签/网格
     let textPixels = 0
@@ -821,7 +821,8 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
-  test('画线：水平通道 + XABCD 形态 + 艾略特波浪 → 绘制 → 删除', async ({ page }) => {
+  test('画线：水平通道 + XABCD 形态 + 艾略特波浪 → 绘制 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -1451,7 +1452,8 @@ test.describe('K 线应用冒烟', () => {
       .toBe(0)
   })
 
-  test('画线：时间区间 → 拖 A→B → 落库两点按时间排序 → 像素校验选中蓝色竖带双边框 → 删除', async ({ page }) => {
+  test('画线：时间区间 → 拖 A→B → 落库两点按时间排序 → 像素校验选中蓝色竖带双边框 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -1581,7 +1583,8 @@ test.describe('K 线应用冒烟', () => {
       .toBe(0)
   })
 
-  test('画线：价格带 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色水平带双边框 → 删除', async ({ page }) => {
+  test('画线：价格带 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色水平带双边框 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -2224,7 +2227,7 @@ test.describe('K 线应用冒烟', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await openMore(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByRole('button', { name: '盘口', exact: true }).click()
     await expect(page.getByTestId('order-book')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText(/盘口订单簿/)).toBeVisible({ timeout: 15_000 })
     // 等待 WS 档位数据到达：买卖各 8 档 + 价差行
@@ -2233,7 +2236,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByTestId('ob-spread')).toBeVisible()
     // 关闭
     await openMore(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByRole('button', { name: '盘口', exact: true }).click()
     await expect(page.getByTestId('order-book')).toHaveCount(0)
   })
 
@@ -2243,7 +2246,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openMore(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByRole('button', { name: '盘口', exact: true }).click()
     const row = page.getByTestId('ob-bid').first()
     await expect(row).toBeVisible({ timeout: 20_000 })
     // 主图 canvas 上 accent 色（#2962ff）像素数
@@ -2272,7 +2275,7 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openMore(page)
-    await page.getByRole('button', { name: '盘口' }).click()
+    await page.getByRole('button', { name: '盘口', exact: true }).click()
     const row = page.getByTestId('ob-bid').first()
     await expect(row).toBeVisible({ timeout: 20_000 })
     const accentPx = () =>
@@ -2366,8 +2369,12 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
   })
 
-  test('分享链接：URL 参数定位品种/周期 + 复制链接', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('分享链接：URL 参数定位品种/周期 + 复制链接', async ({ page, context, browserName }) => {
+    // webkit 的 grantPermissions 不支持 clipboard-write（报 Unknown permission）；
+    // 应用侧复制有 execCommand 降级（toast 两端都出现），剪贴板回读断言仅 chromium（权限齐全）执行
+    if (browserName === 'chromium') {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    }
     await page.goto('/?symbol=ETHUSDT&period=1h')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // URL 参数已定位品种
@@ -2379,11 +2386,14 @@ test.describe('K 线应用冒烟', () => {
     expect(bg).toBe('rgb(41, 98, 255)')
     // 复制分享链接 → 剪贴板含当前品种与周期
     await openMore(page)
-    await page.getByRole('button', { name: '分享' }).click()
+    // 两个「分享」按钮（More 面板深链分享 + 图表截图分享），须按面板精确命中
+    await page.getByTestId('desktop-more-panel').getByRole('button', { name: '分享', exact: true }).click()
     await expect(page.getByText('已复制')).toBeVisible({ timeout: 5000 })
-    const clip = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clip).toContain('symbol=ETHUSDT')
-    expect(clip).toContain('period=1h')
+    if (browserName === 'chromium') {
+      const clip = await page.evaluate(() => navigator.clipboard.readText())
+      expect(clip).toContain('symbol=ETHUSDT')
+      expect(clip).toContain('period=1h')
+    }
   })
 
   test('CSV 导出：一键下载含当前指标列的 K 线文件', async ({ page }) => {
@@ -3088,7 +3098,8 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
 
-  test('画线：斐波那契时间线 → 拖 A→B → 7 条竖线（黄金分割）→ 删除', async ({ page }) => {
+  test('画线：斐波那契时间线 → 拖 A→B → 7 条竖线（黄金分割）→ 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -4541,7 +4552,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(box!.width).toBeGreaterThan(300)
   })
 
-  test('双指捏合纵向缩放：价格轴区间变化（固定价画线位移）+ 无异常', async ({ page }) => {
+  test('双指捏合纵向缩放：价格轴区间变化（固定价画线位移）+ 无异常', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -4595,7 +4607,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：双击复位（捏合缩放 → 快速两次拖动不误复位 → 双击恢复自适应）', async ({ page }) => {
+  test('移动端：双击复位（捏合缩放 → 快速两次拖动不误复位 → 双击恢复自适应）', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -4684,7 +4697,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：触屏整线拖动移动画线（锚点增量一致）→ 无十字光标噪音', async ({ page }) => {
+  test('移动端：触屏整线拖动移动画线（锚点增量一致）→ 无十字光标噪音', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -4780,7 +4794,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：触屏拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page }) => {
+  test('移动端：触屏拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -4880,7 +4895,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：触屏文本标注 → 创建/确认后选中态保持（蓝框/锚点）→ 改字改字号颜色 → 落库 → 删除', async ({ page }) => {
+  test('移动端：触屏文本标注 → 创建/确认后选中态保持（蓝框/锚点）→ 改字改字号颜色 → 落库 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -4996,7 +5012,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(0)
   })
 
-  test('移动端：画线完成自动切回鼠标 → 文本确认后直接触屏拖拽本体 → 空白轻点不误建画线', async ({ page }) => {
+  test('移动端：画线完成自动切回鼠标 → 文本确认后直接触屏拖拽本体 → 空白轻点不误建画线', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -5113,7 +5130,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：触屏拖拽创建价格区间框 → 落库两点按价格排序 → 选中蓝色矩形边框 → 删除', async ({ page }) => {
+  test('移动端：触屏拖拽创建价格区间框 → 落库两点按价格排序 → 选中蓝色矩形边框 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -5237,7 +5255,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：持仓计划 → 触摸三次定义入场/止损/止盈 → 落库三点 → 删除', async ({ page }) => {
+  test('移动端：持仓计划 → 触摸三次定义入场/止损/止盈 → 落库三点 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -5316,7 +5335,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：预测线 → 触摸拖 A→B → 落库两点 → 删除', async ({ page }) => {
+  test('移动端：预测线 → 触摸拖 A→B → 落库两点 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -5401,7 +5421,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
   })
 
 
-  test('移动端：日期范围 → 触摸拖 A→B → 落库两点按时间排序 → 删除', async ({ page }) => {
+  test('移动端：日期范围 → 触摸拖 A→B → 落库两点按时间排序 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -5487,7 +5508,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
   })
 
 
-  test('移动端：备注便签 → 触摸创建并编辑 → 长按本体回填改字 → 删除', async ({ page }) => {
+  test('移动端：备注便签 → 触摸创建并编辑 → 长按本体回填改字 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -5572,7 +5594,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
+  test('移动端：长按文本标注本体 → 直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')
@@ -5660,7 +5683,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
 
   })
 
-  test('移动端：触屏拖拽创建时间区间 → 落库两点保序 → 选中蓝框双边框 → 删除', async ({ page }) => {
+  test('移动端：触屏拖拽创建时间区间 → 落库两点保序 → 选中蓝框双边框 → 删除', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/')

@@ -61,10 +61,19 @@ test.describe('G3 大屏数据压测', () => {
 
     // 十字光标取时（hover 后 tooltip 附带原始时间戳）
     const timeAt = async () => {
-      await page.mouse.move(cx, cy, { steps: 3 })
-      const el = page.getByTestId('crosshair-time')
-      await el.waitFor({ timeout: 5_000 })
-      return Number(await el.getAttribute('data-time'))
+      // webkit 大数据量（20k）下首次 hover 会被 chart 初始渲染吞掉（crosshair 回调不触发），
+      // 第二次 move 才稳定触发——重试式 hover 保证跨浏览器确定性
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await page.mouse.move(cx, cy, { steps: 3 })
+        await page.mouse.move(cx + 1, cy)
+        const el = page.getByTestId('crosshair-time')
+        const ok = await el
+          .waitFor({ timeout: 8_000 })
+          .then(() => true)
+          .catch(() => false)
+        if (ok) return Number(await el.getAttribute('data-time'))
+      }
+      throw new Error('crosshair-time 未出现（多次 hover 均未触发）')
     }
     const tBefore = await timeAt()
 

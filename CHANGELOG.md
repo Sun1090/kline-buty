@@ -12,6 +12,15 @@
 - 升级后全量验证：typecheck / lint 0 error / unit 1532 / build（tsc+vite+docs 47s）全绿
 - typescript 7.0.2 暂缓（#8）：TS7 与 typescript-eslint 尚不兼容致 lint 加载崩溃，待官方支持
 
+### E2E 测试修复与依赖安全（2026-09-11）
+- 依赖安全：`overrides: { esbuild: ^0.25.0 }` 将 vitepress 嵌套 esbuild 0.21.5 → 0.25.12，闭合 dev 高危（GHSA-67mh-4wv8-2f99，≤0.24.2），`npm audit` 3 → 2（剩余 vite≤6.4.2 全为 Windows-only + dev-server-only，awaiting vitepress 2）；lockfile 外科手术式合并仅替换 esbuild 相关块，`npm ci`/docs 构建/单测 1532 全绿
+- E2E 测试债修复（`b045ea8`）：
+  - smoke 5 处过时断言（「浮动盈亏」标签已移除改断言持仓行数值 ×3、「止盈线」改开仓前断言、价格提醒首 input 被隐藏文件导入框抢占改 placeholder 定位）
+  - mobile 14 个 CDP 触摸用例加 chromium 守卫（`newCDPSession` 仅 Chromium；跨浏览器触摸覆盖由 chromium 承担）
+  - 惯性滚动用例方向修正（左拖撞最新右缘被 clamp 吸收、原像素签名实为合成 tick 噪声）→ 改 UI 级闭环断言：右拖进历史 →「回到最新」出现 → 等停稳 → 点击恢复
+- E2E 基建：dependabot 升级 @playwright/test 1.63 后本机缺 webkit 二进制（`npx playwright install webkit`，WebKit 26.6）；运行改为显式捕获退出码（此前 pipeline 尾接 `tail` 掩蔽了失败退出码）
+- 验证：mobile.spec chromium/webkit 24 passed / 14 skipped / 0 failed；smoke 仓位×2 + QO×2 + 价格提醒 chromium 通过；eslint 0 error
+
 ### A 阶段 - 行情与数据深化
 - A1（★）K 线时间戳对齐周期边界：修正 `1w`（UTC 周一）与 `1M`（月初）边界对齐（此前按固定 epoch 倍数会落到周四/30 天近似错位）；新增 `normalizeCandles` 数据流唯一入口，REST/WS/缓存/补洞/分页/合成数据全部归一化后入仓
 - A1 附带：`1M` 分页游标改 31 天上界（修复 30 天近似致首翻页不足 500 根、误判 `hasMore=false` 漏页）；loadMore 游标排除首根自身（翻满一页新数据）；perf 压测周期感知（合成步长/起点对齐当前周期，配合 `window.__klineButyPerf` E2E 断言切周期边界对齐与序列间隔稳定）
