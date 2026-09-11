@@ -5,14 +5,31 @@
 
 ## 当前阶段
 
-**E2E 收尾与依赖安全复核（2026-09-11）** — b230a00 esbuild override 闭合高危链；重跑 E2E 发现并修复 3 类测试债（smoke 过时断言、mobile CDP 浏览器守卫、惯性用例 tick 竞态）；H11 firefox 本机上游 bug 证据固化
-- 依赖安全：`overrides: { esbuild: ^0.25.0 }` 使 vitepress 嵌套 esbuild 0.21.5 → 0.25.12，esbuild 高危（GHSA-67mh-4wv8-2f99）闭合，npm audit 3 → 2（剩余 vite≤6.4.2 全 Windows-only + dev-server-only，awaiting vitepress 2）。lockfile 外科手术式合并（仅 esbuild 相关块，其余字节不动）；验证 npm ci / docs:build / typecheck / lint(0 err) / unit 1532 全绿
-- E2E 基础设施：dependabot 升级 @playwright/test 1.63 后本地缺 webkit 二进制（`npx playwright install webkit` 修复，WebKit 26.6）；此前 multi 运行被「缺少浏览器二进制 + tail 掩蔽退出码」误导为假绿，已改为显式捕获 REAL_EXIT
-- 测试债修复（e2e 工作区，待提交）：
-  1. smoke 5 处过时断言——「浮动盈亏」标签早已移除改断言持仓行数值（×3）、价格提醒面板首 input 被隐藏文件导入框抢占改 placeholder 定位（×1，QO 断言修正 ×1）
-  2. mobile.spec 14 个 CDP 触摸用例加 chromium 守卫（`newCDPSession` 仅 Chromium，webkit 上必然失败）
-  3. 惯性滚动用例 tick 竞态——?perf 模式每 1500ms 合成 tick 更新 K 线，「静止」断言单窗口必然竞态，改为动量衰减后采样连续两次相同签名
-- H11 firefox：直启 firefox-1543 nightly `-headless -profile <手动创建的目录>` 同样报 「Could not find profile folder」，且 TMPDIR 覆盖无效 → 证实为上/浏览器层缺陷（非应用、非 playwright 临时目录实现）；H11 维持 ◐，跨浏览器验证建议以 Linux CI 补齐（见「待办」）
+**E2E 收尾与依赖安全复核（2026-09-11，三轮提交 b230a00 / b045ea8 / 63cf426）** — 全量回归从 26 失败收敛到 3（均为负载抖动，隔离通过）
+- 全量 chromium/webkit 回归现状：**297 passed / 37 skipped / 7 flaky / 3 failed**（14.7m，REAL_EXIT=1）
+  - 3 个 failed 全部隔离复跑通过（chromium 5015 切回鼠标、5133 价格区间框、webkit indicator-crosshair），
+    为 15 分钟长回归下的机器负载抖动，非确定性缺陷
+  - 37 skipped = mobile.spec 14 CDP 守卫 + smoke 移动端 13 CDP 守卫 + 画线像素 4×2 守卫
+    （`newCDPSession`/像素列分组仅 chromium 语义）等
+- 依赖安全：`overrides: { esbuild: ^0.25.0 }` 使 vitepress 嵌套 esbuild 0.21.5 → 0.25.12，
+  esbuild 高危（GHSA-67mh-4wv8-2f99）闭合，npm audit 3 → 2（剩余 vite≤6.4.2 全 Windows-only
+  + dev-server-only，awaiting vitepress 2）。lockfile 外科手术式合并（仅 esbuild 相关块，其余字节不动）；
+  验证 npm ci / docs:build / typecheck / lint(0 err) / unit 1532 全绿
+- E2E 基础设施：dependabot 升级 @playwright/test 1.63 后本地缺 webkit 二进制
+  （`npx playwright install webkit` 修复，WebKit 26.6）；multi 运行改显式捕获 REAL_EXIT
+  （此前 pipeline 尾接 tail 掩蔽失败退出码致假绿）
+- E2E 测试债修复（三轮）：
+  1. smoke 过时断言（「浮动盈亏」标签移除→断言持仓行数值、价格提醒首 input 被隐藏文件导入框
+     抢占→placeholder 定位、「止盈线」改开仓前断言）
+  2. mobile.spec 14 个 + smoke 移动端 13 个 CDP 触摸用例加 chromium 守卫
+  3. 惯性滚动用例方向修正（左拖撞最新右缘被 clamp 吸收、原像素签名实为合成 tick 噪声）
+     → UI 级闭环断言（右拖进历史→「回到最新」出现→等停稳→点击恢复）
+  4. 定位歧义：分享链接两按钮、盘口 exact:true×5；导出截图文件名 @1x 后缀
+  5. webkit 栅格化差异：4 个画线像素列分组断言 chromium-only（功能断言有 chromium 像素级 + 单测）
+  6. stress-large-data：20k 蜡烛下 webkit 首次 hover 被初始渲染吞掉 → timeAt 重试式 hover
+- H11 firefox：直启 firefox-1543 nightly `-headless -profile <手动创建的目录>` 同样报
+  「Could not find profile folder」，且 TMPDIR 覆盖无效 → 证实为浏览器层缺陷（非应用、非 playwright）；
+  H11 维持 ◐，跨浏览器验证建议以 Linux CI 补齐（见「待办」）
 
 **阶段 I 收尾：I15 已交付上线（0fb63ba），I3/I11 暂缓（外部依赖），I 阶段可落地项全部闭合** — docs/13 阶段 I（I1–I15）
 - H1 知识库离线包 ✅（SW runtime 缓存 /knowledge 已访问页面离线可读）
