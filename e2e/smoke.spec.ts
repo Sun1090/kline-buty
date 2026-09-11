@@ -718,10 +718,14 @@ test.describe('K 线应用冒烟', () => {
     const inputs = page.getByRole('region', { name: '模拟仓位' }).locator('input')
     await inputs.nth(0).fill('100')
     await inputs.nth(1).fill('1')
-    await page.getByRole('button', { name: '开仓' }).click()
-    await expect(page.getByText(/浮动盈亏/)).toBeVisible()
+    // 填价后止盈/止损参考价行出现（表单有效时预览；开仓后表单清空会隐藏，须在开仓前断言）
     await expect(page.getByText('止盈线', { exact: false })).toBeVisible()
-    await page.getByRole('button', { name: '平仓' }).click()
+    await page.getByRole('button', { name: '开仓' }).click()
+    const posRow = page.getByTestId('position-row-short')
+    await expect(posRow).toBeVisible()
+    await expect(posRow).toContainText(/-?\d+(\.\d+)?/)
+    // 平仓（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
+    await posRow.getByRole('button').click()
     await expect(page.getByRole('button', { name: '开仓' })).toBeVisible()
   })
 
@@ -2315,9 +2319,10 @@ test.describe('K 线应用冒烟', () => {
     expect(Math.abs(buyPrice - bidPrice) / bidPrice).toBeLessThan(0.02)
     await expect(page.getByText(/预估金额/)).toBeVisible()
     await expect(page.getByText(/手续费/)).toBeVisible()
-    // 确认 → 模拟仓位面板打开（浮动盈亏可见）
+    // 确认 → 模拟仓位面板打开，持仓行含浮动盈亏数值（「浮动盈亏」标签已移除，改断言数值）
     await page.getByTestId('qo-confirm').click()
-    await expect(page.getByText('浮动盈亏')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('position-row-long')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('position-row-long')).toContainText(/-?\d+(\.\d+)?/)
     await expect(page.getByText('模拟仓位')).toBeVisible()
   })
 
@@ -2337,7 +2342,8 @@ test.describe('K 线应用冒烟', () => {
     await expect(page.getByTestId('quick-order').getByText('卖出')).toBeVisible()
     await page.getByTestId('quick-order').locator('input').last().fill('0.01')
     await page.getByTestId('qo-confirm').click()
-    await expect(page.getByText('浮动盈亏')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('position-row-short')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('position-row-short')).toContainText(/-?\d+(\.\d+)?/)
   })
 
   test('情绪面板：开合 + 四类指标标题可见 + 直连 CORS 修复后真实数据渲染', async ({ page }) => {
@@ -5885,10 +5891,12 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
   await inputs.nth(0).fill('100')
   await inputs.nth(1).fill('2')
   await page.getByRole('button', { name: '开仓', exact: true }).click()
-  // 开仓后面板显示浮动盈亏
-  await expect(page.getByText('浮动盈亏')).toBeVisible()
-  // 平仓
-  await page.getByRole('button', { name: '平仓', exact: true }).click()
+  // 开仓后出现持仓行且含浮动盈亏数值（「浮动盈亏」标签早已移除，改为断言数值存在）
+  const posRow = page.getByTestId('position-row-long')
+  await expect(posRow).toBeVisible()
+  await expect(posRow).toContainText(/-?\d+(\.\d+)?/)
+  // 平仓（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
+  await posRow.getByRole('button').click()
   // 面板回到未开仓态（开仓按钮重新出现）
   await expect(page.getByRole('button', { name: '开仓', exact: true })).toBeVisible()
 })
@@ -5904,8 +5912,8 @@ test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page })
   await page.getByRole('button', { name: '提醒', exact: true }).click()
   // 提醒面板出现
   await expect(page.getByRole('region', { name: /价格提醒/ })).toBeVisible()
-  // 输入价格，点添加
-  const priceInput = page.getByRole('region', { name: /价格提醒/ }).locator('input').first()
+  // 输入价格，点添加（区域首 input 是隐藏的文件导入框，须按占位符定位价格输入框）
+  const priceInput = page.getByRole('region', { name: /价格提醒/ }).getByPlaceholder(/[\d.,]+/).first()
   await priceInput.fill('999999')
   await page.getByRole('button', { name: '添加提醒', exact: true }).click()
   // 列表出现该提醒

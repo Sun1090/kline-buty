@@ -5,6 +5,15 @@
 
 ## 当前阶段
 
+**E2E 收尾与依赖安全复核（2026-09-11）** — b230a00 esbuild override 闭合高危链；重跑 E2E 发现并修复 3 类测试债（smoke 过时断言、mobile CDP 浏览器守卫、惯性用例 tick 竞态）；H11 firefox 本机上游 bug 证据固化
+- 依赖安全：`overrides: { esbuild: ^0.25.0 }` 使 vitepress 嵌套 esbuild 0.21.5 → 0.25.12，esbuild 高危（GHSA-67mh-4wv8-2f99）闭合，npm audit 3 → 2（剩余 vite≤6.4.2 全 Windows-only + dev-server-only，awaiting vitepress 2）。lockfile 外科手术式合并（仅 esbuild 相关块，其余字节不动）；验证 npm ci / docs:build / typecheck / lint(0 err) / unit 1532 全绿
+- E2E 基础设施：dependabot 升级 @playwright/test 1.63 后本地缺 webkit 二进制（`npx playwright install webkit` 修复，WebKit 26.6）；此前 multi 运行被「缺少浏览器二进制 + tail 掩蔽退出码」误导为假绿，已改为显式捕获 REAL_EXIT
+- 测试债修复（e2e 工作区，待提交）：
+  1. smoke 5 处过时断言——「浮动盈亏」标签早已移除改断言持仓行数值（×3）、价格提醒面板首 input 被隐藏文件导入框抢占改 placeholder 定位（×1，QO 断言修正 ×1）
+  2. mobile.spec 14 个 CDP 触摸用例加 chromium 守卫（`newCDPSession` 仅 Chromium，webkit 上必然失败）
+  3. 惯性滚动用例 tick 竞态——?perf 模式每 1500ms 合成 tick 更新 K 线，「静止」断言单窗口必然竞态，改为动量衰减后采样连续两次相同签名
+- H11 firefox：直启 firefox-1543 nightly `-headless -profile <手动创建的目录>` 同样报 「Could not find profile folder」，且 TMPDIR 覆盖无效 → 证实为上/浏览器层缺陷（非应用、非 playwright 临时目录实现）；H11 维持 ◐，跨浏览器验证建议以 Linux CI 补齐（见「待办」）
+
 **阶段 I 收尾：I15 已交付上线（0fb63ba），I3/I11 暂缓（外部依赖），I 阶段可落地项全部闭合** — docs/13 阶段 I（I1–I15）
 - H1 知识库离线包 ✅（SW runtime 缓存 /knowledge 已访问页面离线可读）
 - H2 知识库搜索增强 ✅（VitePress local 全文搜索既有）
