@@ -5,6 +5,15 @@
 
 ## 当前阶段
 
+**I9 定时主题切换（2026-09-12）** — I9「深色/浅色自动切换（跟随系统 + 定时）」补齐「定时」子能力：
+- 新增 `schedule` 主题档：主题档循环 dark→light→auto→schedule；schedule 档按用户设定深/浅色时刻
+  （HH:mm）自动切换，配置持久化 `kline-buty:scheduleTheme`（默认深 18:00 / 浅 07:00），跨午夜区间正确
+- `src/theme.ts` 纯函数：`timeToMinutes` / `resolveScheduledTheme` / `currentScheduledTheme`；新 hook
+  `useScheduledTheme`（30s 重算，仅变化时 setState）；桌面/移动 Header 在 schedule 档显示时间配置输入
+- 五语 i18n（toSchedule/scheduleDark/scheduleLight）；设置快照导出自动纳入新持久化键
+- 验证：typecheck ✅ / lint 0 err ✅ / i18n 五语键集一致 ✅ / unit 1561 全绿 ✅ /
+  chromium E2E recent-features 13/13（含 I9 用例）+ visual 4/4 基线不变 ✅
+
 **CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
 - 覆盖率补强（5c339c5）：vitest.setup 加 WebSocket 桩；App 集成 +8 / DesktopHeader +9 / MobileHeader +3；npm test 1549 全绿
 - CI E2E job（2648d4c）：确定性规格集（?perf）+ `--grep-invert "模拟交易"` + 失败上传工件；实时冒烟留本地
@@ -72,7 +81,7 @@
 - I6 智能提醒（波动率阈值自适应）✅（本批：atrPercent + adaptiveThreshold ATR% 波动带）
 - I7 多语言语音播报 ✅（本批：WebSpeech 按 UI 语言朗读触发）
 - I8 图表面板深链 ✅（?symbol=&period= 白名单校验打开定位 + 本批 ?drawing=<id> 打开选中指定画线：格式校验/不存在静默忽略/分享链接自动携带 id；副图刻度守卫修复 v5 竞态；E2E 深链用例，recent-features 12/12）
-- I9 深色浅色自动切换 ✅（theme auto 既有）
+- I9 深色浅色自动切换 ✅（theme auto 既有 + 本批新增 schedule 定时档：深/浅色时刻可配、跨午夜、持久化 + 单测 12 + E2E）
 - I10 指标智能推荐 ✅（本批：recommendIndicators 趋势/波动率分析 + 参数面板一键应用）
 - I12 交易策略笔记 ✅（既有 note 便签画线工具落图）
 - I13 数据导出增强 ✅（本批：导出范围最近 N 根 0/100/500/1000）

@@ -1,5 +1,14 @@
 export type ThemeMode = 'dark' | 'light'
 
+/** 主题档：dark/light 固定档；auto 跟随系统；schedule 按定时切换 */
+export type ThemeSetting = ThemeMode | 'auto' | 'schedule'
+
+/** 定时主题配置：深色/浅色切换时刻（HH:mm，24 小时制） */
+export interface ScheduleThemeConfig {
+  darkTime: string
+  lightTime: string
+}
+
 /** 主题色预设 id：classic 默认（保持原配色） */
 export type ColorPresetId = 'classic' | 'a-share' | 'purple' | 'teal'
 
@@ -117,4 +126,28 @@ export function applyTheme(mode: ThemeMode, presetId: ColorPresetId = 'classic',
   else document.documentElement.removeAttribute('data-hc')
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', THEMES[mode].background)
+}
+
+/** "HH:mm" → 当日分钟数（0-1439）；非法输入回退 -1 */
+export function timeToMinutes(hhmm: string): number {
+  const m = /^([0-1]?\d|2[0-3]):([0-5]\d)$/.exec(hhmm.trim())
+  if (!m) return -1
+  return Number(m[1]) * 60 + Number(m[2])
+}
+
+/**
+ * 解析某时刻应生效的主题。time 为当日分钟数（0-1439）。
+ * darkTime ≤ t < lightTime → dark；否则 light（支持 darkTime > lightTime 的跨午夜区间）。
+ */
+export function resolveScheduledTheme(time: number, config: ScheduleThemeConfig): 'dark' | 'light' {
+  const dark = timeToMinutes(config.darkTime)
+  const light = timeToMinutes(config.lightTime)
+  if (dark < 0 || light < 0) return 'dark'
+  const inDark = dark <= light ? time >= dark && time < light : time >= dark || time < light
+  return inDark ? 'dark' : 'light'
+}
+
+/** 当前时刻的有效主题（now 缺省为当前时间） */
+export function currentScheduledTheme(config: ScheduleThemeConfig, now: Date = new Date()): 'dark' | 'light' {
+  return resolveScheduledTheme(now.getHours() * 60 + now.getMinutes(), config)
 }

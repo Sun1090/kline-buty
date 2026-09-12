@@ -4,7 +4,7 @@ import type { ChartType, MainIndicatorKind, SubIndicatorKind } from './ChartView
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
 import type { DrawingTemplate } from '../drawings/templates'
-import type { ColorPresetId, ThemeMode } from '../theme'
+import type { ColorPresetId, ScheduleThemeConfig, ThemeMode, ThemeSetting } from '../theme'
 import { useI18n } from '../i18n/useI18n'
 import type { MessageKey } from '../i18n/messages'
 import { DrawingColorRow } from './DrawingColorRow'
@@ -198,8 +198,11 @@ export interface MobileHeaderProps {
   shortcutsActive: boolean
   onToggleShortcuts: () => void
   /** App 全局 Esc 链路上有更高层（面板/浮层/画线进度等）打开时为 true：顶栏弹层让路，不劫持 Esc */
-  /** 主题设置三态（auto/dark/light）：自动档按钮文案需区分有效模式与设置 */
-  themeSetting?: 'auto' | ThemeMode
+  /** 主题设置四态（auto/dark/light/schedule）：自动档按钮文案需区分有效模式与设置 */
+  themeSetting?: ThemeSetting
+  /** I9 定时主题：schedule 档下深/浅色切换时刻配置与变更回调 */
+  scheduleTheme?: ScheduleThemeConfig
+  onScheduleThemeChange?: (c: ScheduleThemeConfig) => void
   escChainActive?: boolean
   langLabel: string
   onCycleLang: () => void
@@ -758,8 +761,32 @@ export function MobileHeader(props: MobileHeaderProps) {
                     color: 'var(--text-dim)',
                   }}
                 >
-                  {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+                  {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'schedule' ? t('theme.toSchedule') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
                 </button>
+                {(props.themeSetting ?? props.themeMode) === 'schedule' && (
+                  <div style={{ display: 'flex', gap: 6, padding: '6px 2px', alignItems: 'center' }}>
+                    <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {t('theme.scheduleDark')}
+                      <input
+                        data-testid="schedule-dark-time"
+                        type="time"
+                        value={props.scheduleTheme?.darkTime ?? '18:00'}
+                        onChange={(e) => props.onScheduleThemeChange?.({ ...(props.scheduleTheme ?? { darkTime: '18:00', lightTime: '07:00' }), darkTime: e.target.value })}
+                        style={{ fontSize: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', padding: '4px 6px' }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {t('theme.scheduleLight')}
+                      <input
+                        data-testid="schedule-light-time"
+                        type="time"
+                        value={props.scheduleTheme?.lightTime ?? '07:00'}
+                        onChange={(e) => props.onScheduleThemeChange?.({ ...(props.scheduleTheme ?? { darkTime: '18:00', lightTime: '07:00' }), lightTime: e.target.value })}
+                        style={{ fontSize: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', padding: '4px 6px' }}
+                      />
+                    </label>
+                  </div>
+                )}
                 <button
                   onClick={props.onToggleWatermark}
                   data-testid="watermark-toggle"

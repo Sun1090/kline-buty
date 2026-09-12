@@ -31,6 +31,7 @@ import { calcPnl, checkHit } from './position/pnl'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
+import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
@@ -57,7 +58,7 @@ import {
   type DrawingTool,
 } from './drawings/logic'
 import { normalizeSnapMode, type SnapMode } from './drawings/snap'
-import { applyTheme, type ColorPresetId, type ThemeMode } from './theme'
+import { applyTheme, type ColorPresetId, type ScheduleThemeConfig, type ThemeMode, type ThemeSetting } from './theme'
 import { nudgeAllCrosshairs, clearAllCrosshairs } from './chart/adapter'
 import { volumeSurgeRatio } from './chart/volumeSurge'
 import { findGaps, gapHealth } from './chart/dataHealth'
@@ -163,9 +164,9 @@ export function App() {
       const i = FONT_SCALES.indexOf(cur)
       return FONT_SCALES[i >= 0 && i < FONT_SCALES.length - 1 ? i + 1 : 0]
     })
-  const [themeSetting, setThemeSetting] = usePersistedState<ThemeMode | 'auto'>('theme', 'dark')
+  const [themeSetting, setThemeSetting] = usePersistedState<ThemeSetting>('theme', 'dark')
 
-  // T5：自动档跟随系统 prefers-color-scheme（设置持久化为 auto/dark/light，图表用派生的有效模式）
+  // T5：自动档跟随系统 prefers-color-scheme（设置持久化为 auto/dark/light/schedule，图表用派生的有效模式）
   const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
@@ -173,7 +174,11 @@ export function App() {
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
-  const themeMode: ThemeMode = themeSetting === 'auto' ? (systemDark ? 'dark' : 'light') : themeSetting
+  // I9 定时主题：schedule 档按深/浅色切换时刻自动切换（持久化配置）
+  const [scheduleTheme, setScheduleTheme] = usePersistedState<ScheduleThemeConfig>('scheduleTheme', { darkTime: '18:00', lightTime: '07:00' })
+  const scheduled = useScheduledTheme(scheduleTheme)
+  const themeMode: ThemeMode =
+    themeSetting === 'auto' ? (systemDark ? 'dark' : 'light') : themeSetting === 'schedule' ? scheduled : themeSetting
   const [colorPreset, setColorPreset] = usePersistedState<ColorPresetId>('colorPreset', 'classic')
   // F7 高对比模式（更强的文本/边框对比 + 饱和强调色）
   const [highContrast, setHighContrast] = usePersistedState<boolean>('highContrast', false)
@@ -1283,7 +1288,9 @@ export function App() {
           onToggleDocs={() => setDocsOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
-          onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
+          onToggleTheme={() => setThemeSetting(themeSetting === 'dark' ? 'light' : themeSetting === 'light' ? 'auto' : themeSetting === 'auto' ? 'schedule' : 'dark')}
+          scheduleTheme={scheduleTheme}
+          onScheduleThemeChange={setScheduleTheme}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
           highContrast={highContrast}
@@ -1427,7 +1434,9 @@ export function App() {
           onToggleDocs={() => setDocsOpen((v) => !v)}
           onCycleFontScale={cycleFontScale}
           themeMode={themeMode}
-          onToggleTheme={() => setThemeSetting(themeSetting === 'auto' ? 'dark' : themeSetting === 'dark' ? 'light' : 'auto')}
+          onToggleTheme={() => setThemeSetting(themeSetting === 'dark' ? 'light' : themeSetting === 'light' ? 'auto' : themeSetting === 'auto' ? 'schedule' : 'dark')}
+          scheduleTheme={scheduleTheme}
+          onScheduleThemeChange={setScheduleTheme}
           colorPreset={colorPreset}
           onColorPreset={setColorPreset}
           highContrast={highContrast}
