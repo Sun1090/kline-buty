@@ -719,10 +719,35 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             <PanelButton
               onClick={props.onToggleTheme}
               title={t('theme.switchTitle')}
-              ariaLabel={`${t('theme.switchTitle')}: ${(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}
+              testId="theme-toggle"
+              ariaLabel={`${t('theme.switchTitle')}: ${(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'schedule' ? t('theme.toSchedule') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}`}
             >
-              {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
+              {(props.themeSetting ?? props.themeMode) === 'auto' ? t('theme.toAuto') : (props.themeSetting ?? props.themeMode) === 'schedule' ? t('theme.toSchedule') : (props.themeSetting ?? props.themeMode) === 'dark' ? t('theme.toLight') : t('theme.toDark')}
             </PanelButton>
+            {(props.themeSetting ?? props.themeMode) === 'schedule' && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {t('theme.scheduleDark')}
+                  <input
+                    data-testid="schedule-dark-time"
+                    type="time"
+                    value={props.scheduleTheme?.darkTime ?? '18:00'}
+                    onChange={(e) => props.onScheduleThemeChange?.({ ...(props.scheduleTheme ?? { darkTime: '18:00', lightTime: '07:00' }), darkTime: e.target.value })}
+                    style={{ fontSize: 12, background: 'transparent', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text)', padding: '2px 4px' }}
+                  />
+                </label>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {t('theme.scheduleLight')}
+                  <input
+                    data-testid="schedule-light-time"
+                    type="time"
+                    value={props.scheduleTheme?.lightTime ?? '07:00'}
+                    onChange={(e) => props.onScheduleThemeChange?.({ ...(props.scheduleTheme ?? { darkTime: '18:00', lightTime: '07:00' }), lightTime: e.target.value })}
+                    style={{ fontSize: 12, background: 'transparent', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text)', padding: '2px 4px' }}
+                  />
+                </label>
+              </div>
+            )}
             <ThemePicker value={props.colorPreset} onChange={props.onColorPreset} />
             <PanelButton onClick={props.onToggleHighContrast ?? (() => {})} title={t('theme.highContrastTitle')} active={props.highContrast} testId="high-contrast-toggle">
               {props.highContrast ? t('theme.highContrastOn') : t('theme.highContrastOff')}

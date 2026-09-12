@@ -7,6 +7,16 @@
 
 承接 `docs/13-下一版本任务清单.md`，第一优先级 A 阶段数据正确性与稳定性。完成状态见该清单（★ 标注）。
 
+### I9 定时主题切换（2026-09-12）
+- 新增 `schedule` 主题档：主题档循环 dark→light→auto→schedule；schedule 档按用户设定深/浅色时刻
+  （HH:mm，跨午夜支持）自动切换，配置持久化 `kline-buty:scheduleTheme`（默认深 18:00 / 浅 07:00）
+- `src/theme.ts` 纯函数 `timeToMinutes` / `resolveScheduledTheme` / `currentScheduledTheme` +
+  新 hook `useScheduledTheme`（30s 重算，仅变化时 setState）；桌面/移动 Header 在 schedule 档显示
+  深/浅色时刻 `<input type="time">`；五语 i18n（toSchedule/scheduleDark/scheduleLight）；
+  设置快照导出自动纳入新持久化键
+- 验证：typecheck / lint 0 error / i18n 五语键集一致 / unit 1561 全绿 / chromium E2E
+  recent-features 13/13（含 I9 用例）+ visual 4/4 基线不变
+
 ### 依赖批次（2026-09-10）
 - dependabot 首批 9 个更新 PR 评估合并 8 个：eslint 10.10、@playwright/test 1.63、@vitest/coverage-v8 5.0、vitest 5.0、typescript-eslint 8.69、eslint-plugin-react-refresh 0.5.6、actions/github-script 9、@types/react-dom 19.2.7
 - 升级后全量验证：typecheck / lint 0 error / unit 1532 / build（tsc+vite+docs 47s）全绿

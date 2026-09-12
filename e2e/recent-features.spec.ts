@@ -294,4 +294,45 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page2.getByTestId('drawing-layer-row').first()).toHaveAttribute('data-selected', 'true')
     await page2.close()
   })
+
+  test('I9 定时主题：切到定时档 → 深色/浅色时刻可配 → 跨切换点后主题自动切换', async ({ browserName, context }) => {
+    test.skip(browserName !== 'chromium', 'page.clock 仅 chromium 语义（其余浏览器覆盖由单测承担）')
+    // 固定当前时刻为 06:50（默认深色区间 18:00–07:00 内），时钟须在页面加载前安装才作用于应用定时器
+    const page2 = await context.newPage()
+    await page2.clock.install({ time: new Date('2026-01-01T06:50:00') })
+    await page2.goto('/?perf=600')
+    await expect(page2.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    // 默认档 dark → 按钮文案「浅色」；循环切主题 dark→light→auto→schedule（每次点击切到下一档）
+    const more = page2.getByTestId('header-more')
+    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+    const themeToggle = page2.getByTestId('theme-toggle')
+    await expect(themeToggle).toContainText('浅色') // dark 档 → 文案为下一档「浅色」
+    await themeToggle.click() // → light
+    await expect(themeToggle).toContainText('深色')
+    await themeToggle.click() // → auto
+    await expect(themeToggle).toContainText('自动（跟随系统）')
+    await themeToggle.click() // → schedule
+
+    // 定时档下出现深/浅色时刻输入
+    const darkInput = page2.getByTestId('schedule-dark-time')
+    const lightInput = page2.getByTestId('schedule-light-time')
+    await expect(darkInput).toBeVisible()
+    await expect(lightInput).toBeVisible()
+
+    // 配置深色 18:00 / 浅色 07:00；当前 06:50 → 深色生效
+    await darkInput.fill('18:00')
+    await lightInput.fill('07:00')
+    await expect(page2.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+    // 越过 07:00 切换点 → 应切为浅色（fake clock 驱动应用 30s 定时器）
+    await page2.clock.runFor(11 * 60 * 1000) // +11min → 07:01
+    await expect(page2.locator('html')).toHaveAttribute('data-theme', 'light')
+
+    // 配置持久化
+    const persisted = await page2.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:scheduleTheme') ?? 'null'))
+    expect(persisted).toEqual({ darkTime: '18:00', lightTime: '07:00' })
+
+    await page2.close()
+  })
 })

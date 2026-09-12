@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { applyTheme, COLOR_PRESETS, presetFor, themeFor, THEMES } from '../theme'
+import { applyTheme, COLOR_PRESETS, presetFor, themeFor, THEMES, timeToMinutes, resolveScheduledTheme, currentScheduledTheme } from '../theme'
 
 describe('COLOR_PRESETS / presetFor', () => {
   it('包含 4 套预设：classic / a-share / purple / teal', () => {
@@ -72,5 +72,63 @@ describe('applyTheme F7 高对比模式', () => {
     expect(html.getAttribute('data-hc')).toBeNull()
     expect(html.style.getPropertyValue('--up')).toBe('#26a69a')
     expect(html.style.getPropertyValue('--accent')).toBe('#2962ff')
+  })
+})
+
+describe('I9 timeToMinutes', () => {
+  it('合法时刻 → 当日分钟数', () => {
+    expect(timeToMinutes('00:00')).toBe(0)
+    expect(timeToMinutes('07:00')).toBe(420)
+    expect(timeToMinutes('18:00')).toBe(1080)
+    expect(timeToMinutes('23:59')).toBe(1439)
+  })
+  it('单数字小时也接受', () => {
+    expect(timeToMinutes('0:30')).toBe(30)
+    expect(timeToMinutes('9:05')).toBe(545)
+  })
+  it('非法输入 → -1', () => {
+    expect(timeToMinutes('')).toBe(-1)
+    expect(timeToMinutes('24:00')).toBe(-1)
+    expect(timeToMinutes('18:60')).toBe(-1)
+    expect(timeToMinutes('abc')).toBe(-1)
+    expect(timeToMinutes('6pm')).toBe(-1)
+  })
+})
+
+describe('I9 resolveScheduledTheme', () => {
+  it('跨午夜（dark 18:00 / light 07:00）：夜间为深色', () => {
+    const config = { darkTime: '18:00', lightTime: '07:00' }
+    expect(resolveScheduledTheme(timeToMinutes('19:00'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('23:59'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('00:00'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('06:00'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('08:00'), config)).toBe('light')
+    expect(resolveScheduledTheme(timeToMinutes('17:00'), config)).toBe('light')
+  })
+  it('跨午夜边界：darkTime 起进入深色、lightTime 起回到浅色', () => {
+    const config = { darkTime: '18:00', lightTime: '07:00' }
+    expect(resolveScheduledTheme(timeToMinutes('17:59'), config)).toBe('light')
+    expect(resolveScheduledTheme(timeToMinutes('18:00'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('06:59'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('07:00'), config)).toBe('light')
+  })
+  it('非跨午夜（dark 07:00 / light 18:00）：白天为深色', () => {
+    const config = { darkTime: '07:00', lightTime: '18:00' }
+    expect(resolveScheduledTheme(timeToMinutes('10:00'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('17:59'), config)).toBe('dark')
+    expect(resolveScheduledTheme(timeToMinutes('18:00'), config)).toBe('light')
+    expect(resolveScheduledTheme(timeToMinutes('20:00'), config)).toBe('light')
+    expect(resolveScheduledTheme(timeToMinutes('06:00'), config)).toBe('light')
+  })
+  it('非法配置回退深色', () => {
+    expect(resolveScheduledTheme(600, { darkTime: '', lightTime: '' })).toBe('dark')
+  })
+})
+
+describe('I9 currentScheduledTheme', () => {
+  it('按注入时刻解析（不依赖系统时钟）', () => {
+    const config = { darkTime: '18:00', lightTime: '07:00' }
+    expect(currentScheduledTheme(config, new Date(2026, 0, 1, 19, 0))).toBe('dark')
+    expect(currentScheduledTheme(config, new Date(2026, 0, 1, 9, 0))).toBe('light')
   })
 })
