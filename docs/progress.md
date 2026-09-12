@@ -5,6 +5,21 @@
 
 ## 当前阶段
 
+**RELEASE_FREEZE v0.4.0（2026-09-12，release/v0.4.0）** — 里程碑退出条件达成：docs/13 A–H 全闭合、
+I 阶段除 I3/I11（BLOCKED_EXTERNAL）外全闭合 → 进入发布冻结
+- 版本：package.json / index.html meta app-version 0.1.0 → **0.4.0**；`src/data/changelog.ts` 新增
+  v0.4.0 条目（changelog.v040r1 五语）
+- 依赖升级：react/react-dom/@types-react/react-dom → 19.3.0；vite → 8.3.0（react 19.3 + vite 8.3 均
+  向下兼容，全量验证通过）
+- CHANGELOG 顶部新增 `[v0.4.0] I 阶段收官`（I9 定时主题 + I 阶段收口 + 依赖升级）
+- 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n 五语键集一致 ✅ / unit 1561 全绿 ✅ /
+  build（tsc+vite+docs 69s）✅ / chromium E2E recent-features 13/13 + visual 4/4 基线不变 ✅
+- 分支 release/v0.4.0（基于 feat/i9-scheduled-theme）；LOCAL_ONLY 未 push 未打 tag
+- 发布 PR 与 tag：待权限（push/merge）授予后执行——PR base main、rebase 合并、release-tag workflow
+  自动打 v0.4.0（幂等）
+- 下一里程碑：v0.5（I3 云同步需登录态+云端 KV、I11 移动端 Widget 需原生平台，均为外部能力；
+  本地可先行新特性构想）
+
 **I9 定时主题切换（2026-09-12，提交 e3750d0）** — I9「深色/浅色自动切换（跟随系统 + 定时）」补齐「定时」子能力：
 - 新增 `schedule` 主题档：主题档循环 dark→light→auto→schedule；schedule 档按用户设定深/浅色时刻
   （HH:mm）自动切换，配置持久化 `kline-buty:scheduleTheme`（默认深 18:00 / 浅 07:00），跨午夜区间正确
