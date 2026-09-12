@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchTickers24h, type TickerRow } from '../data/binance/rest'
+import { isPerfMode } from '../data/synthetic'
 import { SYMBOL_LIST } from './useSymbolList'
 
 export type TickerSortKey = 'symbol' | 'price' | 'changePct' | 'quoteVolume'
@@ -42,6 +43,11 @@ export function useTickerList(symbols: string[] = SYMBOL_LIST): TickerListState 
   const [sort, setSort] = useState<{ key: TickerSortKey; dir: SortDir }>({ key: 'symbol', dir: 'asc' })
 
   const refresh = useCallback(async () => {
+    if (isPerfMode()) {
+      setRows([])
+      setLoading(false)
+      return
+    }
     try {
       const data = await fetchTickers24h(symbols)
       setRows(data)

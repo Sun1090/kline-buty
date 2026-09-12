@@ -67,8 +67,10 @@ test.describe('A2 周期切换右侧锚定', () => {
     await waitPerfReady(page, '1h')
     await expect(back).toHaveCount(0, { timeout: 8000 })
 
-    // 回看历史 → 「回到最新」出现
-    await panIntoHistory(page)
+    // 回看历史 → 「回到最新」出现（firefox 拖拽事件时序不同，必要时多拖几次）
+    for (let attempt = 0; attempt < 5 && !(await back.isVisible().catch(() => false)); attempt++) {
+      await panIntoHistory(page)
+    }
     await expect(back).toBeVisible({ timeout: 8000 })
     await page.waitForTimeout(300) // 惯性停稳后再切周期
 

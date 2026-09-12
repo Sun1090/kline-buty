@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isPerfMode } from '../data/synthetic'
 import {
   fetchGlobalLongShortRatio,
   fetchOpenInterestHistory,
@@ -28,6 +29,7 @@ export function useSentiment(symbol: string): SentimentData {
   const [data, setData] = useState<SentimentData>(EMPTY)
 
   useEffect(() => {
+    if (isPerfMode()) return // ?perf 压测：禁止真实 fapi/dapi REST（数据保持空）
     let alive = true
 
     const refresh = async () => {

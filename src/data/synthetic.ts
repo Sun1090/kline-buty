@@ -74,3 +74,8 @@ export function readPerfParam(search = typeof window !== 'undefined' ? window.lo
   if (!Number.isFinite(n) || n <= 0) return 0
   return Math.min(100_000, Math.floor(n))
 }
+
+/** 压测模式判定：?perf>0 时数据源全部走合成数据，禁止任何真实网络请求（docs 契约「不联网」） */
+export function isPerfMode(search = typeof window !== 'undefined' ? window.location.search : ''): boolean {
+  return readPerfParam(search) > 0
+}

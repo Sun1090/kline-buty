@@ -167,7 +167,10 @@ test.describe('2026-08 新功能回归', () => {
     await expect(help).toContainText('无匹配')
   })
 
-  test('移动端下拉刷新：超过阈值后展示刷新态并重新请求行情', async ({ page }) => {
+  test('移动端下拉刷新：超过阈值后展示刷新态并重新请求行情', async ({ page, browserName }) => {
+    // firefox 无 Touch 构造器（Playwright dispatchEvent 创建 TouchEvent 报 Touch is not defined），
+    // 下拉刷新手势由 chromium/webkit 覆盖
+    test.skip(browserName === 'firefox', 'firefox 无 Touch 构造器（Playwright dispatchEvent 限制）')
     await page.setViewportSize({ width: 390, height: 844 })
     await page.reload()
     const wrap = page.getByTestId('pull-to-refresh')

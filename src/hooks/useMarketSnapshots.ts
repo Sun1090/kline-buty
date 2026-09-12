@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchTicker24h, fetchKlines } from '../data/binance/rest'
+import { isPerfMode } from '../data/synthetic'
 import type { Period } from '../chart/types'
 
 export interface MarketSnapshot {
@@ -15,6 +16,10 @@ export function useMarketSnapshots(symbols: string[]) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (isPerfMode()) {
+      setLoading(false)
+      return
+    }
     let alive = true
     setLoading(true)
     Promise.all(

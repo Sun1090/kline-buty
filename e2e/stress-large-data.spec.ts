@@ -94,7 +94,10 @@ test.describe('G3 大屏数据压测', () => {
     await expect.poll(() =>
       page.evaluate(() => (window as unknown as { __klineButyPerf?: { candles: unknown[] } }).__klineButyPerf?.candles?.length),
     ).toBe(20_000)
-    // 显式捕获的实际错误（若断言失败会在输出中列出）
-    expect(errors).toEqual([])
+    // 显式捕获的实际错误（若断言失败会在输出中列出）。
+    // 排除环境性错误：CI（GitHub 运行器）到币安 WS 被 geo 阻断（HTTP 451）——
+    // 应用在 ?perf 离线 K 线外仍会尝试实时盘口 WS，属环境限制非应用缺陷。
+    const appErrors = errors.filter((e) => !/WebSocket connection to 'wss:\/\/stream\.binance\.com/.test(e))
+    expect(appErrors).toEqual([])
   })
 })

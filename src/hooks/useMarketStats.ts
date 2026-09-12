@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchTicker24h, fetchFundingRate, fetchOpenInterest } from '../data/binance/rest'
+import { isPerfMode } from '../data/synthetic'
 
 export interface MarketStats {
   price: number | null
@@ -35,6 +36,7 @@ export function useMarketStats(symbol: string): MarketStats {
   const [stats, setStats] = useState<MarketStats>(EMPTY)
 
   useEffect(() => {
+    if (isPerfMode()) return // ?perf 压测：数据源全合成，禁止真实 REST（stats 保持空）
     let alive = true
 
     const refresh = async () => {

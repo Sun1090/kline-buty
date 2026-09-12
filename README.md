@@ -94,7 +94,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1522-yellow" alt="1522 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
+<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1549-yellow" alt="1549 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
 
 > 部署状态与健康检查（H15）：见 [docs/05-部署.md → 七、部署状态与健康检查](docs/05-部署.md)。
 
@@ -115,9 +115,9 @@ src/
 - ✅ v0.4 D 阶段 — 模拟交易与账户（15 项）：费率/滑点可配、盈亏统计、强平预警、手续费拆分、账户快照/目标/JSON 迁移
 - ✅ v0.4 E 阶段 — 提醒与通知（15 项）：推送渠道、多品种监控、组开关、模板、到期、批量、触发次数、精度、角标、快捷键、语音、备注、JSON
 - ✅ v0.4 F 阶段 — UI/主题/a11y（20 项）：焦点陷阱、高对比、信息条配置、侧栏调宽、面板顺序、布局方案、键盘画线
-- ✅ v0.4 G 阶段（13/15）— 性能/质量：文档站组件测试、降采样、卡顿诊断、泄漏审计、渲染基准、WS 批处理
-- ✅ v0.4 H 阶段（12/15）— 生态/部署：应用内文档索引、版本历史、设置快照、打印速查卡、三浏览器矩阵、反馈入口
-- ✅ v0.4 I 阶段（9/15）— 新特性：一键分享、自选实时行情、语音播报、深链、区间导出
+- ✅ v0.4 G 阶段（15/15）— 性能/质量：文档站组件测试、降采样、卡顿诊断、泄漏审计、渲染基准、WS 批处理、worker 化、预取、丢帧统计、容量监控、离线降级、体积报告
+- ✅ v0.4 H 阶段（14/15）— 生态/部署：应用内文档索引、版本历史、设置快照、打印速查卡、三浏览器矩阵（firefox 由 CI 确定性 E2E 覆盖）、反馈入口、知识库离线/搜索/双语、数据源可配置、路线图、Docker、健康检查
+- ✅ v0.4 I 阶段（13/15，I3/I11 暂缓外部依赖）— 一键分享、自选实时行情、语音播报、深链、区间导出、模板市场、快照画廊
 - ✅ M23 i18n — Japanese, Korean, Spanish
 - ✅ M24 Order book quick trade — Hover → quick order panel
 - ✅ M25 Region screenshot — Drag-select → PNG export
