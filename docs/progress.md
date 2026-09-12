@@ -5,20 +5,20 @@
 
 ## 当前阶段
 
-**RELEASE_FREEZE v0.4.0（2026-09-12，release/v0.4.0）** — 里程碑退出条件达成：docs/13 A–H 全闭合、
-I 阶段除 I3/I11（BLOCKED_EXTERNAL）外全闭合 → 进入发布冻结
-- 版本：package.json / index.html meta app-version 0.1.0 → **0.4.0**；`src/data/changelog.ts` 新增
-  v0.4.0 条目（changelog.v040r1 五语）
-- 依赖升级：react/react-dom/@types-react/react-dom → 19.3.0；vite → 8.3.0（react 19.3 + vite 8.3 均
-  向下兼容，全量验证通过）
-- CHANGELOG 顶部新增 `[v0.4.0] I 阶段收官`（I9 定时主题 + I 阶段收口 + 依赖升级）
-- 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n 五语键集一致 ✅ / unit 1561 全绿 ✅ /
-  build（tsc+vite+docs 69s）✅ / chromium E2E recent-features 13/13 + visual 4/4 基线不变 ✅
-- 分支 release/v0.4.0（基于 feat/i9-scheduled-theme）；LOCAL_ONLY 未 push 未打 tag
-- 发布 PR 与 tag：待权限（push/merge）授予后执行——PR base main、rebase 合并、release-tag workflow
-  自动打 v0.4.0（幂等）
-- 下一里程碑：v0.5（I3 云同步需登录态+云端 KV、I11 移动端 Widget 需原生平台，均为外部能力；
-  本地可先行新特性构想）
+**里程碑 v0.4 exit report（2026-09-12）**
+- 版本号：**0.4.0**（package.json / index.html meta app-version；本地 tag `v0.4.0` @ 7321ad0）
+- 包含任务：I9 定时主题（新）+ I1/I2/I4–I8/I10/I12–I15 收口；A–H 阶段此前全闭合；
+  唯一未含：I3（云同步）/ I11（移动端 Widget），BLOCKED_EXTERNAL
+- 分支：`release/v0.4.0`（3 commits：e3750d0 / b489bdc / 7321ad0），基于 `feat/i9-scheduled-theme`（内含 I9）
+- base SHA：`a57d51065f1696baff0f95fcd0c71849cc225838`
+- 发布 PR：**待授权创建**（LOCAL_ONLY 未 push；`gh pr create --base main --head release/v0.4.0` body 已备好）
+- 合并方式：rebase（禁 merge commit）
+- tag/release：release-tag workflow push main 后自动打 v0.4.0（幂等，不覆盖 v0.1.0）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（应用首页 + 知识库，curl grep 新特征）
+- smoke：chromium E2E recent-features 13/13 + visual 4/4 + 全量单测 1561 + build；CI e2e-tests 3 浏览器门禁验证中
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5**（I3 云同步需登录态+云端 KV、I11 移动端 Widget 需原生平台，均外部能力；
+  本地可先行新特性构想；dependabot #8 TS7 待 typescript-eslint 支持后解封）
 
 **I9 定时主题切换（2026-09-12，提交 e3750d0）** — I9「深色/浅色自动切换（跟随系统 + 定时）」补齐「定时」子能力：
 - 新增 `schedule` 主题档：主题档循环 dark→light→auto→schedule；schedule 档按用户设定深/浅色时刻
