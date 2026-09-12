@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-**I9 定时主题切换（2026-09-12）** — I9「深色/浅色自动切换（跟随系统 + 定时）」补齐「定时」子能力：
+**I9 定时主题切换（2026-09-12，提交 e3750d0）** — I9「深色/浅色自动切换（跟随系统 + 定时）」补齐「定时」子能力：
 - 新增 `schedule` 主题档：主题档循环 dark→light→auto→schedule；schedule 档按用户设定深/浅色时刻
   （HH:mm）自动切换，配置持久化 `kline-buty:scheduleTheme`（默认深 18:00 / 浅 07:00），跨午夜区间正确
 - `src/theme.ts` 纯函数：`timeToMinutes` / `resolveScheduledTheme` / `currentScheduledTheme`；新 hook
@@ -13,6 +13,7 @@
 - 五语 i18n（toSchedule/scheduleDark/scheduleLight）；设置快照导出自动纳入新持久化键
 - 验证：typecheck ✅ / lint 0 err ✅ / i18n 五语键集一致 ✅ / unit 1561 全绿 ✅ /
   chromium E2E recent-features 13/13（含 I9 用例）+ visual 4/4 基线不变 ✅
+- 分支 feat/i9-scheduled-theme @ e3750d0，基于 origin/main@a57d510；LOCAL_ONLY 未 push
 
 **CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
 - 覆盖率补强（5c339c5）：vitest.setup 加 WebSocket 桩；App 集成 +8 / DesktopHeader +9 / MobileHeader +3；npm test 1549 全绿
