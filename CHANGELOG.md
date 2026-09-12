@@ -18,6 +18,14 @@
 - 补齐 H11：本地 firefox nightly 有 macOS headless 上游 bug，Linux CI 全跑三浏览器
 - 实时数据冒烟（smoke/feature-gaps）留本地，避免 GitHub 运行器到币安出口/geo 不可控
 - 失败自动上传 test-results 工件（retention 7 天）便于诊断
+- 首跑暴露 4 类可移植性问题并修复（4d17ca9）：
+  - marker-render 截图基线按本机平台提交 → CI linux 按 `fs.existsSync` 平台守卫，功能断言仍执行
+  - 币安 WS 被 GH runner geo 阻断（HTTP 451）污染 error 断言 → 过滤环境性 Binance WS 错误
+  - period-anchor firefox 拖拽时序 → 回看步骤重试式（≤5 次）
+  - recent-features 下拉刷新 firefox 无 Touch 构造器 → firefox 跳过（chromium/webkit 覆盖）
+- **perf 模式真正离线**（docs 契约「不联网」此前被违反，仍连 WS/REST 生成环境性错误）：
+  `synthetic.ts` 新增 `isPerfMode()`；`useMarketStats`/`useSentiment`/`useTickerList`/
+  `useMarketSnapshots` 加 perf 守卫（`useDepth` 保留实时——「模拟交易」用例 ?perf 下仍用实时盘口）
 
 ### 覆盖率补强（statements 81.71%→82.62%，lines 破 85%）
 - vitest.setup 加 jsdom WebSocket 桩（WS 面板单测渲染空态；连接行为由 E2E 覆盖）

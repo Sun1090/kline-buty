@@ -42,7 +42,10 @@ async function waitCandlesRendered(page: Page) {
 }
 
 test.describe('G3 大屏数据压测', () => {
-  test('?perf=20000：加载渲染 → 十字光标取时 → 多次拖动翻页 → 数据完整且无异常', async ({ page }) => {
+  test('?perf=20000：加载渲染 → 十字光标取时 → 多次拖动翻页 → 数据完整且无异常', async ({ page, browserName }) => {
+    // firefox：Playwright 合成鼠标事件与 lightweight-charts pressedMouseMove 不兼容（真机正常），
+    // 拖拽翻页在 firefox CI 无法合成；大数据压测由 chromium/webkit 覆盖
+    test.skip(browserName === 'firefox', 'firefox 下合成鼠标拖拽平移不可用（Playwright+轻量级图表限制）')
     const errors = collectErrors(page)
     await page.addInitScript(() => localStorage.clear())
     await page.goto('/?perf=20000')

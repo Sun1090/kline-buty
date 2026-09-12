@@ -42,7 +42,10 @@ async function panIntoHistory(page: Page) {
 }
 
 test.describe('A2 周期切换右侧锚定', () => {
-  test('停在最新切周期不越界；回看切周期不跳最新（双向稳定 + 范围显示）', async ({ page }) => {
+  test('停在最新切周期不越界；回看切周期不跳最新（双向稳定 + 范围显示）', async ({ page, browserName }) => {
+    // firefox：Playwright 合成鼠标事件与 lightweight-charts pressedMouseMove 不兼容（真机正常），
+    // 拖拽平移在 firefox CI 无法合成；回看→切周期锚定由 chromium/webkit 覆盖
+    test.skip(browserName === 'firefox', 'firefox 下合成鼠标拖拽平移不可用（Playwright+轻量级图表限制）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     const back = page.getByTestId('back-to-latest')

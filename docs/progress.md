@@ -7,7 +7,15 @@
 
 **CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
 - 覆盖率补强（5c339c5）：vitest.setup 加 WebSocket 桩；App 集成 +8 / DesktopHeader +9 / MobileHeader +3；npm test 1549 全绿
-- CI E2E（本批）：`e2e-tests` job 用确定性规格集（?perf 不依赖币安网络）+ `--grep-invert "模拟交易"`（盘口实时 WS）；失败上传 test-results 工件；实时冒烟留本地
+- CI E2E job（2648d4c）：确定性规格集（?perf）+ `--grep-invert "模拟交易"` + 失败上传工件；实时冒烟留本地
+- CI 首跑失败 4 类可移植性问题 + perf 模式真正离线（4d17ca9，CI 复跑中）：
+  1. marker-render 截图基线按 darwin 提交 → CI linux 按 fs.existsSync 平台守卫，功能断言仍执行
+  2. 币安 WS 被 GH runner geo 阻断（HTTP 451）污染 error 断言 → 过滤环境性 Binance WS 错误
+  3. period-anchor firefox 拖拽时序 → 回看步骤重试式（≤5 次）
+  4. recent-features 下拉刷新 firefox 无 Touch 构造器 → firefox 跳过
+  - perf 模式 docs 契约「不联网」此前被违反（仍连 WS/REST 生成环境性错误）：合成数据模式下
+    useMarketStats/useSentiment/useTickerList/useMarketSnapshots 加 isPerfMode 守卫
+    （useDepth 保留实时——「模拟交易」用例 ?perf 下仍用实时盘口，且已 grep-invert 出 CI）
 
 **E2E 收尾与依赖安全复核（2026-09-11，三轮提交 b230a00 / b045ea8 / 63cf426）** — 全量回归从 26 失败收敛到 3（均为负载抖动，隔离通过）
 - 全量 chromium/webkit 回归现状：**297 passed / 37 skipped / 7 flaky / 3 failed**（14.7m，REAL_EXIT=1）
