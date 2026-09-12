@@ -160,6 +160,7 @@ export const zh = {
   },
   changelog: {
     title: '版本历史',
+    v040r1: 'I 阶段收官：定时主题切换（深/浅色按设定时刻自动切换）、画线深链、模板市场、快照画廊；全阶段 A–I 完成（I3 云同步 / I11 移动端 Widget 待外部能力）',
     v04r1: '数据正确性：周期边界对齐 / 右侧锚定 / 断线补洞 / 多周期光标同步 / 数据延迟指示',
     v04r2: '指标引擎：光标取值 / 信号打点 / 阈值着色 / W%R·TRIX·DPO·Vortex / 参数导入导出 / 指标收藏',
     v04r3: '画线：截图导出 / 组锁 / 批量操作 / 模板跨品种 / 吸附四态 / 撤销深度 / 坐标角标',
@@ -874,6 +875,7 @@ export const en: Messages = {
   },
   changelog: {
     title: 'Version history',
+    v040r1: 'I-stage finale: scheduled theme switching (auto dark/light at set times), drawing deep-links, template market, snapshot gallery; stages A–I complete (I3 cloud sync / I11 mobile widget await external capability)',
     v04r1: 'Data integrity: period-aligned timestamps / right-side anchoring / gap refill / multi-chart crosshair sync / latency indicator',
     v04r2: 'Indicator engine: crosshair values / signal markers / threshold shading / W%R·TRIX·DPO·Vortex / import-export / favorites',
     v04r3: 'Drawing: screenshot export / group lock / batch operations / cross-symbol templates / 4-way snap / undo depth / coord badge',
@@ -1579,6 +1581,7 @@ export const ja: Messages = {
   },
   changelog: {
     title: 'バージョン履歴',
+    v040r1: 'I期総仕上げ：タイマーテーマ切替（設定時刻でダーク/ライト自動切替）、描画ディープリンク、テンプレートマーケット、スナップショットギャラリー；A–I期すべて完了（I3 クラウド同期 / I11 モバイルウィジェットは外部能力待ち）',
     v04r1: 'データ整合性：周期境界アライメント / 右端アンカー / 欠損穴埋め / マルチチャート十字同期 / 遅延表示',
     v04r2: '指標エンジン：カーソル値 / シグナルマーカー / 閾値着色 / W%R·TRIX·DPO·Vortex / パラメータ入出力 / お気に入り',
     v04r3: '描画：スクリーンショット出力 / グループロック / 一括操作 / クロス銘柄テンプレート / スナップ4態 / アンドゥ深度 / 座標バッジ',
@@ -2285,6 +2288,7 @@ export const ko: Messages = {
   },
   changelog: {
     title: '버전 기록',
+    v040r1: 'I 단계 마무리: 예약 테마 전환(설정 시간에 다크/라이트 자동 전환), 드로잉 딥링크, 템플릿 마켓, 스냅샷 갤러리; A–I 단계 완료(I3 클라우드 동기화 / I11 모바일 위젯은 외부 역량 대기)',
     v04r1: '데이터 정합성: 주기 경계 정렬 / 오른쪽 앵커 / 갭 메우기 / 멀티차트 크로스헤어 동기화 / 지연 표시',
     v04r2: '지표 엔진: 크로스헤어 값 / 시그널 마커 / 임계값 배경 / W%R·TRIX·DPO·Vortex / 파라미터 가져오기·내보내기 / 즐겨찾기',
     v04r3: '그리기: 스크린샷 내보내기 / 그룹 잠금 / 일괄 작업 / 종목 간 템플릿 / 스냅 4단계 / 실행취소 깊이 / 좌표 배지',
@@ -3002,6 +3006,7 @@ export const es: Messages = {
   },
   changelog: {
     title: 'Historial de versiones',
+    v040r1: 'Final de la etapa I: cambio de tema programado (oscuro/claro automático a horas fijadas), enlaces profundos de dibujo, mercado de plantillas, galería de instantáneas; etapas A–I completas (I3 sincronización en la nube / I11 widget móvil esperan capacidad externa)',
     v04r1: 'Integridad de datos: alineación de límites de período / anclaje derecho / relleno de huecos / sincronización de crosshair multi-gráfico / indicador de latencia',
     v04r2: 'Motor de indicadores: valores de crosshair / marcadores de señal / coloreado de umbrales / W%R·TRIX·DPO·Vortex / importar-exportar / favoritos',
     v04r3: 'Dibujo: exportar captura / bloqueo de grupo / operaciones por lotes / plantillas entre símbolos / ajuste 4 modos / profundidad de deshacer / insignia de coordenadas',

@@ -10,6 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.4.0',
+    date: '2026-09',
+    rows: ['v040r1'],
+  },
+  {
     version: 'v0.4',
     date: '2026-09',
     rows: [
