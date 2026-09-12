@@ -226,4 +226,38 @@ describe('MobileHeader（移动端工具栏整合）', () => {
       window.removeEventListener('keydown', appEscSpy, true)
     }
   })
+
+  it('更多弹层：水印开关 aria-pressed + onToggleWatermark', () => {
+    const onToggleWatermark = vi.fn()
+    setup({ onToggleWatermark, showWatermark: true })
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    const wm = screen.getByTestId('watermark-toggle')
+    expect(wm.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(wm)
+    expect(onToggleWatermark).toHaveBeenCalledTimes(1)
+  })
+
+  it('更多弹层：分享/导出/快捷键按钮触发回调', () => {
+    const onShare = vi.fn()
+    const onExport = vi.fn()
+    const onToggleShortcuts = vi.fn()
+    setup({ onShare, onExport, onToggleShortcuts })
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    fireEvent.click(screen.getByText('分享'))
+    expect(onShare).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByText('导出'))
+    expect(onExport).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: '键盘快捷键' }))
+    expect(onToggleShortcuts).toHaveBeenCalledTimes(1)
+  })
+
+  it('更多弹层：配色 ThemePicker 切换触发 onColorPreset', () => {
+    const onColorPreset = vi.fn()
+    setup({ onColorPreset })
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    const presetBtn = document.querySelector('[data-preset="a-share"]') as HTMLButtonElement
+    expect(presetBtn).not.toBeNull()
+    fireEvent.click(presetBtn)
+    expect(onColorPreset).toHaveBeenCalledWith('a-share')
+  })
 })

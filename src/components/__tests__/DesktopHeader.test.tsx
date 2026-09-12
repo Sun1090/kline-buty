@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { render, fireEvent, screen, cleanup } from '@testing-library/react'
+import { render, fireEvent, screen, cleanup, waitFor } from '@testing-library/react'
 import { DesktopHeader } from '../DesktopHeader'
 import type { Period } from '../../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from '../ChartView'
@@ -274,5 +274,93 @@ describe('DesktopHeader（桌面顶栏）', () => {
     expect(onToggleNotesHidden).toHaveBeenCalled()
     fireEvent.click(screen.getByTestId('drawing-layers-open'))
     expect(screen.getByTestId('desktop-layers-panel')).toBeDefined()
+  })
+
+  it('更多面板：水印/高对比/时区开关 aria-pressed + 回调', () => {
+    const onToggleWatermark = vi.fn()
+    const onToggleHighContrast = vi.fn()
+    const onToggleTimezone = vi.fn()
+    setup({ onToggleWatermark, onToggleHighContrast, onToggleTimezone, highContrast: true })
+    fireEvent.click(screen.getByTestId('header-more'))
+    // 水印：默认 showWatermark=true → 激活；点击触发回调
+    const wm = screen.getByTestId('watermark-toggle')
+    expect(wm.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(wm)
+    expect(onToggleWatermark).toHaveBeenCalledTimes(1)
+    // 高对比：传入 highContrast=true → 激活
+    const hc = screen.getByTestId('high-contrast-toggle')
+    expect(hc.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(hc)
+    expect(onToggleHighContrast).toHaveBeenCalledTimes(1)
+    // 时区：默认 utc → 未激活；点击触发 onToggleTimezone
+    const tz = screen.getByTestId('tz-toggle')
+    expect(tz.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(tz)
+    expect(onToggleTimezone).toHaveBeenCalledTimes(1)
+  })
+
+  it('更多面板：蜡烛上限开关（renderCandleCap 激活态 + 回调）', () => {
+    const onCycleRenderCandleCap = vi.fn()
+    setup({ onCycleRenderCandleCap, renderCandleCap: 500 })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const cap = screen.getByTestId('candle-cap-toggle')
+    expect(cap.getAttribute('aria-pressed')).toBe('true') // renderCandleCap=500 ≠ 0
+    expect(cap.textContent).toContain('500')
+    fireEvent.click(cap)
+    expect(onCycleRenderCandleCap).toHaveBeenCalledTimes(1)
+  })
+
+  it('面板排序：↑/↓ 触发 onMovePanel，首/尾按钮禁用', () => {
+    const onMovePanel = vi.fn()
+    setup({ panelOrder: ['depth', 'orderBook', 'vp'] as string[], onMovePanel })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const first = screen.getByTestId('panel-order-depth')
+    expect(first).toBeDefined()
+    const up = first.querySelector('[data-testid="panel-order-up-depth"]') as HTMLButtonElement
+    const down = first.querySelector('[data-testid="panel-order-down-depth"]') as HTMLButtonElement
+    expect(up.disabled).toBe(true) // 首项不可上移
+    expect(down.disabled).toBe(false)
+    fireEvent.click(down)
+    expect(onMovePanel).toHaveBeenCalledWith('depth', 1)
+    // 末项不可下移
+    const last = screen.getByTestId('panel-order-vp')
+    const lastDown = last.querySelector('[data-testid="panel-order-down-vp"]') as HTMLButtonElement
+    expect(lastDown.disabled).toBe(true)
+  })
+
+  it('导出范围按钮：aria-pressed 选中态 + onSetExportBarRange', () => {
+    const onSetExportBarRange = vi.fn()
+    setup({ exportBarRange: 100, onSetExportBarRange })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const r100 = screen.getByTestId('export-range-100')
+    expect(r100.getAttribute('aria-pressed')).toBe('true') // exportBarRange=100 选中
+    fireEvent.click(r100)
+    expect(onSetExportBarRange).toHaveBeenCalledWith(100)
+    fireEvent.click(screen.getByTestId('export-range-1000'))
+    expect(onSetExportBarRange).toHaveBeenCalledWith(1000)
+  })
+
+  it('设置快照：导出触发 onExportSettings；导入文件读取后 onImportSettings', async () => {
+    const onExportSettings = vi.fn()
+    const onImportSettings = vi.fn()
+    setup({ onExportSettings, onImportSettings })
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByTestId('settings-export'))
+    expect(onExportSettings).toHaveBeenCalledTimes(1)
+    // 导入：选中 JSON 文件 → FileReader onload（jsdom 异步，满负载下可能 >20ms）→ onImportSettings(内容)
+    const file = new File(['{"kline-buty:lang":"en"}'], 'settings.json', { type: 'application/json' })
+    fireEvent.change(screen.getByTestId('settings-import-file'), { target: { files: [file] } })
+    await waitFor(() => expect(onImportSettings).toHaveBeenCalled(), { timeout: 2000 })
+  })
+
+  it('布局预设：命名保存触发 onSaveLayoutPreset 并清空输入', () => {
+    const onSaveLayoutPreset = vi.fn()
+    setup({ onSaveLayoutPreset })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const nameInput = screen.getByTestId('layout-preset-name') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: '三图' } })
+    fireEvent.click(screen.getByTestId('layout-preset-save'))
+    expect(onSaveLayoutPreset).toHaveBeenCalledWith('三图')
+    expect(nameInput.value).toBe('') // 保存后清空
   })
 })
