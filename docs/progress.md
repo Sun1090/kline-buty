@@ -5,6 +5,10 @@
 
 ## 当前阶段
 
+**CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
+- 覆盖率补强（5c339c5）：vitest.setup 加 WebSocket 桩；App 集成 +8 / DesktopHeader +9 / MobileHeader +3；npm test 1549 全绿
+- CI E2E（本批）：`e2e-tests` job 用确定性规格集（?perf 不依赖币安网络）+ `--grep-invert "模拟交易"`（盘口实时 WS）；失败上传 test-results 工件；实时冒烟留本地
+
 **E2E 收尾与依赖安全复核（2026-09-11，三轮提交 b230a00 / b045ea8 / 63cf426）** — 全量回归从 26 失败收敛到 3（均为负载抖动，隔离通过）
 - 全量 chromium/webkit 回归现状：**297 passed / 37 skipped / 7 flaky / 3 failed**（14.7m，REAL_EXIT=1）
   - 3 个 failed 全部隔离复跑通过（chromium 5015 切回鼠标、5133 价格区间框、webkit indicator-crosshair），

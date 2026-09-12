@@ -98,3 +98,30 @@ jobs:
       # 由 dependabot 跟进，不阻塞本 job——见 docs/13「已知欠账」与 .npmrc 注释。
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  e2e-tests:
+    name: E2E (deterministic, 3 browsers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browsers
+        # H11：本地 firefox nightly 有 macOS headless 上游 bug（Could not find profile folder），
+        # Linux CI 可全跑三浏览器。--with-deps 装系统依赖（apt，需 sudo）。
+        run: npx playwright install --with-deps chromium webkit firefox
+      # 确定性规格集：全部 ?perf 合成数据驱动，不依赖币安网络连通性（GitHub 运行器到
+      # 币安的出口/geo 不可控）。实时数据冒烟（smoke/feature-gaps）留本地。
+      # grep-invert 排除盘口驱动的「模拟交易」（订单簿走实时 WS）。
+      - name: E2E tests
+        run: npx playwright test e2e/alerts-features.spec.ts e2e/drawing-semantics.spec.ts e2e/indicator-crosshair.spec.ts e2e/marker-render.spec.ts e2e/new-features.spec.ts e2e/period-alignment.spec.ts e2e/period-anchor.spec.ts e2e/period-crosshair.spec.ts e2e/recent-features.spec.ts e2e/snapshot-gallery.spec.ts e2e/stress-large-data.spec.ts e2e/trade-settings.spec.ts --grep-invert "模拟交易"
+      - name: Upload E2E report on failure
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7
+        if: failure()

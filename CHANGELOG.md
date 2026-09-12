@@ -12,6 +12,20 @@
 - 升级后全量验证：typecheck / lint 0 error / unit 1532 / build（tsc+vite+docs 47s）全绿
 - typescript 7.0.2 暂缓（#8）：TS7 与 typescript-eslint 尚不兼容致 lint 加载崩溃，待官方支持
 
+### CI E2E 确定性回归（2026-09-12）
+- `ci.yml` 新增 `e2e-tests` job：3 浏览器（chromium/firefox/webkit）× 确定性规格集
+  （?perf 合成数据，不依赖币安网络）+ `--grep-invert "模拟交易"`（盘口走实时 WS）
+- 补齐 H11：本地 firefox nightly 有 macOS headless 上游 bug，Linux CI 全跑三浏览器
+- 实时数据冒烟（smoke/feature-gaps）留本地，避免 GitHub 运行器到币安出口/geo 不可控
+- 失败自动上传 test-results 工件（retention 7 天）便于诊断
+
+### 覆盖率补强（statements 81.71%→82.62%，lines 破 85%）
+- vitest.setup 加 jsdom WebSocket 桩（WS 面板单测渲染空态；连接行为由 E2E 覆盖）
+- App 集成 +8 用例（模拟交易开平仓、提醒增删、设置持久化、布局循环、快捷键配置、
+  WS 面板路径、交易流水、回放）；DesktopHeader +9；MobileHeader +3
+- 验证：typecheck/lint 0 error、npm test 1549 全绿、coverage statements 82.62 /
+  branches 76.91 / functions 74.4 / lines 85.22
+
 ### E2E 测试修复与依赖安全（2026-09-11）
 - 依赖安全：`overrides: { esbuild: ^0.25.0 }` 将 vitepress 嵌套 esbuild 0.21.5 → 0.25.12，闭合 dev 高危（GHSA-67mh-4wv8-2f99，≤0.24.2），`npm audit` 3 → 2（剩余 vite≤6.4.2 全为 Windows-only + dev-server-only，awaiting vitepress 2）；lockfile 外科手术式合并仅替换 esbuild 相关块，`npm ci`/docs 构建/单测 1532 全绿
 - E2E 测试债修复（`b045ea8`）：
