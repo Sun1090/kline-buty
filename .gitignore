@@ -19,3 +19,6 @@ docs-site/.vitepress/dist
 **/.vitepress/dist/
 # VitePress 构建临时目录
 docs-site/.vitepress/.temp/
+
+# vitest coverage json 缓存
+.vitest/
