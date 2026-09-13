@@ -14,6 +14,10 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
     },
+    // 原生价格提醒：前台立即展示横幅 + 声音（Android 通知图标缺省用应用图标）。
+    LocalNotifications: {
+      presentationOptions: ['badge', 'sound', 'banner', 'list'],
+    },
   },
   android: {
     backgroundColor: '#0b0e14',
