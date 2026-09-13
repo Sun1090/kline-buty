@@ -40,13 +40,14 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Build web
-        # VITE_CAPACITOR=1：壳构建打包真实 Capacitor 插件（状态栏/启动屏/返回键）
-        run: VITE_CAPACITOR=1 npm run build
-
       - name: Install shell deps
         working-directory: app-shell
         run: npm ci
+
+      - name: Build web
+        # VITE_CAPACITOR=1：壳构建打包真实 Capacitor 插件（状态栏/启动屏/返回键）
+        # 必须先装好 app-shell 依赖（npm ci），VITE_CAPACITOR 别名指向 app-shell/node_modules 真实插件
+        run: VITE_CAPACITOR=1 npm run build
 
       - name: Sync web -> www -> native
         working-directory: app-shell
