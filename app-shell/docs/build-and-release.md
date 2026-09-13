@@ -43,7 +43,7 @@ If the secret is absent, the Android workflow generates a new pinned key once an
 
 - Web uses `viewport-fit=cover`; the app shell consumes `env(safe-area-inset-*)` through the existing header height so notches do not cover controls.
 - Android uses transparent system bars with light icons; iOS pins light status-bar content for the dark terminal theme.
-- `@capacitor/status-bar` and `@capacitor/splash-screen` are installed only in `app-shell/package.json`; the web bundle imports them dynamically and degrades to a no-op outside Capacitor.
+- `@capacitor/status-bar` and `@capacitor/splash-screen` are installed only in `app-shell/package.json`. The shell CI build runs the web bundle with `VITE_CAPACITOR=1`, which makes the root `vite.config.ts` alias `@capacitor/*` to the **real** plugins in `app-shell/node_modules`; the Web/test build (no env) keeps the browser-safe no-op stubs (`src/shell-app.ts` / `src/shell-compat.ts`).
 - The launch splash keeps the dark background and is hidden after the first shell bridge handshake.
 
 ## 3. iOS simulator build (current verification path)
@@ -55,6 +55,8 @@ iOS currently produces an **unsigned, simulator-only** .app:
 3. Requires a Mac with full Xcode: `xcrun simctl boot "iPhone 16"`, then `xcrun simctl install booted App.app && xcrun simctl launch booted app.klinebuty.chart`.
 
 > This machine (Command Line Tools only) can't run step 3 — the real-device/TestFlight path is §4.
+> The workflow's `Build web` step sets `VITE_CAPACITOR=1`, so the bundled JS contains the real
+> Capacitor plugins (status bar / splash / back button), not the browser stubs.
 
 ## 4. Release roadmap
 
