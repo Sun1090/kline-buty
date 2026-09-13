@@ -71,6 +71,22 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(handlers.onExportEquity).toHaveBeenCalled()
   })
 
+  it('v0.5 权益曲线：渲染交互式曲线 + 最大回撤/当前回撤指标', () => {
+    // 新记录在前：亏损平仓(时间2000) → 开仓(时间1000)；权益 10000→9999.5(开仓费)→9949.5(-50)
+    // 峰 max(10000,9999.5,9949.5)=10000，谷 9949.5 → 最大回撤 50.5/10000 = 0.51%
+    const perfTrades: TradeRecord[] = [
+      { id: 'c1', at: 2_000, symbol: 'BTCUSDT', side: 'sell', kind: 'close', price: 90, qty: 5, fee: 0.45, feeRate: 0.001, pnl: -50 },
+      { id: 'o1', at: 1_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 100, qty: 5, fee: 0.5, feeRate: 0.001 },
+    ]
+    setup({ trades: perfTrades })
+    const equity = screen.getByTestId('trade-history-equity')
+    expect(screen.getByTestId('equity-curve')).toBeTruthy()
+    expect(equity.textContent).toContain('最大回撤')
+    expect(equity.textContent).toContain('0.51%')
+    expect(equity.textContent).toContain('9949.50')
+    expect(equity.textContent).toContain('0.51%') // 当前回撤同 0.51%（位于低谷）
+  })
+
   it('清空按钮触发 onClear', () => {
     const handlers = setup({ trades })
     fireEvent.click(screen.getByTestId('trade-history-clear'))
