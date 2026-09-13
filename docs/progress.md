@@ -30,17 +30,26 @@
   chromium E2E recent-features 13/13（含 I9 用例）+ visual 4/4 基线不变 ✅
 - 分支 feat/i9-scheduled-theme @ e3750d0，基于 origin/main@a57d510；LOCAL_ONLY 未 push
 
-**app-shell M1 修复：壳构建打包真实 Capacitor 插件（2026-09-13，feat/shell-navigation-alerts）**
-- 问题：根 `vite.config.ts` 无条件把 `@capacitor/*` 别名到浏览器桩，Android/iOS CI 直接跑根
-  `npm run build` → APK 内 JS 是桩，状态栏/启动屏/返回键在真机 no-op（`dist` 曾含 `shell-compat` 桩、无 `registerPlugin`）
-- 修复：`vite.config.ts` 别名按 `VITE_CAPACITOR` 条件化——壳构建指向 app-shell/node_modules 真实插件
+**app-shell M1（2026-09-13，feat/shell-navigation-alerts）** — 两个真机能力缺口修复
+- **① 壳构建打包真实 Capacitor 插件**：根 `vite.config.ts` 此前无条件把 `@capacitor/*` 别名到浏览器桩，
+  Android/iOS CI 又直接跑根 `npm run build` → APK 内 JS 是桩，状态栏/启动屏/返回键在真机 no-op。
+  修复：别名按 `VITE_CAPACITOR` 条件化——壳构建指向 app-shell/node_modules 真实插件
   （`@capacitor/app`/`status-bar`/`splash-screen` 的 `dist/esm/index.js`），Web/测试保持桩；
   android-app.yml / ios-app.yml 的 `Build web` 改 `VITE_CAPACITOR=1 npm run build`
-- 验证：`VITE_CAPACITOR=1 npm run build` → bundle 含 `registerPlugin`/@capacitor/core 运行时（7.6KB chunk）+ 真实
-  StatusBar/SplashScreen esm 分块，桩标记（shell-compat/shell-app）消失，backButton/StatusBar/SplashScreen 接线到真实插件；
-  `npm run build`（默认）→ 桩保留、无真实插件；typecheck ✅ / lint 0 err ✅ / unit 1549 全绿 ✅
+- **② 原生价格提醒（M1 P0 Local Notifications）**：Web `new Notification` 在壳 WebView 不可用。
+  新增通知适配层 `@shell/notifications`（vite 别名条件化 + tsconfig paths）：
+  桩 `src/shellNotifications.ts`（Web/测试：行为与原完全一致）+ 真实 `app-shell/native-notifications.ts`
+  （Capacitor LocalNotifications：requestPermissions → schedule 即时展示）；usePriceAlerts 系统渠道改走适配层，
+  permission init/request/挂载异步校正统一经适配层；`@capacitor/local-notifications@^8.3.1` 装入 app-shell；
+  capacitor.config 加 presentationOptions（badge/sound/banner/list）；Android 权限由插件 manifest 自动合并
+  （POST_NOTIFICATIONS + SCHEDULE_EXACT_ALARM）
+- 验证：`VITE_CAPACITOR=1 build` → bundle 含 registerPlugin/@capacitor/core 运行时 + 真实 StatusBar/SplashScreen/
+  LocalNotifications 分块，桩标记消失；默认 build → 桩保留、无真实插件；typecheck ✅ / lint 0 err ✅ /
+  unit 1556 全绿（+7 桩适配层测试）✅ / 全量 build ✅
 - 真机行为：本机无原生工具链，由 CI android/ios 工作流打包后真机确认（构建正确性已由 bundle 检查保障）
 - 分支 feat/shell-navigation-alerts，基于 origin/main@a57d510；LOCAL_ONLY 未 push
+
+**CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
 
 **CI E2E 确定性回归 + 覆盖率补强（2026-09-12）** — ci.yml 新增 e2e-tests job（3 浏览器 × 确定性规格集，H11 firefox 在 Linux CI 全跑）；覆盖率 statements 81.71%→82.62%、lines 破 85%
 - 覆盖率补强（5c339c5）：vitest.setup 加 WebSocket 桩；App 集成 +8 / DesktopHeader +9 / MobileHeader +3；npm test 1549 全绿
