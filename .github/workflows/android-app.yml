@@ -41,7 +41,8 @@ jobs:
         run: npm test
 
       - name: Build web
-        run: npm run build
+        # VITE_CAPACITOR=1：壳构建打包真实 Capacitor 插件（状态栏/启动屏/返回键）
+        run: VITE_CAPACITOR=1 npm run build
 
       - name: Install shell deps
         working-directory: app-shell

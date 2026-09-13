@@ -7,11 +7,19 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     // 壳插件只装在 app-shell/；主应用动态 import 仅用于壳内初始化，Web/测试环境走空实现降级。
-    alias: [
-      { find: /^@capacitor\/app$/, replacement: '/src/shell-app.ts' },
-      { find: '@capacitor/status-bar', replacement: '/src/shell-compat.ts' },
-      { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
-    ],
+    // VITE_CAPACITOR=1（壳构建：Android/iOS CI 打包）时指向 app-shell/node_modules 的真实插件，
+    // 使状态栏/启动屏/返回键在原生 WebView 内真正生效；未设置（Web/测试）保持桩降级。
+    alias: process.env.VITE_CAPACITOR
+      ? [
+          { find: /^@capacitor\/app$/, replacement: '/app-shell/node_modules/@capacitor/app/dist/esm/index.js' },
+          { find: '@capacitor/status-bar', replacement: '/app-shell/node_modules/@capacitor/status-bar/dist/esm/index.js' },
+          { find: '@capacitor/splash-screen', replacement: '/app-shell/node_modules/@capacitor/splash-screen/dist/esm/index.js' },
+        ]
+      : [
+          { find: /^@capacitor\/app$/, replacement: '/src/shell-app.ts' },
+          { find: '@capacitor/status-bar', replacement: '/src/shell-compat.ts' },
+          { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
+        ],
   },
   build: {
     rollupOptions: {
