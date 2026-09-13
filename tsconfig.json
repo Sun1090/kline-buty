@@ -16,7 +16,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@capacitor/app": ["./src/shell-app.ts"]
+      "@capacitor/app": ["./src/shell-app.ts"],
+      "@shell/notifications": ["./src/shellNotifications.ts"]
     }
   },
   "include": ["src"]

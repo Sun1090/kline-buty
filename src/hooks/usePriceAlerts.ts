@@ -4,6 +4,12 @@ import { fetchTickers24h } from '../data/binance/rest'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor } from '../i18n/messages'
 import { usePersistedState } from './usePersistedState'
+import {
+  getNotificationPermission,
+  checkNotificationPermission,
+  requestNotificationPermission as requestNativePermission,
+  showPriceNotification,
+} from '@shell/notifications'
 
 const STORAGE_KEY = 'kline-buty:alerts'
 const HISTORY_KEY = 'kline-buty:alertHistory'
@@ -192,11 +198,7 @@ export function usePriceAlerts(
   const [channel, setChannelState] = useState<AlertChannel>(loadChannel)
   const [alerts, setAlerts] = useState<PriceAlert[]>(loadAlerts)
   const [history, setHistory] = useState<AlertTriggerEvent[]>(loadHistory)
-  const [permission, setPermission] = useState<NotificationPermissionState>(() =>
-    typeof Notification === 'undefined'
-      ? 'unsupported'
-      : (Notification.permission as NotificationPermissionState),
-  )
+  const [permission, setPermission] = useState<NotificationPermissionState>(() => getNotificationPermission())
 
   const priceRef = useRef(latestPrice)
   priceRef.current = latestPrice
@@ -215,9 +217,7 @@ export function usePriceAlerts(
   }
 
   const requestPermission = useCallback(async (): Promise<NotificationPermissionState> => {
-    if (typeof Notification === 'undefined') return 'unsupported'
-    const result = await Notification.requestPermission()
-    const state = result as NotificationPermissionState
+    const state = await requestNativePermission()
     setPermission(state)
     return state
   }, [])
@@ -297,6 +297,17 @@ export function usePriceAlerts(
       localStorage.setItem(CHANNEL_KEY, v)
     } catch {
       /* noop */
+    }
+  }, [])
+
+  // 壳内同步 init 无法读原生权限（返回 default），挂载后异步校正一次
+  useEffect(() => {
+    let alive = true
+    void checkNotificationPermission().then((p) => {
+      if (alive) setPermission(p)
+    })
+    return () => {
+      alive = false
     }
   }, [])
 
@@ -395,19 +406,15 @@ export function usePriceAlerts(
     })
     if (due.length === 0) return
     const pushedSignals = new Map(due.map((a) => [a.id, priceFor(a.symbol) ?? 0]))
-    // E1 渠道：system → 浏览器通知（需授权）；web → 站内横幅事件（App 监听弹 toast）
+    // E1 渠道：system → 系统通知（需授权；Web 走 Notification，壳内走 Local Notifications）；web → 站内横幅事件（App 监听弹 toast）
     const ch = channelRef.current
     if ((ch === 'system' || ch === 'both') && permission === 'granted') {
       for (const a of due) {
-        try {
-          new Notification(t('alert.notifyTitle'), {
-            body: t(a.direction === 'above' ? 'alert.notifyAbove' : 'alert.notifyBelow', { symbol: a.symbol, price: a.price }),
-            tag: a.id,
-            data: { symbol: a.symbol },
-          })
-        } catch {
-          /* 通知失败不阻塞 */
-        }
+        showPriceNotification({
+          title: t('alert.notifyTitle'),
+          body: t(a.direction === 'above' ? 'alert.notifyAbove' : 'alert.notifyBelow', { symbol: a.symbol, price: a.price }),
+          tag: a.id,
+        })
       }
     }
     if ((ch === 'web' || ch === 'both') && typeof window !== 'undefined') {
