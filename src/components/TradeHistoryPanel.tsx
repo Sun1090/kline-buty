@@ -6,7 +6,8 @@ import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
-import { buildSparkPath } from '../utils/sparkPath'
+import { maxDrawdown, currentDrawdown } from '../trade/perf'
+import { EquityCurve } from './EquityCurve'
 
 interface TradeHistoryPanelProps {
   trades: TradeRecord[]
@@ -372,24 +373,37 @@ export function TradeHistoryPanel({
         <div style={{ padding: '12px 4px', color: 'var(--text-faint)', textAlign: 'center' }}>{t('paper.empty')}</div>
       ) : (
         <div>
-          {/* D13 权益曲线：由流水推导的权益 sparkline */}
+          {/* v0.5 权益曲线：交互式曲线 + 最大回撤/当前回撤（由流水推导） */}
           {(() => {
             const pts = equitySeries(trades)
             const last = pts[pts.length - 1]?.equity ?? 10_000
             const up = last >= 10_000
-            const d = buildSparkPath(pts.map((p) => p.equity), 280, 48)
+            const mdd = maxDrawdown(pts, 10_000)
+            const cdd = currentDrawdown(pts, 10_000)
             return (
               <div
                 data-testid="trade-history-equity"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}
+                style={{ padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}
               >
-                <svg width={280} height={48} role="img" aria-label={t('paper.equity')} style={{ flex: 'none' }}>
-                  <path d={d} fill="none" stroke={up ? 'var(--up)' : 'var(--down)'} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
-                </svg>
-                <span style={{ color: 'var(--text-faint)', fontSize: 11, whiteSpace: 'nowrap' }}>
-                  {t('paper.equity')}
-                  <b style={{ color: up ? 'var(--up)' : 'var(--down)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>{last.toFixed(2)}</b>
-                </span>
+                <EquityCurve points={pts} initialBalance={10_000} height={120} />
+                <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-faint)' }}>
+                    {t('paper.equity')}
+                    <b style={{ color: up ? 'var(--up)' : 'var(--down)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>{last.toFixed(2)}</b>
+                  </span>
+                  <span style={{ color: 'var(--text-faint)' }}>
+                    {t('trade.maxDrawdown')}
+                    <b style={{ color: mdd > 0 ? 'var(--down)' : 'var(--text-dim)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>
+                      {(mdd * 100).toFixed(2)}%
+                    </b>
+                  </span>
+                  <span style={{ color: 'var(--text-faint)' }}>
+                    {t('trade.drawdown')}
+                    <b style={{ color: cdd > 0 ? 'var(--down)' : 'var(--text-dim)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>
+                      {(cdd * 100).toFixed(2)}%
+                    </b>
+                  </span>
+                </div>
               </div>
             )
           })()}

@@ -5,6 +5,24 @@
 
 ## 当前阶段
 
+**v0.5 进行中（2026-09-14）** — I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性
+- **里程碑 v0.4.0 发布完成（2026-09-13）**：`release/v0.4.0` → PR #11 rebase 合并 main @ `8a1fbcf`，
+  release-tag workflow 自动打 **tag v0.4.0**；Pages + Vercel 双平台 live 抽查 200 且 `app-version=0.4.0`、
+  知识库 200、bundle 含 I9 scheduleTheme 特征；CI/CodeQL/e2e-tests 全绿；回滚方案：`git revert`（无 DB/迁移）
+- **app-shell M1 已合并（2026-09-13，PR #12）**：真实 Capacitor 插件打包（`VITE_CAPACITOR=1` 条件化别名）+
+  原生价格提醒（Local Notifications 适配层 `@shell/notifications`）→ main `3ae7383`/`16b4677`
+- **O1 错误监控测试已合并（2026-09-13，PR #13）**：errorReport 12 用例 + ErrorBoundary 3 用例 → main `9c17059`
+- **v0.5 本地特性 · 交易绩效面板（本批，feat/v05-perf-panel）**：
+  - 新增 `src/trade/perf.ts` 纯函数：`maxDrawdown` / `currentDrawdown` / `maxDrawdownAmount`（回撤口径含
+    初始资金峰值参考，initialBalance 可选参数）+ `scaleEquity`（权益曲线缩放/路径，全平居中）
+  - 新增 `src/components/EquityCurve.tsx` 可交互权益曲线：悬停十字定位 + tooltip（时点权益/回撤）、
+    初始权益基准虚线、终值涨跌着色、五语 i18n（`trade.maxDrawdown`/`trade.drawdown` 新键）
+  - TradeHistoryPanel 原 280×48 sparkline 升级为交互式权益曲线 + 最大回撤/当前回撤指标行
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1608 全绿**（+perf-metrics 14 + EquityCurve 5 +
+    TradeHistoryPanel 1）✅ / 全量 build ✅ / chromium E2E recent-features 14/14（新增「交易绩效」用例：种入
+    成交流水 → 曲线渲染 → 0.51% 回撤 → 悬停 tooltip）✅
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5（app-shell M2 分享/崩溃监控 或 下一 Web 特性）
+
 **里程碑 v0.4 exit report（2026-09-12）**
 - 版本号：**0.4.0**（package.json / index.html meta app-version；本地 tag `v0.4.0` @ 7321ad0）
 - 包含任务：I9 定时主题（新）+ I1/I2/I4–I8/I10/I12–I15 收口；A–H 阶段此前全闭合；

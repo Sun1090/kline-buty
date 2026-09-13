@@ -75,6 +75,43 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:paperTrades'))).toBeNull()
   })
 
+  test('交易绩效：权益曲线渲染 + 最大回撤 + 悬停 tooltip', async ({ page }) => {
+    // 确定性：种入成交流水（新记录在前：亏损平仓 → 开仓），不依赖盘口实时数据
+    await page.addInitScript(() => {
+      const now = Date.now()
+      localStorage.setItem(
+        'kline-buty:paperTrades',
+        JSON.stringify([
+          { id: 'seed2', at: now, symbol: 'BTCUSDT', side: 'sell', kind: 'close', price: 90, qty: 5, fee: 0.45, feeRate: 0.001, pnl: -50 },
+          { id: 'seed1', at: now - 3_600_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 100, qty: 5, fee: 0.5, feeRate: 0.001 },
+        ]),
+      )
+    })
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    // 交易流水 → 交互式权益曲线
+    await openMore(page)
+    await page.getByRole('button', { name: '流水' }).click()
+    await expect(page.getByTestId('trade-history-panel')).toBeVisible()
+    const equity = page.getByTestId('trade-history-equity')
+    await expect(equity).toBeVisible()
+    const curve = page.getByTestId('equity-curve')
+    await expect(curve).toBeVisible()
+    await expect(curve.locator('svg path[stroke]')).toHaveCount(1)
+
+    // 权益 10,000 → 9,999.5（开仓费）→ 9,949.5（-50 平仓）：峰 10,000 → 谷 9,949.5，回撤 0.51%
+    await expect(equity).toContainText('最大回撤')
+    await expect(equity).toContainText('回撤')
+    await expect(equity).toContainText('0.51%')
+    await expect(equity).toContainText('9949.50')
+
+    // 悬停曲线 → tooltip 显示时点权益
+    await curve.hover()
+    await expect(page.getByTestId('equity-curve-tooltip')).toBeVisible()
+    await expect(page.getByTestId('equity-curve-tooltip')).toContainText('权益')
+  })
+
   test('画线：吸附三态循环、批量显隐、JSON 导出和去重导入', async ({ page }) => {
     await openDrawings(page)
     const snap = page.getByTestId('drawing-snap-toggle')

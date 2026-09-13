@@ -3,6 +3,19 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5] 交易绩效面板（2026-09-14，进行中）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+
+- **交易绩效面板**：交易流水面板内 280×48 权益 sparkline 升级为**可交互权益曲线**（`EquityCurve`）——
+  悬停十字定位 + tooltip（时点权益/回撤）、初始权益基准虚线、终值涨跌着色；
+  新增**最大回撤 / 当前回撤**指标（`src/trade/perf.ts` 纯函数：`maxDrawdown` / `currentDrawdown` /
+  `maxDrawdownAmount` / `scaleEquity`，回撤口径含初始资金峰值参考）；五语 i18n 新增 `trade.maxDrawdown` /
+  `trade.drawdown`；单测 +20（perf-metrics 14 + EquityCurve 5 + TradeHistoryPanel 1）、E2E +1
+  （种入成交流水 → 曲线渲染 → 0.51% 回撤 → 悬停 tooltip）；全量 unit **1608** + chromium E2E 14/14 全绿
+- 承接：v0.4.0 发布完成（PR #11 → tag v0.4.0，Pages/Vercel 双平台 live 抽查通过）；
+  app-shell M1 真实插件 + 原生提醒合并（PR #12）；O1 错误监控测试合并（PR #13）
+
 ## [v0.4.0] I 阶段收官（2026-09-12）
 
 承接 `docs/13-下一版本任务清单.md`。A–H 阶段全部闭合，I 阶段除 I3（云同步需登录态+云端 KV）、
