@@ -85,6 +85,8 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(equity.textContent).toContain('0.51%')
     expect(equity.textContent).toContain('9949.50')
     expect(equity.textContent).toContain('0.51%') // 当前回撤同 0.51%（位于低谷）
+    // v0.5 逐笔盈亏条形图：含一笔亏损平仓 → 1 根柱
+    expect(screen.getByTestId('pnl-bars').querySelectorAll('rect')).toHaveLength(1)
   })
 
   it('清空按钮触发 onClear', () => {

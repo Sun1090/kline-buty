@@ -1,3 +1,4 @@
+import type { TradeRecord } from '../hooks/usePaperAccount'
 import type { EquityPoint } from '../utils/equity'
 
 /**
@@ -82,4 +83,28 @@ export function scaleEquity(points: EquityPoint[], w: number, h: number, padY = 
       ? `${path} L${xs[n - 1].toFixed(1)} ${h.toFixed(1)} L${xs[0].toFixed(1)} ${h.toFixed(1)} Z`
       : ''
   return { xs, ys, path, area, min, max }
+}
+
+export interface PnlBarDatum {
+  /** 平仓时间戳（ms） */
+  at: number
+  /** 净盈亏（USDT，已含手续费） */
+  pnl: number
+  /** 平仓方向（buy=平多 / sell=平空） */
+  side: 'buy' | 'sell'
+}
+
+/**
+ * 逐笔盈亏序列：从成交流水中提取所有已平仓记录的盈亏（新在前 → 反转为时间升序）。
+ * 用于逐笔盈亏条形图；无平仓 → 空数组。
+ */
+export function pnlBars(trades: TradeRecord[]): PnlBarDatum[] {
+  const out: PnlBarDatum[] = []
+  for (let i = trades.length - 1; i >= 0; i--) {
+    const t = trades[i]
+    if (t.kind === 'close' && t.pnl !== undefined) {
+      out.push({ at: t.at, pnl: t.pnl, side: t.side })
+    }
+  }
+  return out
 }

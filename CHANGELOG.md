@@ -7,14 +7,18 @@
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
 
-- **交易绩效面板**：交易流水面板内 280×48 权益 sparkline 升级为**可交互权益曲线**（`EquityCurve`）——
+- **逐笔盈亏条形图**：交易流水面板权益曲线下方新增 `PnlBars`（`src/components/PnlBars.tsx`）——
+  已平仓记录按时间升序排布，盈利向上 / 亏损向下，零轴 + 按最大 |pnl| 归一化；
+  `src/trade/perf.ts` 新增 `pnlBars` 纯函数；五语 i18n 新增 `trade.pnlBars`；
+  单测 +10（pnlBars 4 + PnlBars 5 + TradeHistoryPanel 1）；全量 unit **1617** + chromium E2E 14/14 全绿
+- **交易绩效面板**（上一批）：交易流水面板内 280×48 权益 sparkline 升级为**可交互权益曲线**（`EquityCurve`）——
   悬停十字定位 + tooltip（时点权益/回撤）、初始权益基准虚线、终值涨跌着色；
   新增**最大回撤 / 当前回撤**指标（`src/trade/perf.ts` 纯函数：`maxDrawdown` / `currentDrawdown` /
   `maxDrawdownAmount` / `scaleEquity`，回撤口径含初始资金峰值参考）；五语 i18n 新增 `trade.maxDrawdown` /
-  `trade.drawdown`；单测 +20（perf-metrics 14 + EquityCurve 5 + TradeHistoryPanel 1）、E2E +1
-  （种入成交流水 → 曲线渲染 → 0.51% 回撤 → 悬停 tooltip）；全量 unit **1608** + chromium E2E 14/14 全绿
+  `trade.drawdown`；单测 +20、E2E +1
 - 承接：v0.4.0 发布完成（PR #11 → tag v0.4.0，Pages/Vercel 双平台 live 抽查通过）；
-  app-shell M1 真实插件 + 原生提醒合并（PR #12）；O1 错误监控测试合并（PR #13）
+  app-shell M1 真实插件 + 原生提醒合并（PR #12）；O1 错误监控测试合并（PR #13）；
+  CI 构建顺序缺陷修复（PR #15：VITE_CAPACITOR 构建前先装 app-shell 依赖，恢复 Android/iOS CI）
 
 ## [v0.4.0] I 阶段收官（2026-09-12）
 
