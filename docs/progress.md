@@ -22,12 +22,18 @@
   - TradeHistoryPanel 原 280×48 sparkline 升级为交互式权益曲线 + 最大回撤/当前回撤指标行
   - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit 1608 全绿 ✅ / 全量 build ✅ /
     chromium E2E recent-features 14/14 ✅
-- **v0.5 本地特性 · 逐笔盈亏条形图（本批，feat/v05-pnl-bars）**：
+- **v0.5 本地特性 · 逐笔盈亏条形图（已合并 PR #16，feat/v05-pnl-bars）**：
   - `perf.ts` 新增 `pnlBars(trades)` 纯函数：提取已平仓盈亏序列（新在前 → 时间升序）
   - 新增 `src/components/PnlBars.tsx`：零轴 + 盈利向上（up 色）/亏损向下（down 色）柱形条，柱高按最大 |pnl| 归一化
   - TradeHistoryPanel 权益曲线下方渲染逐笔盈亏条形图；五语 i18n 新增 `trade.pnlBars`
-  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1617 全绿**（+pnlBars 4 + PnlBars 5 + Panel 1）✅ /
-    chromium E2E recent-features 14/14（交易绩效用例含 pnl-bars 1 根柱断言）✅
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit 1617 全绿 ✅ / chromium E2E 14/14 ✅
+- **v0.5 本地特性 · 交易流水过滤（本批，feat/v05-trade-filters）**：
+  - `src/trade/filter.ts` 纯函数：`filterTrades`（symbol/side/query 组合过滤，无过滤原引用返回）+ `tradeSymbols`（去重品种列表）
+  - TradeHistoryPanel 多品种时显示过滤行（品种下拉 + 方向下拉 + 关键词搜索），仅过滤列表，
+    统计/权益曲线/盈亏条仍用全量；空匹配显示 `trade.filterEmpty` 提示
+  - 五语 i18n 新增 `trade.filterSymbol/filterSide/filterQuery/filterEmpty/all`
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1628 全绿**（+filter 11 + Panel 2）✅ /
+    全量 build ✅ / chromium E2E 14/14 ✅
 - 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5（app-shell M2 分享/崩溃监控 或 下一 Web 特性）
 
 **里程碑 v0.4 exit report（2026-09-12）**
