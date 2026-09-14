@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
 import { maxDrawdown, currentDrawdown, pnlBars } from '../trade/perf'
+import { filterTrades, tradeSymbols } from '../trade/filter'
 import { EquityCurve } from './EquityCurve'
 import { PnlBars } from './PnlBars'
 
@@ -77,6 +78,16 @@ export function TradeHistoryPanel({
   const [snapshotName, setSnapshotName] = useState('')
   // D15 导入结果提示
   const [importStatus, setImportStatus] = useState<'' | 'ok' | 'fail'>('')
+  // v0.5 流水过滤：品种 / 方向 / 关键词（仅过滤列表，统计与权益曲线用全量）
+  const [filterSymbol, setFilterSymbol] = useState('')
+  const [filterSide, setFilterSide] = useState<'buy' | 'sell' | ''>('')
+  const [filterQuery, setFilterQuery] = useState('')
+  const visibleTrades = filterTrades(trades, {
+    symbol: filterSymbol || undefined,
+    side: filterSide || undefined,
+    query: filterQuery || undefined,
+  })
+  const symbols = tradeSymbols(trades)
   const fileRef = useRef<HTMLInputElement>(null)
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
@@ -410,8 +421,50 @@ export function TradeHistoryPanel({
           })()}
           {/* v0.5 逐笔盈亏条形图：已平仓记录盈亏可视化（无平仓 → 不渲染） */}
           <PnlBars data={pnlBars(trades)} />
+          {/* v0.5 流水过滤：品种 / 方向 / 关键词（仅过滤列表） */}
+          {symbols.length > 1 && (
+            <div
+              data-testid="trade-filter-row"
+              style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '2px 0 8px', flexWrap: 'wrap' }}
+            >
+              <select
+                data-testid="trade-filter-symbol"
+                aria-label={t('trade.filterSymbol')}
+                value={filterSymbol}
+                onChange={(e) => setFilterSymbol(e.target.value)}
+                style={{ fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              >
+                <option value="">{t('trade.all')}</option>
+                {symbols.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <select
+                data-testid="trade-filter-side"
+                aria-label={t('trade.filterSide')}
+                value={filterSide}
+                onChange={(e) => setFilterSide(e.target.value as 'buy' | 'sell' | '')}
+                style={{ fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              >
+                <option value="">{t('trade.filterSide')}: {t('trade.all')}</option>
+                <option value="buy">{t('paper.long')}</option>
+                <option value="sell">{t('paper.short')}</option>
+              </select>
+              <input
+                data-testid="trade-filter-query"
+                aria-label={t('trade.filterQuery')}
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                placeholder={t('trade.filterQuery')}
+                style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', width: 96 }}
+              />
+            </div>
+          )}
           <div style={{ maxHeight: 'min(46vh, 380px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
-            {trades.map((tr) => {
+            {visibleTrades.length === 0 && trades.length > 0 ? (
+              <div style={{ padding: '8px 4px', color: 'var(--text-faint)', textAlign: 'center', fontSize: 12 }}>{t('trade.filterEmpty')}</div>
+            ) : (
+              visibleTrades.map((tr) => {
               const dirColor = tr.side === 'buy' ? 'var(--up)' : 'var(--down)'
               const expanded = expandedId === tr.id
               // D10 手续费拆分：成交额、费率、价差盈亏、净盈亏
@@ -466,7 +519,7 @@ export function TradeHistoryPanel({
                   )}
                 </div>
               )
-            })}
+            }))}
           </div>
         </div>
       )}
