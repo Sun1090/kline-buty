@@ -178,4 +178,37 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(screen.getByText('手续费')).toBeTruthy()
     expect(screen.getByText('费率')).toBeTruthy()
   })
+
+  it('v0.5 流水过滤：多品种时按品种/方向过滤列表', () => {
+    const multi: TradeRecord[] = [
+      { id: 'b1', at: 3_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+      { id: 'e1', at: 2_000, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: 12.3 },
+      { id: 'b2', at: 1_000, symbol: 'BTCUSDT', side: 'sell', kind: 'close', price: 61_000, qty: 1, fee: 0.61, feeRate: 0.001, pnl: 999.39 },
+    ]
+    setup({ trades: multi })
+    // 多品种 → 过滤行可见；全部 3 行
+    expect(screen.getByTestId('trade-filter-row')).toBeTruthy()
+    expect(screen.getAllByTestId('trade-history-row')).toHaveLength(3)
+    // 按品种 BTCUSDT → 2 行
+    fireEvent.change(screen.getByTestId('trade-filter-symbol'), { target: { value: 'BTCUSDT' } })
+    expect(screen.getAllByTestId('trade-history-row')).toHaveLength(2)
+    // 再按方向 sell → 1 行（b2）
+    fireEvent.change(screen.getByTestId('trade-filter-side'), { target: { value: 'sell' } })
+    expect(screen.getAllByTestId('trade-history-row')).toHaveLength(1)
+    expect(screen.getByTestId('trade-history-row').textContent).toContain('999.39')
+    // 清空方向 → 回到 2 行
+    fireEvent.change(screen.getByTestId('trade-filter-side'), { target: { value: '' } })
+    expect(screen.getAllByTestId('trade-history-row')).toHaveLength(2)
+  })
+
+  it('v0.5 流水过滤：关键词无匹配显示空态提示', () => {
+    const multi: TradeRecord[] = [
+      { id: 'b1', at: 2_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+      { id: 'e1', at: 1_000, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: 12.3 },
+    ]
+    setup({ trades: multi })
+    fireEvent.change(screen.getByTestId('trade-filter-query'), { target: { value: 'DOGE' } })
+    expect(screen.queryAllByTestId('trade-history-row')).toHaveLength(0)
+    expect(screen.getByText('无匹配记录')).toBeTruthy()
+  })
 })
