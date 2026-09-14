@@ -61,6 +61,7 @@ export const zh = {
   chart: {
     subScaleFixed: '固定Y轴',
     subScaleToggleTitle: '副图 Y 轴锁定到理论极值（超买超卖稳定比较），再点恢复自动',
+    sessionLines: '当日高低',
   },
   group: {
     type: '类型',
@@ -784,6 +785,7 @@ export const en: Messages = {
   chart: {
     subScaleFixed: 'Fix Y',
     subScaleToggleTitle: 'Lock sub-pane Y-axis to theoretical extremes (stable overbought/oversold comparison); click again for auto',
+    sessionLines: 'Session H/L',
   },
   group: {
     type: 'Type',
@@ -1498,6 +1500,7 @@ export const ja: Messages = {
   chart: {
     subScaleFixed: 'Y軸固定',
     subScaleToggleTitle: '副パネルY軸を理論極値に固定（過買過売を安定比較）、再クリックで自動に戻す',
+    sessionLines: '当日高安',
   },
   group: {
     type: 'タイプ',
@@ -2213,6 +2216,7 @@ export const ko: Messages = {
   chart: {
     subScaleFixed: 'Y축 고정',
     subScaleToggleTitle: '보조 패널 Y축을 이론적 극값으로 고정(과매수/과매도 안정 비교), 다시 클릭 시 자동 복귀',
+    sessionLines: '당일 고저',
   },
   group: {
     type: '유형',
@@ -2940,6 +2944,7 @@ export const es: Messages = {
   chart: {
     subScaleFixed: 'Fijar Y',
     subScaleToggleTitle: 'Bloquear el eje Y del subpanel a los extremos teóricos (comparación estable de sobrecompra/sobreventa); clic de nuevo para automático',
+    sessionLines: 'Máx/Mín del día',
   },
   group: {
     type: 'Tipo',

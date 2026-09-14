@@ -116,6 +116,22 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('equity-curve-tooltip')).toContainText('权益')
   })
 
+  test('当日高低线：开关开/关 + 持久化（无 pageerror）', async ({ page }) => {
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const toggle = page.getByTestId('session-lines-toggle')
+    await expect(toggle).toBeVisible()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    // 开启 → aria-pressed true + localStorage 持久化
+    await toggle.click({ force: true })
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:sessionLines'))).toBe('true')
+    // 关闭 → aria-pressed false + localStorage 清为 false
+    await toggle.click({ force: true })
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:sessionLines'))).toBe('false')
+  })
+
   test('画线：吸附三态循环、批量显隐、JSON 导出和去重导入', async ({ page }) => {
     await openDrawings(page)
     const snap = page.getByTestId('drawing-snap-toggle')

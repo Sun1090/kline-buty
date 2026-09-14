@@ -27,13 +27,20 @@
   - 新增 `src/components/PnlBars.tsx`：零轴 + 盈利向上（up 色）/亏损向下（down 色）柱形条，柱高按最大 |pnl| 归一化
   - TradeHistoryPanel 权益曲线下方渲染逐笔盈亏条形图；五语 i18n 新增 `trade.pnlBars`
   - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit 1617 全绿 ✅ / chromium E2E 14/14 ✅
-- **v0.5 本地特性 · 交易流水过滤（本批，feat/v05-trade-filters）**：
+- **v0.5 本地特性 · 交易流水过滤（已合并 PR #17，feat/v05-trade-filters）**：
   - `src/trade/filter.ts` 纯函数：`filterTrades`（symbol/side/query 组合过滤，无过滤原引用返回）+ `tradeSymbols`（去重品种列表）
   - TradeHistoryPanel 多品种时显示过滤行（品种下拉 + 方向下拉 + 关键词搜索），仅过滤列表，
     统计/权益曲线/盈亏条仍用全量；空匹配显示 `trade.filterEmpty` 提示
   - 五语 i18n 新增 `trade.filterSymbol/filterSide/filterQuery/filterEmpty/all`
-  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1628 全绿**（+filter 11 + Panel 2）✅ /
-    全量 build ✅ / chromium E2E 14/14 ✅
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit 1628 全绿 ✅ / chromium E2E 15/15 ✅
+- **v0.5 本地特性 · 当日高低线（本批，feat/v05-session-lines）**：
+  - `src/data/session.ts` 纯函数 `sessionExtremes`：按最新 K 线所在 UTC 日聚合会话最高/最低价（含未收盘 K 线实时高低）
+  - adapter 新增 `setSessionHighLow`（当日 H/L 虚线价格线，H 上色/L 下色，仅首次 create 后续 applyOptions）
+  - ChartView 图表右上角「当日高低」开关（持久化 `kline-buty:sessionLines`），随会话高低变化更新；
+    五语 i18n 新增 `chart.sessionLines`
+  - 单测 +5（session.test）+ 相关 ChartApi mock 补 `setSessionHighLow`；全量 unit **1633 全绿** ✅
+  - chromium E2E recent-features **15/15**（新增「当日高低线」开关开/关 + 持久化用例）✅
+  - 注：本机 E2E webServer 构建近期 I/O 阻塞（>40min，4% CPU），改用预构建 dist + 手工 serve-static 验证
 - 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5（app-shell M2 分享/崩溃监控 或 下一 Web 特性）
 
 **里程碑 v0.4 exit report（2026-09-12）**
