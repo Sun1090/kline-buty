@@ -40,6 +40,7 @@ vi.mock('../chart/adapter', async (importOriginal) => {
     setPositionLines() {}
     setReferencePrice() {}
     setMarkerPrice() {}
+    setSessionHighLow() {}
     setPositionDragHandler() {}
     setDrawings() {}
     setDrawingTool() {}

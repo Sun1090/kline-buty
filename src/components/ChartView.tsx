@@ -1,5 +1,7 @@
 /* eslint-disable max-lines -- O3 治理基线：ChartView 为图表编排大组件，指标/数据/交互聚合，行数已超新代码阈值；新增逻辑应抽到 indicators/hooks 层。 */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePersistedState } from '../hooks/usePersistedState'
+import { sessionExtremes } from '../data/session'
 import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
@@ -211,6 +213,10 @@ export function ChartView({
   const theme = themeFor(themeMode, colorPreset)
   const UP = theme.up
   const DOWN = theme.down
+  // v0.5 会话高低点（当日 H/L 虚线）：开关持久化，随当日高低变化更新
+  const [sessionLinesOn, setSessionLinesOn] = usePersistedState<boolean>('sessionLines', false)
+  const session = useMemo(() => (sessionLinesOn ? sessionExtremes(candles) : null), [candles, sessionLinesOn])
+  const sessionSig = session ? `${session.dayStart}|${session.high}|${session.low}` : ''
   /** H2 副图阈值区间：纯函数区间 + 半透明上色（from≥50 超买→DOWN 带、to≤50 超卖→UP 带） */
   const coloredZones = (kind: SubIndicatorKind): { from: number; to: number; color: string }[] =>
     thresholdZones(kind).map((z) => ({
@@ -934,6 +940,14 @@ export function ChartView({
     apiRef.current?.setMarkerPrice(markerPrice ?? null)
   }, [markerPrice])
 
+  // v0.5 会话高低点：仅在开关/当日高低/会话切换时更新，避免逐 tick 重设
+  useEffect(() => {
+    apiRef.current?.setSessionHighLow(
+      sessionSig ? { high: session!.high, low: session!.low } : null,
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- session 由 sessionSig 稳定签名驱动
+  }, [sessionSig])
+
   // 画线重绘 effect：数据变化时仅重绘（保留当前选中态，避免确认文本/更新画线后选中被清）
   useEffect(() => {
     apiRef.current?.setDrawings(drawings ?? [])
@@ -1206,6 +1220,27 @@ export function ChartView({
         }}
       >
         {snapSaved ? t('snap.saved') : t('snap.save')}
+      </button>
+      <button
+        data-testid="session-lines-toggle"
+        onClick={() => setSessionLinesOn((v) => !v)}
+        title={t('chart.sessionLines')}
+        aria-pressed={sessionLinesOn}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 200,
+          padding: '3px 8px',
+          fontSize: 11,
+          border: '1px solid #2a2e39',
+          borderRadius: 4,
+          cursor: 'pointer',
+          background: sessionLinesOn ? 'rgba(41,98,255,0.18)' : 'var(--panel)',
+          color: sessionLinesOn ? 'var(--accent)' : 'var(--text-dim)',
+          zIndex: 6,
+        }}
+      >
+        {t('chart.sessionLines')}
       </button>
       <button
         data-testid="screenshot-scale-toggle"

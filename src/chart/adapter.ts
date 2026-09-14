@@ -214,6 +214,8 @@ export interface ChartApi {
   setReferencePrice(price: number | null): void
   /** 限价标记线（盘口档位点击联动，accent 实线），null 清除 */
   setMarkerPrice(price: number | null): void
+  /** v0.5 会话高低点价格线（当日 H/L dashed），null 清除两线 */
+  setSessionHighLow(hl: { high: number; low: number } | null): void
   /** 仓位线拖拽回调（拖动中实时触发，UI 层同步状态） */
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
@@ -383,6 +385,9 @@ export class LightweightChartAdapter implements ChartApi {
   private positionPriceLines = new Map<string, IPriceLine>()
   private referencePriceLine: IPriceLine | null = null
   private markerPriceLine: IPriceLine | null = null
+  /** v0.5 会话高低点价格线（当日 H/L） */
+  private sessionHighLine: IPriceLine | null = null
+  private sessionLowLine: IPriceLine | null = null
   private theme: ChartTheme = THEMES.dark
   private labels: ChartLabels = chartLabelsFor(DEFAULT_LANG)
   /** 免责声明水印开关（默认开） */
@@ -3308,6 +3313,48 @@ export class LightweightChartAdapter implements ChartApi {
       })
     } else {
       this.markerPriceLine.applyOptions({ price })
+    }
+  }
+
+  /**
+   * v0.5 会话高低点价格线（当日 H/L）：null 移除两线；非 null 创建/更新
+   * （high 线 up 色 dashed 'H'、low 线 down 色 dashed 'L'，仅首次 create、后续 applyOptions）。
+   */
+  setSessionHighLow(hl: { high: number; low: number } | null) {
+    if (hl == null) {
+      if (this.sessionHighLine) {
+        this.mainSeries.removePriceLine(this.sessionHighLine)
+        this.sessionHighLine = null
+      }
+      if (this.sessionLowLine) {
+        this.mainSeries.removePriceLine(this.sessionLowLine)
+        this.sessionLowLine = null
+      }
+      return
+    }
+    if (!this.sessionHighLine) {
+      this.sessionHighLine = this.mainSeries.createPriceLine({
+        price: hl.high,
+        color: this.theme.up,
+        lineStyle: LineStyle.Dashed,
+        lineWidth: 1,
+        axisLabelVisible: true,
+        title: 'H ',
+      })
+    } else {
+      this.sessionHighLine.applyOptions({ price: hl.high })
+    }
+    if (!this.sessionLowLine) {
+      this.sessionLowLine = this.mainSeries.createPriceLine({
+        price: hl.low,
+        color: this.theme.down,
+        lineStyle: LineStyle.Dashed,
+        lineWidth: 1,
+        axisLabelVisible: true,
+        title: 'L ',
+      })
+    } else {
+      this.sessionLowLine.applyOptions({ price: hl.low })
     }
   }
 
