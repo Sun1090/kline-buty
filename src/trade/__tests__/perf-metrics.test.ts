@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { EquityPoint } from '../../utils/equity'
+import type { TradeRecord } from '../../hooks/usePaperAccount'
 import {
   maxDrawdown,
   currentDrawdown,
   maxDrawdownAmount,
   scaleEquity,
+  pnlBars,
 } from '../perf'
 
 const eq = (v: number, at = 0): EquityPoint => ({ at, equity: v })
@@ -110,5 +112,32 @@ describe('scaleEquity', () => {
     // span=200，inner=100：末点 y = 120-10-100 = 10，首点 y = 110
     expect(s.ys[0]).toBeCloseTo(110, 5)
     expect(s.ys[1]).toBeCloseTo(10, 5)
+  })
+})
+
+const closeTrade = (at: number, pnl: number, side: 'buy' | 'sell' = 'sell'): TradeRecord =>
+  ({ id: `c${at}`, at, symbol: 'BTCUSDT', side, kind: 'close', price: 100, qty: 1, fee: 0.1, feeRate: 0.001, pnl })
+
+const openTrade = (at: number): TradeRecord =>
+  ({ id: `o${at}`, at, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 100, qty: 1, fee: 0.1, feeRate: 0.001 })
+
+describe('pnlBars', () => {
+  it('无平仓 → 空数组', () => {
+    expect(pnlBars([])).toEqual([])
+    expect(pnlBars([openTrade(100)])).toEqual([])
+  })
+  it('新记录在前 → 反转为时间升序', () => {
+    const trades = [closeTrade(300, 5), closeTrade(200, -3), openTrade(100)]
+    expect(pnlBars(trades).map((b) => b.at)).toEqual([200, 300])
+  })
+  it('保留方向与盈亏', () => {
+    const trades = [closeTrade(200, -3, 'buy'), closeTrade(100, 5, 'sell')]
+    const bars = pnlBars(trades)
+    expect(bars[0]).toEqual({ at: 100, pnl: 5, side: 'sell' })
+    expect(bars[1]).toEqual({ at: 200, pnl: -3, side: 'buy' })
+  })
+  it('仅统计已平仓记录（开仓被忽略）', () => {
+    const trades = [closeTrade(300, 7), openTrade(200), closeTrade(100, -2)]
+    expect(pnlBars(trades)).toHaveLength(2)
   })
 })

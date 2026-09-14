@@ -6,8 +6,9 @@ import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
 import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
-import { maxDrawdown, currentDrawdown } from '../trade/perf'
+import { maxDrawdown, currentDrawdown, pnlBars } from '../trade/perf'
 import { EquityCurve } from './EquityCurve'
+import { PnlBars } from './PnlBars'
 
 interface TradeHistoryPanelProps {
   trades: TradeRecord[]
@@ -407,6 +408,8 @@ export function TradeHistoryPanel({
               </div>
             )
           })()}
+          {/* v0.5 逐笔盈亏条形图：已平仓记录盈亏可视化（无平仓 → 不渲染） */}
+          <PnlBars data={pnlBars(trades)} />
           <div style={{ maxHeight: 'min(46vh, 380px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {trades.map((tr) => {
               const dirColor = tr.side === 'buy' ? 'var(--up)' : 'var(--down)'

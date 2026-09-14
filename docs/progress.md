@@ -12,15 +12,22 @@
 - **app-shell M1 已合并（2026-09-13，PR #12）**：真实 Capacitor 插件打包（`VITE_CAPACITOR=1` 条件化别名）+
   原生价格提醒（Local Notifications 适配层 `@shell/notifications`）→ main `3ae7383`/`16b4677`
 - **O1 错误监控测试已合并（2026-09-13，PR #13）**：errorReport 12 用例 + ErrorBoundary 3 用例 → main `9c17059`
-- **v0.5 本地特性 · 交易绩效面板（本批，feat/v05-perf-panel）**：
+- **CI 构建顺序缺陷已修复（2026-09-14，PR #15）**：M1 引入的 `VITE_CAPACITOR=1 npm run build` 在 app-shell
+  依赖未装时就跑 → Android/iOS CI UNLOADABLE_DEPENDENCY 双失败；修复：Install shell deps 前移到 Build web 前 → main `a456a6a`，合并后 app-android-apk / app-ios-simulator-build 验证中
+- **v0.5 本地特性 · 交易绩效面板（已合并 PR #14，feat/v05-perf-panel）**：
   - 新增 `src/trade/perf.ts` 纯函数：`maxDrawdown` / `currentDrawdown` / `maxDrawdownAmount`（回撤口径含
     初始资金峰值参考，initialBalance 可选参数）+ `scaleEquity`（权益曲线缩放/路径，全平居中）
   - 新增 `src/components/EquityCurve.tsx` 可交互权益曲线：悬停十字定位 + tooltip（时点权益/回撤）、
     初始权益基准虚线、终值涨跌着色、五语 i18n（`trade.maxDrawdown`/`trade.drawdown` 新键）
   - TradeHistoryPanel 原 280×48 sparkline 升级为交互式权益曲线 + 最大回撤/当前回撤指标行
-  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1608 全绿**（+perf-metrics 14 + EquityCurve 5 +
-    TradeHistoryPanel 1）✅ / 全量 build ✅ / chromium E2E recent-features 14/14（新增「交易绩效」用例：种入
-    成交流水 → 曲线渲染 → 0.51% 回撤 → 悬停 tooltip）✅
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit 1608 全绿 ✅ / 全量 build ✅ /
+    chromium E2E recent-features 14/14 ✅
+- **v0.5 本地特性 · 逐笔盈亏条形图（本批，feat/v05-pnl-bars）**：
+  - `perf.ts` 新增 `pnlBars(trades)` 纯函数：提取已平仓盈亏序列（新在前 → 时间升序）
+  - 新增 `src/components/PnlBars.tsx`：零轴 + 盈利向上（up 色）/亏损向下（down 色）柱形条，柱高按最大 |pnl| 归一化
+  - TradeHistoryPanel 权益曲线下方渲染逐笔盈亏条形图；五语 i18n 新增 `trade.pnlBars`
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1617 全绿**（+pnlBars 4 + PnlBars 5 + Panel 1）✅ /
+    chromium E2E recent-features 14/14（交易绩效用例含 pnl-bars 1 根柱断言）✅
 - 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5（app-shell M2 分享/崩溃监控 或 下一 Web 特性）
 
 **里程碑 v0.4 exit report（2026-09-12）**

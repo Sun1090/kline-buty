@@ -106,6 +106,10 @@ test.describe('2026-08 新功能回归', () => {
     await expect(equity).toContainText('0.51%')
     await expect(equity).toContainText('9949.50')
 
+    // 逐笔盈亏条形图：一笔亏损平仓 → 1 根柱
+    await expect(page.getByTestId('pnl-bars')).toBeVisible()
+    await expect(page.getByTestId('pnl-bars').locator('rect')).toHaveCount(1)
+
     // 悬停曲线 → tooltip 显示时点权益
     await curve.hover()
     await expect(page.getByTestId('equity-curve-tooltip')).toBeVisible()
