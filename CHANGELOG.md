@@ -3,14 +3,13 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5] 交易绩效面板（2026-09-15，进行中）
+## [v0.5.0] 交易绩效阶段（2026-09-15）
 
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
 
 - **当日高低线（Session H/L）**：图表右上角「当日高低」开关（持久化）——`src/data/session.ts` 纯函数
   `sessionExtremes`（最新 K 线所在 UTC 日聚合会话高/低，含未收盘 K 线实时高低）；adapter 新增
-  `setSessionHighLow`（H/L 虚线价格线）；五语 i18n 新增 `chart.sessionLines`；单测 +5；
-  全量 unit **1633** + chromium E2E **15/15** 全绿
+  `setSessionHighLow`（H/L 虚线价格线）；五语 i18n 新增 `chart.sessionLines`；单测 +5
 - **交易流水过滤**：交易流水面板多品种时显示过滤行——品种下拉 + 方向下拉 + 关键词搜索
   （`src/trade/filter.ts` 纯函数 `filterTrades` / `tradeSymbols`，仅过滤列表，统计/权益曲线/盈亏条用全量）；
   五语 i18n 新增 `trade.filterSymbol/filterSide/filterQuery/filterEmpty/all`；单测 +13
@@ -21,12 +20,10 @@ I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新
   悬停十字定位 + tooltip（时点权益/回撤）、初始权益基准虚线、终值涨跌着色；
   新增**最大回撤 / 当前回撤**指标（`src/trade/perf.ts` 纯函数，回撤口径含初始资金峰值参考）；
   五语 i18n 新增 `trade.maxDrawdown` / `trade.drawdown`；单测 +20、E2E +1
-- 承接：v0.4.0 发布完成（PR #11 → tag v0.4.0，Pages/Vercel 双平台 live 抽查通过）；
-  app-shell M1 真实插件 + 原生提醒合并（PR #12）；O1 错误监控测试合并（PR #13）；
-  CI 构建顺序缺陷修复（PR #15：VITE_CAPACITOR 构建前先装 app-shell 依赖，恢复 Android/iOS CI）；
-  交易流水过滤合并（PR #17）
-
-## [v0.4.0] I 阶段收官（2026-09-12）
+- **工程与依赖**：CI 构建顺序修复（PR #15：VITE_CAPACITOR 构建前先装 app-shell 依赖，恢复 Android/iOS CI）；
+  app-shell M1 真实插件 + 原生提醒（PR #12）；O1 错误监控测试（PR #13）；typescript-eslint 8.70（PR #18）
+- 验证：typecheck / lint 0 error / audit:i18n 五语键集一致 / unit **1633** 全绿 /
+  chromium E2E recent-features **15/15** / CI+CodeQL+Pages+Android+iOS 全绿；Pages+Vercel 双平台部署
 
 承接 `docs/13-下一版本任务清单.md`。A–H 阶段全部闭合，I 阶段除 I3（云同步需登录态+云端 KV）、
 I11（移动端 Widget 需原生平台）外全部闭合。版本历史入口（H5 ChangelogModal）新增 v0.4.0 条目。
