@@ -5,7 +5,19 @@
 
 ## 当前阶段
 
-**v0.5 进行中（2026-09-14）** — I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性
+**里程碑 v0.5.0 发布（2026-09-15，RELEASE_FREEZE）**
+- 版本号：**0.5.0**（package.json / index.html meta app-version）
+- 包含任务：交易绩效面板（EquityCurve + 最大回撤）、逐笔盈亏条形图、交易流水过滤、当日高低线（Session H/L）；
+  承接 app-shell M1（真实插件 + 原生提醒）、O1 错误监控测试、CI 构建顺序修复、typescript-eslint 8.70
+- 分支：`release/v0.5.0`；发布 PR：**待创建**（gh pr create --base main --head release/v0.5.0）
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.0（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.0 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1633** / chromium E2E recent-features **15/15**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 明确报 "does not support TS 7.0"，待官方支持）
+
+**里程碑 v0.5 进行中（2026-09-14）** — I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性
 - **里程碑 v0.4.0 发布完成（2026-09-13）**：`release/v0.4.0` → PR #11 rebase 合并 main @ `8a1fbcf`，
   release-tag workflow 自动打 **tag v0.4.0**；Pages + Vercel 双平台 live 抽查 200 且 `app-version=0.4.0`、
   知识库 200、bundle 含 I9 scheduleTheme 特征；CI/CodeQL/e2e-tests 全绿；回滚方案：`git revert`（无 DB/迁移）
