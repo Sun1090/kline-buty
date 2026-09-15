@@ -1228,8 +1228,8 @@ export function ChartView({
         aria-pressed={sessionLinesOn}
         style={{
           position: 'absolute',
-          top: 8,
-          right: 200,
+          top: 36,
+          right: 8,
           padding: '3px 8px',
           fontSize: 11,
           border: '1px solid #2a2e39',
