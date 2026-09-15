@@ -6,7 +6,7 @@
 ## 当前阶段
 
 **v0.5.x 继续（2026-09-15）** — v0.5.0 已发布；本地新特性构想继续
-- **app-shell M2 · 原生分享适配层（本批，feat/shell-native-share）**：
+- **app-shell M2 · 原生分享适配层（已合并 PR #22，feat/shell-native-share）**：
   - 新增 `@shell/share` 适配层（vite 别名条件化 + tsconfig paths，与 `@shell/notifications` 同构）：
     桩 `src/shellShare.ts`（Web/测试：恒返回 'fallback'，导出行为与原完全一致）+
     真实 `app-shell/native-share.ts`（Capacitor Share：系统分享面板文本分享 → 'shared'，取消/失败 → 'fallback'）
@@ -17,7 +17,14 @@
     默认 build → 桩 `return\`fallback\`` 保留、无真实插件；typecheck ✅ / lint 0 err ✅ /
     unit **1635 全绿**（+shellShare 桩 2 用例）✅
   - Web 端零行为变化：桩恒返回 'fallback'，导出下载路径与原一致（无 E2E 依赖交易 CSV/JSON 下载）
-- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x（更多新特性 或 app-shell M2 收尾）
+- **v0.5.x Web 特性 · 交易流水按日分组 + 每日小计（PR #23，feat/v05-trade-daily）**：
+  - `src/trade/daily.ts` 纯函数：`dayKeyFor`（UTC 日键 `YYYY-MM-DD`）/ `groupTradesByDay`（新日在前组序）/
+    `dailySummary`（笔数/已平仓数/净盈亏）
+  - TradeHistoryPanel 流水列表按 UTC 日分组：日标题 + 每日小计（笔数 / 当日盈亏，仅已平仓>0 显示盈亏）；
+    五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`
+  - 单测 +6（daily）+ TradeHistoryPanel +1；全量 unit **1640 全绿** ✅
+  - chromium E2E recent-features 15/15（交易绩效用例含 `trade-history-day` 日标题 + 笔数断言）✅
+- 下一项：继续 v0.5.x（更多新特性）
 
 **里程碑 v0.5.0 发布完成（2026-09-15）**
 - 版本号：**0.5.0**（package.json / index.html meta app-version）

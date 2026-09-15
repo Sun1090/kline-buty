@@ -110,6 +110,10 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('pnl-bars')).toBeVisible()
     await expect(page.getByTestId('pnl-bars').locator('rect')).toHaveCount(1)
 
+    // v0.5 按日分组：UTC 日标题可见（种子流水均为今天）
+    await expect(page.getByTestId('trade-history-day').first()).toBeVisible()
+    await expect(page.getByTestId('trade-history-day').first()).toContainText('笔数 2')
+
     // 悬停曲线 → tooltip 显示时点权益
     await curve.hover()
     await expect(page.getByTestId('equity-curve-tooltip')).toBeVisible()
