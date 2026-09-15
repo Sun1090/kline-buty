@@ -8,6 +8,7 @@ import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
 import { maxDrawdown, currentDrawdown, pnlBars } from '../trade/perf'
 import { filterTrades, tradeSymbols } from '../trade/filter'
+import { groupTradesByDay, dailySummary } from '../trade/daily'
 import { EquityCurve } from './EquityCurve'
 import { PnlBars } from './PnlBars'
 
@@ -464,7 +465,27 @@ export function TradeHistoryPanel({
             {visibleTrades.length === 0 && trades.length > 0 ? (
               <div style={{ padding: '8px 4px', color: 'var(--text-faint)', textAlign: 'center', fontSize: 12 }}>{t('trade.filterEmpty')}</div>
             ) : (
-              visibleTrades.map((tr) => {
+              groupTradesByDay(visibleTrades).map((day) => {
+                const sum = dailySummary(day)
+                return (
+                  <div key={day.dayKey}>
+                    {/* v0.5 按日分组：UTC 日标题 + 每日小计（笔数 / 净盈亏） */}
+                    <div
+                      data-testid="trade-history-day"
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0 2px', fontSize: 10, color: 'var(--text-faint)' }}
+                    >
+                      <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>{day.dayKey}</span>
+                      <span>{t('trade.dailyCount')} {sum.count}</span>
+                      {sum.closed > 0 && (
+                        <span>
+                          {t('trade.dailyPnl')}{' '}
+                          <b style={{ color: sum.pnl >= 0 ? 'var(--up)' : 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+                            {sum.pnl >= 0 ? '+' : ''}{sum.pnl.toFixed(2)}
+                          </b>
+                        </span>
+                      )}
+                    </div>
+                    {day.trades.map((tr) => {
               const dirColor = tr.side === 'buy' ? 'var(--up)' : 'var(--down)'
               const expanded = expandedId === tr.id
               // D10 手续费拆分：成交额、费率、价差盈亏、净盈亏
@@ -519,7 +540,11 @@ export function TradeHistoryPanel({
                   )}
                 </div>
               )
-            }))}
+                    })}
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
       )}

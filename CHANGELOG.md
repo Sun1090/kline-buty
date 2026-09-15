@@ -7,10 +7,15 @@
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
 
+- **交易流水按日分组 + 每日小计**：`src/trade/daily.ts` 纯函数 `dayKeyFor` / `groupTradesByDay` /
+  `dailySummary`（UTC 日键、新日在前组序、笔数/已平仓数/净盈亏）；TradeHistoryPanel 流水列表按 UTC 日分组，
+  日标题 + 每日小计（笔数 / 当日盈亏，仅已平仓>0 显示）；五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`；
+  单测 +7；全量 unit **1640** + chromium E2E 15/15 全绿
 - **app-shell M2 · 原生分享适配层**：新增 `@shell/share` 适配层（与 `@shell/notifications` 同构）——
   桩 `src/shellShare.ts`（Web/测试恒 'fallback'，导出行为不变）+ 真实 `app-shell/native-share.ts`
   （Capacitor Share 系统分享面板）；App.tsx 三个文本导出（流水 CSV / 权益 CSV / 账户 JSON）改走
   `exportTextFile`：壳内先原生分享、未分享回退下载；CSV 保留 BOM、JSON 不加 BOM；
+  `@capacitor/share@8.0.1` 装入 app-shell；单测 +2；Web 端零行为变化
   `@capacitor/share@8.0.1` 装入 app-shell；单测 +2；Web 端零行为变化
 
 ## [v0.5.0] 交易绩效阶段（2026-09-15）
