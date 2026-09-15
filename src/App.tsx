@@ -41,6 +41,7 @@ import { PinnedPanel } from './components/PinnedPanel'
 import { DocsIndexModal } from './components/DocsIndexModal'
 import { tradesCsvFileName, tradesToCsv } from './utils/tradesCsv'
 import { equityCsvFileName, equityToCsv } from './utils/equityCsv'
+import { shareTextFile } from '@shell/share'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { ShortcutsSettings } from './components/ShortcutsSettings'
 import { PullToRefresh } from './components/PullToRefresh'
@@ -865,45 +866,34 @@ export function App() {
   }
 
   // D14 导出交易流水 CSV（纯函数生成文本，BOM + <a download> 触发下载）
-  const exportTradesCsv = () => {
-    if (paper.trades.length === 0) return
-    const csv = tradesToCsv(paper.trades)
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+  // D10 文本导出：先尝试原生分享（壳内 Capacitor Share），未分享则回退下载。
+  // CSV 补 BOM（Excel 中文乱码防护）；JSON 不加（BOM 会破坏 JSON.parse 回导）。
+  const exportTextFile = async (fileName: string, content: string, mime: string, bom: boolean) => {
+    const shared = await shareTextFile(fileName, content)
+    if (shared === 'shared') return
+    const blob = new Blob([bom ? '﻿' + content : content], { type: mime })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = tradesCsvFileName()
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+  const exportTradesCsv = () => {
+    if (paper.trades.length === 0) return
+    void exportTextFile(tradesCsvFileName(), tradesToCsv(paper.trades), 'text/csv;charset=utf-8', true)
   }
   // J6 导出权益曲线 CSV（由流水推导的权益时间序列）
   const exportEquityCsv = () => {
     if (paper.trades.length === 0) return
-    const csv = equityToCsv(paper.trades)
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = equityCsvFileName()
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    void exportTextFile(equityCsvFileName(), equityToCsv(paper.trades), 'text/csv;charset=utf-8', true)
   }
-  // D15 导出模拟账户 JSON（余额+流水）：Blob + <a download> 触发下载
+  // D15 导出模拟账户 JSON（余额+流水）：先分享，回退 Blob + <a download>
   const exportAccountJson = (json: string) => {
     if (!json) return
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'paper-account.json'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    void exportTextFile('paper-account.json', json, 'application/json;charset=utf-8', false)
   }
   // H7/H8 设置快照导出：收集全部 kline-buty:* 持久化键 → JSON 文件（主题/自选/画线/账户等一次迁移）
   const exportSettingsJson = () => {
