@@ -9,6 +9,7 @@ import { equitySeries } from '../utils/equity'
 import { maxDrawdown, currentDrawdown, pnlBars } from '../trade/perf'
 import { filterTrades, tradeSymbols } from '../trade/filter'
 import { groupTradesByDay, dailySummary } from '../trade/daily'
+import { symbolBreakdown } from '../trade/breakdown'
 import { EquityCurve } from './EquityCurve'
 import { PnlBars } from './PnlBars'
 
@@ -79,6 +80,8 @@ export function TradeHistoryPanel({
   const [snapshotName, setSnapshotName] = useState('')
   // D15 导入结果提示
   const [importStatus, setImportStatus] = useState<'' | 'ok' | 'fail'>('')
+  // v0.5 按品种汇总折叠开关
+  const [showBySymbol, setShowBySymbol] = useState(false)
   // v0.5 流水过滤：品种 / 方向 / 关键词（仅过滤列表，统计与权益曲线用全量）
   const [filterSymbol, setFilterSymbol] = useState('')
   const [filterSide, setFilterSide] = useState<'buy' | 'sell' | ''>('')
@@ -235,6 +238,36 @@ export function TradeHistoryPanel({
           <span style={{ fontSize: 11 }}>
             {t('trade.avgLoss')} <b style={{ color: 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>{stats.avgLoss.toFixed(2)}</b>
           </span>
+        </div>
+      )}
+      {/* v0.5 按品种汇总：折叠区（默认收起），净盈亏降序 */}
+      {trades.length > 1 && (
+        <div style={{ padding: '2px 0 8px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
+          <button
+            data-testid="trade-by-symbol-toggle"
+            onClick={() => setShowBySymbol((v) => !v)}
+            aria-expanded={showBySymbol}
+            style={{ border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+          >
+            {showBySymbol ? '▾ ' : '▸ '}{t('trade.bySymbol')}
+          </button>
+          {showBySymbol && (
+            <div data-testid="trade-by-symbol" style={{ marginTop: 4, fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {symbolBreakdown(trades).map((b) => (
+                <div key={b.symbol} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ width: 90, flexShrink: 0, color: 'var(--text)' }}>{b.symbol}</span>
+                  <span style={{ color: 'var(--text-faint)', width: 44, flexShrink: 0 }}>{t('trade.dailyCount')} {b.count}</span>
+                  <span style={{ color: 'var(--text-faint)', width: 44, flexShrink: 0 }}>{t('trade.winRate')} {b.closed > 0 ? `${Math.round(b.winRate * 100)}%` : '—'}</span>
+                  <span style={{ color: 'var(--text-dim)', width: 70, flexShrink: 0, textAlign: 'right' }}>
+                    {t('trade.totalPnl')}{' '}
+                    <b style={{ color: b.pnl >= 0 ? 'var(--up)' : 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+                      {b.pnl >= 0 ? '+' : ''}{b.pnl.toFixed(2)}
+                    </b>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {/* D14 收益目标：输入目标 → 进度条 + 达成提示 */}
