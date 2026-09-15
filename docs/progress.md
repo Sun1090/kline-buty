@@ -17,14 +17,17 @@
     默认 build → 桩 `return\`fallback\`` 保留、无真实插件；typecheck ✅ / lint 0 err ✅ /
     unit **1635 全绿**（+shellShare 桩 2 用例）✅
   - Web 端零行为变化：桩恒返回 'fallback'，导出下载路径与原一致（无 E2E 依赖交易 CSV/JSON 下载）
-- **v0.5.x Web 特性 · 交易流水按日分组 + 每日小计（PR #23，feat/v05-trade-daily）**：
+- **v0.5.x Web 特性 · 交易流水按日分组 + 每日小计（已合并 PR #24，feat/v05-trade-daily）**：
   - `src/trade/daily.ts` 纯函数：`dayKeyFor`（UTC 日键 `YYYY-MM-DD`）/ `groupTradesByDay`（新日在前组序）/
     `dailySummary`（笔数/已平仓数/净盈亏）
   - TradeHistoryPanel 流水列表按 UTC 日分组：日标题 + 每日小计（笔数 / 当日盈亏，仅已平仓>0 显示盈亏）；
-    五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`
-  - 单测 +6（daily）+ TradeHistoryPanel +1；全量 unit **1640 全绿** ✅
-  - chromium E2E recent-features 15/15（交易绩效用例含 `trade-history-day` 日标题 + 笔数断言）✅
-- 下一项：继续 v0.5.x（更多新特性）
+    五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`；单测 +7；unit 1640 全绿；chromium E2E 15/15 ✅
+- **v0.5.x Web 特性 · 按品种盈亏汇总（本批，feat/v05-trade-breakdown）**：
+  - `src/trade/breakdown.ts` 纯函数 `symbolBreakdown`：按品种聚合笔数/已平仓数/净盈亏/胜率，净盈亏降序
+  - TradeHistoryPanel 统计行下折叠区「按品种汇总」（默认收起，多品种时显示）：品种 / 笔数 / 胜率 / 累计盈亏；
+    五语 i18n 新增 `trade.bySymbol`
+  - 单测 +3（breakdown）；全量 unit **1645 全绿** ✅
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x（更多新特性）
 
 **里程碑 v0.5.0 发布完成（2026-09-15）**
 - 版本号：**0.5.0**（package.json / index.html meta app-version）

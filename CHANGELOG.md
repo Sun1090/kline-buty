@@ -11,6 +11,9 @@ I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新
   `dailySummary`（UTC 日键、新日在前组序、笔数/已平仓数/净盈亏）；TradeHistoryPanel 流水列表按 UTC 日分组，
   日标题 + 每日小计（笔数 / 当日盈亏，仅已平仓>0 显示）；五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`；
   单测 +7；全量 unit **1640** + chromium E2E 15/15 全绿
+- **按品种盈亏汇总**：`src/trade/breakdown.ts` 纯函数 `symbolBreakdown`（按品种聚合笔数/已平仓数/净盈亏/
+  胜率，净盈亏降序）；TradeHistoryPanel 统计行下折叠区「按品种汇总」（默认收起）；五语 i18n 新增
+  `trade.bySymbol`；单测 +3；全量 unit **1645** 全绿
 - **app-shell M2 · 原生分享适配层**：新增 `@shell/share` 适配层（与 `@shell/notifications` 同构）——
   桩 `src/shellShare.ts`（Web/测试恒 'fallback'，导出行为不变）+ 真实 `app-shell/native-share.ts`
   （Capacitor Share 系统分享面板）；App.tsx 三个文本导出（流水 CSV / 权益 CSV / 账户 JSON）改走
