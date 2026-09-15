@@ -5,6 +5,17 @@
 
 ## 当前阶段
 
+**v0.5.x 继续（2026-09-15）** — v0.5.0 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 交易流水按日分组 + 每日小计（本批，feat/v05-trade-daily）**：
+  - `src/trade/daily.ts` 纯函数：`dayKeyFor`（UTC 日键 `YYYY-MM-DD`）/ `groupTradesByDay`（新日在前组序）/
+    `dailySummary`（笔数/已平仓数/净盈亏）
+  - TradeHistoryPanel 流水列表按 UTC 日分组：日标题 + 每日小计（笔数 / 当日盈亏，仅已平仓>0 显示盈亏）；
+    五语 i18n 新增 `trade.dailyCount`/`trade.dailyPnl`
+  - 单测 +6（daily）+ TradeHistoryPanel +1；全量 unit **1640 全绿** ✅
+  - chromium E2E recent-features 15/15（交易绩效用例含 `trade-history-day` 日标题 + 笔数断言）✅
+- 承接：app-shell M2 原生分享适配层（PR #22，feat/shell-native-share）在 CI 中
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x（更多新特性）
+
 **里程碑 v0.5.0 发布完成（2026-09-15）**
 - 版本号：**0.5.0**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.0`（release 0493573 + fix 703cd3d，基于含 session-lines 的 main）

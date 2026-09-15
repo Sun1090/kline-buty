@@ -211,4 +211,26 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(screen.queryAllByTestId('trade-history-row')).toHaveLength(0)
     expect(screen.getByText('无匹配记录')).toBeTruthy()
   })
+
+  it('v0.5 按日分组：UTC 日标题 + 每日小计（笔数 / 当日盈亏）', () => {
+    // 2026-01-05 与 2026-01-06 两日（新在前）
+    const D0 = 1_767_571_200_000
+    const multi: TradeRecord[] = [
+      { id: 'd2-open', at: D0 + 26 * 3_600_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+      { id: 'd2-close', at: D0 + 25 * 3_600_000, symbol: 'BTCUSDT', side: 'sell', kind: 'close', price: 61_000, qty: 1, fee: 0.61, feeRate: 0.001, pnl: 999.39 },
+      { id: 'd1-close', at: D0 + 3_600_000, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: -12.3 },
+      { id: 'd1-open', at: D0, symbol: 'ETHUSDT', side: 'buy', kind: 'open', price: 3_400, qty: 2, fee: 0.68, feeRate: 0.001 },
+    ]
+    setup({ trades: multi })
+    const days = screen.getAllByTestId('trade-history-day')
+    expect(days).toHaveLength(2)
+    // 新日前：2026-01-06（2 笔 + 999.39）
+    expect(days[0].textContent).toContain('2026-01-06')
+    expect(days[0].textContent).toContain('笔数 2')
+    expect(days[0].textContent).toContain('+999.39')
+    // 旧日后：2026-01-05（2 笔 -12.3）
+    expect(days[1].textContent).toContain('2026-01-05')
+    expect(days[1].textContent).toContain('笔数 2')
+    expect(days[1].textContent).toContain('-12.30')
+  })
 })
