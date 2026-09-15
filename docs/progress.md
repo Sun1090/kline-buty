@@ -5,14 +5,15 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.0 发布（2026-09-15，RELEASE_FREEZE）**
+**里程碑 v0.5.0 发布完成（2026-09-15）**
 - 版本号：**0.5.0**（package.json / index.html meta app-version）
-- 包含任务：交易绩效面板（EquityCurve + 最大回撤）、逐笔盈亏条形图、交易流水过滤、当日高低线（Session H/L）；
-  承接 app-shell M1（真实插件 + 原生提醒）、O1 错误监控测试、CI 构建顺序修复、typescript-eslint 8.70
-- 分支：`release/v0.5.0`；发布 PR：**待创建**（gh pr create --base main --head release/v0.5.0）
-- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.0（幂等）
-- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.0 + 知识库 200）
-- smoke：typecheck / lint 0 err / audit:i18n / unit **1633** / chromium E2E recent-features **15/15**
+- 分支：`release/v0.5.0`（release 0493573 + fix 703cd3d，基于含 session-lines 的 main）
+- 发布 PR：#20（rebase 合并 → main @ `703cd3d`）
+- tag/release：release-tag workflow 自动打 **tag v0.5.0** @ 703cd3d（幂等，不覆盖 v0.4.0/v0.1.0）
+- 部署：merge 后 Pages + Vercel 自动部署，**live 抽查通过**：
+  首页 200 且 `app-version=0.5.0`、知识库 200；bundle 含 sessionLines/maxDrawdown/pnlBars 新特征
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1633** ✅ / chromium E2E **15/15** ✅ /
+  CI+CodeQL+Pages+Android+iOS 全绿；CI E2E 曾因当日高低按钮与 snapshot-save 重叠失败 → 移至第二行修复后全绿
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
   TS7 仍阻塞——typescript-eslint 8.70 明确报 "does not support TS 7.0"，待官方支持）
