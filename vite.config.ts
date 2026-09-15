@@ -15,12 +15,14 @@ export default defineConfig({
           { find: '@capacitor/status-bar', replacement: '/app-shell/node_modules/@capacitor/status-bar/dist/esm/index.js' },
           { find: '@capacitor/splash-screen', replacement: '/app-shell/node_modules/@capacitor/splash-screen/dist/esm/index.js' },
           { find: '@shell/notifications', replacement: '/app-shell/native-notifications.ts' },
+          { find: '@shell/share', replacement: '/app-shell/native-share.ts' },
         ]
       : [
           { find: /^@capacitor\/app$/, replacement: '/src/shell-app.ts' },
           { find: '@capacitor/status-bar', replacement: '/src/shell-compat.ts' },
           { find: '@capacitor/splash-screen', replacement: '/src/shell-compat.ts' },
           { find: '@shell/notifications', replacement: '/src/shellNotifications.ts' },
+          { find: '@shell/share', replacement: '/src/shellShare.ts' },
         ],
   },
   build: {

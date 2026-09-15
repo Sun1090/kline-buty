@@ -3,6 +3,16 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.1]（2026-09-15，开发中）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+
+- **app-shell M2 · 原生分享适配层**：新增 `@shell/share` 适配层（与 `@shell/notifications` 同构）——
+  桩 `src/shellShare.ts`（Web/测试恒 'fallback'，导出行为不变）+ 真实 `app-shell/native-share.ts`
+  （Capacitor Share 系统分享面板）；App.tsx 三个文本导出（流水 CSV / 权益 CSV / 账户 JSON）改走
+  `exportTextFile`：壳内先原生分享、未分享回退下载；CSV 保留 BOM、JSON 不加 BOM；
+  `@capacitor/share@8.0.1` 装入 app-shell；单测 +2；Web 端零行为变化
+
 ## [v0.5.0] 交易绩效阶段（2026-09-15）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。

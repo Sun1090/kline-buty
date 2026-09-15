@@ -5,6 +5,20 @@
 
 ## 当前阶段
 
+**v0.5.x 继续（2026-09-15）** — v0.5.0 已发布；本地新特性构想继续
+- **app-shell M2 · 原生分享适配层（本批，feat/shell-native-share）**：
+  - 新增 `@shell/share` 适配层（vite 别名条件化 + tsconfig paths，与 `@shell/notifications` 同构）：
+    桩 `src/shellShare.ts`（Web/测试：恒返回 'fallback'，导出行为与原完全一致）+
+    真实 `app-shell/native-share.ts`（Capacitor Share：系统分享面板文本分享 → 'shared'，取消/失败 → 'fallback'）
+  - App.tsx 三个文本导出（交易流水 CSV / 权益曲线 CSV / 账户 JSON）改走 `exportTextFile`：
+    先尝试原生分享（壳内系统分享面板），未分享回退原有 `<a download>`；
+    CSV 保留 BOM（Excel 兼容）、JSON 不加 BOM（回导 JSON.parse 不破坏）；`@capacitor/share@8.0.1` 装入 app-shell
+  - 验证：`VITE_CAPACITOR=1 vite build` → bundle 含 `Share.share` + 'shared'/'fallback'（native-share 生效）；
+    默认 build → 桩 `return\`fallback\`` 保留、无真实插件；typecheck ✅ / lint 0 err ✅ /
+    unit **1635 全绿**（+shellShare 桩 2 用例）✅
+  - Web 端零行为变化：桩恒返回 'fallback'，导出下载路径与原一致（无 E2E 依赖交易 CSV/JSON 下载）
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x（更多新特性 或 app-shell M2 收尾）
+
 **里程碑 v0.5.0 发布完成（2026-09-15）**
 - 版本号：**0.5.0**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.0`（release 0493573 + fix 703cd3d，基于含 session-lines 的 main）
