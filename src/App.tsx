@@ -1595,6 +1595,11 @@ export function App() {
           onSlippagePctChange={(pct) => tradeSettings.setSlippageRatio(pct / 100)}
           onClose={() => setTradesOpen(false)}
           onClear={paper.clearTrades}
+          onSwitchSymbol={(s) => {
+            // v0.5 按品种汇总点击行 → 切主图品种并关闭流水面板
+            setSymbol(s)
+            setTradesOpen(false)
+          }}
           onExport={exportTradesCsv}
           onExportEquity={exportEquityCsv}
           onReset={paper.reset}

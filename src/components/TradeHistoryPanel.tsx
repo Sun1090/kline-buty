@@ -41,6 +41,8 @@ interface TradeHistoryPanelProps {
   /** D15 账户 JSON 导入/导出 */
   onExportJson: () => void
   onImportJson: (json: string) => boolean
+  /** v0.5 按品种汇总点击切换主图品种（可选；未传则行不可点击） */
+  onSwitchSymbol?: (symbol: string) => void
 }
 
 /** D10 手续费拆分：由费率倒推计费成交额（费率缺失时用 价格×数量 兜底展示） */
@@ -70,6 +72,7 @@ export function TradeHistoryPanel({
   onDeleteSnapshot,
   onExportJson,
   onImportJson,
+  onSwitchSymbol,
 }: TradeHistoryPanelProps) {
   const { t } = useI18n()
   // 重置两步确认：首次点击进入确认态，3s 未二次确认自动复位
@@ -254,7 +257,16 @@ export function TradeHistoryPanel({
           {showBySymbol && (
             <div data-testid="trade-by-symbol" style={{ marginTop: 4, fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {symbolBreakdown(trades).map((b) => (
-                <div key={b.symbol} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div
+                  key={b.symbol}
+                  onClick={onSwitchSymbol ? () => onSwitchSymbol(b.symbol) : undefined}
+                  data-testid={`trade-by-symbol-row-${b.symbol}`}
+                  title={onSwitchSymbol ? t('trade.bySymbol') : undefined}
+                  style={{
+                    display: 'flex', gap: 10, alignItems: 'center',
+                    cursor: onSwitchSymbol ? 'pointer' : 'default',
+                  }}
+                >
                   <span style={{ width: 90, flexShrink: 0, color: 'var(--text)' }}>{b.symbol}</span>
                   <span style={{ color: 'var(--text-faint)', width: 44, flexShrink: 0 }}>{t('trade.dailyCount')} {b.count}</span>
                   <span style={{ color: 'var(--text-faint)', width: 44, flexShrink: 0 }}>{t('trade.winRate')} {b.closed > 0 ? `${Math.round(b.winRate * 100)}%` : '—'}</span>

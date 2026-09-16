@@ -212,6 +212,18 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(screen.getByText('无匹配记录')).toBeTruthy()
   })
 
+  it('v0.5 按品种汇总：点击行触发 onSwitchSymbol（含品种）', () => {
+    const multi: TradeRecord[] = [
+      { id: 'b1', at: 2_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+      { id: 'e1', at: 1_000, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: 12.3 },
+    ]
+    const onSwitchSymbol = vi.fn()
+    setup({ trades: multi, onSwitchSymbol })
+    fireEvent.click(screen.getByTestId('trade-by-symbol-toggle'))
+    fireEvent.click(screen.getByTestId('trade-by-symbol-row-ETHUSDT'))
+    expect(onSwitchSymbol).toHaveBeenCalledWith('ETHUSDT')
+  })
+
   it('v0.5 按日分组：UTC 日标题 + 每日小计（笔数 / 当日盈亏）', () => {
     // 2026-01-05 与 2026-01-06 两日（新在前）
     const D0 = 1_767_571_200_000
