@@ -14,8 +14,8 @@
 - smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1648** ✅ / chromium E2E **17/17** ✅ /
   CI+CodeQL+Pages+Android+iOS 全绿
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
-- 下一里程碑：**v0.5.x 继续**（本批：图表右键「复制 OHLC」；I3 云同步 / I11 移动端 Widget 外部能力暂缓；
-  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
+- 下一里程碑：**v0.5.x 继续**（本批：图表右键「复制 OHLC」+ 按品种汇总点击切品种；I3 云同步 /
+  I11 移动端 Widget 外部能力暂缓；TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.2 发布完成（2026-09-16）**
 - 版本号：**0.5.2**（package.json / index.html meta app-version）

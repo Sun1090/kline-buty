@@ -121,6 +121,31 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('equity-curve-tooltip')).toContainText('权益')
   })
 
+  test('按品种汇总：点击品种行切主图品种并关闭流水面板', async ({ page }) => {
+    // 种入两个品种的流水（ETHUSDT 在前，BTCUSDT 在后）
+    await page.addInitScript(() => {
+      const now = Date.now()
+      localStorage.setItem(
+        'kline-buty:paperTrades',
+        JSON.stringify([
+          { id: 'e1', at: now, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: 12.3 },
+          { id: 'b1', at: now - 3_600_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+        ]),
+      )
+    })
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    await openMore(page)
+    await page.getByRole('button', { name: '流水' }).click()
+    await expect(page.getByTestId('trade-history-panel')).toBeVisible()
+    await page.getByTestId('trade-by-symbol-toggle').click()
+    await page.getByTestId('trade-by-symbol-row-BTCUSDT').click()
+    // 面板关闭 + 主图品种切换为 BTCUSDT
+    await expect(page.getByTestId('trade-history-panel')).toHaveCount(0)
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:symbol') ?? '""') as string)).toBe('BTCUSDT')
+  })
+
   test('当日高低线：开关开/关 + 持久化（无 pageerror）', async ({ page }) => {
     await page.goto('/?perf=600')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
