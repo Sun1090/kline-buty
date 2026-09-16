@@ -14,8 +14,9 @@
 - smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1645** ✅ / chromium E2E **15/15** ✅ /
   CI+CodeQL+Pages+Android+iOS 全绿
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
-- 下一里程碑：**v0.5.x 继续**（本批：图表面板深链增强 `?ind=`/`?sub=` 直达指标；I3 云同步 / I11 移动端
-  Widget 外部能力暂缓；TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
+- 下一里程碑：**v0.5.x 继续**（本批：图表面板深链增强 `?ind=`/`?sub=` 直达指标 + QuickOrder 键盘
+  Enter 确认/Esc 关闭；I3 云同步 / I11 移动端 Widget 外部能力暂缓；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **v0.5.x 继续（2026-09-15）** — v0.5.0 已发布；本地新特性构想继续
 - **app-shell M2 · 原生分享适配层（已合并 PR #22，feat/shell-native-share）**：

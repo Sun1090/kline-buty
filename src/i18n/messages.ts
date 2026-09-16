@@ -654,7 +654,7 @@ export const zh = {
     fee: "手续费 (0.1%)",
     total: "合计",
     confirm: "确认下单",
-    hint: "将覆盖当前模拟仓位",
+    hint: "将覆盖当前模拟仓位 · Enter 确认 / Esc 关闭",
     qtyPreset: "常用数量",
   },
   volumeProfile: {
@@ -1381,7 +1381,7 @@ export const en: Messages = {
     fee: "Fee (0.1%)",
     total: "Total",
     confirm: "Place order",
-    hint: "Overwrites current simulated position",
+    hint: "Overwrites current simulated position · Enter to confirm / Esc to close",
     qtyPreset: "Quick qty",
   },
   volumeProfile: {
@@ -2099,7 +2099,7 @@ export const ja: Messages = {
     fee: "手数料 (0.1%)",
     total: "合計",
     confirm: "注文を確定",
-    hint: "現在の模擬ポジションを上書きします",
+    hint: "現在の模擬ポジションを上書きします · Enter 確定 / Esc 閉じる",
     qtyPreset: "よく使う数量",
   },
   volumeProfile: {
@@ -2818,7 +2818,7 @@ export const ko: Messages = {
     fee: "수수료 (0.1%)",
     total: "합계",
     confirm: "주문 확정",
-    hint: "현재 모의 포지션을 덮어씁니다",
+    hint: "현재 모의 포지션을 덮어씁니다 · Enter 확인 / Esc 닫기",
     qtyPreset: "자주 쓰는 수량",
   },
   volumeProfile: {
@@ -3548,7 +3548,7 @@ export const es: Messages = {
     fee: "Comisión (0.1%)",
     total: "Total",
     confirm: "Colocar orden",
-    hint: "Sobrescribe la posición simulada actual",
+    hint: "Sobrescribe la posición simulada actual · Enter confirmar / Esc cerrar",
     qtyPreset: "Cant. rápida",
   },
   volumeProfile: {

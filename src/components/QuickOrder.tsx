@@ -61,11 +61,22 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
+  // v0.5.x 键盘支持：Enter 确认下单（有效且保证金充足时）、Esc 关闭弹层
+  const confirmable = valid && !insufficient
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && confirmable) {
+      e.preventDefault()
+      onConfirm({ side, price: priceNum, qty: qtyNum })
+    } else if (e.key === 'Escape') {
+      onClose()
+    }
+  }
 
   return (
     <div
       ref={rootRef}
       data-testid="quick-order"
+      onKeyDown={handleKeyDown}
       style={{
         position: 'absolute',
         top: 56,
@@ -211,8 +222,8 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           data-testid="qo-confirm"
-          disabled={!valid || insufficient}
-          onClick={() => valid && onConfirm({ side, price: priceNum, qty: qtyNum })}
+          disabled={!confirmable}
+          onClick={() => confirmable && onConfirm({ side, price: priceNum, qty: qtyNum })}
           style={{
             flex: 1,
             padding: '5px 0',

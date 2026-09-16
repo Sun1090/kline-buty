@@ -98,4 +98,24 @@ describe('QuickOrder 快速下单', () => {
     expect(qty25).toBeGreaterThan(0)
     expect(qty25).toBeLessThan(qty)
   })
+
+  it('v0.5 键盘：Enter 确认下单（有效时携带 side/price/qty）', () => {
+    const handlers = setup()
+    fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '3' } })
+    fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Enter' })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 3 })
+  })
+
+  it('v0.5 键盘：非法值 Enter 不下单', () => {
+    const handlers = setup()
+    fireEvent.change(screen.getByTestId('qo-price'), { target: { value: '-1' } })
+    fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Enter' })
+    expect(handlers.onConfirm).not.toHaveBeenCalled()
+  })
+
+  it('v0.5 键盘：Esc 关闭弹层', () => {
+    const handlers = setup()
+    fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Escape' })
+    expect(handlers.onClose).toHaveBeenCalled()
+  })
 })
