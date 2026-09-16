@@ -819,6 +819,11 @@ export function App() {
     if (ind && MAIN_OPTIONS.some((o) => o.value === ind)) setMainIndicator(ind as MainIndicatorKind)
     const sub = params.get('sub')
     if (sub && SUB_OPTIONS.some((o) => o.value === sub)) setSubIndicator(sub as SubIndicatorKind)
+    // v0.5.x 深链增强：?tab= 直达面板（position / trades / alerts；未知值静默忽略）
+    const tab = params.get('tab')
+    if (tab === 'position') setPositionOpen(true)
+    else if (tab === 'trades') setTradesOpen(true)
+    else if (tab === 'alerts') setAlertsOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL 参数解析，setState 引用稳定
   }, [])
 

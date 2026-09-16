@@ -371,6 +371,20 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(sub).toBe('volume')
   })
 
+  test('I8 深链增强：?tab= 直达面板（position / trades / alerts）', async ({ page }) => {
+    await page.goto('/?perf=600&tab=position')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await expect(page.getByRole('region', { name: /模拟仓位/ })).toBeVisible()
+    // trades 面板
+    await page.goto('/?perf=600&tab=trades')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await expect(page.getByTestId('trade-history-panel')).toBeVisible()
+    // 未知 tab 值 → 静默忽略（无面板打开）
+    await page.goto('/?perf=600&tab=whatever')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await expect(page.getByTestId('trade-history-panel')).toHaveCount(0)
+  })
+
   test('I9 定时主题：切到定时档 → 深色/浅色时刻可配 → 跨切换点后主题自动切换', async ({ browserName, context }) => {
     test.skip(browserName !== 'chromium', 'page.clock 仅 chromium 语义（其余浏览器覆盖由单测承担）')
     // 固定当前时刻为 06:50（默认深色区间 18:00–07:00 内），时钟须在页面加载前安装才作用于应用定时器
