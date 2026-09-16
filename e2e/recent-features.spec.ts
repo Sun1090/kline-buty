@@ -356,6 +356,18 @@ test.describe('2026-08 新功能回归', () => {
     await page2.close()
   })
 
+  test('I8 深链增强：?ind=&sub= 直达主图/副图指标（白名单校验，非法静默忽略）', async ({ page }) => {
+    await page.goto('/?perf=600&ind=rsi&sub=macd')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:mainIndicator'))).toBe('rsi')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:subIndicator'))).toBe('macd')
+    // 非法值 → 静默忽略，回落默认（ma / volume）
+    await page.goto('/?perf=600&ind=notreal&sub=alsonot')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:mainIndicator'))).toBe('ma')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:subIndicator'))).toBe('volume')
+  })
+
   test('I9 定时主题：切到定时档 → 深色/浅色时刻可配 → 跨切换点后主题自动切换', async ({ browserName, context }) => {
     test.skip(browserName !== 'chromium', 'page.clock 仅 chromium 语义（其余浏览器覆盖由单测承担）')
     // 固定当前时刻为 06:50（默认深色区间 18:00–07:00 内），时钟须在页面加载前安装才作用于应用定时器
