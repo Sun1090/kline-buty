@@ -216,8 +216,11 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('chart-ctx-menu')).toHaveCount(0, { timeout: 2_000 })
   })
 
-  test('图表右键菜单：复制 OHLC 文本', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('图表右键菜单：复制 OHLC 文本', async ({ page, context, browserName }) => {
+    // 剪贴板 readText 依赖 clipboard-read 权限，仅 chromium 语义（firefox/webkit 保留菜单关闭功能断言）
+    if (browserName === 'chromium') {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    }
     await page.goto('/?perf=600')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     const chart = page.locator('.chart-container').first()
@@ -225,8 +228,10 @@ test.describe('2026-08 新功能回归', () => {
     expect(box).not.toBeNull()
     await chart.click({ button: 'right', position: { x: box!.width * 0.55, y: box!.height * 0.45 } })
     await page.getByTestId('ctx-copy-ohlc').click()
-    const text = await page.evaluate(() => navigator.clipboard.readText())
-    expect(text).toMatch(/^O:.+ H:.+ L:.+ C:.+ V:.+$/)
+    if (browserName === 'chromium') {
+      const text = await page.evaluate(() => navigator.clipboard.readText())
+      expect(text).toMatch(/^O:.+ H:.+ L:.+ C:.+ V:.+$/)
+    }
     await expect(page.getByTestId('chart-ctx-menu')).toHaveCount(0, { timeout: 2_000 })
   })
 
