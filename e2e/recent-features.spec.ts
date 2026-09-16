@@ -216,6 +216,20 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('chart-ctx-menu')).toHaveCount(0, { timeout: 2_000 })
   })
 
+  test('图表右键菜单：复制 OHLC 文本', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const chart = page.locator('.chart-container').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    await chart.click({ button: 'right', position: { x: box!.width * 0.55, y: box!.height * 0.45 } })
+    await page.getByTestId('ctx-copy-ohlc').click()
+    const text = await page.evaluate(() => navigator.clipboard.readText())
+    expect(text).toMatch(/^O:.+ H:.+ L:.+ C:.+ V:.+$/)
+    await expect(page.getByTestId('chart-ctx-menu')).toHaveCount(0, { timeout: 2_000 })
+  })
+
   test('快捷键帮助：分组展示、关键字过滤和无结果态', async ({ page }) => {
     await page.keyboard.press('?')
     const help = page.getByTestId('shortcuts-help')
