@@ -814,6 +814,11 @@ export function App() {
     if (p && PERIODS.some((x) => x.value === p)) setPeriod(p as Period)
     const d = (params.get('drawing') ?? '').trim()
     if (d.length > 0 && d.length <= 128) setDeepLinkDrawingId(d)
+    // v0.5.x 深链增强：?ind=&sub= 直达主图/副图指标（白名单校验，非法静默忽略）
+    const ind = params.get('ind')
+    if (ind && MAIN_OPTIONS.some((o) => o.value === ind)) setMainIndicator(ind as MainIndicatorKind)
+    const sub = params.get('sub')
+    if (sub && SUB_OPTIONS.some((o) => o.value === sub)) setSubIndicator(sub as SubIndicatorKind)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL 参数解析，setState 引用稳定
   }, [])
 
@@ -827,9 +832,11 @@ export function App() {
     if (list.some((x) => x.id === deepLinkDrawingId)) setSelectedDrawingId(deepLinkDrawingId)
   }, [deepLinkDrawingId, drawingsBySymbol, symbol])
 
-  // 复制当前品种+周期（+选中画线 id，直达深链）的分享链接（clipboard 失败降级 execCommand）
+  // 复制当前品种+周期（+选中画线 id + 非默认指标，直达深链）的分享链接（clipboard 失败降级 execCommand）
   const copyShareLink = async () => {
-    const base = `${window.location.origin}${window.location.pathname}?symbol=${encodeURIComponent(symbol)}&period=${period}`
+    let base = `${window.location.origin}${window.location.pathname}?symbol=${encodeURIComponent(symbol)}&period=${period}`
+    if (mainIndicator !== 'ma') base += `&ind=${encodeURIComponent(mainIndicator)}`
+    if (subIndicator !== 'volume') base += `&sub=${encodeURIComponent(subIndicator)}`
     const url = selectedDrawingId ? `${base}&drawing=${encodeURIComponent(selectedDrawingId)}` : base
     try {
       await navigator.clipboard.writeText(url)
