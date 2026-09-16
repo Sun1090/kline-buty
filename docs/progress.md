@@ -5,13 +5,15 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.2 发布（2026-09-16，RELEASE_FREEZE）**
+**里程碑 v0.5.2 发布完成（2026-09-16）**
 - 版本号：**0.5.2**（package.json / index.html meta app-version）
-- 包含任务：QuickOrder 键盘支持（Enter 确认/Esc 关闭）、图表面板深链增强（`?ind=`/`?sub=` 直达指标）
-- 分支：`release/v0.5.2`；发布 PR：**待创建**
-- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.2（幂等）
-- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.2 + 知识库 200）
-- smoke：typecheck / lint 0 err / audit:i18n / unit **1648** / chromium E2E recent-features **16/16**
+- 分支：`release/v0.5.2`（release 6c1030b + 硬化 907b1d7）；发布 PR：#29（rebase 合并 → main）
+- tag/release：release-tag workflow 自动打 **tag v0.5.2** @ 907b1d7（幂等，不覆盖 v0.5.1）
+- 部署：merge 后 Pages + Vercel 自动部署，**live 抽查通过**：
+  首页 200 且 `app-version=0.5.2`、知识库 200；bundle 含 `Enter 确认`/`Esc 关闭`/`当日盈亏` 新特征
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1648** ✅ / chromium E2E **16/16** ✅ /
+  CI+CodeQL+Pages+Android+iOS 全绿；期间 period-anchor webkit/firefox/chromium 时序 flake 复跑 + 硬化
+  （回到最新 force 点击 + 锚定断言 8s→15s）后全绿
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
   TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
