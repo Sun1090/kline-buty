@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePersistedState } from '../hooks/usePersistedState'
 import { sessionExtremes } from '../data/session'
+import { formatOhlc } from '../utils/ohlc'
 import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
@@ -312,7 +313,7 @@ export function ChartView({
   // N5 截图分辨率倍数（1x/2x/3x 循环）
   const [screenshotScale, setScreenshotScale] = useState<1 | 2 | 3>(1)
   // T27：右键菜单（复制价格 / 添加提醒 / 清空画线）；触屏为主设备时不启用
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number } | null>(null)
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; price: number; time: number } | null>(null)
   // I14 快照保存反馈：短暂显示「已保存到画廊」
   const [snapSaved, setSnapSaved] = useState(false)
   /** H12 副图 Y 轴固定范围（有界指标）：true 锁定到理论极值，false 自动缩放 */
@@ -1063,7 +1064,7 @@ export function ChartView({
         if (!pt) return
         e.preventDefault()
         setCtxCopied(false)
-        setCtxMenu({ x: e.clientX, y: e.clientY, price: pt.price })
+        setCtxMenu({ x: e.clientX, y: e.clientY, price: pt.price, time: pt.time })
       }}
     >
       <div ref={containerRef} className="chart-container" style={{ width: '100%', height: '100%' }} />
@@ -1539,10 +1540,25 @@ export function ChartView({
                     setCtxCopied(false)
                     setCtxMenu(null)
                   }, 900)
+                }}                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
+              >
+                {t('ctx.copyPrice')} {fmtPrice(ctxMenu.price)}
+              </button>
+              <button
+                role="menuitem"
+                data-testid="ctx-copy-ohlc"
+                onClick={() => {
+                  const c = candleByTime.get(ctxMenu.time)
+                  if (c) void navigator.clipboard?.writeText(formatOhlc(c)).catch(() => {})
+                  setCtxCopied(true)
+                  window.setTimeout(() => {
+                    setCtxCopied(false)
+                    setCtxMenu(null)
+                  }, 900)
                 }}
                 style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
               >
-                {t('ctx.copyPrice')} {fmtPrice(ctxMenu.price)}
+                {t('ctx.copyOhlc')}
               </button>
               <button
                 role="menuitem"
