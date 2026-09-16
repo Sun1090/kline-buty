@@ -5,6 +5,17 @@
 
 ## 当前阶段
 
+**里程碑 v0.5.3 发布（2026-09-16，RELEASE_FREEZE）**
+- 版本号：**0.5.3**（package.json / index.html meta app-version）
+- 包含任务：图表面板深链增强 `?tab=` 直达面板（position/trades/alerts）
+- 分支：`release/v0.5.3`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.3（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.3 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1648** / chromium E2E recent-features **17/17**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
+
 **里程碑 v0.5.2 发布完成（2026-09-16）**
 - 版本号：**0.5.2**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.2`（release 6c1030b + 硬化 907b1d7）；发布 PR：#29（rebase 合并 → main）
