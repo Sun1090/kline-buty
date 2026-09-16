@@ -76,14 +76,15 @@ test.describe('2026-08 新功能回归', () => {
   })
 
   test('交易绩效：权益曲线渲染 + 最大回撤 + 悬停 tooltip', async ({ page }) => {
-    // 确定性：种入成交流水（新记录在前：亏损平仓 → 开仓），不依赖盘口实时数据
+    // 确定性：种入成交流水（新记录在前：亏损平仓 → 开仓），不依赖盘口实时数据。
+    // 两条记录同 at（同一 UTC 日），避免跨午夜把 2 笔拆成两天 → 按日分组断言稳定
     await page.addInitScript(() => {
       const now = Date.now()
       localStorage.setItem(
         'kline-buty:paperTrades',
         JSON.stringify([
           { id: 'seed2', at: now, symbol: 'BTCUSDT', side: 'sell', kind: 'close', price: 90, qty: 5, fee: 0.45, feeRate: 0.001, pnl: -50 },
-          { id: 'seed1', at: now - 3_600_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 100, qty: 5, fee: 0.5, feeRate: 0.001 },
+          { id: 'seed1', at: now, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 100, qty: 5, fee: 0.5, feeRate: 0.001 },
         ]),
       )
     })
@@ -357,15 +358,17 @@ test.describe('2026-08 新功能回归', () => {
   })
 
   test('I8 深链增强：?ind=&sub= 直达主图/副图指标（白名单校验，非法静默忽略）', async ({ page }) => {
-    await page.goto('/?perf=600&ind=rsi&sub=macd')
+    const ind = () => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:mainIndicator') ?? '""') as string)
+    const sub = () => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:subIndicator') ?? '""') as string)
+    await page.goto('/?perf=600&ind=boll&sub=rsi')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:mainIndicator'))).toBe('rsi')
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:subIndicator'))).toBe('macd')
+    await expect.poll(ind).toBe('boll')
+    await expect.poll(sub).toBe('rsi')
     // 非法值 → 静默忽略，回落默认（ma / volume）
     await page.goto('/?perf=600&ind=notreal&sub=alsonot')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:mainIndicator'))).toBe('ma')
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:subIndicator'))).toBe('volume')
+    await expect.poll(ind).toBe('ma')
+    await expect.poll(sub).toBe('volume')
   })
 
   test('I9 定时主题：切到定时档 → 深色/浅色时刻可配 → 跨切换点后主题自动切换', async ({ browserName, context }) => {
