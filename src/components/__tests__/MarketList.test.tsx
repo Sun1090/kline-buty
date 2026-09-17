@@ -79,15 +79,15 @@ describe('MarketList', () => {
   it('点击行情行 → 回调携带完整交易对', () => {
     stubHook()
     render(<MarketList {...baseProps} />)
-    fireEvent.click(screen.getByTestId('market-row-ETHUSDT'))
+    fireEvent.click(screen.getByTestId('market-row-select-ETHUSDT'))
     expect(baseProps.onSelectSymbol).toHaveBeenCalledWith('ETHUSDT')
   })
 
   it('当前交易对高亮（活跃行）', () => {
     stubHook()
     render(<MarketList {...baseProps} />)
-    const active = screen.getByTestId('market-row-BTCUSDT')
-    const inactive = screen.getByTestId('market-row-ETHUSDT')
+    const active = screen.getByTestId('market-row-select-BTCUSDT')
+    const inactive = screen.getByTestId('market-row-select-ETHUSDT')
     expect(active.style.borderLeft).toContain('var(--accent)')
     expect(inactive.style.borderLeft).toContain('transparent')
   })
@@ -96,8 +96,8 @@ describe('MarketList', () => {
     stubHook()
     render(<MarketList {...baseProps} />)
     // BTC 涨 +1.23%，ETH 跌 -0.45%
-    const btcRow = screen.getByTestId('market-row-BTCUSDT')
-    const ethRow = screen.getByTestId('market-row-ETHUSDT')
+    const btcRow = screen.getByTestId('market-row-select-BTCUSDT')
+    const ethRow = screen.getByTestId('market-row-select-ETHUSDT')
     const btcSpans = btcRow.querySelectorAll('span')
     const ethSpans = ethRow.querySelectorAll('span')
     // 第 2 个 span 是最新价，第 3 个是涨跌幅
@@ -172,7 +172,7 @@ describe('MarketList', () => {
     expect(screen.getByTestId('market-rank-change')).toBeDefined()
     expect(screen.getByTestId('market-rank-volume')).toBeDefined()
     // SOL 涨幅最高（3.45%），应排在榜首序号 1
-    const rows = screen.getAllByTestId(/^market-row-/)
+    const rows = screen.getAllByTestId(/^market-row-select-/)
     expect(rows.length).toBeGreaterThan(0)
     expect(rows[0].textContent).toContain('SOL')
   })
@@ -183,7 +183,7 @@ describe('MarketList', () => {
     fireEvent.click(screen.getByTestId('market-tab-rank'))
     fireEvent.click(screen.getByTestId('market-rank-volume'))
     // 成交额最高为 BTC（1.5e9）
-    const rows = screen.getAllByTestId(/^market-row-/)
+    const rows = screen.getAllByTestId(/^market-row-select-/)
     expect(rows[0].textContent).toContain('BTC')
   })
 
@@ -205,16 +205,39 @@ describe('MarketList', () => {
     expect(screen.queryByTestId('market-rotate')).toBeNull()
   })
 
+  it('v0.5 收藏星标：默认空心，点击触发 toggle 并回写（不触发切换品种）', () => {
+    stubHook()
+    const onSelect = vi.fn()
+    const origStorage = window.localStorage.getItem('kline-buty:favorites')
+    window.localStorage.setItem('kline-buty:favorites', '[]')
+    try {
+      render(<MarketList {...baseProps} onSelectSymbol={onSelect} />)
+      // filtrhook 下 favorites 从 localStorage 读，初始为空 → 空心
+      const fav = screen.getByTestId('market-fav-BTCUSDT')
+      expect(fav.textContent).toBe('☆')
+      // 点击星标 → aria-pressed true + favorites 持久化
+      fireEvent.click(fav)
+      expect(fav.getAttribute('aria-pressed')).toBe('true')
+      const stored = JSON.parse(window.localStorage.getItem('kline-buty:favorites') ?? '[]') as string[]
+      expect(stored).toContain('BTCUSDT')
+      // 星标点击不应触发选择品种
+      expect(onSelect).not.toHaveBeenCalled()
+    } finally {
+      if (origStorage === null) window.localStorage.removeItem('kline-buty:favorites')
+      else window.localStorage.setItem('kline-buty:favorites', origStorage)
+    }
+  })
+
   it('搜索过滤：输入关键词 → 只显示匹配行；Escape 清空恢复全部', () => {
     stubHook()
     render(<MarketList {...baseProps} />)
     const search = screen.getByPlaceholderText('过滤交易对…') as HTMLInputElement
     fireEvent.change(search, { target: { value: 'ETH' } })
-    const rowsAfter = screen.getAllByTestId(/^market-row-/)
+    const rowsAfter = screen.getAllByTestId(/^market-row-select-/)
     expect(rowsAfter).toHaveLength(1)
-    expect(rowsAfter[0].getAttribute('data-testid')).toBe('market-row-ETHUSDT')
+    expect(rowsAfter[0].getAttribute('data-testid')).toBe('market-row-select-ETHUSDT')
     fireEvent.keyDown(search, { key: 'Escape' })
     expect(search.value).toBe('')
-    expect(screen.getAllByTestId(/^market-row-/)).toHaveLength(3)
+    expect(screen.getAllByTestId(/^market-row-select-/)).toHaveLength(3)
   })
 })

@@ -21,24 +21,56 @@ function Row({
   active,
   onSelect,
   rank,
+  favorite,
+  onToggleFavorite,
 }: {
   row: TickerRow
   active: boolean
   onSelect: (s: string) => void
   /** G4 榜单序号（非榜单视图不显示） */
   rank?: number
+  /** v0.5 收藏状态与切换 */
+  favorite: boolean
+  onToggleFavorite: (s: string) => void
 }) {
+  const { t } = useI18n()
   const up = row.changePct >= 0
   return (
-    <button
+    <div
       data-testid={`market-row-${row.symbol}`}
+      style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}
+    >
+      {/* v0.5 收藏星标：独立按钮，点击不触发切换品种 */}
+      <button
+        data-testid={`market-fav-${row.symbol}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleFavorite(row.symbol)
+        }}
+        aria-label={favorite ? t('marketList.removeFavorite') : t('marketList.addFavorite')}
+        aria-pressed={favorite}
+        title={favorite ? t('marketList.removeFavorite') : t('marketList.addFavorite')}
+        style={{
+          flex: '0 0 22px',
+          border: 'none',
+          background: 'transparent',
+          cursor: 'pointer',
+          color: favorite ? 'var(--yellow)' : 'var(--text-faint)',
+          fontSize: 12,
+          padding: 0,
+        }}
+      >
+        {favorite ? '★' : '☆'}
+      </button>
+    <button
+      data-testid={`market-row-select-${row.symbol}`}
       onClick={() => onSelect(row.symbol)}
       title={`${row.symbol} ${fmtPrice(row.price)}`}
       aria-label={`${row.symbol} ${fmtPrice(row.price)}`}
       style={{
         display: 'flex',
         alignItems: 'center',
-        width: '100%',
+        flex: 1,
         gap: 4,
         padding: '5px 8px',
         border: 'none',
@@ -76,6 +108,7 @@ function Row({
         {row.changePct.toFixed(2)}%
       </span>
     </button>
+    </div>
   )
 }
 
@@ -95,7 +128,7 @@ interface MarketListProps {
 export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: MarketListProps) {
   const { t } = useI18n()
   const { rows, loading, error, sortKey, sortDir, setSortKey, refresh } = useTickerList()
-  const { favorites } = useFavorites()
+  const { favorites, toggleFavorite } = useFavorites()
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'all' | 'favorites' | 'rank'>('all')
   // G4 榜单口径：涨幅榜（changePct）/ 成交榜（quoteVolume）
@@ -397,13 +430,13 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
           <PanelState status="empty" message={t('marketList.favoritesEmpty')} />
         ) : view === 'rank' ? (
           ranked.map((row, i) => (
-            <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} rank={i + 1} />
+            <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} rank={i + 1} favorite={favorites.includes(row.symbol)} onToggleFavorite={toggleFavorite} />
           ))
         ) : filtered.length === 0 ? (
           <PanelState status="empty" message={t('marketList.noMatch')} />
         ) : (
           filtered.map((row) => (
-            <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} />
+            <Row key={row.symbol} row={row} active={row.symbol === symbol} onSelect={onSelectSymbol} favorite={favorites.includes(row.symbol)} onToggleFavorite={toggleFavorite} />
           ))
         )}
         {rows.length > 0 && error && (
