@@ -3,12 +3,14 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.5]（2026-09-17，开发中）
+## [v0.5.5] 快照导出（2026-09-17）
 
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
 
 - **快照画廊导出图片**：每张快照新增「下载图片」按钮（⬇，`snapshot-download-<id>`）→ `<a download>` 下载
   `快照名.png`（文件名非法字符清洗）；五语 i18n 新增 `snap.download`；E2E +1（下载事件 .png 校验）
+- 验证：typecheck / lint 0 error / audit:i18n 五语键集一致 / unit **1652** 全绿 /
+  chromium E2E snapshot-gallery 2/2 / CI+CodeQL+Pages+Android+iOS 全绿；Pages+Vercel 双平台部署
 
 ## [v0.5.4] 图表交互增强（2026-09-16）
 
