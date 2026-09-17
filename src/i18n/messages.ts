@@ -465,6 +465,8 @@ export const zh = {
   },
   marketList: {
     title: '行情',
+    addFavorite: '加自选',
+    removeFavorite: '移除自选',
     pair: '交易对',
     lastPrice: '最新价',
     change24h: '24h涨跌',
@@ -1195,6 +1197,8 @@ export const en: Messages = {
   },
   marketList: {
     title: 'Markets',
+    addFavorite: 'Add favorite',
+    removeFavorite: 'Remove favorite',
     pair: 'Pair',
     lastPrice: 'Last',
     change24h: '24h Chg',
@@ -1916,6 +1920,8 @@ export const ja: Messages = {
   },
   marketList: {
     title: '相場',
+    addFavorite: 'お気に入りに追加',
+    removeFavorite: 'お気に入りから削除',
     pair: 'ペア',
     lastPrice: '最新価格',
     change24h: '24h 変動',
@@ -2638,6 +2644,8 @@ export const ko: Messages = {
   },
   marketList: {
     title: '시세',
+    addFavorite: '즐겨찾기 추가',
+    removeFavorite: '즐겨찾기 제거',
     pair: '거래쌍',
     lastPrice: '최신가',
     change24h: '24h 변동',
@@ -3371,6 +3379,8 @@ export const es: Messages = {
   },
   marketList: {
     title: 'Mercados',
+    addFavorite: 'Añadir favorito',
+    removeFavorite: 'Quitar favorito',
     pair: 'Par',
     lastPrice: 'Último',
     change24h: 'Cambio 24h',
