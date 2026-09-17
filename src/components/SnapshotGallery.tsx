@@ -24,6 +24,16 @@ export function SnapshotGallery({ onClose }: SnapshotGalleryProps) {
     if (preview?.id === id) setPreview(null)
   }
 
+  // v0.5 导出快照图片：dataURL → <a download> 触发下载（文件名 = 快照名.png）
+  const download = (s: ChartSnapshot) => {
+    const a = document.createElement('a')
+    a.href = s.dataUrl
+    a.download = `${s.name.replace(/[\\/:*?"<>|]/g, '_')}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
   return (
     <div
       role="region"
@@ -96,14 +106,25 @@ export function SnapshotGallery({ onClose }: SnapshotGalleryProps) {
                 <span style={{ color: 'var(--text-dim)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.name}>
                   {s.name}
                 </span>
-                <button
-                  data-testid={`snapshot-delete-${s.id}`}
-                  onClick={() => remove(s.id)}
-                  aria-label={`${t('common.delete')}: ${s.name}`}
-                  style={{ border: 'none', background: 'transparent', color: 'var(--danger, #e05561)', fontSize: 12, cursor: 'pointer', padding: 0, flex: '0 0 auto' }}
-                >
-                  ✕
-                </button>
+                <span style={{ display: 'flex', gap: 6, flex: '0 0 auto' }}>
+                  <button
+                    data-testid={`snapshot-download-${s.id}`}
+                    onClick={() => download(s)}
+                    aria-label={`${t('snap.download')}: ${s.name}`}
+                    title={t('snap.download')}
+                    style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                  >
+                    ⬇
+                  </button>
+                  <button
+                    data-testid={`snapshot-delete-${s.id}`}
+                    onClick={() => remove(s.id)}
+                    aria-label={`${t('common.delete')}: ${s.name}`}
+                    style={{ border: 'none', background: 'transparent', color: 'var(--danger, #e05561)', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                  >
+                    ✕
+                  </button>
+                </span>
               </div>
             </div>
           ))}
