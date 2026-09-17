@@ -14,7 +14,7 @@
 - smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1652** ✅ / chromium E2E **19/19** ✅ /
   CI+CodeQL+Pages+Android+iOS 全绿；期间 webkit period-anchor 已知 flake 复跑通过
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
-- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+- 下一里程碑：**v0.5.x 继续**（本批：快照画廊导出图片；I3 云同步 / I11 移动端 Widget 外部能力暂缓；
   TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.3 发布完成（2026-09-16）**

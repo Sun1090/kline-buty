@@ -42,4 +42,21 @@ test.describe('I14 图表快照画廊', () => {
     await page.locator('[data-testid^="snapshot-delete-"]').first().click()
     await expect(page.getByTestId('snapshot-empty')).toBeVisible()
   })
+
+  test('v0.5 导出快照图片：下载按钮触发 .png 下载', async ({ page }) => {
+    await gotoChart(page)
+    const saveBtn = page.getByTestId('snapshot-save')
+    await saveBtn.click()
+    await expect(saveBtn).toHaveText(/已保存到画廊/, { timeout: 5_000 })
+
+    await page.getByTestId('header-more').click()
+    await page.getByRole('button', { name: '快照画廊', exact: true }).click()
+    await expect(page.getByTestId('snapshot-gallery')).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('[data-testid^="snapshot-download-"]').first().click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/\.png$/)
+  })
 })
