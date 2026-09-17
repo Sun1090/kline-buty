@@ -3,13 +3,14 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.6]（2026-09-17，开发中）
+## [v0.5.6] 仓位账户总览（2026-09-17）
 
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
 
 - **仓位面板账户总览**：顶部显示可用余额 + 当前品种浮动盈亏（多空合计，无持仓/无现价显 `—`）；
-  `balance` prop 由 App 传入；五语 i18n 新增 `position.balance`/`position.unrealized`；
-  单测 +3、E2E +1
+  `balance` prop 由 App 传入；五语 i18n 新增 `position.balance`/`position.unrealized`；单测 +3、E2E +1
+- 验证：typecheck / lint 0 error / audit:i18n 五语键集一致 / unit **1655** 全绿 /
+  chromium E2E recent-features **20/20** / CI+CodeQL+Pages+Android+iOS 全绿；Pages+Vercel 双平台部署
 
 ## [v0.5.5] 快照导出（2026-09-17）
 

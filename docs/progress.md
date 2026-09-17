@@ -5,14 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.6 开发中（2026-09-17）** — v0.5.5 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 仓位面板账户总览（本批，feat/v05-pos-summary）**：
-  - PositionPanel 顶部显示可用余额 + 当前品种浮动盈亏（多空合计，无持仓/无现价显 `—`）；
-    `balance` prop 由 App 传入（`paper.balance`）；五语 i18n 新增 `position.balance`/`position.unrealized`
-  - 单测 +3（PositionPanel.test 20/20）、E2E +1（仓位面板汇总可见 10000.00 + 占位 `—`）
-  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1655 全绿** ✅ /
-    全量 build ✅ / chromium E2E recent-features **20/20** ✅
-- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x
+**里程碑 v0.5.6 发布（2026-09-18，RELEASE_FREEZE）**
+- 版本号：**0.5.6**（package.json / index.html meta app-version）
+- 包含任务：仓位面板账户总览（可用余额 + 浮动盈亏）
+- 分支：`release/v0.5.6`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.6（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.6 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1655** / chromium E2E recent-features **20/20**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.5 发布完成（2026-09-17）**
 - 版本号：**0.5.5**（package.json / index.html meta app-version）
