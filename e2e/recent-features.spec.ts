@@ -146,6 +146,19 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:symbol') ?? '""') as string)).toBe('BTCUSDT')
   })
 
+  test('仓位账户总览：可用余额 + 浮动盈亏占位（无持仓）', async ({ page }) => {
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    await openMore(page)
+    await page.getByRole('button', { name: '仓位' }).click()
+    await expect(page.getByRole('region', { name: /模拟仓位/ })).toBeVisible()
+    const summary = page.getByTestId('position-account-summary')
+    await expect(summary).toBeVisible()
+    // 初始余额 10,000 + 无持仓浮动盈亏占位 —
+    await expect(summary).toContainText('10000.00')
+    await expect(summary).toContainText('—')
+  })
+
   test('当日高低线：开关开/关 + 持久化（无 pageerror）', async ({ page }) => {
     await page.goto('/?perf=600')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })

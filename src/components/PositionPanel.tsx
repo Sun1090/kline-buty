@@ -9,6 +9,8 @@ interface PositionPanelProps {
   /** J1 双向持仓：long/short 各自独立 */
   positions: Positions
   currentPrice: number | null
+  /** v0.5 可用余额（USDT）：头部显示账户总览 */
+  balance?: number | null
   /** 开仓变更回调（传入新的 positions 容器） */
   onChange: (p: Positions) => void
   /** J2 其他品种持仓一览（key=symbol；不含当前品种） */
@@ -37,7 +39,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -52,6 +54,14 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
+  // v0.5 当前品种浮动盈亏（多空合计；无现价/无持仓 → 0）
+  const hasPos = Boolean(positions.long || positions.short)
+  const floating = (() => {
+    if (currentPrice === null || !hasPos) return 0
+    const long = positions.long ? calcPnl(positions.long, currentPrice).pnl : 0
+    const short = positions.short ? calcPnl(positions.short, currentPrice).pnl : 0
+    return long + short
+  })()
 
   const entryNum = Number(entry)
   const qtyNum = Number(quantity)
@@ -120,6 +130,30 @@ export function PositionPanel({ positions, currentPrice, onChange, otherSymbols,
           {positions.long || positions.short ? `${t('position.hedgeMode')} · 2/2` : ''}
         </span>
       </div>
+
+      {/* v0.5 账户总览：可用余额 + 当前品种浮动盈亏（多空合计） */}
+      {balance != null && (
+        <div
+          data-testid="position-account-summary"
+          style={{ display: 'flex', gap: 16, fontSize: 11, color: 'var(--text-faint)', padding: '4px 0 8px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}
+        >
+          <span>
+            {t('position.balance')}{' '}
+            <b style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{balance.toFixed(2)}</b>
+          </span>
+          <span>
+            {t('position.unrealized')}{' '}
+            <b
+              style={{
+                color: hasPos && currentPrice !== null ? (floating >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--text-faint)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {hasPos && currentPrice !== null ? `${floating >= 0 ? '+' : ''}${floating.toFixed(2)}` : '—'}
+            </b>
+          </span>
+        </div>
+      )}
 
       {/* J1 双向持仓列表：多空各自显示，独立平仓 */}
       <div style={{ marginBottom: 10 }}>

@@ -1617,6 +1617,7 @@ export function App() {
         <PositionPanel
           positions={position}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
+          balance={paper.balance}
           onChange={setPosition}
           otherSymbols={Object.fromEntries(Object.entries(positionsBySymbol).filter(([s]) => s !== symbol))}
           onSwitchSymbol={(s) => {

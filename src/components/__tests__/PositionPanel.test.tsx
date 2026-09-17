@@ -176,4 +176,26 @@ describe('PositionPanel', () => {
     render(<PositionPanel positions={{ long: safe, short: null }} currentPrice={100} onChange={vi.fn()} />)
     expect(screen.queryByTestId('position-liq-warn-long')).toBeNull()
   })
+
+  it('v0.5 账户总览：显示可用余额与当前品种浮动盈亏', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={110} balance={9500} onChange={onChange} />)
+    const summary = screen.getByTestId('position-account-summary')
+    expect(summary.textContent).toContain('9500.00')
+    // long：entry 100 × 2，现价 110 → (110-100)×2 = 20 → +20.00
+    expect(summary.textContent).toContain('+20.00')
+  })
+
+  it('v0.5 账户总览：无持仓显示浮动盈亏占位 —', () => {
+    const onChange = vi.fn()
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} balance={10000} onChange={onChange} />)
+    const summary = screen.getByTestId('position-account-summary')
+    expect(summary.textContent).toContain('10000.00')
+    expect(summary.textContent).toContain('—')
+  })
+
+  it('v0.5 账户总览：未传 balance 不渲染汇总', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-account-summary')).toBeNull()
+  })
 })
