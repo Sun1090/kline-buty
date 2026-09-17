@@ -5,6 +5,15 @@
 
 ## 当前阶段
 
+**v0.5.7 开发中（2026-09-18）** — v0.5.6 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 行情列表收藏星标（本批，feat/v05-fav-star）**：
+  - MarketList 行重构为容器 div（星标按钮 `market-fav-<symbol>` + 选择按钮 `market-row-select-<symbol>`）：
+    星标点击切换收藏（localStorage `kline-buty:favorites` 持久化），不触发切换品种
+  - 五语 i18n 新增 `marketList.addFavorite`/`removeFavorite`；单测 +1
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1656 全绿** ✅ /
+    chromium E2E recent-features **20/20** ✅
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x
+
 **里程碑 v0.5.6 发布完成（2026-09-18）**
 - 版本号：**0.5.6**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.6`（release 53081d0）；发布 PR：#42（rebase 合并 → main）
