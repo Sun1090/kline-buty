@@ -29,8 +29,6 @@
   TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.8 发布完成（2026-09-18）**
-
-**里程碑 v0.5.8 发布完成（2026-09-18）**
 - 版本号：**0.5.8**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.8`（release 66e3c69）；发布 PR：#48（rebase 合并 → main）
 - tag/release：release-tag workflow 自动打 **tag v0.5.8** @ 66e3c69（幂等，不覆盖 v0.5.7）
