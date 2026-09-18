@@ -3,13 +3,15 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.7]（2026-09-18，开发中）
+## [v0.5.7] 行情收藏星标（2026-09-18）
 
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性。
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
 
 - **行情列表收藏星标**：每行左侧新增 ★/☆ 快捷收藏按钮（独立按钮，点击不切换品种），
-  localStorage `kline-buty:favorites` 持久化；五语 i18n 新增 `marketList.addFavorite`/`removeFavorite`；
-  单测 +1、相关行结构重构（行拆为星标 + 选择按钮，改造 E2E/单测 testid）
+  localStorage `kline-buty:favorites` 持久化（≤50 上限）；五语 i18n 新增
+  `marketList.addFavorite`/`removeFavorite`；单测 +1、行结构重构（星标 + 选择按钮）
+- 验证：typecheck / lint 0 error / audit:i18n 五语键集一致 / unit **1656** 全绿 /
+  chromium E2E recent-features **20/20** / CI+CodeQL+Pages+Android+iOS 全绿；Pages+Vercel 双平台部署
 
 ## [v0.5.6] 仓位账户总览（2026-09-17）
 
