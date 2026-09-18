@@ -19,6 +19,8 @@ interface PositionPanelProps {
   onSwitchSymbol?: (symbol: string) => void
   /** J2 平掉某品种全部持仓（含其多空） */
   onSettleSymbol?: (symbol: string) => void
+  /** v0.5.x 反手：平掉指定方向并以现价同量开反向仓（记账由父层完成） */
+  onReverse?: (slot: 'long' | 'short') => void
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -39,7 +41,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -225,6 +227,26 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
                 }}
               >
                 {t('position.close')}
+              </button>
+              <button
+                onClick={() => onReverse?.(key)}
+                data-testid={`position-reverse-${key}`}
+                disabled={currentPrice === null || (balance != null && currentPrice * p.quantity >= balance)}
+                title={t('position.reverse')}
+                aria-label={`${t('position.reverse')} ${t(label)}`}
+                style={{
+                  flex: '0 0 auto',
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: currentPrice !== null && !(balance != null && currentPrice * p.quantity >= balance) ? 'pointer' : 'not-allowed',
+                  background: 'rgba(66,133,244,0.15)',
+                  color: currentPrice !== null && !(balance != null && currentPrice * p.quantity >= balance) ? '#4285f4' : 'var(--text-faint)',
+                  opacity: currentPrice !== null && !(balance != null && currentPrice * p.quantity >= balance) ? 1 : 0.5,
+                }}
+              >
+                {t('position.reverse')}
               </button>
             </div>
           )

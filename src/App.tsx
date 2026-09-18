@@ -28,7 +28,7 @@ import { QuickOrderWithDepth } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, checkHit } from './position/pnl'
-import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, settleSlot, type Positions } from './trade/positions'
+import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
@@ -1628,6 +1628,17 @@ export function App() {
             // D7 一键平仓（含其他品种）：切换到该品种后置空 → 结算 effect 按其最新价记账平仓（含 PnL/手续费）
             if (s !== symbol) setSymbol(s)
             setPositionsBySymbol((prev) => ({ ...prev, [s]: EMPTY_POSITIONS }))
+          }}
+          onReverse={(slot) => {
+            // v0.5.x 反手：以现价同量开反向仓（含滑点/手续费记账）；旧方向平仓由结算 effect 记账
+            const p = position[slot]
+            const price = candles[candles.length - 1]?.close ?? stats.price
+            if (!p || price == null) return
+            const side = slot === 'long' ? 'sell' : 'buy'
+            const est = estimateOrder(price, p.quantity, side, tradeSettings.slippageRatio, tradeSettings.takerFeeRate)
+            if (!paper.canOpen(est.notional, est.fee)) return
+            paper.recordOpen({ symbol, side, price: est.fillPrice, qty: p.quantity, fee: est.fee, feeRate: tradeSettings.takerFeeRate })
+            setPosition((cur) => reverseSlot(cur, slot, est.fillPrice).next)
           }}
         />
       )}

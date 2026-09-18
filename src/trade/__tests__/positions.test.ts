@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_POSITIONS, applyOrder, hasAny, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
+import { EMPTY_POSITIONS, applyOrder, hasAny, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
 import type { Position } from '../../position/pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
@@ -62,5 +62,45 @@ describe('positions（J1 双向持仓纯函数）', () => {
     const next = applyOrder(EMPTY_POSITIONS, 'buy', 100, 1)
     expect(EMPTY_POSITIONS.long).toBeNull() // 原容器不变
     expect(next.long!.quantity).toBe(1)
+  })
+})
+
+describe('reverseSlot（v0.5.x 反手）', () => {
+  it('平多开空：原多仓槽位置空，反向槽以同量现价开空', () => {
+    const base: Positions = { long: longPos, short: null }
+    const { next, closed } = reverseSlot(base, 'long', 120)
+    expect(closed).toBe(longPos)
+    expect(next.long).toBeNull()
+    expect(next.short).not.toBeNull()
+    expect(next.short!.direction).toBe('short')
+    expect(next.short!.quantity).toBe(2) // 同量
+    expect(next.short!.entry).toBe(120) // 现价
+  })
+
+  it('平空开多：反向槽以同量现价开多', () => {
+    const base: Positions = { long: null, short: shortPos }
+    const { next, closed } = reverseSlot(base, 'short', 90)
+    expect(closed).toBe(shortPos)
+    expect(next.short).toBeNull()
+    expect(next.long!.direction).toBe('long')
+    expect(next.long!.quantity).toBe(3)
+    expect(next.long!.entry).toBe(90)
+  })
+
+  it('目标方向已有持仓 → 加权合并，不覆盖', () => {
+    const base: Positions = { long: longPos, short: shortPos }
+    const { next, closed } = reverseSlot(base, 'long', 200)
+    expect(closed).toBe(longPos)
+    expect(next.long).toBeNull()
+    expect(next.short!.direction).toBe('short')
+    // 原 short 3 手 @100 + 新反向 2 手 @200 → (100×3 + 200×2)/5 = 140
+    expect(next.short!.quantity).toBe(5)
+    expect(next.short!.entry).toBe(140)
+  })
+
+  it('空槽位 → 原样返回（不新建）', () => {
+    const { next, closed } = reverseSlot(EMPTY_POSITIONS, 'long', 100)
+    expect(closed).toBeNull()
+    expect(next).toBe(EMPTY_POSITIONS)
   })
 })
