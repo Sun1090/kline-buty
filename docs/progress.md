@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.12 开发中（2026-09-19）** — v0.5.11 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 提醒面板·现价 ±% 快捷填充（本批，feat/v05-alert-quick-pct）**：
-  - 价格输入下新增「快捷 ±%」按钮行（±1%/±2%/±5%）：一键填充现价上浮/下浮价并联动方向
-    （+N%→above、−N%→below）；无现价时不渲染；fmtPricePrecise 按档位精度
-  - 五语 i18n 新增 `alert.quickPct`；组件测试 +3；验证：typecheck / lint 0 err / audit:i18n / unit **1682 全绿**
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.12
+**里程碑 v0.5.12 发布（2026-09-19，RELEASE_FREEZE）**
+- 版本号：**0.5.12**（package.json / index.html meta app-version）
+- 包含任务：提醒面板·现价 ±% 快捷填充
+- 分支：`release/v0.5.12`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.12（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.12 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1682** / chromium E2E recent-features **21/21**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.11 发布完成（2026-09-19）**
 - 版本号：**0.5.11**（package.json / index.html meta app-version）
