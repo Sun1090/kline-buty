@@ -235,4 +235,11 @@ describe('IndicatorSettings I10 智能推荐', () => {
     )
     expect(container.querySelector('[data-testid="indicator-recommend"]')).toBeNull()
   })
+
+  it('v0.5 重置默认：点击按钮触发 onChange(DEFAULT_INDICATOR_PARAMS)', () => {
+    const modified: IndicatorParams = { ...DEFAULT_INDICATOR_PARAMS, maPeriods: [7, 12, 26], rsiPeriod: 7 }
+    const { onChange } = setup('ma', 'rsi', modified)
+    fireEvent.click(screen.getByTestId('indicator-reset'))
+    expect(onChange).toHaveBeenCalledWith(DEFAULT_INDICATOR_PARAMS)
+  })
 })

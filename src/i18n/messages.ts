@@ -367,6 +367,7 @@ export const zh = {
   },
   indicator: {
     settings: '指标参数',
+    resetDefault: '重置默认',
     recommend: '智能推荐',
     recommendTitle: '按趋势/波动率推荐主副图指标',
     recTrending: '趋势市',
@@ -1099,6 +1100,7 @@ export const en: Messages = {
   },
   indicator: {
     settings: 'Indicator settings',
+    resetDefault: 'Reset defaults',
     recommend: 'Smart pick',
     recommendTitle: 'Recommend main/sub indicators by trend & volatility',
     recTrending: 'Trending',
@@ -1822,6 +1824,7 @@ export const ja: Messages = {
   },
   indicator: {
     settings: '指標パラメータ',
+    resetDefault: 'デフォルトに戻す',
     recommend: 'スマート推奨',
     recommendTitle: 'トレンド/ボラティリティで主副指標を推薦',
     recTrending: 'トレンド相場',
@@ -2546,6 +2549,7 @@ export const ko: Messages = {
   },
   indicator: {
     settings: '지표 파라미터',
+    resetDefault: '기본값으로 재설정',
     recommend: '스마트 추천',
     recommendTitle: '추세/변동성에 따라 주·보조 지표 추천',
     recTrending: '추세장',
@@ -3281,6 +3285,7 @@ export const es: Messages = {
   },
   indicator: {
     settings: 'Ajustes de indicadores',
+    resetDefault: 'Restablecer valores',
     recommend: 'Recomendación',
     recommendTitle: 'Recomendar indicadores por tendencia y volatilidad',
     recTrending: 'Tendencia',
