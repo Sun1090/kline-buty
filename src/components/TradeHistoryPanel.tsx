@@ -8,6 +8,7 @@ import { fmtPricePrecise as fmtPrice } from '../utils/format'
 import { equitySeries } from '../utils/equity'
 import { maxDrawdown, currentDrawdown, pnlBars } from '../trade/perf'
 import { filterTrades, tradeSymbols } from '../trade/filter'
+import { periodPnl as periodPnlOf } from '../trade/daily'
 import { groupTradesByDay, dailySummary } from '../trade/daily'
 import { symbolBreakdown } from '../trade/breakdown'
 import { EquityCurve } from './EquityCurve'
@@ -95,6 +96,8 @@ export function TradeHistoryPanel({
     query: filterQuery || undefined,
   })
   const symbols = tradeSymbols(trades)
+  // v0.5.x 期间已实现盈亏：今日 / 本周 / 本月（UTC 口径，供统计条下方展示）
+  const periodPnl = periodPnlOf(trades)
   const fileRef = useRef<HTMLInputElement>(null)
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
@@ -241,6 +244,30 @@ export function TradeHistoryPanel({
           <span style={{ fontSize: 11 }}>
             {t('trade.avgLoss')} <b style={{ color: 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>{stats.avgLoss.toFixed(2)}</b>
           </span>
+        </div>
+      )}
+      {/* v0.5.x 期间已实现盈亏：今日 / 本周 / 本月（UTC 口径，正负着色） */}
+      {trades.length > 0 && (
+        <div
+          data-testid="trade-period-pnl"
+          style={{ display: 'flex', gap: 12, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap' }}
+        >
+          <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{t('trade.period')}:</span>
+          {(
+            [
+              ['trade.dailyPnl', periodPnl.today],
+              ['trade.weekPnl', periodPnl.week],
+              ['trade.monthPnl', periodPnl.month],
+            ] as const
+          ).map(([labelKey, value]) => (
+            <span key={labelKey} style={{ fontSize: 11 }}>
+              {t(labelKey)}{' '}
+              <b style={{ color: value >= 0 ? 'var(--up)' : 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+                {value >= 0 ? '+' : ''}
+                {value.toFixed(2)}
+              </b>
+            </span>
+          ))}
         </div>
       )}
       {/* v0.5 按品种汇总：折叠区（默认收起），净盈亏降序 */}
