@@ -5,13 +5,13 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.8 发布（2026-09-18，RELEASE_FREEZE）**
+**里程碑 v0.5.8 发布完成（2026-09-18）**
 - 版本号：**0.5.8**（package.json / index.html meta app-version）
-- 包含任务：指标参数一键重置为默认
-- 分支：`release/v0.5.8`；发布 PR：**待创建**
-- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.8（幂等）
-- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.8 + 知识库 200）
-- smoke：typecheck / lint 0 err / audit:i18n / unit **1657** / chromium E2E recent-features **20/20**
+- 分支：`release/v0.5.8`（release 66e3c69）；发布 PR：#48（rebase 合并 → main）
+- tag/release：release-tag workflow 自动打 **tag v0.5.8** @ 66e3c69（幂等，不覆盖 v0.5.7）
+- 部署：merge 后 Pages + Vercel 自动部署，**live 抽查通过**：
+  首页 200 且 `app-version=0.5.8`（Pages + Vercel）、知识库 200
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1657** ✅ / chromium E2E recent-features **20/20** ✅
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
   TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
