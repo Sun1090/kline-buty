@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.8 开发中（2026-09-18）** — v0.5.7 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 指标参数一键重置为默认（本批，feat/v05-ind-reset）**：
+  - IndicatorSettings 头部新增「重置默认」按钮：draft + onChange 重置为 `DEFAULT_INDICATOR_PARAMS`
+  - 五语 i18n 新增 `indicator.resetDefault`；单测 +1（重置触发 onChange 默认值）
+  - 验证：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1657 全绿** ✅ / 全量 build ✅
+- 下一项：提交本批 → PR → CI → 合并；随后继续 v0.5.x
+
 **里程碑 v0.5.7 发布完成（2026-09-18）**
 - 版本号：**0.5.7**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.7`（release 8e66ea3）；发布 PR：#45（rebase 合并 → main）
