@@ -167,6 +167,13 @@ export function IndicatorSettings({
     onChange({ ...p })
   }
 
+  // v0.5 一键重置为默认参数（全局默认，含当前主/副图）
+  const resetToDefault = () => {
+    const def = { ...DEFAULT_INDICATOR_PARAMS }
+    setDraft(def)
+    onChange(def)
+  }
+
   // H8 参数导入/导出（跨设备迁移 JSON 快照）
   const fileRef = useRef<HTMLInputElement>(null)
   const [importFlash, setImportFlash] = useState(false)
@@ -227,14 +234,24 @@ export function IndicatorSettings({
         minWidth: 230,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 600 }}>{t('indicator.settings')}</span>
-        <button
-          onClick={onClose}
-          style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13 }}
-        >
-          ✕
-        </button>
+        <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            data-testid="indicator-reset"
+            onClick={resetToDefault}
+            title={t('indicator.resetDefault')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 11 }}
+          >
+            {t('indicator.resetDefault')}
+          </button>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13 }}
+          >
+            ✕
+          </button>
+        </span>
       </div>
       {/* I10 智能推荐：一键按趋势/波动率应用主副图指标 */}
       {recommendation && (
