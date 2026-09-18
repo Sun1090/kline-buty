@@ -230,4 +230,20 @@ describe('PositionPanel', () => {
     // currentPrice × qty = 20 < balance 100 → 可用
     expect((screen.getByTestId('position-reverse-long') as HTMLButtonElement).disabled).toBe(false)
   })
+
+  it('v0.5.x 账户总览：显示今日已实现盈亏（含正负号）', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} balance={10000} todayPnl={12.5} onChange={vi.fn()} />)
+    const pnl = screen.getByTestId('position-today-pnl')
+    expect(pnl.textContent).toBe('+12.50')
+  })
+
+  it('v0.5.x 账户总览：今日亏损显示负号', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} balance={10000} todayPnl={-3.2} onChange={vi.fn()} />)
+    expect(screen.getByTestId('position-today-pnl').textContent).toBe('-3.20')
+  })
+
+  it('v0.5.x 账户总览：未传 todayPnl 不渲染今日盈亏', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} balance={10000} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-today-pnl')).toBeNull()
+  })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TradeRecord } from '../../hooks/usePaperAccount'
-import { dayKeyFor, groupTradesByDay, dailySummary } from '../daily'
+import { dayKeyFor, groupTradesByDay, dailySummary, todayRealizedPnl } from '../daily'
 
 const t = (id: string, at: number, kind: 'open' | 'close' = 'open', pnl?: number): TradeRecord =>
   ({ id, at, symbol: 'BTCUSDT', side: 'buy', kind, price: 100, qty: 1, fee: 0.1, feeRate: 0.001, ...(pnl !== undefined ? { pnl } : {}) })
@@ -49,5 +49,24 @@ describe('dailySummary', () => {
   it('无平仓 → pnl 0 / closed 0', () => {
     const day = { dayKey: '2026-01-05', trades: [t('o1', D0, 'open'), t('o2', D0 + HOUR, 'open')] }
     expect(dailySummary(day)).toEqual({ count: 2, closed: 0, pnl: 0 })
+  })
+})
+
+describe('todayRealizedPnl', () => {
+  it('汇总今日平仓 pnl（UTC 今日），忽略开仓与其他日', () => {
+    const trades = [
+      t('c1', D0 + HOUR, 'close', 12.5), // 今日 close
+      t('o1', D0, 'open'),
+      t('c2', D0 + 2 * HOUR, 'close', -3.2), // 今日 close
+      t('cOld', D0 - 24 * HOUR, 'close', 99), // 昨日 close，应忽略
+    ]
+    expect(todayRealizedPnl(trades, D0)).toBe(9.3)
+  })
+  it('今日无平仓 → 0', () => {
+    const trades = [t('o1', D0, 'open'), t('cOld', D0 - 24 * HOUR, 'close', 99)]
+    expect(todayRealizedPnl(trades, D0)).toBe(0)
+  })
+  it('空流水 → 0', () => {
+    expect(todayRealizedPnl([], D0)).toBe(0)
   })
 })

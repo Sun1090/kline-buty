@@ -33,6 +33,7 @@ import { usePaperAccount } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
+import { todayRealizedPnl } from './trade/daily'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
@@ -1618,6 +1619,7 @@ export function App() {
           positions={position}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
           balance={paper.balance}
+          todayPnl={todayRealizedPnl(paper.trades)}
           onChange={setPosition}
           otherSymbols={Object.fromEntries(Object.entries(positionsBySymbol).filter(([s]) => s !== symbol))}
           onSwitchSymbol={(s) => {
