@@ -245,4 +245,25 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(days[1].textContent).toContain('笔数 2')
     expect(days[1].textContent).toContain('-12.30')
   })
+
+  it('v0.5.x 期间盈亏：有流水时显示今日/本周/本月条（UTC 同域时三值一致）', () => {
+    setup({ trades })
+    const strip = screen.getByTestId('trade-period-pnl')
+    const text = strip.textContent ?? ''
+    // 开仓/平仓 at 与渲染同日期 → 日/周/月键同域，pnl 都计入
+    expect(text).toContain('当日盈亏')
+    expect(text).toContain('本周盈亏')
+    expect(text).toContain('本月盈亏')
+    expect(text.match(/\+18\.58/g)?.length).toBe(3)
+  })
+
+  it('v0.5.x 期间盈亏：负盈亏显示负号', () => {
+    setup({ trades: [{ ...trades[1], pnl: -5.5 }] })
+    expect((screen.getByTestId('trade-period-pnl').textContent ?? '').match(/-5\.50/g)?.length).toBe(3)
+  })
+
+  it('v0.5.x 期间盈亏：无流水时不显示', () => {
+    setup({ trades: [] })
+    expect(screen.queryByTestId('trade-period-pnl')).toBeNull()
+  })
 })

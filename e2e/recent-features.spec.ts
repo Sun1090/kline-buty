@@ -70,6 +70,8 @@ test.describe('2026-08 新功能回归', () => {
     await openMore(page)
     await page.getByRole('button', { name: '流水' }).click()
     await expect(page.getByTestId('trade-history-row')).toHaveCount(2)
+    // v0.5.x 期间盈亏条：有平仓后显示今日/本周/本月已实现（真实数值）
+    await expect(page.getByTestId('trade-period-pnl')).toContainText(/[+-]\d+\.\d{2}/)
     await page.getByTestId('trade-history-clear').click()
     await expect(page.getByTestId('trade-history-row')).toHaveCount(0)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:paperTrades'))).toBeNull()

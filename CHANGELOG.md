@@ -3,6 +3,15 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.11] 交易期间盈亏条（2026-09-18）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **交易流水面板·期间已实现盈亏条**：统计条下方新增「今日 / 本周 / 本月」已实现盈亏
+  （UTC 口径，正负着色）；`src/trade/daily.ts` 新增纯函数 `weekKeyFor` / `monthKeyFor` /
+  `realizedPnlWhere` / `realizedPnlIn` / `periodPnl`；五语 i18n 新增
+  `trade.weekPnl`/`trade.monthPnl`/`trade.period`；单测 +8、E2E 断言增强（流水面板期间盈亏真实数值）
+
 ## [v0.5.10] 今日已实现盈亏（2026-09-18）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
