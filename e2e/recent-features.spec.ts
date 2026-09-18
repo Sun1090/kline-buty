@@ -64,8 +64,8 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(1)
     expect(Number(await page.evaluate(() => localStorage.getItem('kline-buty:paperBalance')))).toBeLessThan(balanceBefore)
 
-    // 平掉开多行（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
-    await page.getByTestId('position-row-long').getByRole('button').click()
+    // 平掉开多行（v0.5.x 反手按钮同在此行，需按「平仓」按钮名精确定位，避免命中「反手」）
+    await page.getByTestId('position-row-long').getByRole('button', { name: '平仓 开多' }).click()
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(2)
     await openMore(page)
     await page.getByRole('button', { name: '流水' }).click()
@@ -73,6 +73,36 @@ test.describe('2026-08 新功能回归', () => {
     await page.getByTestId('trade-history-clear').click()
     await expect(page.getByTestId('trade-history-row')).toHaveCount(0)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:paperTrades'))).toBeNull()
+  })
+
+  test('模拟交易：持仓反手——平多开空、流水 close+open 记账', async ({ page }) => {
+    await openMore(page)
+    await page.getByRole('button', { name: '盘口' }).click()
+    const bid = page.getByTestId('ob-bid').first()
+    await expect(bid).toBeVisible({ timeout: 20_000 })
+    await bid.hover()
+    await bid.getByTestId('qo-buy').click()
+    const order = page.getByTestId('quick-order')
+    await expect(order).toBeVisible()
+    await order.getByTestId('qo-pct-25').click()
+    await order.getByTestId('qo-confirm').click()
+    await expect(page.getByTestId('position-row-long')).toBeVisible()
+
+    // 反手：平多开空（现价同量反向开仓）
+    const reverseBtn = page.getByTestId('position-reverse-long')
+    await expect(reverseBtn).toBeVisible()
+    await expect(reverseBtn).toBeEnabled()
+    await reverseBtn.click()
+
+    await expect(page.getByTestId('position-row-long')).toHaveCount(0)
+    await expect(page.getByTestId('position-row-short')).toBeVisible()
+
+    // 记账：反手 = 新空仓 open + 旧多仓 close（结算 effect 落 close），加最初开仓 open 共 3 条，close 为最新
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(3)
+    const kinds = await page.evaluate(() => (JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]') as { kind: string }[]).map((t) => t.kind))
+    expect(kinds[0]).toBe('close')
+    expect(kinds[1]).toBe('open')
+    expect(kinds[2]).toBe('open')
   })
 
   test('交易绩效：权益曲线渲染 + 最大回撤 + 悬停 tooltip', async ({ page }) => {

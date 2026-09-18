@@ -198,4 +198,36 @@ describe('PositionPanel', () => {
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} onChange={vi.fn()} />)
     expect(screen.queryByTestId('position-account-summary')).toBeNull()
   })
+
+  it('v0.5.x 反手：点击反手按钮回调对应方向槽位', () => {
+    const onReverse = vi.fn()
+    render(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={105} onChange={vi.fn()} onReverse={onReverse} />)
+    fireEvent.click(screen.getByTestId('position-reverse-long'))
+    expect(onReverse).toHaveBeenCalledWith('long')
+  })
+
+  it('v0.5.x 反手：short 槽点击回调 short', () => {
+    const onReverse = vi.fn()
+    render(<PositionPanel positions={{ long: null, short: shortPosition }} currentPrice={105} onChange={vi.fn()} onReverse={onReverse} />)
+    fireEvent.click(screen.getByTestId('position-reverse-short'))
+    expect(onReverse).toHaveBeenCalledWith('short')
+  })
+
+  it('v0.5.x 反手：无现价时禁用', () => {
+    const onReverse = vi.fn()
+    render(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={null} onChange={vi.fn()} onReverse={onReverse} />)
+    expect((screen.getByTestId('position-reverse-long') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('v0.5.x 反手：余额不足（名义金额 ≥ 可用余额）时禁用，充足时可用', () => {
+    const onReverse = vi.fn()
+    const { rerender } = render(
+      <PositionPanel positions={{ long: longPosition, short: null }} currentPrice={1000} balance={100} onChange={vi.fn()} onReverse={onReverse} />,
+    )
+    // currentPrice × qty = 2000 ≥ balance 100 → 禁用
+    expect((screen.getByTestId('position-reverse-long') as HTMLButtonElement).disabled).toBe(true)
+    rerender(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={10} balance={100} onChange={vi.fn()} onReverse={onReverse} />)
+    // currentPrice × qty = 20 < balance 100 → 可用
+    expect((screen.getByTestId('position-reverse-long') as HTMLButtonElement).disabled).toBe(false)
+  })
 })

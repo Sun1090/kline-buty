@@ -66,6 +66,26 @@ export function settleSlot(
   return { next: { ...positions, [slot]: null }, settled: p }
 }
 
+/**
+ * v0.5.x 反手：平掉指定方向持仓，并以现价同量开反向仓。
+ * 已开反向槽位存在时按 applyOrder 加权合并（不覆盖）。平掉的旧持仓
+ * 返回给调用方记账（pnl/手续费）；不修改入参。
+ */
+export function reverseSlot(
+  positions: Positions,
+  slot: 'long' | 'short',
+  price: number,
+  tpPct = 3,
+  slPct = 2,
+): { next: Positions; closed: Position | null } {
+  const closed = positions[slot]
+  if (!closed) return { next: positions, closed: null }
+  const side: OrderSide = slot === 'long' ? 'sell' : 'buy'
+  // 先平旧方向槽位，再同量开反向仓（applyOrder 会加权合并已有的反向持仓）
+  const next = applyOrder({ ...positions, [slot]: null }, side, price, closed.quantity, tpPct, slPct)
+  return { next, closed }
+}
+
 /** 是否有任一方向持仓 */
 export function hasAny(positions: Positions): boolean {
   return positions.long !== null || positions.short !== null
