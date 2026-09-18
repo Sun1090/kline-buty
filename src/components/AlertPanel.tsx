@@ -5,6 +5,7 @@ import { isExpired } from '../alerts/engine'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { adaptiveThreshold } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
+import { fmtPricePrecise } from '../utils/format'
 
 interface AlertPanelProps {
   symbol: string
@@ -116,6 +117,12 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
 
   const priceNum = Number(price)
   const valid = Number.isFinite(priceNum) && priceNum > 0
+  /** v0.5.x 快捷填充：现价 ± 百分比（同时联动方向） */
+  const fillPct = (pct: number, dir: 'above' | 'below') => {
+    if (currentPrice === null) return
+    setDirection(dir)
+    setPrice(fmtPricePrecise(currentPrice * (1 + (dir === 'above' ? pct : -pct) / 100)))
+  }
   const intervalNum = Number(repeatInterval)
   const intervalValid = Number.isFinite(intervalNum) && intervalNum >= 0
   // E6 到期时间戳（datetime-local → ms；空=无到期）
@@ -440,6 +447,51 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           {t('alert.add')}
         </button>
       </div>
+      {/* v0.5.x 快捷设置：现价 ±1%/2%/5% 一键填充价格并联动方向 */}
+      {currentPrice !== null && (
+        <div
+          data-testid="alert-quick-pct"
+          style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}
+        >
+          <span style={{ color: 'var(--text-faint)', fontSize: 10, marginRight: 2 }}>{t('alert.quickPct')}</span>
+          {[1, 2, 5].map((p) => (
+            <button
+              key={`p${p}`}
+              data-testid={`alert-quick-p${p}`}
+              onClick={() => fillPct(p, 'above')}
+              style={{
+                border: 'none',
+                padding: '2px 6px',
+                borderRadius: 4,
+                fontSize: 11,
+                cursor: 'pointer',
+                background: 'rgba(38,166,154,0.15)',
+                color: 'var(--up)',
+              }}
+            >
+              +{p}%
+            </button>
+          ))}
+          {[1, 2, 5].map((p) => (
+            <button
+              key={`m${p}`}
+              data-testid={`alert-quick-m${p}`}
+              onClick={() => fillPct(p, 'below')}
+              style={{
+                border: 'none',
+                padding: '2px 6px',
+                borderRadius: 4,
+                fontSize: 11,
+                cursor: 'pointer',
+                background: 'rgba(239,83,80,0.15)',
+                color: 'var(--down)',
+              }}
+            >
+              -{p}%
+            </button>
+          ))}
+        </div>
+      )}
       <label
         data-testid="alert-repeat-toggle"
         style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)', marginBottom: 8, cursor: 'pointer' }}

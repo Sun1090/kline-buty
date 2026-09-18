@@ -331,4 +331,30 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
     const args = vi.mocked(api.addAlert).mock.calls[0] as unknown[]
     expect(args[2]).toBeCloseTo(64260)
   })
+
+  it('v0.5.x 快捷 ±%：+1% 填充现价上浮价（63000×1.01）并联动 above', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    const input = screen.getByPlaceholderText('63000.00') as HTMLInputElement
+    fireEvent.click(screen.getByTestId('alert-quick-p1'))
+    expect(input.value).toBe('63630.00')
+    fireEvent.click(screen.getByText('添加提醒'))
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'above', 63630, false, undefined, undefined, undefined, { note: undefined, expiresAt: undefined, pricePrecision: undefined })
+  })
+
+  it('v0.5.x 快捷 ±%：-2% 填充现价下浮价（63000×0.98）并联动 below', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    const input = screen.getByPlaceholderText('63000.00') as HTMLInputElement
+    fireEvent.click(screen.getByTestId('alert-quick-m2'))
+    expect(input.value).toBe('61740.00')
+    fireEvent.click(screen.getByText('添加提醒'))
+    expect(api.addAlert).toHaveBeenCalledWith('BTCUSDT', 'below', 61740, false, undefined, undefined, undefined, { note: undefined, expiresAt: undefined, pricePrecision: undefined })
+  })
+
+  it('v0.5.x 快捷 ±%：无现价时不渲染快捷区', () => {
+    const api = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={null} alertsApi={api} />)
+    expect(screen.queryByTestId('alert-quick-pct')).toBeNull()
+  })
 })
