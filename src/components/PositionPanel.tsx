@@ -21,6 +21,8 @@ interface PositionPanelProps {
   onSettleSymbol?: (symbol: string) => void
   /** v0.5.x 反手：平掉指定方向并以现价同量开反向仓（记账由父层完成） */
   onReverse?: (slot: 'long' | 'short') => void
+  /** v0.5.x 今日已实现盈亏（USDT）：账户总览展示，无则传 null 显占位 */
+  todayPnl?: number | null
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -41,7 +43,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, todayPnl }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -133,7 +135,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
         </span>
       </div>
 
-      {/* v0.5 账户总览：可用余额 + 当前品种浮动盈亏（多空合计） */}
+      {/* v0.5 账户总览：可用余额 + 当前品种浮动盈亏（多空合计）+ 今日已实现盈亏 */}
       {balance != null && (
         <div
           data-testid="position-account-summary"
@@ -154,6 +156,21 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               {hasPos && currentPrice !== null ? `${floating >= 0 ? '+' : ''}${floating.toFixed(2)}` : '—'}
             </b>
           </span>
+          {todayPnl != null && (
+            <span>
+              {t('position.todayPnl')}{' '}
+              <b
+                data-testid="position-today-pnl"
+                style={{
+                  color: todayPnl >= 0 ? 'var(--up)' : 'var(--down)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {todayPnl >= 0 ? '+' : ''}
+                {todayPnl.toFixed(2)}
+              </b>
+            </span>
+          )}
         </div>
       )}
 

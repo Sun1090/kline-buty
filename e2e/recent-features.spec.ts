@@ -96,6 +96,8 @@ test.describe('2026-08 新功能回归', () => {
 
     await expect(page.getByTestId('position-row-long')).toHaveCount(0)
     await expect(page.getByTestId('position-row-short')).toBeVisible()
+    // 反手平掉旧仓 → 今日已实现盈亏出现真实数值（不再 +0.00）
+    await expect(page.getByTestId('position-today-pnl')).toContainText(/[+-]\d+\.\d{2}/)
 
     // 记账：反手 = 新空仓 open + 旧多仓 close（结算 effect 落 close），加最初开仓 open 共 3 条，close 为最新
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]').length)).toBe(3)
@@ -176,7 +178,7 @@ test.describe('2026-08 新功能回归', () => {
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:symbol') ?? '""') as string)).toBe('BTCUSDT')
   })
 
-  test('仓位账户总览：可用余额 + 浮动盈亏占位（无持仓）', async ({ page }) => {
+  test('仓位账户总览：可用余额 + 浮动盈亏占位 + 今日已实现 +0.00（无交易）', async ({ page }) => {
     await page.goto('/?perf=600')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     await openMore(page)
@@ -184,9 +186,10 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByRole('region', { name: /模拟仓位/ })).toBeVisible()
     const summary = page.getByTestId('position-account-summary')
     await expect(summary).toBeVisible()
-    // 初始余额 10,000 + 无持仓浮动盈亏占位 —
+    // 初始余额 10,000 + 无持仓浮动盈亏占位 — + 今日已实现盈亏（无交易 → +0.00）
     await expect(summary).toContainText('10000.00')
     await expect(summary).toContainText('—')
+    await expect(page.getByTestId('position-today-pnl')).toHaveText('+0.00')
   })
 
   test('当日高低线：开关开/关 + 持久化（无 pageerror）', async ({ page }) => {

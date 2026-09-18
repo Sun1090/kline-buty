@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.10 开发中（2026-09-18）** — v0.5.9 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 仓位面板账户总览·今日已实现盈亏（本批，feat/v05-today-pnl）**：
+  - 账户总览头部新增「今日已实现」（UTC 今日平仓 pnl 合计，正负着色）；`todayRealizedPnl` 纯函数 + 单测 +3
+  - 五语 i18n 新增 `position.todayPnl`；组件测试 +3；E2E 断言增强（总览 +0.00 / 反手后真实数值）
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1671 全绿** / chromium E2E recent-features **21/21**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.10
+
 **里程碑 v0.5.9 发布完成（2026-09-18）**
 - 版本号：**0.5.9**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.9`（release adacc0e）；发布 PR：#51（rebase 合并 → main）

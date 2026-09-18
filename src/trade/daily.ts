@@ -52,3 +52,10 @@ export function dailySummary(day: DailyGroup): DailySummary {
   }
   return { count: day.trades.length, pnl, closed }
 }
+
+/** 今日已实现盈亏（USDT）：UTC 今日平仓记录 pnl 合计；无平仓 → 0。 */
+export function todayRealizedPnl(trades: TradeRecord[], now = Date.now()): number {
+  const key = dayKeyFor(now)
+  const today = groupTradesByDay(trades).find((g) => g.dayKey === key)
+  return today ? dailySummary(today).pnl : 0
+}

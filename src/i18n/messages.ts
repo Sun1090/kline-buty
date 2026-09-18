@@ -527,6 +527,7 @@ export const zh = {
     liqWarn: '强平预警',
     liqCritical: '强平风险',
     reverse: '反手',
+    todayPnl: '今日已实现',
   },
   alert: {
     history: '触发历史',
@@ -1261,6 +1262,7 @@ export const en: Messages = {
     liqWarn: 'Liq. warning',
     liqCritical: 'Liq. critical',
     reverse: 'Reverse',
+    todayPnl: 'Today PnL',
   },
   alert: {
     history: 'Trigger history',
@@ -1986,6 +1988,7 @@ export const ja: Messages = {
     liqWarn: '強制決済警告',
     liqCritical: '強制決済リスク',
     reverse: '反対売買',
+    todayPnl: '本日実現損益',
   },
   alert: {
     history: '発火履歴',
@@ -2712,6 +2715,7 @@ export const ko: Messages = {
     liqWarn: '강제청산 경고',
     liqCritical: '강제청산 위험',
     reverse: '반대 매매',
+    todayPnl: '오늘 실현손익',
   },
   alert: {
     history: '발동 기록',
@@ -3449,6 +3453,7 @@ export const es: Messages = {
     liqWarn: 'Advertencia de liquidación',
     liqCritical: 'Liquidación crítica',
     reverse: 'Invertir',
+    todayPnl: 'PnL de hoy',
   },
   alert: {
     history: 'Historial de alertas',
