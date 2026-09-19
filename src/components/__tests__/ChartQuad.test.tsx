@@ -39,6 +39,7 @@ vi.mock('../../chart/adapter', () => {
     setReferencePrice = vi.fn()
     setMarkerPrice = vi.fn()
     setSessionHighLow = vi.fn()
+    setTradeMarkers = vi.fn()
     setPositionDragHandler = vi.fn()
     setDrawings = vi.fn()
     setCoordBadge = vi.fn()

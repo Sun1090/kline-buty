@@ -216,6 +216,8 @@ export interface ChartApi {
   setMarkerPrice(price: number | null): void
   /** v0.5 会话高低点价格线（当日 H/L dashed），null 清除两线 */
   setSessionHighLow(hl: { high: number; low: number } | null): void
+  /** v0.5.x 模拟成交图面标记（buy=涨绿 / sell=跌红 点标），null/[] 清除 */
+  setTradeMarkers(markers: { time: number; price: number; side: 'buy' | 'sell' }[] | null): void
   /** 仓位线拖拽回调（拖动中实时触发，UI 层同步状态） */
   setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
   /** 画线数据全量渲染 */
@@ -370,6 +372,8 @@ export class LightweightChartAdapter implements ChartApi {
   private volumeMaSeries: ISeriesApi<'Line'> | null = null
   private mainLines: ISeriesApi<'Line' | 'Area'>[] = []
   private subSeries: ISeriesApi<'Line' | 'Histogram'>[] = []
+  /** v0.5.x 模拟成交图面标记序列（buy/sell 点标，独立于指标重置） */
+  private tradeMarkerSeries: ISeriesApi<'Line'> | null = null
   /** H14 主图指标信号标注（B/S 文字标签）：overlay 在对应价格处绘制 */
   private markerLabels: { time: number; price: number; label: string; color: string }[] = []
   /** H2 副图阈值区间（超买/超卖带）：overlay 半透明背景填充 [from, to] */
@@ -3356,6 +3360,34 @@ export class LightweightChartAdapter implements ChartApi {
     } else {
       this.sessionLowLine.applyOptions({ price: hl.low })
     }
+  }
+
+  /** v0.5.x 模拟成交图面标记：独立 LineSeries 点标（buy=涨绿 / sell=跌红），跨指标切换持久 */
+  setTradeMarkers(markers: { time: number; price: number; side: 'buy' | 'sell' }[] | null) {
+    if (this.tradeMarkerSeries) {
+      this.chart.removeSeries(this.tradeMarkerSeries)
+      this.tradeMarkerSeries = null
+    }
+    if (!markers || markers.length === 0) return
+    this.tradeMarkerSeries = this.chart.addSeries(
+      LineSeries,
+      {
+        lineVisible: false,
+        pointMarkersVisible: true,
+        pointMarkersRadius: 3.5,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      },
+      0,
+    )
+    this.tradeMarkerSeries.setData(
+      markers.map((m) => ({
+        time: m.time as UTCTimestamp,
+        value: m.price,
+        color: m.side === 'buy' ? this.theme.up : this.theme.down,
+      })),
+    )
   }
 
   priceAt(clientX: number, clientY: number): { time: number; price: number } | null {
