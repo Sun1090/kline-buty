@@ -55,10 +55,12 @@ const baseProps = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
 })
 
 afterEach(() => {
   cleanup()
+  localStorage.clear()
 })
 
 describe('MarketList', () => {
@@ -253,5 +255,16 @@ describe('MarketList', () => {
     render(<MarketList {...baseProps} />)
     fireEvent.click(screen.getByTestId('market-sort-quoteVolume'))
     expect(state.setSortKey).toHaveBeenCalledWith('quoteVolume')
+  })
+
+  it('v0.5.x 视图持久化：切榜单 → localStorage；重新渲染恢复', () => {
+    stubHook()
+    const { unmount } = render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('market-tab-rank'))
+    expect(JSON.parse(localStorage.getItem('kline-buty:marketView') ?? '""')).toBe('rank')
+    unmount()
+    // 重新渲染（模拟刷新）→ 从 localStorage 恢复榜单视图
+    render(<MarketList {...baseProps} />)
+    expect(screen.getByTestId('market-tab-rank').getAttribute('aria-pressed')).toBe('true')
   })
 })

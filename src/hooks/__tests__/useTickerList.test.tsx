@@ -22,10 +22,12 @@ const rows = [
 
 beforeEach(() => {
   mockFetch.mockReset()
+  localStorage.clear()
 })
 
 afterEach(() => {
   cleanup()
+  localStorage.clear()
 })
 
 describe('sortTickerRows', () => {
@@ -86,6 +88,22 @@ describe('useTickerList', () => {
     act(() => result.current.setSortKey('symbol'))
     expect(result.current.sortKey).toBe('symbol')
     expect(result.current.sortDir).toBe('asc')
+  })
+
+  it('v0.5.x 排序持久化：setSortKey 写入 localStorage，重新挂载恢复', async () => {
+    mockFetch.mockResolvedValue([...rows])
+    const first = renderHook(() => useTickerList(SYMS))
+    await act(async () => {})
+    act(() => first.result.current.setSortKey('quoteVolume'))
+    expect(first.result.current.sortKey).toBe('quoteVolume')
+    // 已持久化到 localStorage
+    expect(JSON.parse(localStorage.getItem('kline-buty:marketSort') ?? '{}')).toEqual({ key: 'quoteVolume', dir: 'asc' })
+    first.unmount()
+    // 重新挂载（新实例）→ 从 localStorage 恢复排序
+    const second = renderHook(() => useTickerList(SYMS))
+    await act(async () => {})
+    expect(second.result.current.sortKey).toBe('quoteVolume')
+    expect(second.result.current.sortDir).toBe('asc')
   })
 
   it('拉取失败：error 标记，不抛错', async () => {

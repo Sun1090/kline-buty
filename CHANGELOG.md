@@ -3,6 +3,15 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.16] 行情列表排序/视图持久化（2026-09-19）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **行情列表·排序与视图持久化**：排序键/方向（`marketSort`）与视图 tab（全部/自选/榜单，`marketView`）
+  经 localStorage 持久化，刷新后恢复；`useTickerList`/`MarketList` 接入 `usePersistedState`；
+  单测 +2（hook 排序持久化 / 组件视图持久化）、E2E +1（点列头排序 → 刷新仍高亮）
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1696** / E2E recent-features 22/22
+
 ## [v0.5.15] 流水定位图表（2026-09-19）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
