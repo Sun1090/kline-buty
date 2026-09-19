@@ -35,6 +35,7 @@ import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
 import { todayRealizedPnl } from './trade/daily'
 import { tradeMarkersFor } from './trade/markers'
+import { locateRangeFor } from './trade/locate'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
@@ -232,6 +233,8 @@ export function App() {
   }
   const [positionOpen, setPositionOpen] = useState(false)
   const [tradesOpen, setTradesOpen] = useState(false)
+  // v0.5.x 流水定位：点击流水行 → 图表可视范围定位到该成交时刻（仅当前品种生效，跨品种先切）
+  const [locateTrade, setLocateTrade] = useState<{ symbol: string; at: number } | null>(null)
   // T15：模拟交易账户（余额 + 成交流水）
   const paper = usePaperAccount()
   // D5/D8：吃单费率 + 市价滑点（持久化，影响下单估算与平仓计费）
@@ -1602,6 +1605,12 @@ export function App() {
             setSymbol(s)
             setTradesOpen(false)
           }}
+          onLocateTrade={(locSymbol, at) => {
+            // v0.5.x 流水行点击 → 定位图表到该时刻（跨品种先切品种，关闭流水面板）
+            setLocateTrade({ symbol: locSymbol, at })
+            if (locSymbol !== symbol) setSymbol(locSymbol)
+            setTradesOpen(false)
+          }}
           onExport={exportTradesCsv}
           onExportEquity={exportEquityCsv}
           onReset={paper.reset}
@@ -1782,6 +1791,11 @@ export function App() {
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
             tradeMarkers={tradeMarkersFor(paper.trades, symbol)}
+            externalRange={
+              locateTrade && locateTrade.symbol === symbol && renderCandles.length > 0
+                ? locateRangeFor(renderCandles, Math.floor(locateTrade.at / 1000))
+                : null
+            }
             compareSeries={compareSymbol && layout === 'single' ? { symbol: compareSymbol, candles: compareData.state.candles } : null}
             onPositionDrag={(key, price) =>
               setPosition((prev) => {

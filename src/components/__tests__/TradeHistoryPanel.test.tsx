@@ -266,4 +266,24 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     setup({ trades: [] })
     expect(screen.queryByTestId('trade-period-pnl')).toBeNull()
   })
+
+  it('v0.5.x 流水定位：点击行触发 onLocateTrade（带 symbol + at）', () => {
+    const onLocateTrade = vi.fn()
+    setup({ trades, onLocateTrade })
+    fireEvent.click(screen.getAllByTestId('trade-history-row')[0])
+    expect(onLocateTrade).toHaveBeenCalledWith('BTCUSDT', expect.any(Number))
+  })
+
+  it('v0.5.x 流水定位：展开明细按钮不触发定位（stopPropagation）', () => {
+    const onLocateTrade = vi.fn()
+    setup({ trades, onLocateTrade })
+    fireEvent.click(screen.getByTestId('trade-history-detail-toggle-close'))
+    expect(onLocateTrade).not.toHaveBeenCalled()
+    expect(screen.getByTestId('trade-history-detail')).toBeDefined()
+  })
+
+  it('v0.5.x 流水定位：未传 onLocateTrade 时行不可点击', () => {
+    setup({ trades })
+    expect(screen.getAllByTestId('trade-history-row')[0].style.cursor).toBe('default')
+  })
 })

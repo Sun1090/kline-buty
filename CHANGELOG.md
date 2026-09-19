@@ -3,6 +3,16 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.15] 流水定位图表（2026-09-19）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **交易流水行点击 → 图表定位该时刻**：直播成交行点击后主图可视范围跳到该成交时刻
+  （跨品种先切品种；展开明细按钮 stopPropagation 不误触）；`src/trade/locate.ts` 纯函数
+  `locateRangeFor`（±span 根钳制）+ 单测 +4；App 经 ChartView `externalRange` 接线；
+  五语 i18n 新增 `trade.locate`；组件测试 +3
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1694** / E2E recent-features 21/21
+
 ## [v0.5.14] 图表成交进出场标记（2026-09-19）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。

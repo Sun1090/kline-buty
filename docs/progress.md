@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.15 开发中（2026-09-19）** — v0.5.14 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 交易流水行点击 → 图表定位该时刻（本批，feat/v05-trade-locate）**：
+  - 流水行点击后主图可视范围跳到该成交时刻（跨品种先切；展开明细 stopPropagation 不误触）
+  - `src/trade/locate.ts` 纯函数 `locateRangeFor`（±span 根钳制）+ 单测 +4；App 经 externalRange 接线
+  - 五语 i18n 新增 `trade.locate`；组件测试 +3；验证：typecheck / lint 0 err / audit:i18n / unit **1694 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.15
+
 **里程碑 v0.5.14 发布完成（2026-09-19）**
 - 版本号：**0.5.14**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.14`（release 0f568c2）；发布 PR：#65（rebase 合并 → main）
