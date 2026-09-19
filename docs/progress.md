@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.14 开发中（2026-09-19）** — v0.5.13 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 主图模拟成交 B/S 落点标记（本批，feat/v05-trade-markers）**：
+  - 当前品种成交流水在主图点标（buy=涨绿 / sell=跌红，时间戳对齐 K 线秒口径）
+  - `src/trade/markers.ts` 纯函数 `tradeMarkersFor` + 单测 +3；adapter `setTradeMarkers` 独立点标序列
+  - ChartView prop + effect；App 接线 `paper.trades`；单测 **1687 全绿** / E2E recent-features 21/21
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.14
+
 **里程碑 v0.5.13 发布完成（2026-09-19）**
 - 版本号：**0.5.13**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.13`（release d0e7f59 + 硬化 9d8071b）；发布 PR：#62（rebase 合并 → main）
