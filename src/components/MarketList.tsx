@@ -3,6 +3,7 @@ import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
 import { topRank, useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import { useFavorites } from '../hooks/useFavorites'
+import { fmtVolumeBM } from '../utils/format'
 import type { TickerRow } from '../data/binance/rest'
 
 /** 价格格式化：≥1000 两位小数、≥1 四位、否则六位（与行情信息条一致） */
@@ -10,9 +11,10 @@ function fmtPrice(v: number): string {
   return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
 }
 
-const COLS: { key: TickerSortKey; labelKey: 'pair' | 'lastPrice' | 'change24h'; align: 'left' | 'right' }[] = [
+const COLS: { key: TickerSortKey; labelKey: 'pair' | 'lastPrice' | 'change24h' | 'volume'; align: 'left' | 'right' }[] = [
   { key: 'symbol', labelKey: 'pair', align: 'left' },
   { key: 'price', labelKey: 'lastPrice', align: 'right' },
+  { key: 'quoteVolume', labelKey: 'volume', align: 'right' },
   { key: 'changePct', labelKey: 'change24h', align: 'right' },
 ]
 
@@ -102,6 +104,10 @@ function Row({
       </span>
       <span style={{ flex: '0 0 76px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: up ? 'var(--up)' : 'var(--down)' }}>
         {fmtPrice(row.price)}
+      </span>
+      {/* v0.5.x 24h 成交额列：B/M 缩写；移动窄屏允许收缩省略（不引入横向滚动） */}
+      <span style={{ flex: '1 1 64px', minWidth: 0, textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-dim)' }}>
+        {fmtVolumeBM(row.quoteVolume)}
       </span>
       <span style={{ flex: '0 0 56px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: up ? 'var(--up)' : 'var(--down)' }}>
         {up ? '+' : ''}
@@ -359,8 +365,9 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
               title={t('marketList.sortTitle')}
               aria-label={`${t('marketList.sortTitle')}: ${t(`marketList.${col.labelKey}` as never)}`}
               style={{
-                flex: col.key === 'symbol' ? '0 0 84px' : '0 0 76px',
+                flex: col.key === 'symbol' ? '0 0 84px' : col.key === 'quoteVolume' ? '1 1 64px' : '0 0 76px',
                 ...(col.key === 'changePct' ? { flex: '0 0 56px' } : {}),
+                minWidth: 0,
                 border: 'none',
                 background: 'transparent',
                 color: activeCol ? 'var(--accent)' : 'var(--text-faint)',

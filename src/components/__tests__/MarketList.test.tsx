@@ -100,11 +100,11 @@ describe('MarketList', () => {
     const ethRow = screen.getByTestId('market-row-select-ETHUSDT')
     const btcSpans = btcRow.querySelectorAll('span')
     const ethSpans = ethRow.querySelectorAll('span')
-    // 第 2 个 span 是最新价，第 3 个是涨跌幅
+    // 第 2 个 span 是最新价，第 4 个是涨跌幅（第 3 个为 24h 成交额列）
     expect(btcSpans[1].style.color).toContain('var(--up)')
-    expect(btcSpans[2].style.color).toContain('var(--up)')
+    expect(btcSpans[3].style.color).toContain('var(--up)')
     expect(ethSpans[1].style.color).toContain('var(--down)')
-    expect(ethSpans[2].style.color).toContain('var(--down)')
+    expect(ethSpans[3].style.color).toContain('var(--down)')
   })
 
   it('点击列头 → setSortKey，并显示当前排序列箭头', () => {
@@ -239,5 +239,19 @@ describe('MarketList', () => {
     fireEvent.keyDown(search, { key: 'Escape' })
     expect(search.value).toBe('')
     expect(screen.getAllByTestId(/^market-row-select-/)).toHaveLength(3)
+  })
+
+  it('v0.5.x 24h 成交额列：B/M 缩写显示', () => {
+    stubHook()
+    render(<MarketList {...baseProps} />)
+    expect(screen.getByTestId('market-row-select-BTCUSDT').textContent).toContain('1.50B') // 1.5e9
+    expect(screen.getByTestId('market-row-select-ETHUSDT').textContent).toContain('500.00M') // 5e8
+  })
+
+  it('v0.5.x 24h 成交额列：点击列头触发 quoteVolume 排序', () => {
+    const state = stubHook()
+    render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('market-sort-quoteVolume'))
+    expect(state.setSortKey).toHaveBeenCalledWith('quoteVolume')
   })
 })
