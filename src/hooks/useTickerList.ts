@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchTickers24h, type TickerRow } from '../data/binance/rest'
 import { isPerfMode } from '../data/synthetic'
 import { SYMBOL_LIST } from './useSymbolList'
+import { usePersistedState } from './usePersistedState'
 
 export type TickerSortKey = 'symbol' | 'price' | 'changePct' | 'quoteVolume'
 export type SortDir = 'asc' | 'desc'
@@ -40,7 +41,10 @@ export function useTickerList(symbols: string[] = SYMBOL_LIST): TickerListState 
   const [rows, setRows] = useState<TickerRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [sort, setSort] = useState<{ key: TickerSortKey; dir: SortDir }>({ key: 'symbol', dir: 'asc' })
+  const [sort, setSort] = usePersistedState<{ key: TickerSortKey; dir: SortDir }>('marketSort', {
+    key: 'symbol',
+    dir: 'asc',
+  })
 
   const refresh = useCallback(async () => {
     if (isPerfMode()) {
@@ -70,7 +74,7 @@ export function useTickerList(symbols: string[] = SYMBOL_LIST): TickerListState 
     setSort((prev) =>
       prev.key === k ? { key: k, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key: k, dir: 'asc' },
     )
-  }, [])
+  }, [setSort])
 
   const sorted = useMemo(() => sortTickerRows(rows, sort.key, sort.dir), [rows, sort.key, sort.dir])
 

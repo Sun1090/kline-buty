@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.16 开发中（2026-09-19）** — v0.5.15 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 行情列表·排序与视图持久化（本批，feat/v05-market-persist）**：
+  - 排序键/方向（`marketSort`）与视图 tab（全部/自选/榜单，`marketView`）localStorage 持久化，刷新恢复
+  - `useTickerList`/`MarketList` 接入 `usePersistedState`；单测 +2、E2E +1（写入侧验证，刷新恢复走单测）
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1696 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.16
+
 **里程碑 v0.5.15 发布完成（2026-09-19）**
 - 版本号：**0.5.15**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.15`（release 8240f1f）；发布 PR：#68（rebase 合并 → main）

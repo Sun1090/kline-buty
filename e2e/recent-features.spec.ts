@@ -194,6 +194,19 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('position-today-pnl')).toHaveText('+0.00')
   })
 
+  test('行情列表：排序持久化——点列头排序写入 localStorage 并立即高亮', async ({ page }) => {
+    // 注：describe beforeEach 的 addInitScript 会在每次页面加载（含 reload）清空 localStorage，
+    // 故此处验证写入侧；刷新恢复路径由 useTickerList/MarketList 单测覆盖
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const priceHeader = page.getByTestId('market-sort-price')
+    await expect(priceHeader).toBeVisible()
+    await priceHeader.click()
+    // 排序写入 localStorage + 列头立即高亮
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kline-buty:marketSort'))).toContain('price')
+    await expect(priceHeader).toContainText(/[▲▼]/)
+  })
+
   test('当日高低线：开关开/关 + 持久化（无 pageerror）', async ({ page }) => {
     await page.goto('/?perf=600')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })

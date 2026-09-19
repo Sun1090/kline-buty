@@ -3,6 +3,7 @@ import { PanelState } from './PanelState'
 import { useI18n } from '../i18n/useI18n'
 import { topRank, useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import { useFavorites } from '../hooks/useFavorites'
+import { usePersistedState } from '../hooks/usePersistedState'
 import { fmtVolumeBM } from '../utils/format'
 import type { TickerRow } from '../data/binance/rest'
 
@@ -136,7 +137,8 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
   const { rows, loading, error, sortKey, sortDir, setSortKey, refresh } = useTickerList()
   const { favorites, toggleFavorite } = useFavorites()
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'all' | 'favorites' | 'rank'>('all')
+  // v0.5.x 视图持久化：全部/自选/榜单 切换后刷新保留
+  const [view, setView] = usePersistedState<'all' | 'favorites' | 'rank'>('marketView', 'all')
   // G4 榜单口径：涨幅榜（changePct）/ 成交榜（quoteVolume）
   const [rankKey, setRankKey] = useState<'changePct' | 'quoteVolume'>('changePct')
   // 视图过滤（自选/全部）与搜索过滤串联：先视图后搜索，排序由 hook 内排序函数处理
