@@ -42,6 +42,9 @@ async function panIntoHistory(page: Page) {
 }
 
 test.describe('A2 周期切换右侧锚定', () => {
+  // webkit 在重负载 CI runner 下合成数据大窗口切周期锚定收敛可达数十秒（v0.5.13 复现），
+  // 放宽整测预算，避免单步断言时长总和撞上 60s 测试级超时
+  test.setTimeout(150_000)
   test('停在最新切周期不越界；回看切周期不跳最新（双向稳定 + 范围显示）', async ({ page, browserName }) => {
     // firefox：Playwright 合成鼠标事件与 lightweight-charts pressedMouseMove 不兼容（真机正常），
     // 拖拽平移在 firefox CI 无法合成；回看→切周期锚定由 chromium/webkit 覆盖
@@ -60,16 +63,16 @@ test.describe('A2 周期切换右侧锚定', () => {
     await expect(visibleRange).toBeVisible()
 
     // 停在最新处切 5m → 仍锚定最新（不越界），范围显示随之更新
-    // 合成数据大窗口切周期锚定在慢机/高负载下可达十数秒，放宽到 25s 防负载抖动误报（v0.5.13 硬化）
+    // 合成数据大窗口切周期锚定在慢机/高负载下可达数十秒，放宽到 45s 防负载抖动误报（v0.5.13 二次硬化）
     await page.getByTestId('period-5m').click()
     await waitPerfReady(page, '5m')
-    await expect(back).toHaveCount(0, { timeout: 25000 }) // 关键：停在最新处切周期不跳出最新
+    await expect(back).toHaveCount(0, { timeout: 45000 }) // 关键：停在最新处切周期不跳出最新
     await expect(visibleRange).toBeVisible()
 
     // 最新处切 1h → 仍最新
     await page.getByTestId('period-1h').click()
     await waitPerfReady(page, '1h')
-    await expect(back).toHaveCount(0, { timeout: 25000 })
+    await expect(back).toHaveCount(0, { timeout: 45000 })
 
     // 回看历史 → 「回到最新」出现（firefox 拖拽事件时序不同，必要时多拖几次）
     for (let attempt = 0; attempt < 5 && !(await back.isVisible().catch(() => false)); attempt++) {
