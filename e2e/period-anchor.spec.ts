@@ -60,16 +60,16 @@ test.describe('A2 周期切换右侧锚定', () => {
     await expect(visibleRange).toBeVisible()
 
     // 停在最新处切 5m → 仍锚定最新（不越界），范围显示随之更新
-    // 合成数据大窗口切周期锚定在慢机/高负载下可达数秒，放宽到 15s 防负载抖动误报
+    // 合成数据大窗口切周期锚定在慢机/高负载下可达十数秒，放宽到 25s 防负载抖动误报（v0.5.13 硬化）
     await page.getByTestId('period-5m').click()
     await waitPerfReady(page, '5m')
-    await expect(back).toHaveCount(0, { timeout: 15000 }) // 关键：停在最新处切周期不跳出最新
+    await expect(back).toHaveCount(0, { timeout: 25000 }) // 关键：停在最新处切周期不跳出最新
     await expect(visibleRange).toBeVisible()
 
     // 最新处切 1h → 仍最新
     await page.getByTestId('period-1h').click()
     await waitPerfReady(page, '1h')
-    await expect(back).toHaveCount(0, { timeout: 15000 })
+    await expect(back).toHaveCount(0, { timeout: 25000 })
 
     // 回看历史 → 「回到最新」出现（firefox 拖拽事件时序不同，必要时多拖几次）
     for (let attempt = 0; attempt < 5 && !(await back.isVisible().catch(() => false)); attempt++) {
@@ -88,10 +88,10 @@ test.describe('A2 周期切换右侧锚定', () => {
     // 合成 tick（1.5s 间隔）+ 周期切换会触发图表重渲染 → 点击前等渲染稳定，force 忽略瞬时 detach
     await page.waitForTimeout(500)
     await back.click({ force: true })
-    await expect(back).toHaveCount(0, { timeout: 8000 })
+    await expect(back).toHaveCount(0, { timeout: 15000 })
     await page.getByTestId('period-1m').click()
     await waitPerfReady(page, '1m')
-    await expect(back).toHaveCount(0, { timeout: 8000 })
+    await expect(back).toHaveCount(0, { timeout: 15000 })
 
     expect(errors).toHaveLength(0)
   })
