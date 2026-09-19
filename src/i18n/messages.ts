@@ -190,6 +190,9 @@ export const zh = {
     empty: '暂无钉选品种——在自选列表点击★钉选',
     unpin: '取消钉选',
     add: '钉选',
+    sortBy: '排序',
+    sortPrice: '价格',
+    sortChange: '涨跌',
   },
   sentiment: {
     globalRatio: '全账户多空比',
@@ -930,6 +933,9 @@ export const en: Messages = {
     empty: 'No pinned symbols — tap ★ in the watchlist to pin',
     unpin: 'Unpin',
     add: 'Pin',
+    sortBy: 'Sort',
+    sortPrice: 'Price',
+    sortChange: 'Change',
   },
   sentiment: {
     globalRatio: 'Global long/short',
@@ -1661,6 +1667,9 @@ export const ja: Messages = {
     empty: 'ピン留め銘柄なし——ウォッチリストの★でピン留め',
     unpin: 'ピン解除',
     add: 'ピン留め',
+    sortBy: '並び替え',
+    sortPrice: '価格',
+    sortChange: '変動',
   },
   sentiment: {
     globalRatio: '全口座ロング/ショート比',
@@ -2393,6 +2402,9 @@ export const ko: Messages = {
     empty: '고정 종목 없음 — 관심목록의 ★로 고정',
     unpin: '고정 해제',
     add: '고정',
+    sortBy: '정렬',
+    sortPrice: '가격',
+    sortChange: '변동',
   },
   sentiment: {
     globalRatio: '전체 계정 롱/숏 비율',
@@ -3136,6 +3148,9 @@ export const es: Messages = {
     empty: 'Sin símbolos fijados — toca ★ en la lista para fijar',
     unpin: 'Desfijar',
     add: 'Fijar',
+    sortBy: 'Orden',
+    sortPrice: 'Precio',
+    sortChange: 'Cambio',
   },
   sentiment: {
     globalRatio: 'Largo/corto global',
