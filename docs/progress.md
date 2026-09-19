@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.17 开发中（2026-09-19）** — v0.5.16 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 自选行情面板（PinnedPanel）增强（本批，feat/v05-pinned-enhance）**：
-  - 补齐缺失的 24h 涨跌幅显示（涨绿/跌红）；当前品种高亮（activeSymbol accent 左框）
-  - 排序切换（按价格/按涨跌，降序，pinned-sort）；五语 i18n `pinned.sortBy/sortPrice/sortChange`
-  - 单测 +3；验证：typecheck / lint 0 err / audit:i18n / unit **1699 全绿**
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.17
+**里程碑 v0.5.17 发布（2026-09-20，RELEASE_FREEZE）**
+- 版本号：**0.5.17**（package.json / index.html meta app-version）
+- 包含任务：自选行情面板（PinnedPanel）增强
+- 分支：`release/v0.5.17`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.17（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.17 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1699** / chromium E2E recent-features **22/22**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.16 发布完成（2026-09-19）**
 - 版本号：**0.5.16**（package.json / index.html meta app-version）
