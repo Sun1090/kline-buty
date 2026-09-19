@@ -44,6 +44,8 @@ interface TradeHistoryPanelProps {
   onImportJson: (json: string) => boolean
   /** v0.5 按品种汇总点击切换主图品种（可选；未传则行不可点击） */
   onSwitchSymbol?: (symbol: string) => void
+  /** v0.5.x 流水行点击定位到图表该时刻（传 symbol + 成交时间戳；未传则行不可点击定位） */
+  onLocateTrade?: (symbol: string, at: number) => void
 }
 
 /** D10 手续费拆分：由费率倒推计费成交额（费率缺失时用 价格×数量 兜底展示） */
@@ -74,6 +76,7 @@ export function TradeHistoryPanel({
   onExportJson,
   onImportJson,
   onSwitchSymbol,
+  onLocateTrade,
 }: TradeHistoryPanelProps) {
   const { t } = useI18n()
   // 重置两步确认：首次点击进入确认态，3s 未二次确认自动复位
@@ -567,11 +570,16 @@ export function TradeHistoryPanel({
                 <div key={tr.id}>
                   <div
                     data-testid="trade-history-row"
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: expanded ? 'none' : '1px solid var(--border)', fontVariantNumeric: 'tabular-nums' }}
+                    onClick={onLocateTrade ? () => onLocateTrade(tr.symbol, tr.at) : undefined}
+                    title={onLocateTrade ? t('trade.locate') : undefined}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: expanded ? 'none' : '1px solid var(--border)', fontVariantNumeric: 'tabular-nums', cursor: onLocateTrade ? 'pointer' : 'default' }}
                   >
                     <button
                       data-testid={`trade-history-detail-toggle-${tr.kind}`}
-                      onClick={() => setExpandedId(expanded ? null : tr.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedId(expanded ? null : tr.id)
+                      }}
                       aria-label={t('trade.detail')}
                       aria-expanded={expanded}
                       style={{ border: 'none', background: 'transparent', color: 'var(--text-faint)', fontSize: 10, cursor: 'pointer', padding: 0, width: 12, flexShrink: 0 }}
