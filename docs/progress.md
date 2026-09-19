@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.17 开发中（2026-09-19）** — v0.5.16 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 自选行情面板（PinnedPanel）增强（本批，feat/v05-pinned-enhance）**：
+  - 补齐缺失的 24h 涨跌幅显示（涨绿/跌红）；当前品种高亮（activeSymbol accent 左框）
+  - 排序切换（按价格/按涨跌，降序，pinned-sort）；五语 i18n `pinned.sortBy/sortPrice/sortChange`
+  - 单测 +3；验证：typecheck / lint 0 err / audit:i18n / unit **1699 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.17
+
 **里程碑 v0.5.16 发布完成（2026-09-19）**
 - 版本号：**0.5.16**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.16`（release 47e94b0）；发布 PR：#71（rebase 合并 → main）

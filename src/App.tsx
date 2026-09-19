@@ -1677,6 +1677,7 @@ export function App() {
       {pinnedOpen && (
         <PinnedPanel
           symbols={pinnedSymbols}
+          activeSymbol={symbol}
           onSelect={(s) => {
             setSymbol(s)
             setPinnedOpen(false)
