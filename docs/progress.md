@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.14 开发中（2026-09-19）** — v0.5.13 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 主图模拟成交 B/S 落点标记（本批，feat/v05-trade-markers）**：
-  - 当前品种成交流水在主图点标（buy=涨绿 / sell=跌红，时间戳对齐 K 线秒口径）
-  - `src/trade/markers.ts` 纯函数 `tradeMarkersFor` + 单测 +3；adapter `setTradeMarkers` 独立点标序列
-  - ChartView prop + effect；App 接线 `paper.trades`；单测 **1687 全绿** / E2E recent-features 21/21
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.14
+**里程碑 v0.5.14 发布（2026-09-19，RELEASE_FREEZE）**
+- 版本号：**0.5.14**（package.json / index.html meta app-version）
+- 包含任务：主图模拟成交 B/S 落点标记
+- 分支：`release/v0.5.14`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.14（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.14 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1687** / chromium E2E recent-features **21/21**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.13 发布完成（2026-09-19）**
 - 版本号：**0.5.13**（package.json / index.html meta app-version）
