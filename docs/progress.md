@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.15 开发中（2026-09-19）** — v0.5.14 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 交易流水行点击 → 图表定位该时刻（本批，feat/v05-trade-locate）**：
-  - 流水行点击后主图可视范围跳到该成交时刻（跨品种先切；展开明细 stopPropagation 不误触）
-  - `src/trade/locate.ts` 纯函数 `locateRangeFor`（±span 根钳制）+ 单测 +4；App 经 externalRange 接线
-  - 五语 i18n 新增 `trade.locate`；组件测试 +3；验证：typecheck / lint 0 err / audit:i18n / unit **1694 全绿**
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.15
+**里程碑 v0.5.15 发布（2026-09-19，RELEASE_FREEZE）**
+- 版本号：**0.5.15**（package.json / index.html meta app-version）
+- 包含任务：交易流水行点击 → 图表定位该成交时刻
+- 分支：`release/v0.5.15`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.15（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.15 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1694** / chromium E2E recent-features **21/21**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 仍阻塞——typescript-eslint 8.70 报 "does not support TS 7.0"，待官方支持）
 
 **里程碑 v0.5.14 发布完成（2026-09-19）**
 - 版本号：**0.5.14**（package.json / index.html meta app-version）
