@@ -121,6 +121,8 @@ interface ChartViewProps {
   referencePrice?: number | null
   /** 限价标记线（盘口档位点击联动），null 清除 */
   markerPrice?: number | null
+  /** v0.5.x 模拟成交图面标记（当前品种，buy/sell 点标），空数组/undefined 清除 */
+  tradeMarkers?: { time: number; price: number; side: 'buy' | 'sell' }[]
   /** 仓位线拖拽回调 */
   onPositionDrag?: (key: 'entry' | 'takeProfit' | 'stopLoss', price: number) => void
   /** 画线数据（已按当前品种过滤） */
@@ -189,6 +191,7 @@ export function ChartView({
   positionLines,
   referencePrice,
   markerPrice,
+  tradeMarkers,
   onPositionDrag,
   drawings,
   notesHidden,
@@ -940,6 +943,11 @@ export function ChartView({
   useEffect(() => {
     apiRef.current?.setMarkerPrice(markerPrice ?? null)
   }, [markerPrice])
+
+  // v0.5.x 模拟成交图面标记：随成交流水变化重设（独立于指标/数据重绘）
+  useEffect(() => {
+    apiRef.current?.setTradeMarkers(tradeMarkers && tradeMarkers.length > 0 ? tradeMarkers : null)
+  }, [tradeMarkers])
 
   // v0.5 会话高低点：仅在开关/当日高低/会话切换时更新，避免逐 tick 重设
   useEffect(() => {

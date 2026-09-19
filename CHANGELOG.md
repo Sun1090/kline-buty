@@ -3,6 +3,15 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.14] 图表成交进出场标记（2026-09-19）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **主图模拟成交 B/S 落点**：当前品种成交流水在图上以点标标出（buy=涨绿 / sell=跌红），
+  时间戳对齐 K 线秒口径；`src/trade/markers.ts` 纯函数 `tradeMarkersFor` + 单测 +3；
+  adapter 新增独立 `setTradeMarkers` 序列（跨指标切换持久）；App 接线 `paper.trades`
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1687** 全绿
+
 ## [v0.5.13] 行情列表 24h 成交额列（2026-09-19）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。

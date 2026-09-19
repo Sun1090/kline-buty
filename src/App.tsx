@@ -34,6 +34,7 @@ import { useTradeSettings } from './hooks/useTradeSettings'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
 import { todayRealizedPnl } from './trade/daily'
+import { tradeMarkersFor } from './trade/markers'
 import { TradeHistoryPanel } from './components/TradeHistoryPanel'
 import { PerfPanel } from './components/PerfPanel'
 import { ChangelogModal } from './components/ChangelogModal'
@@ -1780,6 +1781,7 @@ export function App() {
             positionLines={position.long ?? position.short}
             referencePrice={obHoverPrice}
             markerPrice={obMarkPrice}
+            tradeMarkers={tradeMarkersFor(paper.trades, symbol)}
             compareSeries={compareSymbol && layout === 'single' ? { symbol: compareSymbol, candles: compareData.state.candles } : null}
             onPositionDrag={(key, price) =>
               setPosition((prev) => {
