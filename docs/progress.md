@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.13 开发中（2026-09-19）** — v0.5.12 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 行情列表·24h 成交额列（可排序）（本批，feat/v05-market-volume）**：
+  - COLS 新增 quoteVolume 列（复用 marketList.volume 文案）；行内 fmtVolumeBM B/M 缩写
+  - 成交额列设为收缩列保证 320px 无横向滚动；列头 market-sort-quoteVolume 走既有排序
+  - 单测 +2；验证：typecheck / lint 0 err / audit:i18n / unit **1684 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.13
+
 **里程碑 v0.5.12 发布完成（2026-09-19）**
 - 版本号：**0.5.12**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.12`（release 7d85f64）；发布 PR：#59（rebase 合并 → main）
