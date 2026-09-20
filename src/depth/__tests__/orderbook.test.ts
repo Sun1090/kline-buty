@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { orderBookRows } from '../orderbook'
+import { orderBookRows, depthImbalance } from '../orderbook'
 import type { DepthSnapshot } from '../../hooks/useDepth'
 
 const snap: DepthSnapshot = {
@@ -95,5 +95,34 @@ describe('orderBookRows 盘口聚合', () => {
     }
     expect(orderBookRows(frac, 8, 0).bids[0].price).toBe(99.5)
     expect(orderBookRows(frac, 8, 1).bids[0].price).toBe(99)
+  })
+})
+
+describe('depthImbalance（v0.5.x 盘口买卖失衡）', () => {
+  it('买/卖量相等 → 0（中性）', () => {
+    const eq: DepthSnapshot = {
+      bids: [{ price: 100, quantity: 5 }, { price: 99, quantity: 5 }],
+      asks: [{ price: 101, quantity: 5 }, { price: 102, quantity: 5 }],
+    }
+    expect(depthImbalance(eq)).toBe(0)
+  })
+
+  it('卖压大 → 负值（示例盘口 bidVol=19 vs askVol=40）', () => {
+    const v = depthImbalance(snap)
+    expect(v).toBeCloseTo((19 - 40) / 59, 5)
+    expect(v).toBeLessThan(0)
+  })
+
+  it('仅买盘 → 1（纯买压）', () => {
+    const bidOnly: DepthSnapshot = { bids: [{ price: 100, quantity: 3 }], asks: [] }
+    expect(depthImbalance(bidOnly)).toBe(1)
+  })
+
+  it('空盘口 → 0', () => {
+    expect(depthImbalance({ bids: [], asks: [] })).toBe(0)
+  })
+
+  it('limit 截断影响失衡（只看前 1 档：1 vs 1 → 0）', () => {
+    expect(depthImbalance(snap, 1)).toBe(0)
   })
 })

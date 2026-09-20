@@ -131,4 +131,16 @@ describe('OrderBook 移动端快捷下单', () => {
     render(<OrderBook symbol="BTCUSDT" depth={depth} />)
     expect(screen.queryByTestId('ob-refresh')).toBeNull()
   })
+
+  it('v0.5.x 买卖失衡徽标：按买/卖占比显示（bid 2 vs ask 3 → 买 40% / 卖 60%）', () => {
+    render(<OrderBook symbol="BTCUSDT" depth={depth} />)
+    const badge = screen.getByTestId('ob-imbalance')
+    expect(badge.textContent).toContain('40%')
+    expect(badge.textContent).toContain('60%')
+  })
+
+  it('v0.5.x 买卖失衡徽标：空盘口显示占位 —', () => {
+    render(<OrderBook symbol="BTCUSDT" depth={{ bids: [], asks: [] }} />)
+    expect(screen.getByTestId('ob-imbalance').textContent).toContain('—')
+  })
 })

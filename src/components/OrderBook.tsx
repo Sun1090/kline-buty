@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DepthSnapshot } from '../hooks/useDepth'
-import { orderBookRows, type OrderBookRow } from '../depth/orderbook'
+import { orderBookRows, depthImbalance, type OrderBookRow } from '../depth/orderbook'
 import { fmtCompact } from '../depth/format'
 import { fmtPriceCompact as fmtPrice } from '../utils/format'
 import { useI18n } from '../i18n/useI18n'
@@ -121,6 +121,12 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
   // 买卖各自最大挂单量档位（强调：粗字重 + 高亮色 + 更亮背景条）
   const maxBidQty = useMemo(() => data.bids.reduce((m, r) => Math.max(m, r.quantity), 0), [data.bids])
   const maxAskQty = useMemo(() => data.asks.reduce((m, r) => Math.max(m, r.quantity), 0), [data.asks])
+  // v0.5.x 盘口买卖失衡：[-1,1]，>0 买压大；转成买/卖占总量的百分比展示
+  const imbalance = useMemo(
+    () => depthImbalance(depth ?? { bids: [], asks: [] }, LIMIT, groupSize),
+    [depth, groupSize],
+  )
+  const bidShare = hasData ? Math.round(((1 + imbalance) / 2) * 100) : 50
 
   return (
     <div
@@ -140,6 +146,23 @@ export function OrderBook({ symbol, depth, onHoverPrice, onMarkPrice, onQuickOrd
         <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
           {t('orderBook.title', { symbol: symbol.replace('USDT', '/USDT') })}
         </span>
+        {/* v0.5.x 盘口买卖失衡：买/卖占总量的百分比（无盘口时占位 —） */}
+        <span
+          data-testid="ob-imbalance"
+          title={t('orderBook.imbalance')}
+          style={{ fontSize: 10, color: 'var(--text-faint)', fontVariantNumeric: 'tabular-nums' }}
+        >
+          {hasData ? (
+            <span>
+              <b style={{ color: 'var(--up)' }}>{t('orderBook.bid')} {bidShare}%</b>
+              {' · '}
+              <b style={{ color: 'var(--down)' }}>{t('orderBook.ask')} {100 - bidShare}%</b>
+            </span>
+          ) : (
+            <span>{'—'}</span>
+          )}
+        </span>
+        <span style={{ flex: 1 }} />
         <button
           data-testid="ob-group-toggle"
           onClick={() => setGroupIdx((i) => (i + 1) % GROUP_STEPS.length)}
