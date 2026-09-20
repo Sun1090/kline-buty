@@ -192,4 +192,23 @@ describe('StatsBar F15 显示项配置', () => {
     fireEvent.click(screen.getByTestId('statsbar-config-price'))
     expect(onToggleItem).toHaveBeenCalledWith('price')
   })
+
+  it('v0.5.x 资金费率结算倒计时：存在 nextFundingTime 时显示 mm:ss（复用 formatRemaining）', () => {
+    const s = {
+      ...EMPTY,
+      price: 100,
+      fundingRate: 0.0001,
+      markPrice: 100,
+      nextFundingTime: Date.now() + 90_000,
+    }
+    render(<StatsBar stats={s} />)
+    const cd = screen.getByTestId('funding-countdown')
+    expect(cd.textContent).toMatch(/\d+:\d{2}/) // 90s → "1:30" 附近（now 基准 ms 级抖动）
+  })
+
+  it('v0.5.x 资金费率结算倒计时：无 nextFundingTime 时不渲染', () => {
+    const s = { ...EMPTY, price: 100, fundingRate: 0.0001, markPrice: 100 }
+    render(<StatsBar stats={s} />)
+    expect(screen.queryByTestId('funding-countdown')).toBeNull()
+  })
 })

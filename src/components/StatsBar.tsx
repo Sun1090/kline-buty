@@ -236,6 +236,16 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
       {show('summary') && isPerp && stats.fundingRate !== null && (
         <Item label={t('stats.fundingRate')}>
           <span style={{ color: fundingColor }}>{fundingPct.toFixed(4)}%</span>
+          {/* v0.5.x 资金费率结算倒计时：复用 formatRemaining + 现有 1s now tick */}
+          {stats.nextFundingTime !== null && (
+            <span
+              data-testid="funding-countdown"
+              title={t('stats.fundingNext')}
+              style={{ color: 'var(--text-faint)', fontVariantNumeric: 'tabular-nums' }}
+            >
+              · {formatRemaining(stats.nextFundingTime - now)}
+            </span>
+          )}
         </Item>
       )}
       {show('summary') && isPerp && stats.openInterest !== null && (

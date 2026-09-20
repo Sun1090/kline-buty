@@ -3,6 +3,15 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.19] 资金费率结算倒计时（2026-09-20）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **行情信息条·资金费率结算倒计时**：资金费率行追加距下次结算倒计时（`funding-countdown`，
+  复用已有 `formatRemaining` 与 1s 计时器，`nextFundingTime` 为既有拉取数据此前未展示）；
+  五语 i18n 新增 `stats.fundingNext`；组件测试 +2（mm:ss 显示 / 无 nextFundingTime 不渲染）
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1708** / E2E recent-features 22/22
+
 ## [v0.5.18] 盘口买卖失衡（2026-09-20）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
