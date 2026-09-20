@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.19 开发中（2026-09-20）** — v0.5.18 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 资金费率结算倒计时（本批，feat/v05-funding-countdown）**：
+  - 行情信息条资金费率行追加距下次结算倒计时（funding-countdown，复用 formatRemaining + 1s 计时器，
+    nextFundingTime 为既有拉取数据此前未展示）；五语 i18n 新增 stats.fundingNext
+  - 组件测试 +2；验证：typecheck / lint 0 err / audit:i18n / unit **1708 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.19
+
 **里程碑 v0.5.18 发布完成（2026-09-20）**
 - 版本号：**0.5.18**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.18`（release 6d4f0d9）；发布 PR：#78（rebase 合并 → main）
