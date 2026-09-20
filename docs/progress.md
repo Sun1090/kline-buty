@@ -5,13 +5,14 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.19 发布（2026-09-20，RELEASE_FREEZE）**
+**里程碑 v0.5.19 发布完成（2026-09-20）**
 - 版本号：**0.5.19**（package.json / index.html meta app-version）
-- 包含任务：资金费率结算倒计时
-- 分支：`release/v0.5.19`；发布 PR：**待创建**
-- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.19（幂等）
-- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.19 + 知识库 200）
-- smoke：typecheck / lint 0 err / audit:i18n / unit **1708** / chromium E2E recent-features **22/22**
+- 分支：`release/v0.5.19`（release c34fd13）；发布 PR：#81（rebase 合并 → main）
+- tag/release：release-tag workflow 自动打 **tag v0.5.19** @ a99d54a（幂等，不覆盖 v0.5.18）
+- 部署：merge 后 Pages + Vercel 自动部署，**live 抽查通过**：
+  首页 200 且 `app-version=0.5.19`（Pages + Vercel）、知识库 200
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1708** ✅ / chromium E2E recent-features **22/22** ✅ /
+  CI+CodeQL+Pages+Android+iOS 全绿（release push 主 CI 曾遇 period-anchor webkit 已知 flake → 复跑通过）
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
   TS7 已解阻塞——typescript-eslint 8.70 兼容 TS 7.0.2，toolchain 全绿）
