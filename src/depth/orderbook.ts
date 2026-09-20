@@ -68,3 +68,16 @@ export function orderBookRows(snapshot: DepthSnapshot, limit = 8, groupSize = 0)
     maxTotal,
   }
 }
+
+/**
+ * v0.5.x 盘口买卖失衡（纯函数）：前 limit 档买/卖量差与总量之比，∈[-1, 1]。
+ * >0 买盘占优（买方压力大，看涨倾向），<0 卖盘占优；无盘口 → 0。
+ */
+export function depthImbalance(snapshot: DepthSnapshot, limit = 8, groupSize = 0): number {
+  const data = orderBookRows(snapshot, limit, groupSize)
+  const bidVol = data.bids.reduce((s, r) => s + r.quantity, 0)
+  const askVol = data.asks.reduce((s, r) => s + r.quantity, 0)
+  const total = bidVol + askVol
+  if (total <= 0) return 0
+  return (bidVol - askVol) / total
+}

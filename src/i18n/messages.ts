@@ -616,6 +616,9 @@ export const zh = {
     spread: '价差',
     markHint: '点击标记到主图（再点清除）；左侧按钮快捷下单',
     refresh: '刷新盘口（重连拉取最新快照）',
+    bid: '买',
+    ask: '卖',
+    imbalance: '盘口买卖失衡：买/卖各占总量的百分比',
   },
   trade: {
     buy: "买入",
@@ -1359,6 +1362,9 @@ export const en: Messages = {
     spread: 'Spread',
     markHint: 'Click to mark on main chart (click again to clear); quick-order button on the left',
     refresh: 'Refresh order book (reconnect for latest snapshot)',
+    bid: 'Bid',
+    ask: 'Ask',
+    imbalance: 'Order-book imbalance: bid/ask share of total volume',
   },
   trade: {
     buy: "Buy",
@@ -2093,6 +2099,9 @@ export const ja: Messages = {
     spread: 'スプレッド',
     markHint: 'クリックでメインにマーク（再クリックで解除）；左ボタンでクイック注文',
     refresh: '板を更新（再接続して最新スナップショット取得）',
+    bid: '買い',
+    ask: '売り',
+    imbalance: '板の買売不均衡：買/売の合計に占める割合',
   },
   trade: {
     buy: "買い",
@@ -2828,6 +2837,9 @@ export const ko: Messages = {
     spread: '스프레드',
     markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제); 왼쪽 버튼으로 빠른 주문',
     refresh: '호가창 새로고침(재접속하여 최신 스냅샷 조회)',
+    bid: '매수',
+    ask: '매도',
+    imbalance: '호가 매매 불균형: 매수/매도 비중',
   },
   trade: {
     buy: "매수",
@@ -3574,6 +3586,9 @@ export const es: Messages = {
     spread: 'Diferencial',
     markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar); botón de orden rápida a la izquierda',
     refresh: 'Actualizar cartera (reconectar para el último snapshot)',
+    bid: 'Compra',
+    ask: 'Venta',
+    imbalance: 'Desequilibrio del libro: proporción de compra/venta',
   },
   trade: {
     buy: "Comprar",

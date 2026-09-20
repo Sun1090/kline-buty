@@ -3,6 +3,16 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.18] 盘口买卖失衡（2026-09-20）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **盘口买卖失衡指示**：订单簿头部新增买/卖占总量的百分比徽标（`ob-imbalance`），
+  一眼识别买方/卖方压力；`src/depth/orderbook.ts` 纯函数 `depthImbalance`（前 limit 档量差/总量，∈[-1,1]）
+  + 单测 +5；OrderBook 徽标随聚合精度/档位联动；无盘口显占位；五语 i18n 新增
+  `orderBook.bid/ask/imbalance`；组件测试 +2
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1706** / E2E recent-features 22/22
+
 ## [v0.5.17] 自选行情面板增强（2026-09-20）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
