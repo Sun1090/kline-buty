@@ -88,11 +88,7 @@ test.describe('v0.5 止盈止损结算', () => {
     const nextTp = Math.round(current * 0.98)
     expect(nextTp).toBeGreaterThan(40_000)
 
-    const more = page.getByTestId('header-more')
-    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
-    await page.getByRole('button', { name: '仓位' }).click()
-    const panel = page.getByRole('region', { name: '模拟仓位' })
-    await expect(panel).toBeVisible()
+    const panel = await openPositionPanel(page)
     await panel.getByTestId('position-edit-levels-long').click()
     await expect(panel.getByTestId('position-level-tp-long')).toHaveValue('90000')
     await panel.getByTestId('position-level-tp-long').fill(String(nextTp))
@@ -114,6 +110,17 @@ test.describe('v0.5 止盈止损结算', () => {
       .toBeNull()
   })
 
+/** 打开「仓位」面板：桌面走 header-more，窄屏（<768px）走 mobile-more 弹层 */
+async function openPositionPanel(page: Page) {
+  const desktop = page.getByTestId('header-more')
+  const more = (await desktop.count()) > 0 ? desktop : page.getByTestId('mobile-more')
+  if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+  await page.getByRole('button', { name: '仓位', exact: true }).click()
+  const panel = page.getByRole('region', { name: '模拟仓位' })
+  await expect(panel).toBeVisible()
+  return panel
+}
+
   test('窄屏 320px：价位编辑器换行展示，面板不产生横向滚动', async ({ page }) => {
     await page.addInitScript(
       ([key, payload]) => localStorage.setItem(key, JSON.stringify({ BTCUSDT: { long: payload, short: null } })),
@@ -126,11 +133,7 @@ test.describe('v0.5 止盈止损结算', () => {
     await page.goto('/?perf=600&period=1m')
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
 
-    const more = page.getByTestId('header-more')
-    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
-    await page.getByRole('button', { name: '仓位' }).click()
-    const panel = page.getByRole('region', { name: '模拟仓位' })
-    await expect(panel).toBeVisible()
+    const panel = await openPositionPanel(page)
     await panel.getByTestId('position-edit-levels-long').click()
 
     const editor = panel.getByTestId('position-levels-editor-long')
