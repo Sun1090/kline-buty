@@ -15,6 +15,8 @@ export interface OrderEstimate {
 
 /** 模拟吃单费率（币安现货 0.1%） */
 export const TAKER_FEE_RATE = 0.001
+/** 挂单（Maker）费率：限价单触达即按挂单价成交，默认按主流永续挂单口径 0.02%（可配置） */
+export const MAKER_FEE_RATE = 0.0002
 /** 模拟盘口滑点偏移（0.02%）：市价单相对最新价的深度成本近似。 */
 export const DEFAULT_SLIPPAGE_RATIO = 0.0002
 

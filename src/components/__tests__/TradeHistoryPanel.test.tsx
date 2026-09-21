@@ -28,6 +28,7 @@ function setup(overrides: Partial<Parameters<typeof TradeHistoryPanel>[0]> = {})
     onReset: vi.fn(),
     onTakerFeeRatePctChange: vi.fn(),
     onSlippagePctChange: vi.fn(),
+    onMakerFeeRatePctChange: vi.fn(),
     onProfitTargetChange: vi.fn(),
     onSaveSnapshot: vi.fn(() => true),
     onLoadSnapshot: vi.fn(),
@@ -39,6 +40,7 @@ function setup(overrides: Partial<Parameters<typeof TradeHistoryPanel>[0]> = {})
     trades: [],
     stats: tradeStats([]),
     takerFeeRatePct: 0.1,
+    makerFeeRatePct: 0.02,
     slippagePct: 0.02,
     profitTarget: 0,
     snapshots: [],
@@ -299,5 +301,13 @@ describe('TradeHistoryPanel 交易流水面板', () => {
   it('v0.5.x 流水定位：未传 onLocateTrade 时行不可点击', () => {
     setup({ trades })
     expect(screen.getAllByTestId('trade-history-row')[0].style.cursor).toBe('default')
+  })
+
+  it('D5 交易设置：吃单费率与挂单费率分别上报', () => {
+    const handlers = setup()
+    fireEvent.change(screen.getByTestId('trade-fee-rate'), { target: { value: '0.2' } })
+    expect(handlers.onTakerFeeRatePctChange).toHaveBeenCalledWith(0.2)
+    fireEvent.change(screen.getByTestId('trade-maker-fee-rate'), { target: { value: '0.05' } })
+    expect(handlers.onMakerFeeRatePctChange).toHaveBeenCalledWith(0.05)
   })
 })

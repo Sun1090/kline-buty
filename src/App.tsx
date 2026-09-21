@@ -31,6 +31,10 @@ import { calcPnl, checkHit } from './position/pnl'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
+import { usePendingOrders } from './hooks/usePendingOrders'
+import { useSymbolPrices } from './hooks/useSymbolPrices'
+import { useLimitOrderFills } from './hooks/useLimitOrderFills'
+import { createPendingOrder, ORDERS_PER_SYMBOL_MAX } from './trade/pending'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
 import { todayRealizedPnl } from './trade/daily'
@@ -597,6 +601,41 @@ export function App() {
   const depth = useDepth(symbol, depthReload)
   const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
+
+  // v0.5.x 限价挂单（Maker）：挂单列表 + 多品种价源 + 触价撮合，成交/撤销走站内横幅
+  const pending = usePendingOrders()
+  const orderSymbols = useMemo(
+    () => pending.orders.filter((o) => o.symbol !== symbol).map((o) => o.symbol),
+    [pending.orders, symbol],
+  )
+  const orderPrices = useSymbolPrices(orderSymbols)
+  const [orderToast, setOrderToast] = useState<{ id: number; text: string } | null>(null)
+  const showOrderToast = useCallback((text: string) => setOrderToast({ id: Date.now(), text }), [])
+  const onOrderNotice = useCallback(
+    (n: { kind: 'filled' | 'cancelled'; symbol: string; qty: number; price: number }) =>
+      showOrderToast(
+        n.kind === 'filled'
+          ? t('trade.filledToast', { symbol: n.symbol, qty: String(n.qty), price: n.price.toFixed(2) })
+          : t('trade.cancelledToast', { symbol: n.symbol }),
+      ),
+    [showOrderToast, t],
+  )
+  useLimitOrderFills({
+    orders: pending.orders,
+    remove: pending.remove,
+    balance: paper.balance,
+    recordOpen: paper.recordOpen,
+    setPositionsBySymbol,
+    makerFeeRate: tradeSettings.makerFeeRate,
+    live: candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,
+    prices: orderPrices,
+    onNotice: onOrderNotice,
+  })
+  useEffect(() => {
+    if (!orderToast) return
+    const timer = window.setTimeout(() => setOrderToast(null), 4_000)
+    return () => window.clearTimeout(timer)
+  }, [orderToast])
 
   /**
    * 统一的画线变更入口：先记录变更前快照到 undo 栈（会话内，不持久化），
@@ -1175,6 +1214,30 @@ export function App() {
           </button>
         </div>
       )}
+      {/* v0.5.x 限价挂单撮合横幅：成交 / 余额不足撤销 */}
+      {orderToast && (
+        <div
+          data-testid="order-toast"
+          role="status"
+          style={{
+            position: 'fixed',
+            bottom: 60,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            padding: '8px 14px',
+            background: 'var(--panel)',
+            border: '1px solid var(--accent)',
+            color: 'var(--text)',
+            borderRadius: 8,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            fontSize: 12,
+            maxWidth: 'min(92vw, 420px)',
+          }}
+        >
+          {orderToast.text}
+        </div>
+      )}
       {/* N11 存储容量提示：localStorage 高水位时提醒清理 */}
       {storageWarn && (
         <div
@@ -1596,8 +1659,20 @@ export function App() {
           side={quickOrder.side}
           price={quickOrder.price}
           balance={paper.balance}
+          takerFeeRate={tradeSettings.takerFeeRate}
+          makerFeeRate={tradeSettings.makerFeeRate}
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
+            if (order.type === 'limit') {
+              // 限价挂单：先入队，由 useLimitOrderFills 在价格触达时按挂单价成交
+              const created = createPendingOrder({ symbol, side: order.side, price: order.price, qty: order.qty })
+              if (!created || !pending.add(created)) {
+                showOrderToast(t('trade.tooManyOrders', { max: String(ORDERS_PER_SYMBOL_MAX) }))
+                return
+              }
+              setQuickOrder(null)
+              return
+            }
             // D8 市价单含模拟滑点（可配置）：成交价相对盘口小幅偏移；D5 费率可配置
             const est = estimateOrder(order.price, order.qty, order.side, tradeSettings.slippageRatio, tradeSettings.takerFeeRate)
             if (!paper.canOpen(est.notional, est.fee)) return
@@ -1616,8 +1691,10 @@ export function App() {
           stats={tradeStats(paper.trades)}
           takerFeeRatePct={tradeSettings.takerFeeRate * 100}
           slippagePct={tradeSettings.slippageRatio * 100}
+          makerFeeRatePct={tradeSettings.makerFeeRate * 100}
           onTakerFeeRatePctChange={(pct) => tradeSettings.setTakerFeeRate(pct / 100)}
           onSlippagePctChange={(pct) => tradeSettings.setSlippageRatio(pct / 100)}
+          onMakerFeeRatePctChange={(pct) => tradeSettings.setMakerFeeRate(pct / 100)}
           onClose={() => setTradesOpen(false)}
           onClear={paper.clearTrades}
           onSwitchSymbol={(s) => {
@@ -1647,6 +1724,9 @@ export function App() {
       {positionOpen && (
         <PositionPanel
           positions={position}
+          symbol={symbol}
+          pendingOrders={pending.orders}
+          onCancelOrder={(id) => pending.remove([id])}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
           balance={paper.balance}
           todayPnl={todayRealizedPnl(paper.trades)}

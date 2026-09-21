@@ -36,11 +36,11 @@ describe('QuickOrder 快速下单', () => {
     expect((screen.getByTestId('qo-qty') as HTMLInputElement).value).toBe('5')
   })
 
-  it('确认下单携带 side/price/qty', () => {
+  it('确认下单携带 side/price/qty（默认市价单）', () => {
     const handlers = setup()
     fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '2.5' } })
     fireEvent.click(screen.getByTestId('qo-confirm'))
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 2.5 })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 2.5, type: 'market' })
   })
 
   it('余额不足时确认按钮禁用', () => {
@@ -118,7 +118,7 @@ describe('QuickOrder 快速下单', () => {
     const handlers = setup()
     fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '3' } })
     fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Enter' })
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 3 })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 3, type: 'market' })
   })
 
   it('v0.5 键盘：非法值 Enter 不下单', () => {
@@ -132,5 +132,25 @@ describe('QuickOrder 快速下单', () => {
     const handlers = setup()
     fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Escape' })
     expect(handlers.onClose).toHaveBeenCalled()
+  })
+
+  it('v0.5.x 限价模式：提交携带 type=limit，成交价=挂单价、按挂单费率计费', () => {
+    const handlers = setup({ makerFeeRate: 0.0005 })
+    fireEvent.click(screen.getByTestId('qo-type-limit'))
+    fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '1' } })
+    // 无滑点：估计成交价即挂单价；手续费 100×1×0.05% = 0.0500
+    expect(screen.getByTestId('qo-limit-price').textContent).toContain('100.00')
+    expect(screen.getByTestId('qo-fee').textContent).toBe('0.0500')
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit' })
+  })
+
+  it('v0.5.x 市价模式按吃单费率 + 滑点计费，切回市价即恢复', () => {
+    setup({ takerFeeRate: 0.001 })
+    fireEvent.click(screen.getByTestId('qo-type-limit'))
+    fireEvent.click(screen.getByTestId('qo-type-market'))
+    // 100 × (1+0.02%) × 0.1% ≈ 0.1000
+    expect(screen.getByTestId('qo-fee').textContent).toBe('0.1000')
+    expect(screen.queryByTestId('qo-limit-price')).toBeNull()
   })
 })
