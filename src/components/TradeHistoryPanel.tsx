@@ -25,8 +25,8 @@ interface TradeHistoryPanelProps {
   onSlippagePctChange: (pct: number) => void
   onClose: () => void
   onClear: () => void
-  /** 导出流水 CSV */
-  onExport: () => void
+  /** 导出流水 CSV（v0.5.x 传入当前筛选结果；未筛选时为全量） */
+  onExport: (trades: TradeRecord[]) => void
   /** 导出权益曲线 CSV */
   onExportEquity: () => void
   /** 重置模拟账户（两步确认在面板内） */
@@ -159,11 +159,11 @@ export function TradeHistoryPanel({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 600 }}>{t('paper.title')}</span>
         <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {trades.length > 0 && (
+          {visibleTrades.length > 0 && (
             <>
               <button
                 data-testid="trade-history-export"
-                onClick={onExport}
+                onClick={() => onExport(visibleTrades)}
                 title={t('paper.export')}
                 style={{ border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', padding: 0 }}
               >

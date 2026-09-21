@@ -677,6 +677,8 @@ export const zh = {
     confirm: "确认下单",
     hint: "将覆盖当前模拟仓位 · Enter 确认 / Esc 关闭",
     qtyPreset: "常用数量",
+    customPct: "自定义%",
+    apply: "应用",
   },
   volumeProfile: {
     title: '筹码分布（最近 300 根）· {symbol}',
@@ -1425,6 +1427,8 @@ export const en: Messages = {
     confirm: "Place order",
     hint: "Overwrites current simulated position · Enter to confirm / Esc to close",
     qtyPreset: "Quick qty",
+    customPct: "Custom %",
+    apply: "Apply",
   },
   volumeProfile: {
     title: 'Volume profile (last 300) · {symbol}',
@@ -2164,6 +2168,8 @@ export const ja: Messages = {
     confirm: "注文を確定",
     hint: "現在の模擬ポジションを上書きします · Enter 確定 / Esc 閉じる",
     qtyPreset: "よく使う数量",
+    customPct: "カスタム%",
+    apply: "適用",
   },
   volumeProfile: {
     title: '出来高プロファイル（直近 300 本）· {symbol}',
@@ -2904,6 +2910,8 @@ export const ko: Messages = {
     confirm: "주문 확정",
     hint: "현재 모의 포지션을 덮어씁니다 · Enter 확인 / Esc 닫기",
     qtyPreset: "자주 쓰는 수량",
+    customPct: "사용자 정의%",
+    apply: "적용",
   },
   volumeProfile: {
     title: '거래량 프로파일 (최근 300개) · {symbol}',
@@ -3655,6 +3663,8 @@ export const es: Messages = {
     confirm: "Colocar orden",
     hint: "Sobrescribe la posición simulada actual · Enter confirmar / Esc cerrar",
     qtyPreset: "Cant. rápida",
+    customPct: "Personalizado %",
+    apply: "Aplicar",
   },
   volumeProfile: {
     title: 'Perfil de volumen (últimas 300) · {symbol}',

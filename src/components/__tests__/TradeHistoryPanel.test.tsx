@@ -57,12 +57,26 @@ describe('TradeHistoryPanel 交易流水面板', () => {
     expect(screen.queryByTestId('trade-history-clear')).toBeNull()
   })
 
-  it('有流水时：导出/清空按钮可见，导出触发 onExport', () => {
+  it('有流水时：导出/清空按钮可见，导出触发 onExport（未筛选 → 全量）', () => {
     const handlers = setup({ trades })
     expect(screen.getByTestId('trade-history-export')).toBeTruthy()
     expect(screen.getByTestId('trade-history-clear')).toBeTruthy()
     fireEvent.click(screen.getByTestId('trade-history-export'))
-    expect(handlers.onExport).toHaveBeenCalled()
+    expect(handlers.onExport).toHaveBeenCalledWith(trades)
+  })
+
+  it('v0.5.x 导出当前筛选：启用品种筛选后导出仅含该品种子集', () => {
+    const multiLocal: TradeRecord[] = [
+      { id: 'b1', at: 3_000, symbol: 'BTCUSDT', side: 'buy', kind: 'open', price: 60_000, qty: 1, fee: 0.6, feeRate: 0.001 },
+      { id: 'e1', at: 2_000, symbol: 'ETHUSDT', side: 'sell', kind: 'close', price: 3_500, qty: 2, fee: 0.7, feeRate: 0.001, pnl: 12.3 },
+    ]
+    const handlers = setup({ trades: multiLocal })
+    // 应用 ETHUSDT 筛选
+    fireEvent.change(screen.getByTestId('trade-filter-symbol'), { target: { value: 'ETHUSDT' } })
+    fireEvent.click(screen.getByTestId('trade-history-export'))
+    const arg = vi.mocked(handlers.onExport).mock.calls[0][0] as TradeRecord[]
+    expect(arg.every((t) => t.symbol === 'ETHUSDT')).toBe(true)
+    expect(arg.length).toBeGreaterThan(0)
   })
 
   it('J6 导出权益曲线按钮：触发 onExportEquity', () => {

@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.21 开发中（2026-09-21）** — v0.5.20 已发布；本地新特性构想继续（批量积累后发布，规避 Vercel build-rate-limit）
+- **v0.5.x Web 特性 · 交易流水导出筛选 + QuickOrder 自定义百分比（本批，feat/v05-export-filter-quickpct）**：
+  - 流水 CSV 导出改为当前筛选视图子集（onExport 携带筛选结果）；组件测试 +1
+  - QuickOrder 仓位预设行新增「自定义%」输入+应用；五语 i18n `quickOrder.customPct/apply`；组件测试 +2
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1713 全绿** / E2E recent-features 22/22
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.21
+
 **里程碑 v0.5.20 发布完成（2026-09-21）**
 - 版本号：**0.5.20**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.20`（release 2b23e23）；发布 PR：#84（rebase 合并 → main）
