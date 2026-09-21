@@ -56,4 +56,45 @@ describe('RecentTrades 成交明细', () => {
     expect(screen.queryAllByTestId('tape-row')).toHaveLength(0)
     expect(screen.queryByTestId('tape-side-summary')).toBeNull()
   })
+
+  it('v0.5.x 方向筛选：只保留对应主动方向的成交', () => {
+    const rows = [print(1, true), print(2, false), print(3, false)]
+    hook.mockReturnValue(rows)
+    render(<RecentTrades symbol="BTCUSDT" />)
+    expect(screen.getAllByTestId('tape-row')).toHaveLength(3)
+
+    fireEvent.click(screen.getByTestId('tape-filter-sell'))
+    const sells = screen.getAllByTestId('tape-row')
+    expect(sells).toHaveLength(2)
+    expect(sells.every((r) => r.getAttribute('data-side') === 'sell')).toBe(true)
+
+    fireEvent.click(screen.getByTestId('tape-filter-all'))
+    expect(screen.getAllByTestId('tape-row')).toHaveLength(3)
+  })
+
+  it('v0.5.x 大单档循环：×5 只留鲸鱼成交 → ×10 无命中 → 关闭恢复全量', () => {
+    const many = Array.from({ length: 9 }, (_, i) => print(i + 1, true))
+    hook.mockReturnValue([...many, print(10, false)].map((t) => (t.id === 10 ? { ...t, qty: 100 } : t)))
+    render(<RecentTrades symbol="BTCUSDT" />)
+    const big = screen.getByTestId('tape-filter-big')
+    expect(screen.getAllByTestId('tape-row')).toHaveLength(10)
+    expect(big.textContent).toBe('大单')
+
+    // 均值 ≈ 11.35（9 笔 1.5 + 1 笔 100），×5 → 阈值 ≈ 56.8，只有 qty 100 的那笔通过
+    fireEvent.click(big)
+    expect(big.textContent).toBe('大单 ×5')
+    const whales = screen.getAllByTestId('tape-row')
+    expect(whales).toHaveLength(1)
+    expect(whales[0].getAttribute('data-side')).toBe('sell')
+
+    // ×10 → 阈值 ≈ 113.5，无命中 → 空态提示
+    fireEvent.click(big)
+    expect(big.textContent).toBe('大单 ×10')
+    expect(screen.queryAllByTestId('tape-row')).toHaveLength(0)
+    expect(screen.getByTestId('tape-empty-filter')).toBeDefined()
+
+    fireEvent.click(big)
+    expect(big.textContent).toBe('大单')
+    expect(screen.getAllByTestId('tape-row')).toHaveLength(10)
+  })
 })

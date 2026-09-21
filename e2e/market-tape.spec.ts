@@ -51,6 +51,35 @@ test.describe('v0.5 成交明细 Tape（真实行情）', () => {
     expect(order.indexOf('tape')).toBeLessThan(order.indexOf('orderBook'))
   })
 
+  test('筛选控件：方向过滤生效、大单档位可循环', async ({ page }) => {
+    await openTape(page)
+    const tape = page.getByTestId('recent-trades')
+    const rows = tape.getByTestId('tape-row')
+    await expect(rows.first()).toBeVisible({ timeout: 25_000 })
+
+    await tape.getByTestId('tape-filter-sell').click()
+    // 真实行情下可能暂无主动卖成交 → 允许进入空态，但有行时必须全是 sell
+    const count = await rows.count()
+    if (count === 0) {
+      await expect(tape.getByTestId('tape-empty-filter')).toBeVisible()
+    } else {
+      const sides = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-side')))
+      expect(sides.every((s) => s === 'sell')).toBe(true)
+    }
+
+    await tape.getByTestId('tape-filter-all').click()
+    await expect(rows.first()).toBeVisible()
+
+    const big = tape.getByTestId('tape-filter-big')
+    await expect(big).toHaveText('大单')
+    await big.click()
+    await expect(big).toHaveText('大单 ×5')
+    await big.click()
+    await expect(big).toHaveText('大单 ×10')
+    await big.click()
+    await expect(big).toHaveText('大单')
+  })
+
   test('成交明细关闭后不轮询（卸载即停）', async ({ page }) => {
     await openTape(page)
     await expect(page.getByTestId('recent-trades')).toBeVisible()
