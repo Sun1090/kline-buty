@@ -239,8 +239,9 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     { label: t('panel.settings'), active: props.settingsActive, onToggle: closeMore(props.onToggleSettings) },
   ]
 
+  // 头部层必须高于停靠面板（各面板 z 100）：否则 More 下拉展开时被面板盖住、菜单项点不中
   return (
-    <div ref={rootRef} style={{ position: 'relative', zIndex: 95 }}>
+    <div ref={rootRef} style={{ position: 'relative', zIndex: 130 }}>
       <header
         data-testid="desktop-header"
         ref={props.headerRef}
