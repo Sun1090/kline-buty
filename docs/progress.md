@@ -5,16 +5,18 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.20 发布（2026-09-21，RELEASE_FREEZE）**
+**里程碑 v0.5.20 发布完成（2026-09-21）**
 - 版本号：**0.5.20**（package.json / index.html meta app-version）
-- 包含任务：提醒面板·一键清理已过期
-- 分支：`release/v0.5.20`；发布 PR：**待创建**
-- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.20（幂等）
-- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.20 + 知识库 200）
-- smoke：typecheck / lint 0 err / audit:i18n / unit **1710** / chromium E2E recent-features **22/22**
+- 分支：`release/v0.5.20`（release 2b23e23）；发布 PR：#84（rebase 合并 → main）
+- tag/release：release-tag workflow 自动打 **tag v0.5.20** @ df71d10（幂等，不覆盖 v0.5.19）
+- 部署：Pages **live 抽查通过**（首页 200 + `app-version=0.5.20` + 知识库 200）；
+  Vercel 生产被 **build-rate-limit** 阻塞（Hobby 计划因本会话 12 连发触顶，vercel.com?upgradeToPro=build-rate-limit；
+  非代码问题——release PR preview 构建通过、CI 全绿；限流重置后 Vercel 自动补齐最新 main）
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1710** ✅ / chromium E2E recent-features **22/22** ✅ /
+  CI+CodeQL+Pages+Android+iOS 全绿（release push 主 CI 首跑即绿）
+- 期间处理：E6 E2E 断言 getByText(/已过期/) 因新增「清理已过期」按钮文案二义 → 限定 alert-row（组件+E2E 双处同步修复）
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
-- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
-  TS7 已解阻塞——typescript-eslint 8.70 兼容 TS 7.0.2，toolchain 全绿）
+- 下一里程碑：**v0.5.x 继续**——调整发布节奏（连发 12 版触发 Vercel Hobby build-rate-limit，后续功能先批量积累再发布）
 
 **里程碑 v0.5.19 发布完成（2026-09-20）**
 - 版本号：**0.5.19**（package.json / index.html meta app-version）
