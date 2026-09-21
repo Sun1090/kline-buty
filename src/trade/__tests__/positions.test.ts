@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_POSITIONS, applyOrder, hasAny, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
+import { EMPTY_POSITIONS, applyOrder, hasAny, planReduce, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
 import type { Position } from '../../position/pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
@@ -102,5 +102,44 @@ describe('reverseSlot（v0.5.x 反手）', () => {
     const { next, closed } = reverseSlot(EMPTY_POSITIONS, 'long', 100)
     expect(closed).toBeNull()
     expect(next).toBe(EMPTY_POSITIONS)
+  })
+})
+
+describe('planReduce 部分平仓', () => {
+  it('减半：返回减仓量与剩余持仓，价位线设置原样保留', () => {
+    expect(planReduce(longPos, 1)).toEqual({ qty: 1, remaining: { ...longPos, quantity: 1 } })
+    const t: Position = { entry: 100, quantity: 3, direction: 'long', trailPct: 2, takeProfit: 120, stopLoss: 110 }
+    expect(planReduce(t, 1)!.remaining).toEqual({ ...t, quantity: 2 })
+  })
+
+  it('减到 0（含浮点尘）→ 剩余为 null，即整仓平掉', () => {
+    expect(planReduce(longPos, 2)!.remaining).toBeNull()
+    expect(planReduce(longPos, 2)!.qty).toBe(2)
+    // 25% × 4 次累加后的尾差不应报「超过持仓量」
+    expect(planReduce({ ...longPos, quantity: 4 }, 4 - 1e-12)!.remaining).toBeNull()
+  })
+
+  it('空头镜像：数量口径一致', () => {
+    expect(planReduce(shortPos, 1.5)).toEqual({ qty: 1.5, remaining: { ...shortPos, quantity: 1.5 } })
+  })
+
+  it('非法数量（0 / 负数 / NaN / Infinity / 超过持仓）→ null', () => {
+    expect(planReduce(longPos, 0)).toBeNull()
+    expect(planReduce(longPos, -1)).toBeNull()
+    expect(planReduce(longPos, NaN)).toBeNull()
+    expect(planReduce(longPos, Infinity)).toBeNull()
+    expect(planReduce(longPos, 2.5)).toBeNull()
+  })
+
+  it('按比例减仓的浮点结果保持可读（不写出 0.30000000000000004）', () => {
+    const p: Position = { entry: 100, quantity: 0.3, direction: 'long' }
+    const res = planReduce(p, 0.3 * 0.5)
+    expect(res?.qty).toBe(0.15)
+    expect(res?.remaining?.quantity).toBe(0.15)
+  })
+
+  it('不修改入参持仓对象', () => {
+    planReduce(longPos, 1)
+    expect(longPos.quantity).toBe(2)
   })
 })

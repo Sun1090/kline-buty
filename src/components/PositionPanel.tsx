@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
 import { applyLevels, breakevenStop, type LevelError, type LevelInput } from '../position/levels'
-import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
+import { EMPTY_POSITIONS, planReduce, type Positions } from '../trade/positions'
 import type { PendingOrder } from '../trade/pending'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
@@ -24,6 +24,8 @@ interface PositionPanelProps {
   onSettleSymbol?: (symbol: string) => void
   /** v0.5.x 反手：平掉指定方向并以现价同量开反向仓（记账由父层完成） */
   onReverse?: (slot: 'long' | 'short') => void
+  /** v0.5.x 部分平仓：减掉 qty 数量，剩余仓位保留原开仓价与价位线（记账由父层完成） */
+  onReduce?: (slot: 'long' | 'short', qty: number) => void
   /** v0.5.x 今日已实现盈亏（USDT）：账户总览展示，无则传 null 显占位 */
   todayPnl?: number | null
   /** v0.5.x 限价挂单列表（含其他品种）：当前品种 + 撤销回调 */
@@ -50,7 +52,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, todayPnl, symbol, pendingOrders, onCancelOrder }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, onReduce, todayPnl, symbol, pendingOrders, onCancelOrder }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -66,6 +68,10 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
   const [levelEdit, setLevelEdit] = useState<'long' | 'short' | null>(null)
   const [levelDraft, setLevelDraft] = useState<LevelInput>({ takeProfit: '', stopLoss: '', trail: '' })
   const [levelError, setLevelError] = useState<LevelError | null>(null)
+  // v0.5.x 部分平仓：一次只展开一个方向的减仓编辑器，数量以字符串承载
+  const [reduceEdit, setReduceEdit] = useState<'long' | 'short' | null>(null)
+  const [reduceDraft, setReduceDraft] = useState<string>('')
+  const [reduceError, setReduceError] = useState<boolean>(false)
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
@@ -118,6 +124,41 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
 
   const settle = (slot: 'long' | 'short') => {
     onChange({ ...positions, [slot]: null })
+  }
+
+  /** 展开减仓编辑器：默认填一半数量（浮点结果按 12 位有效数字收窄，避免一长串尾数） */
+  const openReduceEditor = (slot: 'long' | 'short') => {
+    const p = positions[slot]
+    if (!p) return
+    setReduceEdit(slot)
+    setReduceError(false)
+    setReduceDraft(String(Number((p.quantity / 2).toPrecision(12))))
+  }
+
+  /** 提交减仓：数量非法或超过持仓量时面板内报错、不回调 */
+  const submitReduce = (slot: 'long' | 'short') => {
+    const p = positions[slot]
+    if (!p) return
+    const plan = planReduce(p, Number(reduceDraft))
+    if (!plan) {
+      setReduceError(true)
+      return
+    }
+    setReduceEdit(null)
+    onReduce?.(slot, plan.qty)
+  }
+
+  /** 按比例快捷减仓：直接按该比例减掉，不再弹编辑器 */
+  const reduceByRatio = (slot: 'long' | 'short', ratio: number) => {
+    const p = positions[slot]
+    if (!p) return
+    const plan = planReduce(p, Number((p.quantity * ratio).toPrecision(12)))
+    if (!plan) {
+      setReduceError(true)
+      return
+    }
+    setReduceEdit(null)
+    onReduce?.(slot, plan.qty)
   }
 
   /** 展开某方向的价位编辑器：以当前止盈/止损预填，空槽位留空 */
@@ -276,6 +317,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               )}
               <button
                 onClick={() => settle(key)}
+                data-testid={`position-close-${key}`}
                 title={t('position.close')}
                 aria-label={`${t('position.close')} ${t(label)}`}
                 style={{
@@ -290,6 +332,25 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
                 }}
               >
                 {t('position.close')}
+              </button>
+              <button
+                onClick={() => (reduceEdit === key ? setReduceEdit(null) : openReduceEditor(key))}
+                data-testid={`position-reduce-toggle-${key}`}
+                aria-expanded={reduceEdit === key}
+                title={t('position.reduce')}
+                aria-label={`${t('position.reduce')} ${t(label)}`}
+                style={{
+                  flex: '0 0 auto',
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: 'var(--text-dim)',
+                }}
+              >
+                {t('position.reduce')}
               </button>
               <button
                 onClick={() => onReverse?.(key)}
@@ -448,6 +509,91 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
                   {levelError && (
                     <span data-testid="position-level-error" style={{ color: 'var(--down)' }}>
                       {t(levelError === 'crossed' ? 'position.levelErrCrossed' : 'position.levelErrInvalid')}
+                    </span>
+                  )}
+                </div>
+              )}
+              {reduceEdit === key && (
+                <div
+                  data-testid={`position-reduce-editor-${key}`}
+                  style={{
+                    flex: '1 1 100%',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 2,
+                    paddingTop: 8,
+                    borderTop: '1px dashed rgba(255,255,255,0.12)',
+                    fontSize: 11,
+                  }}
+                >
+                  {[0.25, 0.5, 0.75].map((ratio) => (
+                    <button
+                      key={ratio}
+                      onClick={() => reduceByRatio(key, ratio)}
+                      data-testid={`position-reduce-ratio-${key}-${Math.round(ratio * 100)}`}
+                      style={{
+                        padding: '2px 8px',
+                        fontSize: 11,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        color: 'var(--text-dim)',
+                      }}
+                    >
+                      {Math.round(ratio * 100)}%
+                    </button>
+                  ))}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <span style={{ color: 'var(--text-dim)' }}>{t('position.reduceQty')}</span>
+                    <input
+                      data-testid={`position-reduce-qty-${key}`}
+                      style={{ ...inputStyle, width: 80 }}
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={reduceDraft}
+                      onChange={(e) => {
+                        setReduceDraft(e.target.value)
+                        setReduceError(false)
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => submitReduce(key)}
+                    data-testid={`position-reduce-confirm-${key}`}
+                    style={{
+                      padding: '2px 10px',
+                      fontSize: 11,
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      background: 'var(--accent)',
+                      color: '#fff',
+                    }}
+                  >
+                    {t('common.confirm')}
+                  </button>
+                  <button
+                    onClick={() => setReduceEdit(null)}
+                    data-testid={`position-reduce-cancel-${key}`}
+                    style={{
+                      padding: '2px 10px',
+                      fontSize: 11,
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      background: 'transparent',
+                      color: 'var(--text-faint)',
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  {reduceError && (
+                    <span data-testid="position-reduce-error" style={{ color: 'var(--down)' }}>
+                      {t('position.reduceErr')}
                     </span>
                   )}
                 </div>

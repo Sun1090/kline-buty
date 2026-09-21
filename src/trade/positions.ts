@@ -86,6 +86,24 @@ export function reverseSlot(
   return { next, closed }
 }
 
+/**
+ * 部分平仓计划：从持仓中减掉 qty，返回减仓量与剩余持仓（减到 0 则槽位清空为 null）。
+ * qty 非法（非有限数 / ≤0）或超过持仓量时返回 null，由调用方提示而不是静默改数量。
+ * 剩余持仓沿用开仓价与止盈/止损/移动止损设置——减仓不动这些线。
+ */
+export function planReduce(
+  p: Position,
+  qty: number,
+): { qty: number; remaining: Position | null } | null {
+  if (!Number.isFinite(qty) || qty <= 0) return null
+  // 按比例算出的浮点尘不应被当成「超过持仓量」
+  if (qty > p.quantity + 1e-9) return null
+  const closed = Number(Math.min(qty, p.quantity).toPrecision(12))
+  const left = p.quantity - closed
+  if (left <= 1e-9) return { qty: closed, remaining: null }
+  return { qty: closed, remaining: { ...p, quantity: Number(left.toPrecision(12)) } }
+}
+
 /** 是否有任一方向持仓 */
 export function hasAny(positions: Positions): boolean {
   return positions.long !== null || positions.short !== null

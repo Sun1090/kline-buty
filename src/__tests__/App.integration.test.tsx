@@ -165,12 +165,90 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     const posRow = screen.getByTestId('position-row-long')
     expect(posRow).toBeDefined()
     expect(posRow.textContent).toMatch(/-?\d+(\.\d+)?/) // 浮动盈亏数值
-    // 平仓（行内唯一按钮）
-    const closeBtn = posRow.querySelector('button')
-    expect(closeBtn).not.toBeNull()
-    fireEvent.click(closeBtn!)
+    // 平仓（行内按钮，用 testid 而不依赖顺序：全平/减仓/反手/价位 四个按钮同排）
+    const closeBtn = screen.getByTestId('position-close-long')
+    fireEvent.click(closeBtn)
     expect(screen.queryByTestId('position-row-long')).toBeNull()
     expect(screen.getByText('暂无持仓')).toBeDefined()
+  })
+
+  it('部分平仓：减仓 50% → 剩余仓位保留、流水记一条净额 close', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('仓位'))
+    const panel = screen.getByRole('region', { name: '模拟仓位' })
+    const inputs = panel.querySelectorAll('input')
+    fireEvent.change(inputs[0], { target: { value: '100' } })
+    fireEvent.change(inputs[1], { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: '开仓' }))
+
+    fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+    // 默认预填一半
+    expect((screen.getByTestId('position-reduce-qty-long') as HTMLInputElement).value).toBe('1')
+    // 超量直接报错、不回调
+    fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '5' } })
+    fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+    expect(screen.getByTestId('position-reduce-error')).toBeTruthy()
+    expect(screen.getByTestId('position-row-long')).toBeTruthy()
+
+    fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '1' } })
+    fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+    expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+    // 剩余仓位仍在，数量减半
+    const stored = JSON.parse(localStorage.getItem('kline-buty:positionsBySymbol') ?? '{}') as {
+      BTCUSDT: { long: { quantity: number; entry: number } }
+    }
+    expect(stored.BTCUSDT.long.quantity).toBe(1)
+    expect(stored.BTCUSDT.long.entry).toBe(100)
+    // 流水：一条 close，qty 为减仓量（开仓那条是 open）
+    const trades = JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]') as {
+      kind: string
+      qty: number
+      side: string
+    }[]
+    const closes = trades.filter((r) => r.kind === 'close')
+    expect(closes).toHaveLength(1)
+    expect(closes[0]).toMatchObject({ qty: 1, side: 'buy' })
+  })
+
+  it('减仓比例芯片：编辑器内点 25% 直接按量减掉并收起', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('仓位'))
+    const panel = screen.getByRole('region', { name: '模拟仓位' })
+    const inputs = panel.querySelectorAll('input')
+    fireEvent.change(inputs[0], { target: { value: '100' } })
+    fireEvent.change(inputs[1], { target: { value: '4' } })
+    fireEvent.click(screen.getByRole('button', { name: '开仓' }))
+
+    // 芯片在编辑器内：先展开（防误触：减仓是直接下单动作，不是一键即发）
+    fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+    fireEvent.click(screen.getByTestId('position-reduce-ratio-long-25'))
+    const stored = JSON.parse(localStorage.getItem('kline-buty:positionsBySymbol') ?? '{}') as {
+      BTCUSDT: { long: { quantity: number } }
+    }
+    expect(stored.BTCUSDT.long.quantity).toBe(3)
+    expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+  })
+
+  it('减到全量等价于全平：清空槽位且只记一条 close', () => {
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('仓位'))
+    const panel = screen.getByRole('region', { name: '模拟仓位' })
+    const inputs = panel.querySelectorAll('input')
+    fireEvent.change(inputs[0], { target: { value: '100' } })
+    fireEvent.change(inputs[1], { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: '开仓' }))
+
+    fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+    fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '2' } })
+    fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+    expect(screen.queryByTestId('position-row-long')).toBeNull()
+    const trades = JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]') as { kind: string; qty: number }[]
+    const closes = trades.filter((r) => r.kind === 'close')
+    expect(closes).toHaveLength(1)
+    expect(closes[0].qty).toBe(2)
   })
 
   it('价格提醒：创建提醒 → 列表出现 → 删除', () => {
