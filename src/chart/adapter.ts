@@ -27,7 +27,7 @@ import {
 } from './inertiaScroll'
 import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
-import { detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
+import { acceptDragPrice, detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
 import {
   channelLine,
   DEFAULT_TEXT_FONT_SIZE,
@@ -218,8 +218,8 @@ export interface ChartApi {
   setSessionHighLow(hl: { high: number; low: number } | null): void
   /** v0.5.x 模拟成交图面标记（buy=涨绿 / sell=跌红 点标），null/[] 清除 */
   setTradeMarkers(markers: { time: number; price: number; side: 'buy' | 'sell' }[] | null): void
-  /** 仓位线拖拽回调（拖动中实时触发，UI 层同步状态） */
-  setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => void) | null): void
+  /** 仓位线拖拽回调（拖动中实时触发）：返回夹紧后的价格，或 null 表示拒绝本次移动 */
+  setPositionDragHandler(cb: ((key: PositionLineKey, price: number) => number | null | void) | null): void
   /** 画线数据全量渲染 */
   setDrawings(drawings: Drawing[]): void
   /** I9 画线坐标信息角标常显开关（每条线端点在 overlay 上显示坐标标签） */
@@ -406,7 +406,7 @@ export class LightweightChartAdapter implements ChartApi {
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
   private lastDownDetail = 1
-  private dragHandler: ((key: PositionLineKey, price: number) => void) | null = null
+  private dragHandler: ((key: PositionLineKey, price: number) => number | null | void) | null = null
   private dragKey: PositionLineKey | null = null
   private hoverKey: PositionLineKey | null = null
   private overlay: HTMLCanvasElement
@@ -2587,13 +2587,14 @@ export class LightweightChartAdapter implements ChartApi {
       return
     }
     if (this.dragKey) {
-      const price = resolveDragPrice(y, (yy) => this.mainSeries.coordinateToPrice(yy))
-      if (price !== null) {
-        const next = { ...this.positionLines, [this.dragKey]: price }
-        this.positionLines = next
-        this.applyPositionLines()
-        this.dragHandler?.(this.dragKey, price)
-      }
+      const raw = resolveDragPrice(y, (yy) => this.mainSeries.coordinateToPrice(yy))
+      if (raw === null) return
+      // UI 层（持仓校验）决定这条线最终落在哪儿：拒绝则停在原位，返回夹紧价则按夹紧价画
+      const price = acceptDragPrice(raw, this.dragHandler?.(this.dragKey, raw))
+      if (price === null) return
+      const next = { ...this.positionLines, [this.dragKey]: price }
+      this.positionLines = next
+      this.applyPositionLines()
       return
     }
     const lines = Object.entries(this.positionLines)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectHover, resolveDragPrice, type PositionLineInfo } from '../dragState'
+import { acceptDragPrice, detectHover, resolveDragPrice, type PositionLineInfo } from '../dragState'
 
 const lines: PositionLineInfo[] = [
   { key: 'entry', price: 100 },
@@ -41,5 +41,23 @@ describe('resolveDragPrice', () => {
     expect(resolveDragPrice(200, () => null)).toBeNull()
     expect(resolveDragPrice(200, () => -5)).toBeNull()
     expect(resolveDragPrice(200, () => NaN)).toBeNull()
+  })
+})
+
+describe('acceptDragPrice 拖动落点由 UI 层裁定', () => {
+  it('未返回值（如拖开仓价）原样采用指针价', () => {
+    expect(acceptDragPrice(105, undefined)).toBe(105)
+    expect(acceptDragPrice(105, (() => {})())).toBe(105)
+  })
+
+  it('返回夹紧价则按夹紧价落线；返回 null 则拒绝本次移动', () => {
+    expect(acceptDragPrice(80, 100)).toBe(100)
+    expect(acceptDragPrice(80, null)).toBeNull()
+  })
+
+  it('返回非法值（NaN / 0 / 负数）退回指针价', () => {
+    expect(acceptDragPrice(105, NaN)).toBe(105)
+    expect(acceptDragPrice(105, 0)).toBe(105)
+    expect(acceptDragPrice(105, -3)).toBe(105)
   })
 })
