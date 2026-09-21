@@ -3,20 +3,33 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.24] 持仓止盈止损可编辑（2026-09-22）
+## [v0.5.24] 持仓止盈止损可编辑 + 移动止损（2026-09-22）
 
-v0.5.23 发布后的第一个批次：让已开仓位也能改止盈/止损，与刚补全的触价结算链路闭环。
+v0.5.23 发布后的批次：让已开仓位也能改止盈/止损，并让止损跟着行情走，与刚补全的触价结算链路闭环。
 
 - **行内编辑器**：仓位面板每个持仓行新增「止盈/止损」开关，以现值预填两条价位、留空即清除该线；
   一键**保本止损**把止损推到开仓价（保留止盈与数量），多空各自独立展开、互不影响
 - **校验**：多头要求止盈 ≥ 开仓价 ≥ 止损、空头方向相反；两线重合报「不能重合」，
-  非正数/非有限数报「非法」——失败时面板内提示错误且不写回
-- 纯函数层新增 `src/position/levels.ts`（`parseLevel` / `applyLevels` / `levelsOnCorrectSide` /
-  `levelsOrdered` / `breakevenStop`，均不改入参）；编辑写回 `positionsBySymbol`，
-  图表止盈/止损线与 v0.5.23 的结算 effect 同步生效（改价到现价有利侧即触价平仓）
-- 五语 i18n 新增 `position.levels/levelBreakeven/levelClearHint/levelErrInvalid/levelErrCrossed`
-- 测试：单测 +19（纯函数 12、面板编辑器 6、App 集成 1），E2E `tpsl-guard` 新增两条
-  （面板改止盈价到现价下方 → 保存即结算；320px 窄屏编辑器换行且面板不横向滚动）
+  非正数/非有限数报「非法」——失败时面板内提示错误且不写回。止损的上界取
+  「开仓价与现价中的较有利者」，因此移动止损推进后的止损价可以被存回去
+- **移动止损 `trailPct`**：编辑器第三格填百分比（留空即关闭该档），持仓行显示「移动止损 t%」徽标。
+  每次价格刷新把止损朝有利方向推进到距现价 t% 的位置，**价格回落时不回撤**；
+  回落到推进后的止损线即按既有口径结算一次。实现分两步且互不越界：
+  `planTpSlExits` 只认持仓上的存值止损，`planTrailMoves` 负责把推进后的线写回状态
+  （同一轮已命中的槽位不再写回），写回值随 `positionsBySymbol` 持久化——
+  图表上的止损线因此自己会跟着走
+- **结算链路合并**：原先「当前图表品种的 K 线级结算」与「跨品种守护」两条路径各写一遍判定与记账，
+  现统一为 `usePositionSettlement` 一条链路（当前品种取 K 线最新价、其他品种取 30s 轮询价），
+  `autoSettled` WeakSet + claim key 双保险，避免与显式平仓簿记重复记账
+- 纯函数层新增 `src/position/levels.ts`（`parseLevel` / `parseTrail` / `applyLevels` /
+  `levelsOrdered` / `effectiveStopLoss` / `breakevenStop`，均不改入参）与
+  `src/trade/tpsl.ts`（`planTpSlExits` / `planTrailMoves`）
+- 五语 i18n 新增 `position.levels/levelBreakeven/levelClearHint/levelErrInvalid/levelErrCrossed/levelTrail/levelTrailHint`
+- 测试：单测 1796 → **1841**（价位编辑/移动止损纯函数、结算 hook、面板编辑器、App 集成），
+  E2E `tpsl-guard` 五条：改止盈价到现价下方即结算、面板设 t% 后回落结算一次、
+  320px 窄屏三格输入换行且面板不横向滚动
+- 修复（开发过程中）：价位编辑器加入第三格后，320px 下三个输入被挤到视口外并撑出横向滚动
+  （违反「移动端功能区换行、不得横向滚动」）→ 改用 `grid auto-fit`，窄屏每格独占一行
 
 ## [v0.5.23] 成交明细筛选 + 图表右键挂单 + 跨品种止盈止损（2026-09-22）
 
