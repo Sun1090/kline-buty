@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { TAPE_CAP, fmtTradeClock, mergeTrades, parseTrades, type TradePrint } from '../trades'
+import {
+  TAPE_BIG_STEPS,
+  TAPE_CAP,
+  TAPE_FILTER_DEFAULT,
+  avgTradeQty,
+  filterTape,
+  fmtTradeClock,
+  mergeTrades,
+  parseTrades,
+  type TradePrint,
+} from '../trades'
 
 const print = (id: number, over: Partial<TradePrint> = {}): TradePrint => ({
   id,
@@ -60,8 +70,38 @@ describe('mergeTrades', () => {
   })
 })
 
-describe('fmtTradeClock', () => {
-  it('本地时区 HH:MM:SS 补零', () => {
+describe('avgTradeQty / filterTape', () => {
+  const prints = [
+    print(1, { qty: 1, buy: true }),
+    print(2, { qty: 2, buy: false }),
+    print(3, { qty: 11, buy: true }),
+  ]
+
+  it('窗口均值：空表为 0，否则为数量算术平均', () => {
+    expect(avgTradeQty([])).toBe(0)
+    expect(avgTradeQty(prints)).toBeCloseTo(14 / 3, 10)
+  })
+
+  it('方向筛选：all 全放行，buy/sell 只留对应主动方向', () => {
+    expect(filterTape(prints, { side: 'all', bigMultiple: 0 })).toHaveLength(3)
+    expect(filterTape(prints, { side: 'buy', bigMultiple: 0 }).map((t) => t.id)).toEqual([1, 3])
+    expect(filterTape(prints, { side: 'sell', bigMultiple: 0 }).map((t) => t.id)).toEqual([2])
+  })
+
+  it('大单筛选：数量 ≥ 均值 × 倍数，并与方向叠加', () => {
+    // 均值 4.67，×2 → 阈值 9.33，只有 id 3 通过
+    expect(filterTape(prints, { side: 'all', bigMultiple: 2 }).map((t) => t.id)).toEqual([3])
+    expect(filterTape(prints, { side: 'sell', bigMultiple: 2 })).toEqual([])
+  })
+
+  it('无成交时大单档不放行任何成交；默认筛选档位常量有效', () => {
+    expect(filterTape([], { side: 'all', bigMultiple: 5 })).toEqual([])
+    expect(TAPE_FILTER_DEFAULT).toEqual({ side: 'all', bigMultiple: 0 })
+    expect(TAPE_BIG_STEPS[0]).toBe(0)
+  })
+})
+
+describe('fmtTradeClock', () => {  it('本地时区 HH:MM:SS 补零', () => {
     expect(fmtTradeClock(new Date(2026, 0, 2, 3, 4, 5).getTime())).toBe('03:04:05')
     expect(fmtTradeClock(new Date(2026, 10, 30, 23, 59, 58).getTime())).toBe('23:59:58')
   })

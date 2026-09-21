@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { useRecentTrades } from '../hooks/useRecentTrades'
-import { fmtTradeClock } from '../data/trades'
+import { TAPE_BIG_STEPS, TAPE_FILTER_DEFAULT, fmtTradeClock, filterTape, type TapeFilter } from '../data/trades'
 import { fmtCompact } from '../depth/format'
 import { fmtPriceCompact as fmtPrice } from '../utils/format'
 import { useI18n } from '../i18n/useI18n'
@@ -15,15 +15,35 @@ interface RecentTradesProps {
 /** 列表最多渲染的行数（累积窗口由 hook 的 TAPE_CAP 决定） */
 const MAX_ROWS = 20
 
+const SIDES: TapeFilter['side'][] = ['all', 'buy', 'sell']
+
+function chipStyle(active: boolean): CSSProperties {
+  return {
+    border: '1px solid #2a2e39',
+    borderRadius: 4,
+    background: active ? 'rgba(41,98,255,0.18)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--text-faint)',
+    cursor: 'pointer',
+    fontSize: 10,
+    padding: '1px 6px',
+  }
+}
+
 /**
- * 最新逐笔成交（成交明细 Tape）：5s 轮询累积，按主动买/主动卖着色，最新在顶部。
- * 与盘口共用主图标记线联动。
+ * 最新逐笔成交（成交明细 Tape）：5s 轮询累积，按主动买/主动卖着色，最新在顶部；
+ * 支持方向筛选与「大单」阈值（数量 ≥ 窗口均值 × 倍数）过滤。
  */
 export function RecentTrades({ symbol, onMarkPrice }: RecentTradesProps) {
   const { t } = useI18n()
   const trades = useRecentTrades(symbol)
-  const rows = useMemo(() => trades.slice(-MAX_ROWS).reverse(), [trades])
+  const [filter, setFilter] = useState<TapeFilter>(TAPE_FILTER_DEFAULT)
+  const rows = useMemo(() => filterTape(trades, filter).slice(-MAX_ROWS).reverse(), [trades, filter])
   const buyCount = useMemo(() => trades.reduce((n, tr) => n + (tr.buy ? 1 : 0), 0), [trades])
+  const sideLabel: Record<TapeFilter['side'], string> = {
+    all: t('tape.filterAll'),
+    buy: t('tape.filterBuy'),
+    sell: t('tape.filterSell'),
+  }
 
   return (
     <div
@@ -56,6 +76,36 @@ export function RecentTrades({ symbol, onMarkPrice }: RecentTradesProps) {
           </span>
         )}
       </div>
+      {/* v0.5.x Tape 筛选：方向 + 大单阈值（倍数循环） */}
+      <div data-testid="tape-filter" style={{ display: 'flex', gap: 4, marginBottom: 2, alignItems: 'center' }}>
+        {SIDES.map((side) => (
+          <button
+            key={side}
+            data-testid={`tape-filter-${side}`}
+            onClick={() => setFilter((f) => ({ ...f, side }))}
+            aria-pressed={filter.side === side}
+            title={t('tape.filterSideHint')}
+            style={chipStyle(filter.side === side)}
+          >
+            {sideLabel[side]}
+          </button>
+        ))}
+        <button
+          data-testid="tape-filter-big"
+          onClick={() =>
+            setFilter((f) => {
+              const idx = TAPE_BIG_STEPS.indexOf(f.bigMultiple as (typeof TAPE_BIG_STEPS)[number])
+              return { ...f, bigMultiple: TAPE_BIG_STEPS[(idx + 1) % TAPE_BIG_STEPS.length] }
+            })
+          }
+          aria-pressed={filter.bigMultiple > 0}
+          title={t('tape.bigOrderHint')}
+          style={chipStyle(filter.bigMultiple > 0)}
+        >
+          {t('tape.bigOrder')}
+          {filter.bigMultiple > 0 ? ` ×${filter.bigMultiple}` : ''}
+        </button>
+      </div>
       <div
         style={{
           display: 'grid',
@@ -73,6 +123,10 @@ export function RecentTrades({ symbol, onMarkPrice }: RecentTradesProps) {
       </div>
       {trades.length === 0 ? (
         <Skeleton rows={8} rowHeight={16} testId="tape-skeleton" />
+      ) : rows.length === 0 ? (
+        <div data-testid="tape-empty-filter" style={{ fontSize: 11, color: 'var(--text-faint)', padding: '4px 8px' }}>
+          {t('tape.emptyFilter')}
+        </div>
       ) : (
         rows.map((tr) => (
           <div
