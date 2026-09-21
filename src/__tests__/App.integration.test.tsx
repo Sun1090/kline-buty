@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { render, fireEvent, screen, cleanup } from '@testing-library/react'
+import { render, fireEvent, screen, cleanup, waitFor, act } from '@testing-library/react'
 
 function makeCandles(n: number) {
   return Array.from({ length: n }, (_, i) => ({
@@ -184,6 +184,43 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     // 删除
     fireEvent.click(screen.getByRole('button', { name: '删除' }))
     expect(screen.queryByTestId('alert-row')).toBeNull()
+  })
+
+  it('图表右键挂限价单：事件 → 快捷下单预填挂单价 → 确认写入挂单存储', async () => {
+    render(<App />)
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('chart-request-limit-order', { detail: { symbol: 'BTCUSDT', price: 60000, side: 'sell' } }),
+      )
+    })
+    await waitFor(() => expect(screen.getByTestId('quick-order')).toBeTruthy())
+    // 右键入口直接进入限价模式，价格即点击价位
+    expect((screen.getByTestId('qo-type-limit') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
+    expect((screen.getByTestId('qo-price') as HTMLInputElement).value).toBe('60000')
+    fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '0.001' } })
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(screen.queryByTestId('quick-order')).toBeNull()
+    // 现价（mock 蜡烛 ≈ 100）远低于卖单挂价 → 不触价，挂单原样入队
+    const orders = JSON.parse(localStorage.getItem('kline-buty:paperOrders') ?? '[]') as {
+      symbol: string
+      side: string
+      price: number
+      qty: number
+    }[]
+    expect(orders).toHaveLength(1)
+    expect(orders[0]).toMatchObject({ symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.001 })
+    expect((JSON.parse(localStorage.getItem('kline-buty:paperTrades') ?? '[]') as unknown[]).length).toBe(0)
+  })
+
+  it('图表右键挂单事件：缺价格或方向非法时不打开下单面板', async () => {
+    render(<App />)
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('chart-request-limit-order', { detail: { symbol: 'BTCUSDT', side: 'sell' } }))
+      window.dispatchEvent(
+        new CustomEvent('chart-request-limit-order', { detail: { symbol: 'BTCUSDT', price: 100, side: 'long' } }),
+      )
+    })
+    expect(screen.queryByTestId('quick-order')).toBeNull()
   })
 
   it('设置流：水印开关持久化 + 高对比 + 时区切换', () => {

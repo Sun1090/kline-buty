@@ -153,4 +153,12 @@ describe('QuickOrder 快速下单', () => {
     expect(screen.getByTestId('qo-fee').textContent).toBe('0.1000')
     expect(screen.queryByTestId('qo-limit-price')).toBeNull()
   })
+
+  it('v0.5.x initialType=limit：打开即处于挂单模式（图表右键入口）', () => {
+    const handlers = setup({ initialType: 'limit' })
+    expect((screen.getByTestId('qo-type-limit') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
+    expect((screen.getByTestId('qo-type-market') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit' })
+  })
 })
