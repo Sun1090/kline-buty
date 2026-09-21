@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
+import { applyLevels, breakevenStop, type LevelError, type LevelInput } from '../position/levels'
 import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
 import type { PendingOrder } from '../trade/pending'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -61,6 +62,10 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
   const [levelMode, setLevelMode] = useState<'pct' | 'price'>('pct')
   const [tpPrice, setTpPrice] = useState<string>('')
   const [slPrice, setSlPrice] = useState<string>('')
+  // v0.5.x 已开仓位的止盈/止损行内编辑：一次只展开一个方向
+  const [levelEdit, setLevelEdit] = useState<'long' | 'short' | null>(null)
+  const [levelDraft, setLevelDraft] = useState<LevelInput>({ takeProfit: '', stopLoss: '' })
+  const [levelError, setLevelError] = useState<LevelError | null>(null)
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
@@ -113,6 +118,39 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
 
   const settle = (slot: 'long' | 'short') => {
     onChange({ ...positions, [slot]: null })
+  }
+
+  /** 展开某方向的价位编辑器：以当前止盈/止损预填，空槽位留空 */
+  const openLevelEditor = (slot: 'long' | 'short') => {
+    const p = positions[slot]
+    if (!p) return
+    setLevelEdit(slot)
+    setLevelError(null)
+    setLevelDraft({
+      takeProfit: p.takeProfit !== undefined ? String(p.takeProfit) : '',
+      stopLoss: p.stopLoss !== undefined ? String(p.stopLoss) : '',
+    })
+  }
+
+  const saveLevels = (slot: 'long' | 'short') => {
+    const p = positions[slot]
+    if (!p) return
+    const res = applyLevels(p, levelDraft)
+    if (!res.ok) {
+      setLevelError(res.error)
+      return
+    }
+    onChange({ ...positions, [slot]: res.position })
+    setLevelEdit(null)
+  }
+
+  /** 一键把止损移到开仓价（保本），编辑器同步显示 */
+  const applyBreakeven = (slot: 'long' | 'short') => {
+    const p = positions[slot]
+    if (!p) return
+    onChange({ ...positions, [slot]: breakevenStop(p) })
+    setLevelDraft((d) => ({ ...d, stopLoss: String(p.entry) }))
+    setLevelError(null)
   }
 
   return (
@@ -198,6 +236,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                flexWrap: 'wrap',
                 gap: 8,
                 padding: '6px 8px',
                 marginBottom: 6,
@@ -271,6 +310,114 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               >
                 {t('position.reverse')}
               </button>
+              <button
+                onClick={() => (levelEdit === key ? setLevelEdit(null) : openLevelEditor(key))}
+                data-testid={`position-edit-levels-${key}`}
+                aria-expanded={levelEdit === key}
+                title={t('position.levels')}
+                aria-label={`${t('position.levels')} ${t(label)}`}
+                style={{
+                  flex: '0 0 auto',
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: 'var(--text-dim)',
+                }}
+              >
+                {t('position.levels')}
+              </button>
+              {levelEdit === key && (
+                <div
+                  data-testid={`position-levels-editor-${key}`}
+                  style={{
+                    flex: '1 1 100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    marginTop: 2,
+                    paddingTop: 8,
+                    borderTop: '1px dashed rgba(255,255,255,0.12)',
+                    fontSize: 11,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpLine')}</span>
+                    <input
+                      data-testid={`position-level-tp-${key}`}
+                      style={inputStyle}
+                      type="number"
+                      step="any"
+                      value={levelDraft.takeProfit}
+                      onChange={(e) => setLevelDraft((d) => ({ ...d, takeProfit: e.target.value }))}
+                    />
+                    <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slLine')}</span>
+                    <input
+                      data-testid={`position-level-sl-${key}`}
+                      style={inputStyle}
+                      type="number"
+                      step="any"
+                      value={levelDraft.stopLoss}
+                      onChange={(e) => setLevelDraft((d) => ({ ...d, stopLoss: e.target.value }))}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => applyBreakeven(key)}
+                      data-testid={`position-level-breakeven-${key}`}
+                      style={{
+                        padding: '2px 8px',
+                        fontSize: 11,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        color: 'var(--text-dim)',
+                      }}
+                    >
+                      {t('position.levelBreakeven')}
+                    </button>
+                    <button
+                      onClick={() => saveLevels(key)}
+                      data-testid={`position-level-save-${key}`}
+                      style={{
+                        padding: '2px 10px',
+                        fontSize: 11,
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        background: 'var(--accent)',
+                        color: '#fff',
+                      }}
+                    >
+                      {t('common.confirm')}
+                    </button>
+                    <button
+                      onClick={() => setLevelEdit(null)}
+                      data-testid={`position-level-cancel-${key}`}
+                      style={{
+                        padding: '2px 10px',
+                        fontSize: 11,
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        color: 'var(--text-faint)',
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <span style={{ color: 'var(--text-faint)' }}>{t('position.levelClearHint')}</span>
+                  </div>
+                  {levelError && (
+                    <span data-testid="position-level-error" style={{ color: 'var(--down)' }}>
+                      {t(levelError === 'crossed' ? 'position.levelErrCrossed' : 'position.levelErrInvalid')}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}

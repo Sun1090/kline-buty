@@ -72,4 +72,81 @@ test.describe('v0.5 止盈止损结算', () => {
     const positions = (await stored(page, POSITIONS_KEY)) as { ETHUSDT: { long: { entry: number } } }
     expect(positions.ETHUSDT.long.entry).toBe(40_000)
   })
+
+  test('面板改止盈价到现价下方：保存即触价结算并留一条流水', async ({ page }) => {
+    await page.addInitScript(
+      ([key, payload]) => localStorage.setItem(key, JSON.stringify({ BTCUSDT: { long: payload, short: null } })),
+      [
+        POSITIONS_KEY,
+        { entry: 40_000, quantity: 0.001, direction: 'long', takeProfit: 90_000, stopLoss: 30_000 },
+      ] as const,
+    )
+    await page.goto('/?perf=600&period=1m')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const current = Number((await page.getByTestId('live-price').innerText()).replace(/[^\d.]/g, ''))
+    // 止盈改到现价之下（仍高于开仓价 → 校验通过）→ 保存后必然触价
+    const nextTp = Math.round(current * 0.98)
+    expect(nextTp).toBeGreaterThan(40_000)
+
+    const more = page.getByTestId('header-more')
+    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+    await page.getByRole('button', { name: '仓位' }).click()
+    const panel = page.getByRole('region', { name: '模拟仓位' })
+    await expect(panel).toBeVisible()
+    await panel.getByTestId('position-edit-levels-long').click()
+    await expect(panel.getByTestId('position-level-tp-long')).toHaveValue('90000')
+    await panel.getByTestId('position-level-tp-long').fill(String(nextTp))
+    await panel.getByTestId('position-level-save-long').click()
+    await expect(panel.getByTestId('position-levels-editor-long')).toHaveCount(0)
+
+    await expect
+      .poll(() => stored(page, TRADES_KEY), { timeout: 20_000 })
+      .toBeTruthy()
+    const trades = (await stored(page, TRADES_KEY)) as TradeRow[]
+    expect(trades).toHaveLength(1)
+    expect(trades[0]).toMatchObject({ symbol: 'BTCUSDT', kind: 'close', side: 'buy' })
+    expect(trades[0].price).toBeGreaterThanOrEqual(nextTp)
+    await expect
+      .poll(async () => {
+        const p = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: unknown } }
+        return p.BTCUSDT.long
+      })
+      .toBeNull()
+  })
+
+  test('窄屏 320px：价位编辑器换行展示，面板不产生横向滚动', async ({ page }) => {
+    await page.addInitScript(
+      ([key, payload]) => localStorage.setItem(key, JSON.stringify({ BTCUSDT: { long: payload, short: null } })),
+      [
+        POSITIONS_KEY,
+        { entry: 40_000, quantity: 0.001, direction: 'long', takeProfit: 90_000, stopLoss: 30_000 },
+      ] as const,
+    )
+    await page.setViewportSize({ width: 320, height: 720 })
+    await page.goto('/?perf=600&period=1m')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    const more = page.getByTestId('header-more')
+    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+    await page.getByRole('button', { name: '仓位' }).click()
+    const panel = page.getByRole('region', { name: '模拟仓位' })
+    await expect(panel).toBeVisible()
+    await panel.getByTestId('position-edit-levels-long').click()
+
+    const editor = panel.getByTestId('position-levels-editor-long')
+    await expect(editor).toBeVisible()
+    // 编辑器独占一行（flex-wrap 后宽度≈面板内容宽），两个价位输入可见
+    await expect(panel.getByTestId('position-level-tp-long')).toBeInViewport()
+    await expect(panel.getByTestId('position-level-sl-long')).toBeInViewport()
+    const editorBox = await editor.boundingBox()
+    const panelBox = await panel.boundingBox()
+    expect(editorBox && panelBox ? editorBox.width / panelBox.width : 0).toBeGreaterThan(0.6)
+    // 移动端功能区不得横向溢出
+    const overflow = await panel.evaluate((node) => node.scrollWidth - node.clientWidth)
+    expect(overflow).toBeLessThanOrEqual(1)
+    await panel.getByTestId('position-level-save-long').click()
+    await expect(editor).toHaveCount(0)
+    const saved = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: { takeProfit: number } } }
+    expect(saved.BTCUSDT.long.takeProfit).toBe(90_000)
+  })
 })

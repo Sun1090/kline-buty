@@ -268,4 +268,75 @@ describe('PositionPanel', () => {
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} onChange={vi.fn()} />)
     expect(screen.queryByTestId('pending-orders')).toBeNull()
   })
+
+  describe('v0.5.x 持仓止盈止损行内编辑', () => {
+    const held = { long: longPosition, short: null }
+
+    it('展开编辑器：以当前止盈/止损预填', () => {
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} />)
+      expect(screen.queryByTestId('position-levels-editor-long')).toBeNull()
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      expect((screen.getByTestId('position-level-tp-long') as HTMLInputElement).value).toBe('103')
+      expect((screen.getByTestId('position-level-sl-long') as HTMLInputElement).value).toBe('98')
+    })
+
+    it('保存：回调收到更新后的两条线，其余字段不变', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-tp-long'), { target: { value: '150' } })
+      fireEvent.change(screen.getByTestId('position-level-sl-long'), { target: { value: '95' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      expect(onChange).toHaveBeenCalledTimes(1)
+      const next = onChange.mock.calls[0][0] as { long: Position }
+      expect(next.long).toEqual({ ...longPosition, takeProfit: 150, stopLoss: 95 })
+      expect(screen.queryByTestId('position-levels-editor-long')).toBeNull()
+    })
+
+    it('留空即清除该线', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-tp-long'), { target: { value: '' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      const next = onChange.mock.calls[0][0] as { long: Position }
+      expect('takeProfit' in next.long).toBe(false)
+      expect(next.long.stopLoss).toBe(98)
+    })
+
+    it('非法价位：显示错误且不回调', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-tp-long'), { target: { value: '80' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      expect(onChange).not.toHaveBeenCalled()
+      expect(screen.getByTestId('position-level-error')).toBeTruthy()
+      // 取消可收起编辑器
+      fireEvent.click(screen.getByTestId('position-level-cancel-long'))
+      expect(screen.queryByTestId('position-levels-editor-long')).toBeNull()
+    })
+
+    it('保本止损：立即把止损写到开仓价', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.click(screen.getByTestId('position-level-breakeven-long'))
+      const next = onChange.mock.calls[0][0] as { long: Position }
+      expect(next.long.stopLoss).toBe(100)
+      expect(next.long.takeProfit).toBe(103)
+      expect((screen.getByTestId('position-level-sl-long') as HTMLInputElement).value).toBe('100')
+    })
+
+    it('空头编辑器独立：编辑 short 不影响 long', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={{ long: longPosition, short: shortPosition }} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-short'))
+      fireEvent.change(screen.getByTestId('position-level-sl-short'), { target: { value: '120' } })
+      fireEvent.click(screen.getByTestId('position-level-save-short'))
+      const next = onChange.mock.calls[0][0] as { long: Position; short: Position }
+      expect(next.short.stopLoss).toBe(120)
+      expect(next.long).toEqual(longPosition)
+    })
+  })
 })
