@@ -5,6 +5,17 @@
 
 ## 当前阶段
 
+**v0.5.24 开发中（2026-09-22）** — v0.5.23 已发布（tag v0.5.23 @ a573c4e，Pages live 0.5.23）；本批：持仓止盈止损可编辑
+- **v0.5.x Web 特性 · 持仓止盈止损可编辑（分支 feat/v05-position-levels）**：
+  - 仓位面板每个持仓行新增「止盈/止损」行内编辑器：以现值预填、留空即清除，一键保本止损把止损推到开仓价；
+    校验「多头止盈 ≥ 开仓价 ≥ 止损（空头相反）」，两线重合与非正价分别报错且不写回
+  - 纯函数层新增 `src/position/levels.ts`；写回 `positionsBySymbol` 后图表价位线与 v0.5.23 结算链路同步生效
+  - 五语 i18n 新增 `position.levels/levelBreakeven/levelClearHint/levelErrInvalid/levelErrCrossed`
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1815**（171 files，+19）/
+    chromium E2E `tpsl-guard` 4 例（含改价即触价结算、320px 窄屏换行不横向滚动）；
+    桌面 1280×800 与移动 320×720 均由 E2E 覆盖
+- 下一项：本批 PR → CI → 合并；随后清理 Dependabot #88/#89/#90/#92/#93（已被自动变基，逐个绿则合并）
+
 **里程碑 v0.5.23 发布完成（2026-09-22）**
 - 版本号：**0.5.23**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.23`（release bd7f22c）；发布 PR：#108（rebase 合并 → main **a573c4e**）
