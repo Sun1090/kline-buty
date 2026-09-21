@@ -51,6 +51,20 @@ async function expectCandlesRendered(page: Page) {
     .poll(
       () =>
         page.evaluate(() => {
+          // 涨跌色取自主题变量而不是写死阈值：webkit 读回 canvas 像素会过一遍显示色域，
+          // 通道值随合成器状态整体漂移（v0.5.22 main run 537 三连超时即此因）
+          const css = getComputedStyle(document.documentElement)
+          const rgbOf = (name: string): number[] | null => {
+            const raw = css.getPropertyValue(name).trim()
+            const hex = raw.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+            if (hex) return [1, 2, 3].map((g) => parseInt(String(hex[g]), 16))
+            const nums = raw.match(/[0-9]+/g)
+            return nums ? nums.slice(0, 3).map(Number) : null
+          }
+          const palette = [rgbOf('--up'), rgbOf('--down')].filter((c): c is number[] => c?.length === 3)
+          if (palette.length === 0) return false
+          const near = (r: number, g: number, b: number) =>
+            palette.some((c) => Math.abs(r - c[0]) < 48 && Math.abs(g - c[1]) < 48 && Math.abs(b - c[2]) < 48)
           const cs = [...document.querySelectorAll('canvas')]
           for (const c of cs) {
             try {
@@ -58,10 +72,7 @@ async function expectCandlesRendered(page: Page) {
               if (!ctx || c.width < 100) continue
               const d = ctx.getImageData(0, 0, c.width, c.height).data
               for (let i = 0; i < d.length; i += 200) {
-                const r = d[i]
-                const g = d[i + 1]
-                const b = d[i + 2]
-                if ((g > 140 && r < 80 && b < 140) || (r > 200 && g < 120 && b < 120)) return true
+                if (near(d[i], d[i + 1], d[i + 2])) return true
               }
             } catch {
               /* noop */
@@ -69,7 +80,8 @@ async function expectCandlesRendered(page: Page) {
           }
           return false
         }),
-      { timeout: 20_000 },
+      // webkit 在重负载 CI runner 上最后一帧可迟数十秒（与 A2 周期切换用例同样的放宽先例）
+      { timeout: 45_000 },
     )
     .toBe(true)
 }
@@ -81,6 +93,9 @@ async function switchPeriod(page: Page, testId: string, period: string, count: n
 }
 
 test.describe('A1 周期边界对齐（openTime 归一化）', () => {
+  // 4 次切周期 × 数据就绪轮询（20s）+ 渲染轮询（45s）串在同一条用例里，
+  // 慢机/高负载下总和会撞上 60s 默认预算 → 与 A2 同样放宽整测预算
+  test.setTimeout(180_000)
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.clear())
   })
