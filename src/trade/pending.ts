@@ -1,14 +1,15 @@
 import type { OrderSide } from './order'
 
 /**
- * 限价挂单（Maker 单）领域模型：挂单价即成交价，触达即成交、不计滑点。
+ * 限价挂单（Maker 单）领域模型：触价即成交、不计滑点；
+ * 市场价已优于挂单价时按市场价成交（价格改善，见 `fillPrice`）。
  * 撮合判定放在纯函数层，余额与持仓落地由调用方（App 撮合循环）处理。
  */
 export interface PendingOrder {
   id: string
   symbol: string
   side: OrderSide
-  /** 触发价（同时是成交价） */
+  /** 触发价（限价下界；市场价更优时以市场价为成交价） */
   price: number
   qty: number
   /** 下单时刻（ms）：同价多条时按此 FIFO 撮合 */
@@ -103,9 +104,15 @@ export function canAddOrder(orders: PendingOrder[], symbol: string): boolean {
   return orders.filter((o) => o.symbol === target).length < ORDERS_PER_SYMBOL_MAX
 }
 
+/** 成交价：市场价优于挂单价时按市场价成交（价格改善），市场价缺失时退回挂单价 */
+export function fillPrice(order: PendingOrder, market: number | null | undefined): number {
+  if (typeof market !== 'number' || !Number.isFinite(market) || market <= 0) return order.price
+  return order.side === 'buy' ? Math.min(order.price, market) : Math.max(order.price, market)
+}
+
 export interface FillPlanItem {
   order: PendingOrder
-  /** 名义金额 = 挂单价 × 数量（Maker 单无滑点） */
+  /** 名义金额 = 成交价 × 数量（Maker 单无滑点） */
   notional: number
   /** 挂单费率计的手续费 */
   fee: number
@@ -120,14 +127,20 @@ export interface FillPlan {
 /**
  * 撮合落地计划：按 FIFO 顺序累计名义金额 + 手续费，超出可用余额的挂单不成交。
  * 同一轮多条成交必须累计判定——开仓只即时扣手续费，余额不会随开仓递减。
+ * `priceOf` 给出该订单的实际成交价（默认挂单价），名义金额与费用按成交价计。
  */
-export function planFills(filled: PendingOrder[], balance: number, feeRate: number): FillPlan {
+export function planFills(
+  filled: PendingOrder[],
+  balance: number,
+  feeRate: number,
+  priceOf: (order: PendingOrder) => number = (order) => order.price,
+): FillPlan {
   const accepted: FillPlanItem[] = []
   const rejected: PendingOrder[] = []
   let used = 0
   for (let i = 0; i < filled.length; i++) {
     const order = filled[i]
-    const notional = order.price * order.qty
+    const notional = priceOf(order) * order.qty
     const fee = notional * feeRate
     // FIFO：一旦承接不下，后续订单全部撤销（不插队成交）
     if (used + notional + fee > balance) {
