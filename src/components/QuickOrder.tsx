@@ -47,6 +47,8 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
   const { t } = useI18n()
   const [priceStr, setPriceStr] = useState(String(price))
   const [qtyStr, setQtyStr] = useState('1')
+  // v0.5.x 自定义百分比仓位输入（余额占比，含开仓手续费预留）
+  const [customPct, setCustomPct] = useState('')
   // M5 焦点陷阱：下单弹层内 Tab 循环
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
@@ -175,6 +177,40 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
               {pct}%
             </button>
           ))}
+          {/* v0.5.x 自定义百分比仓位 */}
+          <input
+            data-testid="qo-pct-custom-input"
+            type="number"
+            min={0}
+            max={100}
+            value={customPct}
+            onChange={(e) => setCustomPct(e.target.value)}
+            placeholder={t('quickOrder.customPct')}
+            aria-label={t('quickOrder.customPct')}
+            style={{
+              width: 46,
+              padding: '2px 4px',
+              fontSize: 11,
+              borderRadius: 4,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <button
+            data-testid="qo-pct-custom-apply"
+            onClick={() => {
+              const pct = Number(customPct)
+              if (!(pct > 0)) return
+              const maxQty = (balance * (pct / 100)) / (priceNum * (1 + TAKER_FEE_RATE))
+              const step = maxQty >= 1 ? 0.001 : 0.000001
+              setQtyStr(String(Math.floor(maxQty / step) * step))
+            }}
+            title={t('quickOrder.customPct')}
+            style={fillBtnStyle('var(--yellow)')}
+          >
+            {t('quickOrder.apply')}
+          </button>
         </div>
       )}
 

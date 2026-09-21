@@ -29,7 +29,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, checkHit } from './position/pnl'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, settleSlot, type Positions } from './trade/positions'
-import { usePaperAccount } from './hooks/usePaperAccount'
+import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
@@ -898,9 +898,10 @@ export function App() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
-  const exportTradesCsv = () => {
-    if (paper.trades.length === 0) return
-    void exportTextFile(tradesCsvFileName(), tradesToCsv(paper.trades), 'text/csv;charset=utf-8', true)
+  const exportTradesCsv = (subset?: TradeRecord[]) => {
+    const data = subset ?? paper.trades
+    if (data.length === 0) return
+    void exportTextFile(tradesCsvFileName(), tradesToCsv(data), 'text/csv;charset=utf-8', true)
   }
   // J6 导出权益曲线 CSV（由流水推导的权益时间序列）
   const exportEquityCsv = () => {

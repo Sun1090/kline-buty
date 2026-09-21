@@ -99,6 +99,21 @@ describe('QuickOrder 快速下单', () => {
     expect(qty25).toBeLessThan(qty)
   })
 
+  it('v0.5.x 自定义百分比仓位：输入百分比 → 应用 → 按余额+费率计算数量', () => {
+    setup({ balance: 10000, price: 100 })
+    // 30%：10000×0.3 / (100×1.001) = 29.970... → 步长 0.001 取整 29.97
+    fireEvent.change(screen.getByTestId('qo-pct-custom-input'), { target: { value: '30' } })
+    fireEvent.click(screen.getByTestId('qo-pct-custom-apply'))
+    expect((screen.getByTestId('qo-qty') as HTMLInputElement).value).toBe('29.97')
+  })
+
+  it('v0.5.x 自定义百分比仓位：空/非法输入点应用不改变数量', () => {
+    setup({ balance: 10000, price: 100 })
+    fireEvent.change(screen.getByTestId('qo-pct-custom-input'), { target: { value: '' } })
+    fireEvent.click(screen.getByTestId('qo-pct-custom-apply'))
+    expect((screen.getByTestId('qo-qty') as HTMLInputElement).value).toBe('1')
+  })
+
   it('v0.5 键盘：Enter 确认下单（有效时携带 side/price/qty）', () => {
     const handlers = setup()
     fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '3' } })
