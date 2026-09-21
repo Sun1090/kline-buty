@@ -5,30 +5,12 @@
 
 ## 当前阶段
 
-**v0.5.24 开发中（2026-09-22）** — v0.5.22 已合并 main（release PR #97 待定档）；本批：模拟盘限价挂单
-- **v0.5.x Web 特性 · 限价挂单 Maker 单（本批，feat/v05-limit-orders）**：
-  - 快速下单上市价/限价两档；限价单挂队列，触价按挂单价成交（无滑点、按挂单费率），跨品种撮合
-    （当前品种 tick 级、其他品种 30s ticker），余额不足按 FIFO 撤销，同品种 10 条 / 全局 50 条上限
-  - 持仓面板新增「当前挂单」列表（撤销 + 点行切品种）+ localStorage 持久化清洗 + 成交/撤销横幅；
-    补齐 D5 挂单费率设置；纯函数层 `src/trade/pending.ts` + 3 个 hooks
-  - 修复 `DrawingLayers` I15 导入用例固定 sleep 的并发偶发失败（改 waitFor）
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1753 全绿**（+37） / chromium E2E limit-orders 3 例
-- 下一项：提交本批 → PR → CI → 合并；v0.5.22/v0.5.23 发布待定档（release PR #97 与 main 冲突，需从新 main 重新切版本提交）
-**v0.5.23 开发中（2026-09-22）** — v0.5.22 已发布；本批：行情侧栏「成交明细」Tape
-- **v0.5.x Web 特性 · 成交明细 Tape（本批，feat/v05-recent-trades）**：
-  - 侧栏新增第 5 个面板：逐笔成交 5s 轮询累积（现货优先、永续兜底），按成交 id 去重、方向着色、笔数汇总，
-    点击行联动主图标记线；参与面板顺序换位（F16）与布局方案快照（F18，旧快照按未开启兼容）
-  - 纯函数层 `src/data/trades.ts`（parseTrades/mergeTrades/fmtTradeClock）+ `useRecentTrades`；
-    `?perf` 压测模式禁止真实 REST；五语 i18n 新增 `panel.tape/tapeTitle` 与 `tape.*`
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1736 全绿** / chromium E2E market-tape 3 例
-- 下一项：提交本批 → PR → CI → 合并（发布节奏：与后续批次积累后统一发版）
-
-**v0.5.22 开发中（2026-09-21）** — v0.5.21 已发布；本地新特性构想继续（批量积累后发布）
-- **v0.5.x Web 特性 · 提醒面板·列表筛选（本批，feat/v05-alert-filter）**：
-  - 新增方向（≥/≤）与状态（全部/待触发/已触发/已过期）过滤，联动列表与批量「全选」
-  - `visibleAlerts` useMemo 稳定引用；五语 i18n 新增 `alert.filter/filterAll/filterActive`；组件测试 +3
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1716 全绿**
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.22
+**v0.5.22 定档（2026-09-22）** — 三个本地特性批次（提醒列表筛选 #96、成交明细 Tape #98、模拟盘限价挂单 #99）
+已全部 rebase 合并进 main，本提交定版 0.5.21 → 0.5.22（package.json + index.html app-version），
+并把 CHANGELOG 的三个待发布小节合并为一条 v0.5.22。
+- 被取代的发布 PR：#97（分支 release/v0.5.22，从 8bba2a8 切出、仅含版本号与进度记录，与 main 冲突）→ 关闭，改由本分支发布
+- 单测规模：v0.5.21 的 1713 → 本版本 **1774**
+- 下一项：本 PR 合并 → tag → Pages 部署抽查 → 补「里程碑 v0.5.22 发布完成」记录 → 回到 v0.5.x 特性批次
 
 **里程碑 v0.5.21 发布完成（2026-09-21）**
 - 版本号：**0.5.21**（package.json / index.html meta app-version）

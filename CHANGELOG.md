@@ -3,39 +3,24 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.24] 模拟盘限价挂单（2026-09-22）
+## [v0.5.22] 成交明细 Tape + 模拟盘限价挂单 + 提醒列表筛选（2026-09-22）
 
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+I3（云同步）/ I11（移动端 Widget）两项外部能力暂缓；本地先行的三个特性批次积累后一并发布。
 
-- **限价挂单（Maker 单）**：快速下单新增市价/限价两档；限价单进入挂单队列，价格触达即按**挂单价**成交、
-  不计滑点、按挂单费率计费（补齐 D5 的挂单费率设置项，交易流水面板内可配）
-- 撮合跨品种：当前图表品种用 K 线最新价（tick 级即时触价），其他品种走 30s 批量 ticker 价源；
-  余额承接不下的按 FIFO 撤销；同品种上限 10 条、全局 50 条
-- 持仓面板新增「当前挂单」列表（撤销、点行切品种），localStorage 持久化且读取即清洗脏数据；
-  成交/撤销通过站内横幅提示；`?perf` 压测模式下由合成 K 线驱动撮合（E2E 确定性）
-- 纯函数层 `src/trade/pending.ts`（create/fillsAt/match/planFills/parse）+ `usePendingOrders` /
-  `useSymbolPrices` / `useLimitOrderFills`；五语 i18n 新增 `trade.market/limit/limitHint/makerFee/pendingTitle/pendingEmpty/cancelOrder/filledToast/cancelledToast/tooManyOrders`
-- 顺手修复：`DrawingLayers` I15 导入两条用例用固定 20ms sleep 等 FileReader，高并发全量跑偶发失败 → 改 `waitFor`
-- 验证：typecheck / lint 0 error / audit:i18n / unit **1753** / chromium E2E limit-orders 3 例
-## [v0.5.23] 成交明细 Tape（2026-09-22）
-
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
-
-- **侧栏新增「成交明细」面板（Time & Sales）**：最新逐笔成交 Tape（现货 `/api/v3/trades`，
-  交易对仅存在于永续时回退 `/fapi/v1/trades`），5s 轮询按成交 id 去重累积（窗口 60 笔、渲染 20 行），
-  主动买/主动卖着色 + 笔数汇总，点击行联动主图标记线；参与 F16 侧栏顺序换位与 F18 布局方案快照；
-  `?perf` 压测模式禁止真实 REST
-- 五语 i18n 新增 `panel.tape/tapeTitle` 与 `tape.*`；单测 +20（解析/合并去重/轮询累积/组件/REST 回退）
-- 验证：typecheck / lint 0 error / audit:i18n / unit **1736** / E2E market-tape 3 例（chromium）
-
-## [v0.5.22] 提醒列表筛选（2026-09-21）
-
-I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
-
-- **提醒面板·列表筛选**：新增方向（≥ / ≤）与状态（全部/待触发/已触发/已过期）过滤，
-  联动列表与批量「全选」；`visibleAlerts` memo 稳定引用；五语 i18n 新增
-  `alert.filter/filterAll/filterActive`；组件测试 +3（方向/状态/重置）
-- 验证：typecheck / lint 0 error / audit:i18n / unit **1716** / E2E recent-features 22/22 + alerts-features 8/8
+- **提醒面板·列表筛选**（#96）：新增方向（≥ / ≤）与状态（全部/待触发/已触发/已过期）过滤，
+  联动列表与批量「全选」；`visibleAlerts` memo 稳定引用；五语 i18n `alert.filter/filterAll/filterActive`
+- **侧栏「成交明细」面板（Time & Sales）**（#98）：现货 `/api/v3/trades` 逐笔成交 5s 轮询累积
+  （交易对仅存在于永续时回退 `/fapi/v1/trades`），按成交 id 去重（窗口 60 笔 / 渲染 20 行）、
+  主动买卖着色 + 笔数汇总、点击行联动主图标记线；参与 F16 侧栏顺序换位与 F18 布局快照；
+  `?perf` 压测模式禁止真实 REST；纯函数层 `src/data/trades.ts` + `useRecentTrades`
+- **模拟盘限价挂单（Maker 单）**（#99）：快速下单上市价/限价两档，限价单进挂单队列、价格触达即按**挂单价**成交
+  （无滑点、按挂单费率计费），跨品种撮合（当前图表品种 tick 级 + 其他品种 30s 批量 ticker），
+  余额承接不下按 FIFO 撤销，同品种上限 10 条 / 全局 50 条；持仓面板新增「当前挂单」列表
+  （撤销 + 点行切品种 + localStorage 清洗）；补齐 D5 挂单费率设置项；`src/trade/pending.ts` +
+  `usePendingOrders` / `useSymbolPrices` / `useLimitOrderFills`
+- 附带修复：`DrawingLayers` I15 导入两条用例的固定 20ms sleep 改为 `waitFor`，消除全量并发跑的偶发失败
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1774**（较 v0.5.21 的 1713：提醒筛选 +3、成交明细 +20、限价挂单 +38） /
+  E2E recent-features + alerts-features + market-tape + limit-orders
 
 ## [v0.5.21] 交易流水导出筛选 + 自定义百分比仓位（2026-09-21）
 
