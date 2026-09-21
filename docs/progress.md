@@ -5,12 +5,29 @@
 
 ## 当前阶段
 
-**v0.5.22 定档（2026-09-22）** — 三个本地特性批次（提醒列表筛选 #96、成交明细 Tape #98、模拟盘限价挂单 #99）
-已全部 rebase 合并进 main，本提交定版 0.5.21 → 0.5.22（package.json + index.html app-version），
-并把 CHANGELOG 的三个待发布小节合并为一条 v0.5.22。
-- 被取代的发布 PR：#97（分支 release/v0.5.22，从 8bba2a8 切出、仅含版本号与进度记录，与 main 冲突）→ 关闭，改由本分支发布
-- 单测规模：v0.5.21 的 1713 → 本版本 **1774**
-- 下一项：本 PR 合并 → tag → Pages 部署抽查 → 补「里程碑 v0.5.22 发布完成」记录 → 回到 v0.5.x 特性批次
+**里程碑 v0.5.22 发布完成（2026-09-22）**
+- 版本号：**0.5.22**（package.json / index.html meta app-version）
+- 分支：`release/v0522`（release ce70dab）；发布 PR：#101（rebase 合并 → main **5a4c501**）
+- tag/release：Release Tag workflow 自动打 **tag v0.5.22** @ 5a4c501（幂等，不覆盖 v0.5.21）
+- 本版收录（三个本地特性批次按「批量积累后发布」一并定档）：
+  - #96 提醒面板·列表筛选（方向 ≥/≤ + 状态过滤）
+  - #98 侧栏「成交明细」Time & Sales 面板（逐笔成交轮询累积）
+  - #99 模拟盘限价挂单 Maker 单（触价按挂单价成交 + 当前挂单列表 + D5 挂单费率设置）
+  - #100 指标参数导出用例显式桩掉 URL.createObjectURL（解除 jsdom 30.1.0 门禁）+ DrawingLayers waitFor 并发偶发失败修复
+- 单测规模：v0.5.21 的 1713 → **1774**（+61）
+- 部署与 live 抽查：
+  - Pages ✅ 首页 200 且 `app-version=0.5.22`、知识库 `/knowledge/` 200
+  - Vercel ⚠ 仍为 0.5.21：账号级 **build-rate-limit**（Hobby 计划本会话多次 PR/预览构建触顶，
+    `vercel.com/...?upgradeToPro=build-rate-limit`，约 24h 后自动恢复并补齐最新 main）——非代码问题，
+    release PR 的 preview 构建与 CI Production build 均通过
+- smoke：typecheck ✅ / lint 0 err ✅ / audit:i18n ✅ / unit **1774** ✅ /
+  chromium E2E market-tape **3/3** + limit-orders **3/3** ✅ / 三浏览器 E2E + CodeQL + Pages + Android 全绿
+- 取代处理：旧发布 PR **#97**（分支从 8bba2a8 切出、与 main CONFLICTING）已关闭，其内容在 #101 中重做；
+  合并后已删除 release/v0.5.22、feat/v05-alert-filter、feat/v05-recent-trades、feat/v05-limit-orders、
+  test/indicator-export-objecturl 等远端临时分支
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；
+  下一批为「成交明细筛选：方向 + 大单阈值」，预期 v0.5.23）
 
 **里程碑 v0.5.21 发布完成（2026-09-21）**
 - 版本号：**0.5.21**（package.json / index.html meta app-version）
