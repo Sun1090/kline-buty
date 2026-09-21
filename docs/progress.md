@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.20 开发中（2026-09-21）** — v0.5.19 已发布；本地新特性构想继续
-- **v0.5.x Web 特性 · 提醒面板·一键清理已过期（本批，feat/v05-alert-clear-expired）**：
-  - 批量操作行新增「清理已过期 (N)」按钮（alert-clear-expired），有到期失效提醒时显示并一键移除
-  - 五语 i18n 新增 `alert.clearExpired`；组件测试 +2；E6 徽标断言限定 alert-row（避免与按钮文案匹配冲突）
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1710 全绿**
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.20
+**里程碑 v0.5.20 发布（2026-09-21，RELEASE_FREEZE）**
+- 版本号：**0.5.20**（package.json / index.html meta app-version）
+- 包含任务：提醒面板·一键清理已过期
+- 分支：`release/v0.5.20`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.20（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.20 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1710** / chromium E2E recent-features **22/22**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 已解阻塞——typescript-eslint 8.70 兼容 TS 7.0.2，toolchain 全绿）
 
 **里程碑 v0.5.19 发布完成（2026-09-20）**
 - 版本号：**0.5.19**（package.json / index.html meta app-version）
