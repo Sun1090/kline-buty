@@ -687,6 +687,25 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         >
           {t('alert.batch')}
         </button>
+        {/* v0.5.x 一键清理已过期提醒（E6 到期自动失效后收尾）；显式包装避免 index 传入 isExpired 的 now 参数 */}
+        {symbolAlerts.some((a) => isExpired(a)) && (
+          <button
+            data-testid="alert-clear-expired"
+            onClick={() => symbolAlerts.filter((a) => isExpired(a)).forEach((a) => removeAlert(a.id))}
+            title={t('alert.clearExpired')}
+            style={{
+              padding: '2px 8px',
+              fontSize: 11,
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              background: 'rgba(245,192,47,0.14)',
+              color: 'var(--yellow)',
+            }}
+          >
+            {t('alert.clearExpired')} ({symbolAlerts.filter((a) => isExpired(a)).length})
+          </button>
+        )}
         {batchMode && (
           <>
             <button

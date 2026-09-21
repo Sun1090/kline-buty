@@ -318,7 +318,8 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
       alerts: [{ id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, expiresAt: 1 }],
     })
     render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
-    expect(screen.getByText(/已过期/)).toBeTruthy()
+    // 行内已过期徽标（限定 alert-row，避免与「清理已过期」按钮文案匹配）
+    expect(screen.getByTestId('alert-row').textContent).toContain('已过期')
   })
 
   it('I6 波动率自适应：开启后按 ATR% 计算阈值（above → 现价+ATR%）', () => {
@@ -356,5 +357,31 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
     const api = makeApi()
     render(<AlertPanel symbol="BTCUSDT" currentPrice={null} alertsApi={api} />)
     expect(screen.queryByTestId('alert-quick-pct')).toBeNull()
+  })
+
+  it('v0.5.x 清理已过期：存在过期提醒时按钮显示数量，点击仅移除过期项', () => {
+    const now = Date.now()
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, expiresAt: now + 3_600_000 },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 64000, triggered: false, expiresAt: now - 1_000 },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    const btn = screen.getByTestId('alert-clear-expired')
+    expect(btn.textContent).toContain('(1)')
+    fireEvent.click(btn)
+    expect(api.removeAlert).toHaveBeenCalledWith('a2')
+    expect(api.removeAlert).not.toHaveBeenCalledWith('a1')
+  })
+
+  it('v0.5.x 清理已过期：无过期提醒时不显示按钮', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, expiresAt: Date.now() + 3_600_000 },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    expect(screen.queryByTestId('alert-clear-expired')).toBeNull()
   })
 })
