@@ -338,5 +338,77 @@ describe('PositionPanel', () => {
       expect(next.short.stopLoss).toBe(120)
       expect(next.long).toEqual(longPosition)
     })
+
+    it('移动止损：预填已设百分比，保存后写回 trailPct 并显示徽标', () => {
+      const onChange = vi.fn()
+      const { unmount } = render(
+        <PositionPanel positions={{ long: { ...longPosition, trailPct: 2 }, short: null }} currentPrice={110} onChange={onChange} />,
+      )
+      expect(screen.getByTestId('position-trail-long').textContent).toContain('2')
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      expect((screen.getByTestId('position-level-trail-long') as HTMLInputElement).value).toBe('2')
+      fireEvent.change(screen.getByTestId('position-level-trail-long'), { target: { value: '1.5' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      const next = onChange.mock.calls[0][0] as { long: Position }
+      expect(next.long).toEqual({ ...longPosition, trailPct: 1.5 })
+      unmount()
+
+      // 未设移动止损时不显示徽标，编辑格里也是空
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} />)
+      expect(screen.queryByTestId('position-trail-long')).toBeNull()
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      expect((screen.getByTestId('position-level-trail-long') as HTMLInputElement).value).toBe('')
+    })
+
+    it('移动止损：留空即关闭该档', () => {
+      const onChange = vi.fn()
+      render(
+        <PositionPanel positions={{ long: { ...longPosition, trailPct: 2 }, short: null }} currentPrice={110} onChange={onChange} />,
+      )
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-trail-long'), { target: { value: '' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      const next = onChange.mock.calls[0][0] as { long: Position }
+      expect('trailPct' in next.long).toBe(false)
+      expect(next.long.takeProfit).toBe(103)
+    })
+
+    it('移动止损：百分比越界（0 / 120）→ 报错且不回调', () => {
+      const onChange = vi.fn()
+      render(
+        <PositionPanel positions={{ long: { ...longPosition, trailPct: 2 }, short: null }} currentPrice={110} onChange={onChange} />,
+      )
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-trail-long'), { target: { value: '120' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      expect(onChange).not.toHaveBeenCalled()
+      expect(screen.getByTestId('position-level-error')).toBeTruthy()
+    })
+
+    it('止损可保存到现价之下的盈利区（跟随推进后的值），超过现价仍报错', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={130} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      // 止盈留在 103 会与 128 的止损交叉 → 一并清除，只保留推进后的止损
+      fireEvent.change(screen.getByTestId('position-level-tp-long'), { target: { value: '' } })
+      fireEvent.change(screen.getByTestId('position-level-sl-long'), { target: { value: '128' } })
+      fireEvent.change(screen.getByTestId('position-level-trail-long'), { target: { value: '2' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange.mock.calls[0][0]).toEqual({
+        long: { entry: 100, quantity: 2, direction: 'long', stopLoss: 128, trailPct: 2 },
+        short: null,
+      })
+    })
+
+    it('止损高于现价仍为非法', () => {
+      const onChange = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={onChange} />)
+      fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+      fireEvent.change(screen.getByTestId('position-level-sl-long'), { target: { value: '115' } })
+      fireEvent.click(screen.getByTestId('position-level-save-long'))
+      expect(onChange).not.toHaveBeenCalled()
+      expect(screen.getByTestId('position-level-error')).toBeTruthy()
+    })
   })
 })

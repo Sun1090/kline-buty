@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyLevels, breakevenStop, levelsOnCorrectSide, levelsOrdered, parseLevel } from '../levels'
+import { applyLevels, breakevenStop, effectiveStopLoss, levelsOrdered, parseLevel, parseTrail } from '../levels'
 import type { Position } from '../../position/pnl'
 
 const long: Position = { entry: 100, quantity: 1, direction: 'long', takeProfit: 120, stopLoss: 90 }
@@ -61,7 +61,7 @@ describe('applyLevels 编辑已开仓位的止盈止损', () => {
     expect(applyLevels(short, { takeProfit: '80', stopLoss: '100' }).ok).toBe(true)
   })
 
-  it('只清除一条线时不做方向校验（单线不设限）', () => {
+  it('清除两条线、或只保留合理的单条线均通过', () => {
     expect(applyLevels(long, { takeProfit: '', stopLoss: '' }).ok).toBe(true)
     expect(applyLevels(long, { takeProfit: '120', stopLoss: '' }).ok).toBe(true)
   })
@@ -75,15 +75,81 @@ describe('breakevenStop 一键保本止损', () => {
 })
 
 describe('levels 校验原语', () => {
-  it('方向合理侧判定', () => {
-    expect(levelsOnCorrectSide('long', 100, 120, 90)).toBe(true)
-    expect(levelsOnCorrectSide('long', 100, 90, 120)).toBe(false)
-    expect(levelsOnCorrectSide('short', 100, 90, 120)).toBe(true)
-  })
-
   it('两线次序判定', () => {
     expect(levelsOrdered('long', 120, 90)).toBe(true)
     expect(levelsOrdered('long', 90, 120)).toBe(false)
     expect(levelsOrdered('short', 90, 120)).toBe(true)
+  })
+
+  it('单条线也按方向校验（不再依赖另一条是否存在）', () => {
+    // 无现价时止损上界是开仓价；有现价则可推到盈利区
+    expect(applyLevels(long, { takeProfit: '', stopLoss: '110' })).toEqual({ ok: false, error: 'invalid' })
+    expect(applyLevels(long, { takeProfit: '', stopLoss: '110' }, 120).ok).toBe(true)
+    expect(applyLevels(long, { takeProfit: '90', stopLoss: '' })).toEqual({ ok: false, error: 'invalid' })
+    expect(applyLevels(short, { takeProfit: '', stopLoss: '90' })).toEqual({ ok: false, error: 'invalid' })
+    expect(applyLevels(short, { takeProfit: '110', stopLoss: '' })).toEqual({ ok: false, error: 'invalid' })
+  })
+})
+
+describe('parseTrail 移动止损输入', () => {
+  it('空白关闭，(0,100] 之外或非法视为错误', () => {
+    expect(parseTrail('')).toBeNull()
+    expect(parseTrail('  ')).toBeNull()
+    expect(parseTrail('0.5')).toBe(0.5)
+    expect(parseTrail('100')).toBe(100)
+    expect(parseTrail('0')).toBeUndefined()
+    expect(parseTrail('-1')).toBeUndefined()
+    expect(parseTrail('101')).toBeUndefined()
+    expect(parseTrail('abc')).toBeUndefined()
+  })
+})
+
+describe('effectiveStopLoss 移动止损只朝有利方向推进', () => {
+  it('未设 t 或价非法时沿用已存止损', () => {
+    expect(effectiveStopLoss(long, 130)).toBe(90)
+    const t = { ...long, trailPct: undefined }
+    expect(effectiveStopLoss(t, 130)).toBe(90)
+    expect(effectiveStopLoss({ ...long, trailPct: 2 }, null)).toBe(90)
+    expect(effectiveStopLoss({ ...long, trailPct: 2 }, 0)).toBe(90)
+  })
+
+  it('多头：现价抬升则止损上移，现价回落则不回撤', () => {
+    expect(effectiveStopLoss({ ...long, trailPct: 2 }, 200)).toBeCloseTo(196, 10)
+    expect(effectiveStopLoss({ ...long, trailPct: 2 }, 120)).toBeCloseTo(117.6, 10)
+    // 已推进到 196 后价格回落到 120：止损仍停在 196（此时即触发平仓）
+    expect(effectiveStopLoss({ ...long, trailPct: 2, stopLoss: 196 }, 120)).toBe(196)
+  })
+
+  it('空头：镜像向下推进；无止损时以候选价为准', () => {
+    expect(effectiveStopLoss({ ...short, trailPct: 10 }, 50)).toBeCloseTo(55, 10)
+    expect(effectiveStopLoss({ ...short, trailPct: 10, stopLoss: 60 }, 50)).toBeCloseTo(55, 10)
+    expect(effectiveStopLoss({ ...short, stopLoss: undefined, trailPct: 10 }, 50)).toBeCloseTo(55, 10)
+    expect(effectiveStopLoss({ ...short, trailPct: 10, stopLoss: 40 }, 50)).toBe(40)
+  })
+})
+
+describe('applyLevels 的 trail 字段', () => {
+  it('设置移动止损百分比并保留其它字段', () => {
+    const res = applyLevels(long, { takeProfit: '120', stopLoss: '90', trail: '2' })
+    expect(res.ok).toBe(true)
+    if (res.ok) expect(res.position).toEqual({ ...long, trailPct: 2 })
+  })
+
+  it('空串关闭移动止损；不传该字段则保持原值', () => {
+    const withTrail = { ...long, trailPct: 2 }
+    const off = applyLevels(withTrail, { takeProfit: '120', stopLoss: '90', trail: '' })
+    expect(off.ok && 'trailPct' in off.position).toBe(false)
+    const untouched = applyLevels(withTrail, { takeProfit: '120', stopLoss: '90' })
+    expect(untouched.ok && (untouched as { position: Position }).position.trailPct).toBe(2)
+  })
+
+  it('非法百分比 → invalid', () => {
+    expect(applyLevels(long, { takeProfit: '120', stopLoss: '90', trail: '0' })).toEqual({ ok: false, error: 'invalid' })
+    expect(applyLevels(long, { takeProfit: '120', stopLoss: '90', trail: '150' })).toEqual({ ok: false, error: 'invalid' })
+  })
+
+  it('有现价时允许把止损保存到现价之下的盈利区（跟随移动止损后的值）', () => {
+    expect(applyLevels(long, { takeProfit: '', stopLoss: '118', trail: '2' }, 120).ok).toBe(true)
+    expect(applyLevels(long, { takeProfit: '', stopLoss: '125', trail: '2' }, 120)).toEqual({ ok: false, error: 'invalid' })
   })
 })
