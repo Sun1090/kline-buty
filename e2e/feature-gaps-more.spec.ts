@@ -162,3 +162,34 @@ test('C15 跟随最新价：持仓计划工具 → 图层开启跟随开关', as
   const follow = (stored as { BTCUSDT: Array<{ type?: string; followLatest?: boolean }> }).BTCUSDT.find((d) => d.type === 'position')
   expect(follow?.followLatest).toBe(true)
 })
+
+test('层叠回归：停靠面板打开时，顶栏 More 下拉项仍在最上层且可点中', async ({ page }) => {
+  // 有持仓时仓位面板才会带上开仓表单（正是它盖住下拉项），先种一笔持仓
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'kline-buty:positionsBySymbol',
+      JSON.stringify({ BTCUSDT: { long: { entry: 40_000, quantity: 0.001, direction: 'long', takeProfit: 90_000, stopLoss: 30_000 }, short: null } }),
+    ),
+  );
+  await page.goto('/?perf=600')
+  await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+  await openPath(page, 'header-more')
+  await page.getByRole('button', { name: '仓位' }).click()
+  await expect(page.getByTestId('pending-orders')).toBeVisible()
+
+  // 下拉展开时其下半部分正落在停靠面板（z 100）之上：命中的必须还是菜单项本身，
+  // 否则点击会被面板里的按钮吃掉（历史缺陷：头部层 z 95 < 面板 100）
+  await openPath(page, 'header-more')
+  const item = page.getByRole('button', { name: '交易流水' })
+  await expect(item).toBeVisible()
+  const hitIsItem = await item.evaluate((el) => {
+    const box = el.getBoundingClientRect()
+    const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+    return top === el || el.contains(top)
+  })
+  expect(hitIsItem).toBe(true)
+
+  await item.click({ timeout: 5_000 })
+  await expect(page.getByTestId('trade-history-panel')).toBeVisible()
+})
