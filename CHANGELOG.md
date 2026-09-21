@@ -3,6 +3,18 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.23] 成交明细筛选（2026-09-22）
+
+v0.5.22 发布后的第一个特性批次：给刚落地的 Time & Sales 面板补上交易所同级的筛选能力。
+
+- **Tape 筛选行**：方向（全部 / 主动买 / 主动卖）+ 大单档循环（关 → ×5 → ×10）；
+  大单口径为「数量 ≥ 窗口均值 × 倍数」，与方向叠加过滤，用于盯大单/单边吃单
+- 筛选后无命中展示「无符合筛选的成交」空态（与首载骨架屏区分）；头部买卖笔数仍统计整个窗口
+- 纯函数层新增 `filterTape` / `avgTradeQty` / `TAPE_BIG_STEPS` / `TAPE_FILTER_DEFAULT`；
+  五语 i18n 新增 `tape.filterAll/filterBuy/filterSell/filterSideHint/bigOrder/bigOrderHint/emptyFilter`
+- 测试：单测 +6（均值 / 方向 / 阈值 / 组件筛选与档位循环），E2E market-tape 新增筛选控件用例
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1780** / chromium E2E market-tape 4 例
+
 ## [v0.5.22] 成交明细 Tape + 模拟盘限价挂单 + 提醒列表筛选（2026-09-22）
 
 I3（云同步）/ I11（移动端 Widget）两项外部能力暂缓；本地先行的三个特性批次积累后一并发布。

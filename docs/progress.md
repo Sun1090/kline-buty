@@ -5,6 +5,14 @@
 
 ## 当前阶段
 
+**v0.5.23 开发中（2026-09-22）** — v0.5.22 已发布（tag v0.5.22 @ 5a4c501，Pages live 0.5.22）；本批：成交明细筛选
+- **v0.5.x Web 特性 · 成交明细筛选（本批，feat/v05-tape-filter）**：
+  - Tape 面板新增筛选行：方向（全部/主动买/主动卖）+ 大单档循环（关 → ×5 → ×10），
+    大单 = 数量 ≥ 窗口均值 × 倍数，与方向叠加；无命中走「无符合筛选的成交」空态
+  - 纯函数层 `filterTape` / `avgTradeQty` / `TAPE_BIG_STEPS`；五语 i18n 新增 `tape.filter*` / `tape.bigOrder*` / `tape.emptyFilter`
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1780 全绿**（+6） / chromium E2E market-tape 4 例
+- 下一项：提交本批 → PR → CI → 合并（按「批量积累后发布」节奏，与后续批次一并定档 v0.5.23）
+
 **v0.5.22 定档（2026-09-22）** — 三个本地特性批次（提醒列表筛选 #96、成交明细 Tape #98、模拟盘限价挂单 #99）
 已全部 rebase 合并进 main，本提交定版 0.5.21 → 0.5.22（package.json + index.html app-version），
 并把 CHANGELOG 的三个待发布小节合并为一条 v0.5.22。
