@@ -5,12 +5,16 @@
 
 ## 当前阶段
 
-**v0.5.21 开发中（2026-09-21）** — v0.5.20 已发布；本地新特性构想继续（批量积累后发布，规避 Vercel build-rate-limit）
-- **v0.5.x Web 特性 · 交易流水导出筛选 + QuickOrder 自定义百分比（本批，feat/v05-export-filter-quickpct）**：
-  - 流水 CSV 导出改为当前筛选视图子集（onExport 携带筛选结果）；组件测试 +1
-  - QuickOrder 仓位预设行新增「自定义%」输入+应用；五语 i18n `quickOrder.customPct/apply`；组件测试 +2
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1713 全绿** / E2E recent-features 22/22
-- 下一项：提交本批 → PR → CI → 合并 → release v0.5.21
+**里程碑 v0.5.21 发布（2026-09-21，RELEASE_FREEZE）**
+- 版本号：**0.5.21**（package.json / index.html meta app-version）
+- 包含任务：交易流水导出筛选 + QuickOrder 自定义百分比仓位
+- 分支：`release/v0.5.21`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.21（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.21 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1713** / chromium E2E recent-features **22/22**
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 已解阻塞——typescript-eslint 8.70 兼容 TS 7.0.2，toolchain 全绿）
 
 **里程碑 v0.5.20 发布完成（2026-09-21）**
 - 版本号：**0.5.20**（package.json / index.html meta app-version）
