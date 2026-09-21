@@ -106,14 +106,26 @@ describe('IndicatorSettings', () => {
   })
 
   it('H8 导出：按钮存在且可点击（触发下载不抛错）', () => {
-    // jsdom 无 URL.createObjectURL → 导出会走 a.click，容忍不抛错
+    // URL.createObjectURL 在不同 jsdom 版本下行为不一（30.1.0 起对跨 realm Blob 抛 _buffer），
+    // 显式桩掉，保证下载路径与断言与宿主 jsdom 版本无关
     const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
-    setup('ma', 'rsi')
-    const btn = screen.getByTestId('indicator-export')
-    expect(btn).toBeDefined()
-    fireEvent.click(btn)
-    expect(anchorClickSpy).toHaveBeenCalled()
-    anchorClickSpy.mockRestore()
+    const createSpy = vi.fn(() => 'blob:indicator-params')
+    const revokeSpy = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', { value: createSpy, configurable: true, writable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeSpy, configurable: true, writable: true })
+    try {
+      setup('ma', 'rsi')
+      const btn = screen.getByTestId('indicator-export')
+      expect(btn).toBeDefined()
+      fireEvent.click(btn)
+      expect(createSpy).toHaveBeenCalledTimes(1)
+      expect(anchorClickSpy).toHaveBeenCalled()
+      expect(revokeSpy).toHaveBeenCalledWith('blob:indicator-params')
+    } finally {
+      anchorClickSpy.mockRestore()
+      delete (URL as unknown as Record<string, unknown>).createObjectURL
+      delete (URL as unknown as Record<string, unknown>).revokeObjectURL
+    }
   })
 
   it('H8 导入：按钮触发文件选择器', () => {
