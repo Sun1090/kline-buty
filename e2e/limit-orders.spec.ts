@@ -97,4 +97,35 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(trades[0].feeRate).toBeCloseTo(0.005, 10)
     expect(trades[0].fee).toBeCloseTo(trades[0].price * trades[0].qty * 0.005, 6)
   })
+
+  test('图表右键挂限价单：菜单价位预填，挂单方向落在现价另一侧即挂起', async ({ page }) => {
+    const current = await lastPrice(page)
+    const chart = page.locator('.chart-container').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    await chart.click({ button: 'right', position: { x: box!.width * 0.55, y: box!.height * 0.45 } })
+
+    const clicked = Number((await page.getByTestId('ctx-copy-price').innerText()).replace(/[^\d.]/g, ''))
+    expect(clicked).toBeGreaterThan(0)
+    // 高于现价的买单、低于现价的卖单会立即触价成交；反向选择方向才能验证「挂起」路径
+    expect(clicked).not.toBe(current)
+    const side = clicked > current ? 'sell' : 'buy'
+    await page.getByTestId(`ctx-limit-${side}`).click()
+
+    const order = page.getByTestId('quick-order')
+    await expect(order).toBeVisible()
+    await expect(order.getByTestId('qo-type-limit')).toHaveAttribute('aria-pressed', 'true')
+    await expect(order.getByTestId('qo-price')).toHaveValue(String(clicked))
+    await order.getByTestId('qo-qty').fill('0.001')
+    await order.getByTestId('qo-confirm').click()
+    await expect(page.getByTestId('quick-order')).toHaveCount(0)
+
+    await ensurePanel(page, '仓位', 'pending-orders')
+    await expect(page.getByTestId('pending-orders-count')).toHaveText('1')
+    const orders = (await stored(page, 'kline-buty:paperOrders')) as { side: string; price: number; qty: number }[]
+    expect(orders).toHaveLength(1)
+    expect(orders[0].side).toBe(side)
+    expect(orders[0].price).toBe(clicked)
+    expect(orders[0].qty).toBe(0.001)
+  })
 })

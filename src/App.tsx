@@ -24,7 +24,7 @@ import { AlertPanel } from './components/AlertPanel'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useDepth } from './hooks/useDepth'
 import { OrderBook } from './components/OrderBook'
-import { QuickOrderWithDepth } from './components/QuickOrder'
+import { QuickOrderWithDepth, type OrderType } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, checkHit } from './position/pnl'
@@ -263,11 +263,19 @@ export function App() {
       setAlertsOpen(true)
     }
     const onClearDrawings = () => clearDrawings()
+    // v0.5.x 右键「挂限价单」：以光标价打开快速下单的限价模式
+    const onRequestLimitOrder = (e: Event) => {
+      const detail = (e as CustomEvent<{ price: number; side: OrderSide }>).detail
+      if (!detail || typeof detail.price !== 'number' || (detail.side !== 'buy' && detail.side !== 'sell')) return
+      setQuickOrder({ side: detail.side, price: detail.price, type: 'limit' })
+    }
     window.addEventListener('chart-request-alert', onRequestAlert)
     window.addEventListener('chart-clear-drawings', onClearDrawings)
+    window.addEventListener('chart-request-limit-order', onRequestLimitOrder)
     return () => {
       window.removeEventListener('chart-request-alert', onRequestAlert)
       window.removeEventListener('chart-clear-drawings', onClearDrawings)
+      window.removeEventListener('chart-request-limit-order', onRequestLimitOrder)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- alertsApi/candles 取最新渲染闭包即可，事件监听只挂一次
   }, [])
@@ -371,7 +379,7 @@ export function App() {
       return next
     })
   }
-  const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number } | null>(null)
+  const [quickOrder, setQuickOrder] = useState<{ side: OrderSide; price: number; type?: OrderType } | null>(null)
   const [volumeProfileOpen, setVolumeProfileOpen] = usePersistedState('volumeProfileOpen', false)
   const [sentimentOpen, setSentimentOpen] = usePersistedState('sentimentOpen', false)
   // G10 卡顿诊断面板开关
@@ -1655,12 +1663,14 @@ export function App() {
       <OfflineBanner />
       {quickOrder && (
         <QuickOrderWithDepth
+          key={`${quickOrder.side}-${quickOrder.price}-${quickOrder.type ?? 'market'}`}
           symbol={symbol}
           side={quickOrder.side}
           price={quickOrder.price}
           balance={paper.balance}
           takerFeeRate={tradeSettings.takerFeeRate}
           makerFeeRate={tradeSettings.makerFeeRate}
+          initialType={quickOrder.type ?? 'market'}
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
             if (order.type === 'limit') {

@@ -19,6 +19,8 @@ interface QuickOrderProps {
   /** 吃单/挂单费率（可选，默认内置常量）：限价模式按挂单费率且不计滑点 */
   takerFeeRate?: number
   makerFeeRate?: number
+  /** 打开时的下单类型（默认市价）：图表右键「挂限价单」传 limit */
+  initialType?: OrderType
   onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType }) => void
   onClose: () => void
 }
@@ -49,9 +51,9 @@ const fillBtnStyle = (color: string): React.CSSProperties => ({
   fontVariantNumeric: 'tabular-nums',
 })
 
-export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRate = TAKER_FEE_RATE, makerFeeRate = MAKER_FEE_RATE, onConfirm, onClose }: QuickOrderProps) {
+export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRate = TAKER_FEE_RATE, makerFeeRate = MAKER_FEE_RATE, initialType = 'market', onConfirm, onClose }: QuickOrderProps) {
   const { t } = useI18n()
-  const [orderType, setOrderType] = useState<OrderType>('market')
+  const [orderType, setOrderType] = useState<OrderType>(initialType)
   const [priceStr, setPriceStr] = useState(String(price))
   const [qtyStr, setQtyStr] = useState('1')
   // v0.5.x 自定义百分比仓位输入（余额占比，含开仓手续费预留）

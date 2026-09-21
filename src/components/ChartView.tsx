@@ -1579,6 +1579,21 @@ export function ChartView({
               >
                 {t('ctx.addAlert')}
               </button>
+              {/* v0.5.x 以光标价挂限价单（买入/卖出两向，打开快速下单的限价模式） */}
+              {(['buy', 'sell'] as const).map((side) => (
+                <button
+                  key={side}
+                  role="menuitem"
+                  data-testid={`ctx-limit-${side}`}
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('chart-request-limit-order', { detail: { symbol, price: ctxMenu.price, side } }))
+                    setCtxMenu(null)
+                  }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', color: side === 'buy' ? 'var(--up)' : 'var(--down)', fontSize: 12, cursor: 'pointer' }}
+                >
+                  {side === 'buy' ? t('ctx.limitBuy') : t('ctx.limitSell')}
+                </button>
+              ))}
               <button
                 role="menuitem"
                 data-testid="ctx-clear-drawings"
