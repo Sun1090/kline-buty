@@ -5,6 +5,17 @@
 
 ## 当前阶段
 
+**里程碑 v0.5.22 发布（2026-09-21，RELEASE_FREEZE）**
+- 版本号：**0.5.22**（package.json / index.html meta app-version）
+- 包含任务：提醒列表筛选（方向与状态过滤）
+- 分支：`release/v0.5.22`；发布 PR：**待创建**
+- 合并方式：rebase（禁 merge commit）；tag/release：release-tag workflow push main 后自动打 v0.5.22（幂等）
+- 部署：merge 后 Pages/Vercel 自动部署；需 live 抽查（首页 200 + app-version=0.5.22 + 知识库 200）
+- smoke：typecheck / lint 0 err / audit:i18n / unit **1716** / chromium E2E recent-features 22/22 + alerts-features 8/8
+- 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓；本地可继续新特性构想；
+  TS7 已解阻塞——typescript-eslint 8.70 兼容 TS 7.0.2，toolchain 全绿）
+
 **里程碑 v0.5.21 发布完成（2026-09-21）**
 - 版本号：**0.5.21**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.21`（release 25524c3）；发布 PR：#87（rebase 合并 → main）
