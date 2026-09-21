@@ -223,6 +223,23 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     expect(screen.queryByTestId('quick-order')).toBeNull()
   })
 
+  it('持仓止盈止损编辑：面板改价 → 写回 positionsBySymbol', () => {
+    localStorage.setItem(
+      'kline-buty:positionsBySymbol',
+      JSON.stringify({ BTCUSDT: { long: { entry: 100, quantity: 1, direction: 'long', takeProfit: 103, stopLoss: 98 }, short: null } }),
+    )
+    render(<App />)
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByText('仓位'))
+    fireEvent.click(screen.getByTestId('position-edit-levels-long'))
+    fireEvent.change(screen.getByTestId('position-level-tp-long'), { target: { value: '150' } })
+    fireEvent.click(screen.getByTestId('position-level-save-long'))
+    const saved = JSON.parse(localStorage.getItem('kline-buty:positionsBySymbol') ?? '{}') as {
+      BTCUSDT: { long: { takeProfit: number; stopLoss: number; entry: number } }
+    }
+    expect(saved.BTCUSDT.long).toMatchObject({ entry: 100, takeProfit: 150, stopLoss: 98 })
+  })
+
   it('设置流：水印开关持久化 + 高对比 + 时区切换', () => {
     render(<App />)
     fireEvent.click(screen.getByTestId('header-more'))
