@@ -5,17 +5,32 @@
 
 ## 当前阶段
 
-**v0.5.23 定档（2026-09-22）** — 三个特性批次已合并，本提交定版 0.5.22 → 0.5.23（package.json + index.html app-version）
-- 收录：**#102** 成交明细筛选（方向 + 大单阈值，纯函数 `filterTape`/`avgTradeQty`/`TAPE_BIG_STEPS`）、
-  **#105** 图表右键挂限价单（`QuickOrder.initialType` + `chart-request-limit-order` 事件接线）、
-  **#107** 止盈止损结算覆盖（跨品种守护 `planTpSlExits`/`useTpSlGuard`；当前品种结算 effect 补最新价依赖
-  + 持仓对象 WeakSet 去重，修掉「静止持仓触价不平仓」与随之暴露的重复记账风险）
-- 附带质量项：**#104** v0.5.22 发布完成记录、**#106** A1 canvas 渲染判据改取主题涨跌色（旧判据实际只认跌色像素）、
-  限价单 E2E「交易流水浮层遮挡盘口买入」导致的 60s 超时修复
-- 单测规模：v0.5.22 的 1774 → 本版本 **1796**（170 files）
-- 定档门禁：typecheck 干净 / lint 0 error / audit:i18n / unit **1796** / 全量 build 通过
-- 下一项：本 PR 合并 → tag v0.5.23 → Pages live 抽查 → 补「里程碑 v0.5.23 发布完成」记录
-  → 下一批：**持仓止盈止损可编辑（含移动止损）**，并清理 Dependabot #88–#94
+**里程碑 v0.5.23 发布完成（2026-09-22）**
+- 版本号：**0.5.23**（package.json / index.html meta app-version）
+- 分支：`release/v0.5.23`（release bd7f22c）；发布 PR：#108（rebase 合并 → main **a573c4e**）
+- tag/release：Release Tag workflow 自动打 **tag v0.5.23** @ a573c4e（幂等，不覆盖 v0.5.22）
+- 本版收录（v0.5.22 之后积累的三个特性批次 + 质量修复一并定档）：
+  - #102 成交明细筛选：方向（全部/主动买/主动卖）+ 大单档循环（关 → ×5 → ×10）
+  - #105 图表右键挂限价单：以点击价位直接打开限价模式下单并入挂单队列
+  - #107 止盈止损结算覆盖：跨品种守护 + 当前品种按最新价触发改动（修掉「静止持仓触价不平仓」与重复记账风险）
+  - #104 发布记录文档、#106 A1 canvas 渲染判据改取主题涨跌色、限价单 E2E 浮层遮挡 60s 超时修复
+- 单测规模：v0.5.22 的 1774 → **1796**（170 files，+22）
+- smoke（release 分支实跑）：typecheck ✅ / lint 0 err（28 条既有 warning）✅ / audit:i18n ✅ /
+  unit **1796** ✅ / 全量 build（含 docs 站合并）✅
+- CI 与部署：release PR #108 三浏览器 E2E（12m2s）+ CodeQL + Pages + Android 全绿；
+  **合并后 main push CI 同样全绿**（v0.5.22 那次 run 537 的 webkit A1 渲染断言未再复现）
+- live 抽查：
+  - Pages ✅ 首页 200 且 `app-version=0.5.23`、`/knowledge/` 200
+  - 真实浏览器打开 `?perf=600` ✅ 应用正常启动（最新价 ▲50747.97、MA/VOL 指标读数正常），
+    主包内含本版新文案（「挂限价买入」「无符合筛选的成交」），懒加载分块（RecentTrades/DepthChart 等）齐备
+  - Vercel ⚠ 生产域名仍为 0.5.22（PR 的 Vercel 预览构建已通过；生产构建仍受账号级 **build-rate-limit** 滞后，
+    `vercel.com/...?upgradeToPro=build-rate-limit`，非代码问题，限流解除后自动补齐最新 main）
+- 取代与清理：已删除远端/本地临时分支 release/v0.5.23 与遗留的 release/v0522（#101 合并后未删的那条），
+  worktree 全部回收，`git branch -r` 仅剩 main 与 Dependabot 分支；无 DB/迁移
+- 回滚：`git revert a573c4e`（版本定档为单提交）；远端 tag 误打用 `gh api` 删除
+- 下一里程碑：**v0.5.24 继续积累** — 进行中的批次为「持仓止盈止损可编辑（含一键保本止损）」
+  （分支 feat/v05-position-levels，纯函数 `src/position/levels.ts` + 面板行内编辑器，
+  与本版止盈止损结算链路闭环），随后清理 Dependabot #88–#94
 
 **里程碑 v0.5.22 发布完成（2026-09-22）**
 - 版本号：**0.5.22**（package.json / index.html meta app-version）
