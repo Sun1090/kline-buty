@@ -40,3 +40,15 @@ export function resolveDragPrice(
   if (price === null || !Number.isFinite(price) || price <= 0) return null
   return price
 }
+
+/**
+ * 本次拖动的落点价格：由 UI 层（持仓校验）决定。
+ * - accepted 为 null：本次移动不合法 → 线停在原位；
+ * - accepted 为有限正数：按夹紧后的价格落线；
+ * - 未返回（void/undefined）或返回非法值：原样沿用指针价（如拖开仓价）。
+ */
+export function acceptDragPrice(raw: number, accepted: number | null | void): number | null {
+  if (accepted === null) return null
+  if (accepted === undefined) return raw
+  return Number.isFinite(accepted) && accepted > 0 ? accepted : raw
+}

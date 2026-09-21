@@ -28,6 +28,7 @@ import { QuickOrderWithDepth, type OrderType } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, type Position } from './position/pnl'
+import { dragLevel } from './position/levels'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
@@ -1944,14 +1945,20 @@ export function App() {
                 : null
             }
             compareSeries={compareSymbol && layout === 'single' ? { symbol: compareSymbol, candles: compareData.state.candles } : null}
-            onPositionDrag={(key, price) =>
-              setPosition((prev) => {
-                const target = prev.long ?? prev.short
-                if (!target) return prev
-                const slot = prev.long ? 'long' : 'short'
-                return { ...prev, [slot]: { ...target, [key]: price } }
-              })
-            }
+            onPositionDrag={(key, price) => {
+              // 图上拖动价位线：与仓位面板行内编辑共用一套校验，越界即停在原位
+              const slot: 'long' | 'short' | null = position.long ? 'long' : position.short ? 'short' : null
+              const target = slot ? position[slot] : null
+              if (!slot || !target) return null
+              if (key === 'entry') {
+                setPosition({ ...position, [slot]: { ...target, entry: price } })
+                return price
+              }
+              const next = dragLevel(target, key, price, lastClosePrice)
+              if (!next) return null
+              setPosition({ ...position, [slot]: next })
+              return next[key] ?? price
+            }}
             drawings={drawings}
             drawingTool={drawingTool}
             selectedDrawingId={selectedDrawingId}

@@ -123,8 +123,8 @@ interface ChartViewProps {
   markerPrice?: number | null
   /** v0.5.x 模拟成交图面标记（当前品种，buy/sell 点标），空数组/undefined 清除 */
   tradeMarkers?: { time: number; price: number; side: 'buy' | 'sell' }[]
-  /** 仓位线拖拽回调 */
-  onPositionDrag?: (key: 'entry' | 'takeProfit' | 'stopLoss', price: number) => void
+  /** 仓位线拖拽回调：返回夹紧后的价格，或 null 表示拒绝本次移动（线停在原位） */
+  onPositionDrag?: (key: 'entry' | 'takeProfit' | 'stopLoss', price: number) => number | null | void
   /** 画线数据（已按当前品种过滤） */
   drawings?: Drawing[]
   /** C12 便签全局显隐（隐藏时不渲染 note，数据保留） */

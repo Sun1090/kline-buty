@@ -40,6 +40,20 @@ function levelBounds(direction: Position['direction'], entry: number, currentPri
     : { tpOk: (v: number) => v <= entry, slOk: (v: number) => v >= Math.min(entry, currentPrice ?? entry) }
 }
 
+/** 两条线的统一校验：先方向侧界，再次序；返回错误码，null 表示通过 */
+function validateLevels(
+  p: Position,
+  tp: number | undefined,
+  sl: number | undefined,
+  currentPrice?: number | null,
+): LevelError | null {
+  const { tpOk, slOk } = levelBounds(p.direction, p.entry, currentPrice)
+  if (tp !== undefined && !tpOk(tp)) return 'invalid'
+  if (sl !== undefined && !slOk(sl)) return 'invalid'
+  if (tp !== undefined && sl !== undefined && !levelsOrdered(p.direction, tp, sl)) return 'crossed'
+  return null
+}
+
 /** 应用编辑：逐条解析校验，返回新持仓或错误码（不改入参） */
 export function applyLevels(p: Position, input: LevelInput, currentPrice?: number | null): LevelResult {
   const tp = parseLevel(input.takeProfit)
@@ -56,13 +70,24 @@ export function applyLevels(p: Position, input: LevelInput, currentPrice?: numbe
   if (trail === null) delete next.trailPct
   else next.trailPct = trail
 
-  const { tpOk, slOk } = levelBounds(p.direction, p.entry, currentPrice)
-  if (next.takeProfit !== undefined && !tpOk(next.takeProfit)) return { ok: false, error: 'invalid' }
-  if (next.stopLoss !== undefined && !slOk(next.stopLoss)) return { ok: false, error: 'invalid' }
-  if (next.takeProfit !== undefined && next.stopLoss !== undefined && !levelsOrdered(p.direction, next.takeProfit, next.stopLoss)) {
-    return { ok: false, error: 'crossed' }
-  }
-  return { ok: true, position: next }
+  const error = validateLevels(p, next.takeProfit, next.stopLoss, currentPrice)
+  return error ? { ok: false, error } : { ok: true, position: next }
+}
+
+/**
+ * 图上拖拽某条价位线：走与行内编辑同一套校验。
+ * 不合法（越过开仓价一侧、与另一条线交叉、价非法）返回 null，由调用方保持原值——
+ * 表现为「线拖到边界就停住」，而不是写进一个会误触发的价位。
+ */
+export function dragLevel(
+  p: Position,
+  key: 'takeProfit' | 'stopLoss',
+  price: number,
+  currentPrice?: number | null,
+): Position | null {
+  if (!Number.isFinite(price) || price <= 0) return null
+  const next: Position = { ...p, [key]: price }
+  return validateLevels(p, next.takeProfit, next.stopLoss, currentPrice) === null ? next : null
 }
 
 /** 一键保本止损：把止损推到开仓价（浮盈归零位），保留止盈 */

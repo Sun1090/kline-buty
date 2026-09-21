@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyLevels, breakevenStop, effectiveStopLoss, levelsOrdered, parseLevel, parseTrail } from '../levels'
+import { applyLevels, breakevenStop, dragLevel, effectiveStopLoss, levelsOrdered, parseLevel, parseTrail } from '../levels'
 import type { Position } from '../../position/pnl'
 
 const long: Position = { entry: 100, quantity: 1, direction: 'long', takeProfit: 120, stopLoss: 90 }
@@ -151,5 +151,50 @@ describe('applyLevels 的 trail 字段', () => {
   it('有现价时允许把止损保存到现价之下的盈利区（跟随移动止损后的值）', () => {
     expect(applyLevels(long, { takeProfit: '', stopLoss: '118', trail: '2' }, 120).ok).toBe(true)
     expect(applyLevels(long, { takeProfit: '', stopLoss: '125', trail: '2' }, 120)).toEqual({ ok: false, error: 'invalid' })
+  })
+})
+
+describe('dragLevel 图上拖拽价位线', () => {
+  it('合法区间内直接落点，其余字段与移动止损保持不变', () => {
+    const p: Position = { entry: 100, quantity: 1, direction: 'long', takeProfit: 150, stopLoss: 90, trailPct: 2 }
+    expect(dragLevel(p, 'takeProfit', 180)).toEqual({ ...p, takeProfit: 180 })
+    expect(dragLevel(p, 'stopLoss', 95, 120)).toEqual({ ...p, stopLoss: 95 })
+    expect(p.takeProfit).toBe(150)
+  })
+
+  it('越到开仓价另一侧 → 拒绝（多头止盈不得低于开仓价、空头不得高于开仓价）', () => {
+    expect(dragLevel(long, 'takeProfit', 90)).toBeNull()
+    expect(dragLevel(short, 'takeProfit', 110)).toBeNull()
+    // 无现价时多头止损上界是开仓价
+    expect(dragLevel(long, 'stopLoss', 105)).toBeNull()
+    expect(dragLevel(long, 'stopLoss', 100)).toEqual({ ...long, stopLoss: 100 })
+  })
+
+  it('有现价时止损可推进到现价下方的盈利区，越过现价仍拒绝', () => {
+    expect(dragLevel(long, 'stopLoss', 118, 120)?.stopLoss).toBe(118)
+    expect(dragLevel(long, 'stopLoss', 125, 120)).toBeNull()
+    expect(dragLevel(short, 'stopLoss', 82, 80)?.stopLoss).toBe(82)
+    expect(dragLevel(short, 'stopLoss', 75, 80)).toBeNull()
+  })
+
+  it('与另一条线交叉或重合 → 拒绝', () => {
+    expect(dragLevel(long, 'takeProfit', 90)).toBeNull()
+    expect(dragLevel(long, 'stopLoss', 120)).toBeNull()
+    expect(dragLevel(long, 'stopLoss', 120, 200)).toBeNull()
+    expect(dragLevel(short, 'stopLoss', 80)).toBeNull()
+  })
+
+  it('价非法（0 / 负数 / NaN / Infinity）→ 拒绝', () => {
+    expect(dragLevel(long, 'takeProfit', 0)).toBeNull()
+    expect(dragLevel(long, 'takeProfit', -5)).toBeNull()
+    expect(dragLevel(long, 'takeProfit', NaN)).toBeNull()
+    expect(dragLevel(long, 'takeProfit', Infinity)).toBeNull()
+  })
+
+  it('只有一条线时另一侧不设次序约束', () => {
+    const onlyTp: Position = { entry: 100, quantity: 1, direction: 'long', takeProfit: 150 }
+    expect(dragLevel(onlyTp, 'takeProfit', 120)).toEqual({ ...onlyTp, takeProfit: 120 })
+    const onlySl: Position = { entry: 100, quantity: 1, direction: 'short', stopLoss: 130 }
+    expect(dragLevel(onlySl, 'stopLoss', 118, 110)).toEqual({ ...onlySl, stopLoss: 118 })
   })
 })
