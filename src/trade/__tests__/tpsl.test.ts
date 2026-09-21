@@ -16,19 +16,25 @@ const slots = (long: Position | null = null, short: Position | null = null): Pos
 
 const priceMap = (map: Record<string, number>) => (sym: string) => map[sym] ?? null
 
+/** source 是持仓原对象引用，比对结构时剥离（toEqual 忽略 undefined 字段） */
+const stripSource = (exits: ReturnType<typeof planTpSlExits>) => exits.map((e) => ({ ...e, source: undefined }))
+
 describe('planTpSlExits 跨品种止盈止损判定', () => {
   it('多头触止盈 / 触止损各产出一条', () => {
     const positions = { BTCUSDT: slots(pos()) }
-    expect(planTpSlExits(positions, priceMap({ BTCUSDT: 120 }))).toEqual([
+    const exits = planTpSlExits(positions, priceMap({ BTCUSDT: 120 }))
+    expect(stripSource(exits)).toEqual([
       { symbol: 'BTCUSDT', slot: 'long', reason: 'takeProfit', price: 120, entry: 100, qty: 1, direction: 'long' },
     ])
+    // source 指向持仓原对象：调用方据此与显式平仓簿记共享去重
+    expect(exits[0].source).toBe(positions.BTCUSDT.long)
     expect(planTpSlExits(positions, priceMap({ BTCUSDT: 90 })).map((e) => e.reason)).toEqual(['stopLoss'])
   })
 
   it('空头方向相反：价跌至止盈价触发、价涨至止损价触发', () => {
     const positions = { ETHUSDT: slots(null, pos({ direction: 'short', takeProfit: 80, stopLoss: 110 })) }
     expect(planTpSlExits(positions, priceMap({ ETHUSDT: 120 })).map((e) => e.reason)).toEqual(['stopLoss'])
-    expect(planTpSlExits(positions, priceMap({ ETHUSDT: 80 })).map((e) => e)).toEqual([
+    expect(stripSource(planTpSlExits(positions, priceMap({ ETHUSDT: 80 })))).toEqual([
       { symbol: 'ETHUSDT', slot: 'short', reason: 'takeProfit', price: 80, entry: 100, qty: 1, direction: 'short' },
     ])
   })

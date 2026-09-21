@@ -12,6 +12,8 @@ export interface TpSlExit {
   entry: number
   qty: number
   direction: Position['direction']
+  /** 命中的原持仓对象引用：调用方据此与显式平仓簿记共享去重 */
+  source: Position
 }
 
 /** 价源：返回该品种最新价，无数据时返回 null（该品种本轮跳过） */
@@ -32,7 +34,7 @@ export function planTpSlExits(positions: Record<string, Positions>, priceOf: Pri
       if (!p) continue
       const reason = checkHit(p, price)
       if (!reason) continue
-      exits.push({ symbol, slot, reason, price, entry: p.entry, qty: p.quantity, direction: p.direction })
+      exits.push({ symbol, slot, reason, price, entry: p.entry, qty: p.quantity, direction: p.direction, source: p })
     }
   }
   return exits
