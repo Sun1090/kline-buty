@@ -62,10 +62,10 @@ test.describe('E 阶段提醒增强', () => {
     await page.getByTestId('alert-note-input').fill('突破后回调买')
     await page.getByTestId('alert-precision').selectOption('4')
     await page.getByRole('button', { name: '添加提醒' }).click()
-    // 行内显示备注 + 4 位精度价格 + 到期空（无到期标记）
+    // 行内显示备注 + 4 位精度价格 + 到期空（无到期标记；限定 alert-row 避免「清理已过期」按钮文案）
     await expect(page.getByText('突破后回调买')).toBeVisible()
     await expect(page.getByText(/≥ 99999\.0000/)).toBeVisible()
-    await expect(page.getByText(/已过期/)).toHaveCount(0)
+    await expect(page.getByTestId('alert-row').getByText(/已过期/)).toHaveCount(0)
   })
 
   test('E6 到期：创建过期提醒显示「已过期」', async ({ page }) => {
@@ -73,7 +73,8 @@ test.describe('E 阶段提醒增强', () => {
     await page.getByPlaceholder(/[\d.,]+/).first().fill('99999')
     await page.getByTestId('alert-expiry-input').fill('2020-01-01T00:00')
     await page.getByRole('button', { name: '添加提醒' }).click()
-    await expect(page.getByText(/已过期/)).toBeVisible()
+    // 行内（alert-row）已过期徽标可见（「清理已过期」按钮也在页面上，需限定行）
+    await expect(page.getByTestId('alert-row').getByText(/已过期/)).toBeVisible()
   })
 
   test('E4 模板：保存当前条件 → 出现模板按钮 → 刷新保留 → 套用回填', async ({ page }) => {
