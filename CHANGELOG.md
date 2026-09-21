@@ -3,6 +3,20 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.24] 模拟盘限价挂单（2026-09-22）
+
+I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。
+
+- **限价挂单（Maker 单）**：快速下单新增市价/限价两档；限价单进入挂单队列，价格触达即按**挂单价**成交、
+  不计滑点、按挂单费率计费（补齐 D5 的挂单费率设置项，交易流水面板内可配）
+- 撮合跨品种：当前图表品种用 K 线最新价（tick 级即时触价），其他品种走 30s 批量 ticker 价源；
+  余额承接不下的按 FIFO 撤销；同品种上限 10 条、全局 50 条
+- 持仓面板新增「当前挂单」列表（撤销、点行切品种），localStorage 持久化且读取即清洗脏数据；
+  成交/撤销通过站内横幅提示；`?perf` 压测模式下由合成 K 线驱动撮合（E2E 确定性）
+- 纯函数层 `src/trade/pending.ts`（create/fillsAt/match/planFills/parse）+ `usePendingOrders` /
+  `useSymbolPrices` / `useLimitOrderFills`；五语 i18n 新增 `trade.market/limit/limitHint/makerFee/pendingTitle/pendingEmpty/cancelOrder/filledToast/cancelledToast/tooManyOrders`
+- 顺手修复：`DrawingLayers` I15 导入两条用例用固定 20ms sleep 等 FileReader，高并发全量跑偶发失败 → 改 `waitFor`
+- 验证：typecheck / lint 0 error / audit:i18n / unit **1753** / chromium E2E limit-orders 3 例
 ## [v0.5.23] 成交明细 Tape（2026-09-22）
 
 I3（云同步）/ I11（移动端 Widget）外部能力暂缓，本地先行新特性完成一批。

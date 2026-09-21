@@ -1,8 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
-import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
+import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, MAKER_FEE_RATE, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+
+/** 下单类型：市价（即时成交、计滑点）/ 限价（挂单、触达按挂单价成交） */
+export type OrderType = 'market' | 'limit'
 
 interface QuickOrderProps {
   symbol: string
@@ -13,7 +16,10 @@ interface QuickOrderProps {
   ask?: number | null
   /** 模拟账户可用余额（USDT）：传入时显示并拦截保证金不足 */
   balance?: number | null
-  onConfirm: (order: { side: OrderSide; price: number; qty: number }) => void
+  /** 吃单/挂单费率（可选，默认内置常量）：限价模式按挂单费率且不计滑点 */
+  takerFeeRate?: number
+  makerFeeRate?: number
+  onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType }) => void
   onClose: () => void
 }
 
@@ -43,8 +49,9 @@ const fillBtnStyle = (color: string): React.CSSProperties => ({
   fontVariantNumeric: 'tabular-nums',
 })
 
-export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, onClose }: QuickOrderProps) {
+export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRate = TAKER_FEE_RATE, makerFeeRate = MAKER_FEE_RATE, onConfirm, onClose }: QuickOrderProps) {
   const { t } = useI18n()
+  const [orderType, setOrderType] = useState<OrderType>('market')
   const [priceStr, setPriceStr] = useState(String(price))
   const [qtyStr, setQtyStr] = useState('1')
   // v0.5.x 自定义百分比仓位输入（余额占比，含开仓手续费预留）
@@ -56,19 +63,25 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
   const priceNum = Number(priceStr)
   const qtyNum = Number(qtyStr)
   const valid = Number.isFinite(priceNum) && priceNum > 0 && Number.isFinite(qtyNum) && qtyNum > 0
+  // 限价（Maker）单按挂单价成交：无滑点、按挂单费率；市价单按吃单费率 + 可配滑点
+  const isLimit = orderType === 'limit'
   const est = useMemo(
-    () => (valid ? estimateOrder(priceNum, qtyNum, side, DEFAULT_SLIPPAGE_RATIO) : null),
-    [valid, priceNum, qtyNum, side],
+    () =>
+      valid
+        ? estimateOrder(priceNum, qtyNum, side, isLimit ? 0 : DEFAULT_SLIPPAGE_RATIO, isLimit ? makerFeeRate : takerFeeRate)
+        : null,
+    [valid, priceNum, qtyNum, side, isLimit, makerFeeRate, takerFeeRate],
   )
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
   // v0.5.x 键盘支持：Enter 确认下单（有效且保证金充足时）、Esc 关闭弹层
   const confirmable = valid && !insufficient
+  const submit = () => onConfirm({ side, price: priceNum, qty: qtyNum, type: orderType })
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && confirmable) {
       e.preventDefault()
-      onConfirm({ side, price: priceNum, qty: qtyNum })
+      submit()
     } else if (e.key === 'Escape') {
       onClose()
     }
@@ -121,6 +134,31 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
         >
           {side === 'buy' ? t('trade.buy') : t('trade.sell')}
         </span>
+      </div>
+
+      {/* v0.5.x 下单类型：市价即时成交 / 限价挂单（价格触达后按挂单价成交） */}
+      <div data-testid="qo-type" style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+        {(['market', 'limit'] as const).map((tp) => (
+          <button
+            key={tp}
+            data-testid={`qo-type-${tp}`}
+            onClick={() => setOrderType(tp)}
+            aria-pressed={orderType === tp}
+            title={t('trade.limitHint')}
+            style={{
+              flex: 1,
+              padding: '3px 0',
+              fontSize: 11,
+              borderRadius: 4,
+              cursor: 'pointer',
+              border: '1px solid var(--border)',
+              background: orderType === tp ? 'rgba(41,98,255,0.18)' : 'transparent',
+              color: orderType === tp ? 'var(--accent)' : 'var(--text-dim)',
+            }}
+          >
+            {tp === 'market' ? t('trade.market') : t('trade.limit')}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -240,14 +278,15 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          <span>
-            {t('quickOrder.fill')} <b style={{ color: 'var(--text)' }}>{est.fillPrice.toFixed(priceNum >= 1 ? 2 : 6)}</b>
+          <span data-testid={isLimit ? 'qo-limit-price' : undefined}>
+            {isLimit ? t('quickOrder.price') : t('quickOrder.fill')} <b style={{ color: 'var(--text)' }}>{est.fillPrice.toFixed(priceNum >= 1 ? 2 : 6)}</b>
           </span>
           <span>
             {t('quickOrder.notional')} <b style={{ color: 'var(--text)' }}>{est.notional.toFixed(2)}</b>
           </span>
           <span>
-            {t('quickOrder.fee')} <b style={{ color: 'var(--text)' }}>{est.fee.toFixed(4)}</b>
+            {t('quickOrder.fee')}{' '}
+            <b data-testid="qo-fee" style={{ color: 'var(--text)' }}>{est.fee.toFixed(4)}</b>
           </span>
           <span>
             {t('quickOrder.total')} <b style={{ color: 'var(--text)' }}>{est.total.toFixed(2)}</b>
@@ -259,7 +298,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
         <button
           data-testid="qo-confirm"
           disabled={!confirmable}
-          onClick={() => confirmable && onConfirm({ side, price: priceNum, qty: qtyNum })}
+          onClick={() => confirmable && submit()}
           style={{
             flex: 1,
             padding: '5px 0',
@@ -276,7 +315,9 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, onConfirm, 
           {t('quickOrder.confirm')}
         </button>
       </div>
-      <div style={{ marginTop: 8, fontSize: 10, color: 'var(--text-faint)' }}>{t('quickOrder.hint')}</div>
+      <div style={{ marginTop: 8, fontSize: 10, color: 'var(--text-faint)' }}>
+        {isLimit ? t('trade.limitHint') : t('quickOrder.hint')}
+      </div>
     </div>
   )
 }

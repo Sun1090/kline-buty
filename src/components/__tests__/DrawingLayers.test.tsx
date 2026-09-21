@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { render, fireEvent, screen, cleanup, act } from '@testing-library/react'
+import { render, fireEvent, screen, cleanup, act, waitFor } from '@testing-library/react'
 import { DrawingLayers } from '../DrawingLayers'
 import { createDrawing, type Drawing } from '../../drawings/logic'
 import { createTemplate } from '../../drawings/templates'
@@ -402,11 +402,11 @@ describe('DrawingLayers（图层管理面板）', () => {
     const input = screen.getByTestId('drawing-template-import-file') as HTMLInputElement
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } })
-      await new Promise((r) => setTimeout(r, 20))
+      // FileReader.onload 异步：等到回调发生再继续（固定 sleep 在高并发下会误报）
+      await waitFor(() => expect(handlers.onImportTemplates).toHaveBeenCalledTimes(1))
     })
-    expect(handlers.onImportTemplates).toHaveBeenCalledTimes(1)
     expect(String((handlers.onImportTemplates as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0])).toContain('外部模板')
-    expect(screen.getByText('已导入')).toBeDefined()
+    await waitFor(() => expect(screen.getByText('已导入')).toBeDefined())
   })
 
   it('I15 导入：非法文件（onImportTemplates 返回 false）→ 显示失败提示', async () => {
@@ -416,10 +416,9 @@ describe('DrawingLayers（图层管理面板）', () => {
     const input = screen.getByTestId('drawing-template-import-file') as HTMLInputElement
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } })
-      await new Promise((r) => setTimeout(r, 20))
+      await waitFor(() => expect(importMock).toHaveBeenCalledTimes(1))
     })
-    expect(importMock).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('导入失败：文件格式无效')).toBeDefined()
+    await waitFor(() => expect(screen.getByText('导入失败：文件格式无效')).toBeDefined())
   })
 
 })

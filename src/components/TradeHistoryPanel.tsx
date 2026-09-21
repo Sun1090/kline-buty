@@ -21,8 +21,11 @@ interface TradeHistoryPanelProps {
   /** D5/D8 交易设置（费率/滑点，百分比显示） */
   takerFeeRatePct: number
   slippagePct: number
+  /** v0.5.x 挂单（Maker）费率：限价单成交计费 */
+  makerFeeRatePct: number
   onTakerFeeRatePctChange: (pct: number) => void
   onSlippagePctChange: (pct: number) => void
+  onMakerFeeRatePctChange: (pct: number) => void
   onClose: () => void
   onClear: () => void
   /** 导出流水 CSV（v0.5.x 传入当前筛选结果；未筛选时为全量） */
@@ -60,8 +63,10 @@ export function TradeHistoryPanel({
   stats,
   takerFeeRatePct,
   slippagePct,
+  makerFeeRatePct,
   onTakerFeeRatePctChange,
   onSlippagePctChange,
+  onMakerFeeRatePctChange,
   onClose,
   onClear,
   onExport,
@@ -374,6 +379,19 @@ export function TradeHistoryPanel({
             step={0.001}
             value={slippagePct}
             onChange={(e) => onSlippagePctChange(Number(e.target.value))}
+            style={{ width: 56, padding: '2px 4px', fontSize: 11, borderRadius: 4, border: '1px solid #2a2e39', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+        </label>
+        {/* v0.5.x 挂单费率：限价单成交按此费率计费 */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-dim)' }}>
+          {t('trade.makerFee')}
+          <input
+            data-testid="trade-maker-fee-rate"
+            type="number"
+            min={0}
+            step={0.01}
+            value={makerFeeRatePct}
+            onChange={(e) => onMakerFeeRatePctChange(Number(e.target.value))}
             style={{ width: 56, padding: '2px 4px', fontSize: 11, borderRadius: 4, border: '1px solid #2a2e39', background: 'var(--bg)', color: 'var(--text)' }}
           />
         </label>

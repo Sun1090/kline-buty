@@ -246,4 +246,26 @@ describe('PositionPanel', () => {
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} balance={10000} onChange={vi.fn()} />)
     expect(screen.queryByTestId('position-today-pnl')).toBeNull()
   })
+
+  it('v0.5.x 限价挂单：传入列表即渲染挂单区，撤销回调上报 id', () => {
+    const onCancelOrder = vi.fn()
+    render(
+      <PositionPanel
+        positions={EMPTY_POSITIONS}
+        currentPrice={110}
+        onChange={vi.fn()}
+        symbol="BTCUSDT"
+        pendingOrders={[{ id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 1 }]}
+        onCancelOrder={onCancelOrder}
+      />,
+    )
+    expect(screen.getByTestId('pending-orders')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('pending-order-cancel'))
+    expect(onCancelOrder).toHaveBeenCalledWith('a')
+  })
+
+  it('v0.5.x 限价挂单：未传挂单属性则不渲染挂单区', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={110} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('pending-orders')).toBeNull()
+  })
 })

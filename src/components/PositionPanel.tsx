@@ -2,8 +2,10 @@ import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
 import { EMPTY_POSITIONS, type Positions } from '../trade/positions'
+import type { PendingOrder } from '../trade/pending'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
+import { PendingOrders } from './PendingOrders'
 
 interface PositionPanelProps {
   /** J1 双向持仓：long/short 各自独立 */
@@ -23,6 +25,10 @@ interface PositionPanelProps {
   onReverse?: (slot: 'long' | 'short') => void
   /** v0.5.x 今日已实现盈亏（USDT）：账户总览展示，无则传 null 显占位 */
   todayPnl?: number | null
+  /** v0.5.x 限价挂单列表（含其他品种）：当前品种 + 撤销回调 */
+  symbol?: string
+  pendingOrders?: PendingOrder[]
+  onCancelOrder?: (id: string) => void
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -43,7 +49,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, todayPnl }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, todayPnl, symbol, pendingOrders, onCancelOrder }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -291,6 +297,16 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
           </button>
         )}
       </div>
+
+      {/* v0.5.x 限价挂单列表（含其他品种，可撤销、点行切品种） */}
+      {pendingOrders && onCancelOrder && (
+        <PendingOrders
+          orders={pendingOrders}
+          symbol={symbol ?? ''}
+          onCancel={onCancelOrder}
+          onSwitchSymbol={onSwitchSymbol}
+        />
+      )}
 
       {/* J2 其他品种持仓一览：切品种查看或一键全平 */}
       {otherSymbols && Object.keys(otherSymbols).length > 0 && (
