@@ -137,3 +137,95 @@ describe('usePositionSettlement 止盈止损结算循环', () => {
     expect(onExit).not.toHaveBeenCalled()
   })
 })
+
+describe('usePositionSettlement 移动止损', () => {
+  /** 让 setPositionsBySymbol 真正落到外部变量上，以便逐帧 rerender */
+  function loop(initial: PositionsBySymbol, initialPrices: Record<string, number>) {
+    const recordClose = vi.fn()
+    const autoSettled = new WeakSet<Position>()
+    let positions = initial
+    let prices = initialPrices
+    const setPositionsBySymbol = vi.fn((fn: (prev: PositionsBySymbol) => PositionsBySymbol) => {
+      positions = fn(positions)
+    })
+    const utils = renderHook(() =>
+      usePositionSettlement({
+        get positionsBySymbol() {
+          return positions
+        },
+        live: null,
+        get prices() {
+          return prices
+        },
+        takerFeeRate: 0.001,
+        recordClose,
+        setPositionsBySymbol,
+        autoSettled,
+      }),
+    )
+    const setPrice = (symbol: string, price: number) => {
+      prices = { [symbol]: price }
+    }
+    return { ...utils, recordClose, setPositionsBySymbol, autoSettled, positions: () => positions, setPrice }
+  }
+
+  it('多头现价上行只推进止损线，不结算；再跑一轮不重复写回', () => {
+    const held = longPos({ takeProfit: 200, trailPct: 2 })
+    const h = loop({ BTCUSDT: { long: held, short: null } }, { BTCUSDT: 150 })
+    expect(h.recordClose).not.toHaveBeenCalled()
+    expect(h.positions().BTCUSDT.long?.stopLoss).toBeCloseTo(147, 10)
+    expect(h.positions().BTCUSDT.long?.trailPct).toBe(2)
+    // 写回换了对象，但没平仓 → 原持仓不算已结算
+    expect(h.autoSettled.has(held)).toBe(false)
+    h.rerender()
+    expect(h.setPositionsBySymbol).toHaveBeenCalledTimes(1)
+  })
+
+  it('写回后价格回落：按推进了的止损线结算一次', () => {
+    const h = loop({ BTCUSDT: { long: longPos({ takeProfit: 200, trailPct: 2 }), short: null } }, { BTCUSDT: 150 })
+    h.setPrice('BTCUSDT', 146)
+    h.rerender()
+    expect(h.recordClose).toHaveBeenCalledTimes(1)
+    expect(h.recordClose.mock.calls[0][0]).toMatchObject({ symbol: 'BTCUSDT', side: 'buy', price: 146, pnl: 46 })
+    expect(h.positions().BTCUSDT).toEqual(EMPTY_POSITIONS)
+
+    h.setPrice('BTCUSDT', 120)
+    h.rerender()
+    expect(h.recordClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('止损线只朝有利方向推进：价格回落不下移，回落到该线即结算', () => {
+    const held = longPos({ takeProfit: 400, stopLoss: 90, trailPct: 10 })
+    const h = loop({ BTCUSDT: { long: held, short: null } }, { BTCUSDT: 200 })
+    expect(h.positions().BTCUSDT.long?.stopLoss).toBe(180)
+
+    // 回落到 190：候选 171 低于已推进的 180 → 不下移、也不结算
+    h.setPrice('BTCUSDT', 190)
+    h.rerender()
+    expect(h.setPositionsBySymbol).toHaveBeenCalledTimes(1)
+    expect(h.recordClose).not.toHaveBeenCalled()
+    expect(h.positions().BTCUSDT.long?.stopLoss).toBe(180)
+
+    // 跌破 180 → 按该线结算一次
+    h.setPrice('BTCUSDT', 175)
+    h.rerender()
+    expect(h.recordClose).toHaveBeenCalledTimes(1)
+    expect(h.recordClose.mock.calls[0][0]).toMatchObject({ price: 175, pnl: 75 })
+    expect(h.positions().BTCUSDT).toEqual(EMPTY_POSITIONS)
+  })
+
+  it('空头镜像推进；同一轮已命中的槽位不再写回', () => {
+    const shortHeld = shortPos({ takeProfit: 40, stopLoss: 110, trailPct: 5 })
+    const h = loop({ ETHUSDT: { long: null, short: shortHeld } }, { ETHUSDT: 60 })
+    expect(h.recordClose).not.toHaveBeenCalled()
+    expect(h.positions().ETHUSDT.short?.stopLoss).toBeCloseTo(63, 10)
+
+    // 止盈命中那一帧：即使 trail 也算得出新止损，也不再写回（槽位即将清空）
+    const tpHeld = longPos({ takeProfit: 150, stopLoss: 90, trailPct: 2 })
+    const hit = loop({ BTCUSDT: { long: tpHeld, short: null } }, { BTCUSDT: 160 })
+    expect(hit.recordClose).toHaveBeenCalledTimes(1)
+    expect(hit.recordClose.mock.calls[0][0]).toMatchObject({ price: 160, pnl: 60 })
+    expect(hit.setPositionsBySymbol).toHaveBeenCalledTimes(1)
+    expect(hit.positions().BTCUSDT).toEqual(EMPTY_POSITIONS)
+  })
+})

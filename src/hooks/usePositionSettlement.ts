@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { calcPnl, type Position } from '../position/pnl'
 import { feeForPrice, type OrderSide } from '../trade/order'
 import { EMPTY_POSITIONS, settleSlot, type Positions } from '../trade/positions'
-import { planTpSlExits, type TpSlExit } from '../trade/tpsl'
+import { planTpSlExits, planTrailMoves, type TpSlExit } from '../trade/tpsl'
 
 type PositionsBySymbol = Record<string, Positions>
 
@@ -35,8 +35,8 @@ export interface SettlementDeps {
 }
 
 /**
- * 止盈/止损结算循环：所有品种的持仓统一按各自价源判定 TP/SL，
- * 命中即平掉对应槽位、按既有流水口径记账并清空槽位。
+ * 止盈/止损结算循环：所有品种的持仓统一按各自价源判定 TP/止损，
+ * 命中即平掉对应槽位、按既有流水口径记账并清空槽位；带移动止损的持仓先把止损朝有利方向推进。
  * 当前图表品种用 K 线最新价（tick 级），其他品种用轮询价（30s 级）。
  */
 export function usePositionSettlement(deps: SettlementDeps): void {
@@ -44,9 +44,25 @@ export function usePositionSettlement(deps: SettlementDeps): void {
   const claimedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    const exits = planTpSlExits(positionsBySymbol, (sym) =>
-      live && live.symbol === sym ? live.price : prices[sym] ?? null,
-    ).filter((e) => !claimedRef.current.has(claimKey(e)))
+    const priceOf = (sym: string) => (live && live.symbol === sym ? live.price : prices[sym] ?? null)
+    const exits = planTpSlExits(positionsBySymbol, priceOf).filter(
+      (e) => !claimedRef.current.has(claimKey(e)),
+    )
+    // 移动止损：先写回推进了的止损线，再处理本轮平仓（已平仓的槽位不再写）
+    const settled = new Set(exits.map((e) => `${e.symbol}:${e.slot}`))
+    const moves = planTrailMoves(positionsBySymbol, priceOf).filter(
+      (m) => !settled.has(`${m.symbol}:${m.slot}`),
+    )
+    if (moves.length > 0) {
+      setPositionsBySymbol((prev) => {
+        const next = { ...prev }
+        for (const m of moves) {
+          const slots = next[m.symbol] ?? EMPTY_POSITIONS
+          next[m.symbol] = { ...slots, [m.slot]: { ...slots[m.slot]!, stopLoss: m.stop } }
+        }
+        return next
+      })
+    }
     if (exits.length === 0) return
     for (const e of exits) claimedRef.current.add(claimKey(e))
 

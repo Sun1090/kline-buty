@@ -135,4 +135,41 @@ describe('App 跨品种止盈止损守护', () => {
     expect(storedTrades()).toHaveLength(0)
     expect(storedLong()).toMatchObject({ entry: 100 })
   })
+
+  it('移动止损：先把止损推进并持久化，价格回落到该线才结算一次', async () => {
+    localStorage.setItem(
+      POSITIONS_KEY,
+      JSON.stringify({
+        ETHUSDT: { long: { entry: 100, quantity: 1, direction: 'long', takeProfit: 400, stopLoss: 90, trailPct: 10 }, short: null },
+      }),
+    )
+    priceHolder.current = { ETHUSDT: 200 }
+    const { rerender } = render(<App />)
+    // 200 × (1−10%) = 180：只推进止损，浮盈仍远未触线
+    await waitFor(() => expect(storedLong()).toMatchObject({ stopLoss: 180, trailPct: 10 }))
+    expect(storedTrades()).toHaveLength(0)
+
+    priceHolder.current = { ETHUSDT: 175 }
+    rerender(<App />)
+    await waitFor(() => expect(storedLong()).toBeNull())
+    expect(storedTrades()).toHaveLength(1)
+    // 净额：价差 +75 扣平仓手续费 0.1
+    expect(storedTrades()[0]).toMatchObject({ symbol: 'ETHUSDT', kind: 'close', side: 'buy', price: 175, pnl: 74.9 })
+
+    // 槽位已空：再来一帧也不会重复记账
+    priceHolder.current = { ETHUSDT: 160 }
+    rerender(<App />)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(storedTrades()).toHaveLength(1)
+  })
+
+  it('未设移动止损的持仓不会被写回逻辑改动', async () => {
+    seedEthLong()
+    priceHolder.current = { ETHUSDT: 110 }
+    render(<App />)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(storedLong()).toMatchObject({ entry: 100, stopLoss: 90, takeProfit: 120 })
+    expect('trailPct' in (storedLong() as object)).toBe(false)
+    expect(storedTrades()).toHaveLength(0)
+  })
 })

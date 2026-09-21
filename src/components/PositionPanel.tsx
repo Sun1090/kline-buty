@@ -64,7 +64,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
   const [slPrice, setSlPrice] = useState<string>('')
   // v0.5.x 已开仓位的止盈/止损行内编辑：一次只展开一个方向
   const [levelEdit, setLevelEdit] = useState<'long' | 'short' | null>(null)
-  const [levelDraft, setLevelDraft] = useState<LevelInput>({ takeProfit: '', stopLoss: '' })
+  const [levelDraft, setLevelDraft] = useState<LevelInput>({ takeProfit: '', stopLoss: '', trail: '' })
   const [levelError, setLevelError] = useState<LevelError | null>(null)
   // F4 焦点陷阱：Tab 在面板内循环，关闭恢复焦点
   const rootRef = useRef<HTMLDivElement>(null)
@@ -129,13 +129,14 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
     setLevelDraft({
       takeProfit: p.takeProfit !== undefined ? String(p.takeProfit) : '',
       stopLoss: p.stopLoss !== undefined ? String(p.stopLoss) : '',
+      trail: p.trailPct !== undefined ? String(p.trailPct) : '',
     })
   }
 
   const saveLevels = (slot: 'long' | 'short') => {
     const p = positions[slot]
     if (!p) return
-    const res = applyLevels(p, levelDraft)
+    const res = applyLevels(p, levelDraft, currentPrice)
     if (!res.ok) {
       setLevelError(res.error)
       return
@@ -310,6 +311,15 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               >
                 {t('position.reverse')}
               </button>
+              {p.trailPct !== undefined && (
+                <span
+                  data-testid={`position-trail-${key}`}
+                  title={t('position.levelTrailHint')}
+                  style={{ fontSize: 10, color: 'var(--accent)' }}
+                >
+                  {t('position.levelTrail')} {p.trailPct}%
+                </span>
+              )}
               <button
                 onClick={() => (levelEdit === key ? setLevelEdit(null) : openLevelEditor(key))}
                 data-testid={`position-edit-levels-${key}`}
@@ -343,25 +353,49 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
                     fontSize: 11,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpLine')}</span>
-                    <input
-                      data-testid={`position-level-tp-${key}`}
-                      style={inputStyle}
-                      type="number"
-                      step="any"
-                      value={levelDraft.takeProfit}
-                      onChange={(e) => setLevelDraft((d) => ({ ...d, takeProfit: e.target.value }))}
-                    />
-                    <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slLine')}</span>
-                    <input
-                      data-testid={`position-level-sl-${key}`}
-                      style={inputStyle}
-                      type="number"
-                      step="any"
-                      value={levelDraft.stopLoss}
-                      onChange={(e) => setLevelDraft((d) => ({ ...d, stopLoss: e.target.value }))}
-                    />
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: 6,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ color: 'var(--text-dim)', flex: '0 0 auto' }}>{t('position.tpLine')}</span>
+                      <input
+                        data-testid={`position-level-tp-${key}`}
+                        style={{ ...inputStyle, width: 'auto', flex: '1 1 auto', minWidth: 0 }}
+                        type="number"
+                        step="any"
+                        value={levelDraft.takeProfit}
+                        onChange={(e) => setLevelDraft((d) => ({ ...d, takeProfit: e.target.value }))}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ color: 'var(--text-dim)', flex: '0 0 auto' }}>{t('position.slLine')}</span>
+                      <input
+                        data-testid={`position-level-sl-${key}`}
+                        style={{ ...inputStyle, width: 'auto', flex: '1 1 auto', minWidth: 0 }}
+                        type="number"
+                        step="any"
+                        value={levelDraft.stopLoss}
+                        onChange={(e) => setLevelDraft((d) => ({ ...d, stopLoss: e.target.value }))}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ color: 'var(--text-dim)', flex: '0 0 auto' }}>{t('position.levelTrail')}</span>
+                      <input
+                        data-testid={`position-level-trail-${key}`}
+                        style={{ ...inputStyle, width: 'auto', flex: '1 1 auto', minWidth: 0 }}
+                        type="number"
+                        step="any"
+                        min="0"
+                        max="100"
+                        value={levelDraft.trail}
+                        onChange={(e) => setLevelDraft((d) => ({ ...d, trail: e.target.value }))}
+                      />
+                    </label>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <button

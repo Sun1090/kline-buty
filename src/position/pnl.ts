@@ -6,6 +6,8 @@ export interface Position {
   stopLoss?: number
   /** D9 开仓杠杆（可选）：用于动态保证金率与强平预警（未存杠杆的旧仓按 1x 全额口径） */
   leverage?: number
+  /** v0.5.x 移动止损百分比（0–100）：每次价格刷新把止损朝有利方向推进 (100−t)% 的距离 */
+  trailPct?: number
 }
 
 export interface PnlResult {
