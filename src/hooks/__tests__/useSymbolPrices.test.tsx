@@ -41,6 +41,7 @@ async function flush() {
 beforeEach(() => {
   vi.useFakeTimers()
   __resetModeForTests()
+  window.history.replaceState({}, '', '/')
 })
 
 afterEach(() => {
@@ -78,5 +79,18 @@ describe('useSymbolPrices', () => {
     rerender({ symbols: ['BTCUSDT', 'BTCUSDT'] })
     await flush()
     expect(tickerCalls(mock)).toBe(1)
+  })
+
+  it('?perf 压测模式禁止真实 REST（价表保持空）', async () => {
+    window.history.replaceState({}, '', '/?perf=600')
+    const mock = serve({ BTCUSDT: 60000 })
+    const { result } = renderHook(() => useSymbolPrices(['BTCUSDT']))
+    await flush()
+    await act(async () => {
+      vi.advanceTimersByTime(60_000)
+    })
+    await flush()
+    expect(result.current).toEqual({})
+    expect(tickerCalls(mock)).toBe(0)
   })
 })
