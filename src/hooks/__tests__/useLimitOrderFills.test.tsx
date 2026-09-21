@@ -60,18 +60,27 @@ describe('useLimitOrderFills', () => {
     expect(onNotice).not.toHaveBeenCalled()
   })
 
-  it('触价成交：按挂单价 + 挂单费率记账开仓、hedge 合并持仓、移出列表并提示', () => {
+  it('触价成交：市场价更优按市场价成交、按挂单费率记账、hedge 合并持仓、移出列表并提示', () => {
     const { remove, recordOpen, setPositionsBySymbol, onNotice } = setup({
       orders: [order({ side: 'buy', price: 100, qty: 2 })],
       live: { symbol: 'BTCUSDT', price: 99 },
     })
     expect(remove).toHaveBeenCalledWith(['a'])
-    expect(recordOpen).toHaveBeenCalledWith({ symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 2, fee: 0.1, feeRate: 0.0005 })
+    // 买单价 100 而市场仅 99 → 价格改善按 99 成交（不会为同一笔行情多付）
+    expect(recordOpen).toHaveBeenCalledWith({ symbol: 'BTCUSDT', side: 'buy', price: 99, qty: 2, fee: 0.099, feeRate: 0.0005 })
     const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
     const next = updater({})
-    expect(next.BTCUSDT.long).toEqual(expect.objectContaining({ entry: 100, quantity: 2, direction: 'long' }))
+    expect(next.BTCUSDT.long).toEqual(expect.objectContaining({ entry: 99, quantity: 2, direction: 'long' }))
     expect(next.BTCUSDT.short).toBeNull()
-    expect(onNotice).toHaveBeenCalledWith(expect.objectContaining({ kind: 'filled', symbol: 'BTCUSDT', price: 100 }))
+    expect(onNotice).toHaveBeenCalledWith(expect.objectContaining({ kind: 'filled', symbol: 'BTCUSDT', price: 99 }))
+  })
+
+  it('市场价劣于挂单价时仍以挂单价成交（挂单被动触价）', () => {
+    const { recordOpen } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1 })],
+      live: { symbol: 'BTCUSDT', price: 100 },
+    })
+    expect(recordOpen).toHaveBeenCalledWith(expect.objectContaining({ price: 100, fee: 0.05 }))
   })
 
   it('非当前品种走轮询价表；无价品种保持挂单', () => {
@@ -80,7 +89,8 @@ describe('useLimitOrderFills', () => {
     const { recordOpen, remove } = setup({ orders: [eth, sol], live: null, prices: { ETHUSDT: 3001 } })
     expect(remove).toHaveBeenCalledWith(['eth'])
     expect(recordOpen).toHaveBeenCalledTimes(1)
-    expect(recordOpen).toHaveBeenCalledWith(expect.objectContaining({ symbol: 'ETHUSDT', side: 'sell', price: 3_000 }))
+    // 卖单挂 3000、市场已 3001 → 按更优的 3001 成交
+    expect(recordOpen).toHaveBeenCalledWith(expect.objectContaining({ symbol: 'ETHUSDT', side: 'sell', price: 3_001 }))
   })
 
   it('余额承接不下 → 撤销并提示，不开仓', () => {
@@ -99,10 +109,12 @@ describe('useLimitOrderFills', () => {
     const b = order({ id: 'b', createdAt: 2, price: 100, qty: 2 })
     const { recordOpen, setPositionsBySymbol } = setup({ orders: [b, a], live: { symbol: 'BTCUSDT', price: 80 } })
     expect(recordOpen.mock.calls.map((c) => c[0].qty)).toEqual([1, 2])
+    // 两条都按改善价 80 成交
+    expect(recordOpen.mock.calls.map((c) => c[0].price)).toEqual([80, 80])
     const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
     const afterFirst = updater({ BTCUSDT: EMPTY_POSITIONS })
     const second = setPositionsBySymbol.mock.calls[1][0] as (prev: PositionsBySymbol) => PositionsBySymbol
-    expect(second(afterFirst).BTCUSDT.long).toEqual(expect.objectContaining({ entry: 100, quantity: 3 }))
+    expect(second(afterFirst).BTCUSDT.long).toEqual(expect.objectContaining({ entry: 80, quantity: 3 }))
   })
 
   it('幂等：同一批挂单重复渲染不会二次记账', () => {

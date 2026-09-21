@@ -6,6 +6,7 @@ import {
   fillsAt,
   matchPendingOrders,
   parsePendingOrders,
+  fillPrice,
   planFills,
   type PendingOrder,
 } from '../pending'
@@ -134,5 +135,48 @@ describe('planFills', () => {
   it('空列表 / 余额为 0 安全', () => {
     expect(planFills([], 10_000, 0.001)).toEqual({ accepted: [], rejected: [] })
     expect(planFills([order()], 0, 0.001).rejected).toHaveLength(1)
+  })
+})
+
+describe('fillPrice 成交价与价格改善', () => {
+  it('买单：市场价低于挂单价按市场价成交（跨过价差时不付出更差价）', () => {
+    expect(fillPrice(order({ side: 'buy', price: 60_000 }), 50_000)).toBe(50_000)
+  })
+
+  it('买单：市场价高于挂单价（挂单尚未触价）按挂单价', () => {
+    expect(fillPrice(order({ side: 'buy', price: 60_000 }), 70_000)).toBe(60_000)
+  })
+
+  it('卖单镜像：市场价高于挂单价按市场价，低于则按挂单价', () => {
+    expect(fillPrice(order({ side: 'sell', price: 60_000 }), 70_000)).toBe(70_000)
+    expect(fillPrice(order({ side: 'sell', price: 60_000 }), 50_000)).toBe(60_000)
+  })
+
+  it('市场价缺失/非法退回挂单价（撮合判定本身也不会让它成交）', () => {
+    expect(fillPrice(order(), null)).toBe(60_000)
+    expect(fillPrice(order(), undefined)).toBe(60_000)
+    expect(fillPrice(order(), 0)).toBe(60_000)
+    expect(fillPrice(order(), NaN)).toBe(60_000)
+  })
+})
+
+describe('planFills 的成交价入参', () => {
+  it('priceOf 提供改善后的市场价：名义额与手续费都按成交价计', () => {
+    const o = order({ price: 100, qty: 2 })
+    const { accepted } = planFills([o], 1_000, 0.0005, () => 90)
+    expect(accepted).toEqual([{ order: o, notional: 180, fee: 0.09 }])
+  })
+
+  it('余额按成交价口径判定：挂单价会超预算但市场价可承接', () => {
+    const o = order({ price: 100, qty: 1 })
+    // 挂单价口径需 100 + 0.05 费 → 余额 100.04 承接不下
+    expect(planFills([o], 100.04, 0.0005).accepted).toHaveLength(0)
+    // 市场价 90 口径只需 90 + 0.045 → 同一笔余额即可承接
+    expect(planFills([o], 90.05, 0.0005, () => 90).accepted).toHaveLength(1)
+  })
+
+  it('不传 priceOf 时保持原口径（挂单价即成交价）', () => {
+    const o = order({ price: 100, qty: 2 })
+    expect(planFills([o], 1_000, 0.0005).accepted[0].notional).toBe(200)
   })
 })

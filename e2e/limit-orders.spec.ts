@@ -62,20 +62,22 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(orders).toEqual([])
   })
 
-  test('限价买入挂在现价上方：触价按挂单价成交、扣挂单费率并记流水', async ({ page }) => {
+  test('限价买入挂在现价上方：立即成交并按市场价改善（不付出挂单价）', async ({ page }) => {
     const price = await lastPrice(page)
     const limit = Number((price * 1.2).toFixed(2))
     await placeLimitBuy(page, limit, 0.001)
 
     await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
-    await ensurePanel(page, '仓位', 'pending-orders')
-    await expect(page.getByTestId('pending-orders-count')).toHaveText('0')
+    // 成交后移出挂单队列（直接读存储，避免多层浮层互相遮挡点击）
+    expect((await stored(page, 'kline-buty:paperOrders')) ?? []).toEqual([])
 
     const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; price: number; qty: number; feeRate: number }[]
     expect(trades).toHaveLength(1)
-    // 成交价即挂单价（Maker 无滑点），费率即挂单费率
+    // 成交价取市场价（价格改善），而不是被跨过的挂单价；费率仍是挂单费率
     expect(trades[0].kind).toBe('open')
-    expect(trades[0].price).toBe(limit)
+    expect(trades[0].price).toBeLessThan(limit)
+    expect(trades[0].price).toBeGreaterThan(price * 0.9)
+    expect(trades[0].qty).toBe(0.001)
     expect(trades[0].feeRate).toBeLessThan(0.001)
 
     await ensurePanel(page, '交易流水', 'trade-history-panel')
