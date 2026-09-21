@@ -411,4 +411,80 @@ describe('PositionPanel', () => {
       expect(screen.getByTestId('position-level-error')).toBeTruthy()
     })
   })
+  describe('v0.5.x 部分平仓（减仓）', () => {
+    const held = { long: longPosition, short: null }
+
+    it('展开减仓编辑器：默认预填一半数量', () => {
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} />)
+      expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      expect((screen.getByTestId('position-reduce-qty-long') as HTMLInputElement).value).toBe('1')
+      // 再点一次收起
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+    })
+
+    it('确认减仓：回调收到减仓量并收起编辑器', () => {
+      const onReduce = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '0.75' } })
+      fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+      expect(onReduce).toHaveBeenCalledTimes(1)
+      expect(onReduce).toHaveBeenCalledWith('long', 0.75)
+      expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+    })
+
+    it('比例芯片直接按量回调（25% → 2 × 25% = 0.5）', () => {
+      const onReduce = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      fireEvent.click(screen.getByTestId('position-reduce-ratio-long-25'))
+      expect(onReduce).toHaveBeenCalledWith('long', 0.5)
+    })
+
+    it('数量非法（0 / 文本 / 超过持仓量）→ 报错且不回调', () => {
+      const onReduce = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      for (const bad of ['0', '-1', 'abc', '2.5']) {
+        fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: bad } })
+        fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+        expect(onReduce).not.toHaveBeenCalled()
+        expect(screen.getByTestId('position-reduce-error')).toBeTruthy()
+        // 编辑器保持展开，等用户改数
+        expect(screen.getByTestId('position-reduce-editor-long')).toBeTruthy()
+      }
+    })
+
+    it('改数即清掉错误提示', () => {
+      const onReduce = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '9' } })
+      fireEvent.click(screen.getByTestId('position-reduce-confirm-long'))
+      expect(screen.getByTestId('position-reduce-error')).toBeTruthy()
+      fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '1' } })
+      expect(screen.queryByTestId('position-reduce-error')).toBeNull()
+    })
+
+    it('多空各自独立：只展开 short 时 long 没有编辑器', () => {
+      const onReduce = vi.fn()
+      render(
+        <PositionPanel
+          positions={{ long: longPosition, short: shortPosition }}
+          currentPrice={110}
+          onChange={vi.fn()}
+          onReduce={onReduce}
+        />,
+      )
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-short'))
+      expect(screen.getByTestId('position-reduce-editor-short')).toBeTruthy()
+      expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+      // short 数量 3 → 一半 1.5
+      fireEvent.click(screen.getByTestId('position-reduce-ratio-short-25'))
+      expect(onReduce).toHaveBeenCalledWith('short', 0.75)
+    })
+  })
 })
+

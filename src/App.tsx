@@ -29,7 +29,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, type Position } from './position/pnl'
 import { dragLevel } from './position/levels'
-import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, type Positions } from './trade/positions'
+import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, planReduce, reverseSlot, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { usePendingOrders } from './hooks/usePendingOrders'
@@ -1798,6 +1798,32 @@ export function App() {
             if (!paper.canOpen(est.notional, est.fee)) return
             paper.recordOpen({ symbol, side, price: est.fillPrice, qty: p.quantity, fee: est.fee, feeRate: tradeSettings.takerFeeRate })
             setPosition((cur) => reverseSlot(cur, slot, est.fillPrice).next)
+          }}
+          onReduce={(slot, qty) => {
+            // v0.5.x 部分平仓：按现价结算减掉的那一份，剩余仓位保留开仓价与价位线
+            const p = position[slot]
+            const price = candles[candles.length - 1]?.close ?? stats.price
+            if (!p || price == null) return
+            const plan = planReduce(p, qty)
+            if (!plan) return
+            if (plan.remaining === null) {
+              // 减到空等价于全平：走既有的显式平仓簿记，避免这里再记一次
+              setPosition((cur) => settleSlot(cur, slot).next)
+              return
+            }
+            const fee = feeForPrice(p.entry, plan.qty, tradeSettings.takerFeeRate)
+            const { pnl } = calcPnl({ ...p, quantity: plan.qty }, price)
+            paper.recordClose({
+              symbol,
+              // 平仓流水的 side 记被平掉的方向（流水面板据此显示多/空）
+              side: p.direction === 'long' ? 'buy' : 'sell',
+              price,
+              qty: plan.qty,
+              fee,
+              feeRate: tradeSettings.takerFeeRate,
+              pnl,
+            })
+            setPosition((cur) => ({ ...cur, [slot]: plan.remaining }))
           }}
         />
       )}
