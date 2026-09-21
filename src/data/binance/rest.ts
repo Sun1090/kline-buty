@@ -1,5 +1,6 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKline } from './types'
+import { parseTrades, type TradePrint } from '../trades'
 import { DAPI_BASE, buildApiUrl, detectMode, readCustomBases, toCoinMPair, toCoinMSymbol } from './endpoints'
 
 /** 币安 K 线 → 领域类型（openTime 毫秒 → 秒） */
@@ -108,6 +109,20 @@ export async function fetchTicker24h(symbol: string): Promise<Ticker24h> {
   }
 }
 
+
+/**
+ * 最近逐笔成交。现货 /api/v3/trades 优先（data-api 带 CORS）；
+ * 交易对仅存在于永续合约时回退 /fapi/v1/trades（返回结构同构）。
+ */
+export async function fetchRecentTrades(symbol: string, limit = 50, signal?: AbortSignal): Promise<TradePrint[]> {
+  const query = `symbol=${encodeURIComponent(symbol)}&limit=${limit}`
+  const res = await binanceGet(
+    `/api/v3/trades?${query}`,
+    buildApiUrl('direct', `/fapi/v1/trades?${query}`),
+    signal,
+  )
+  return parseTrades((await res.json()) as unknown[])
+}
 
 /** 行情列表行：批量 24h 摘要（交易对/最新价/涨跌幅/成交额） */
 export interface TickerRow {

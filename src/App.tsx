@@ -117,6 +117,11 @@ const STATUS_TEXT: Record<string, MessageKey> = {
 const DepthChart = lazy(() => import('./components/DepthChart').then((m) => ({ default: m.DepthChart })))
 const VolumeProfileChart = lazy(() => import('./components/VolumeProfileChart').then((m) => ({ default: m.VolumeProfileChart })))
 const SentimentPanel = lazy(() => import('./components/SentimentPanel').then((m) => ({ default: m.SentimentPanel })))
+const RecentTrades = lazy(() => import('./components/RecentTrades').then((m) => ({ default: m.RecentTrades })))
+
+/** F16 右侧边栏面板（顺序可持久化换位） */
+const PANEL_KEYS = ['depth', 'orderBook', 'tape', 'vp', 'sentiment'] as const
+type PanelKey = (typeof PANEL_KEYS)[number]
 
 export function App() {
   const { t, lang, setLang } = useI18n()
@@ -307,6 +312,7 @@ export function App() {
   }, [])
   const [depthOpen, setDepthOpen] = usePersistedState('depthOpen', false)
   const [orderBookOpen, setOrderBookOpen] = usePersistedState('orderBookOpen', false)
+  const [tapeOpen, setTapeOpen] = usePersistedState('tapeOpen', false)
   const [obHoverPrice, setObHoverPrice] = useState<number | null>(null)
   const [obMarkPrice, setObMarkPrice] = useState<number | null>(null)
   const [marketListOpen, setMarketListOpen] = usePersistedState('marketListOpen', true)
@@ -315,26 +321,31 @@ export function App() {
   const [sidePanelWidth, setSidePanelWidth] = usePersistedState<number>('sidePanelWidth', 380)
   // G15 数据量自适应：超过渲染上限时对传入图表的蜡烛降采样（0=关闭自适应）
   const [renderCandleCap, setRenderCandleCap] = usePersistedState<number>('renderCandleCap', 3000)
-  // F16 侧栏面板顺序（持久化）：depth/orderBook/vp/sentiment 拖拽换位
-  const [panelOrder, setPanelOrder] = usePersistedState<('depth' | 'orderBook' | 'vp' | 'sentiment')[]>('panelOrder', ['depth', 'orderBook', 'vp', 'sentiment'])
-  const movePanel = (key: 'depth' | 'orderBook' | 'vp' | 'sentiment', dir: -1 | 1) => {
-    setPanelOrder((prev) => {
-      const idx = prev.indexOf(key)
+  // F16 侧栏面板顺序（持久化）：depth/orderBook/tape/vp/sentiment 拖拽换位
+  const [panelOrder, setPanelOrder] = usePersistedState<PanelKey[]>('panelOrder', [...PANEL_KEYS])
+  // 旧持久化值兼容：剔除未知键、把新增面板补到末尾（否则老用户看不到新面板）
+  const orderedPanels = useMemo<PanelKey[]>(() => {
+    const known = panelOrder.filter((k): k is PanelKey => (PANEL_KEYS as readonly string[]).includes(k))
+    return [...known, ...PANEL_KEYS.filter((k) => !known.includes(k))]
+  }, [panelOrder])
+  const movePanel = (key: PanelKey, dir: -1 | 1) => {
+    setPanelOrder(() => {
+      const idx = orderedPanels.indexOf(key)
       const target = idx + dir
-      if (idx < 0 || target < 0 || target >= prev.length) return prev
-      const next = [...prev]
+      if (idx < 0 || target < 0 || target >= orderedPanels.length) return orderedPanels
+      const next = [...orderedPanels]
       ;[next[idx], next[target]] = [next[target], next[idx]]
       return next
     })
   }
   // F18 面板布局方案（命名快照：图表布局 + 侧栏面板开合 + 面板宽度）
-  const [layoutPresets, setLayoutPresets] = usePersistedState<Record<string, { layout: string; depthOpen: boolean; orderBookOpen: boolean; volumeProfileOpen: boolean; sentimentOpen: boolean; marketListOpen: boolean; sidePanelWidth: number }>>('layoutPresets', {})
+  const [layoutPresets, setLayoutPresets] = usePersistedState<Record<string, { layout: string; depthOpen: boolean; orderBookOpen: boolean; tapeOpen?: boolean; volumeProfileOpen: boolean; sentimentOpen: boolean; marketListOpen: boolean; sidePanelWidth: number }>>('layoutPresets', {})
   const saveLayoutPreset = (name: string) => {
     const trimmed = name.trim()
     if (!trimmed || layoutPresets[trimmed]) return
     setLayoutPresets((prev) => ({
       ...prev,
-      [trimmed]: { layout, depthOpen, orderBookOpen, volumeProfileOpen, sentimentOpen, marketListOpen, sidePanelWidth },
+      [trimmed]: { layout, depthOpen, orderBookOpen, tapeOpen, volumeProfileOpen, sentimentOpen, marketListOpen, sidePanelWidth },
     }))
   }
   const applyLayoutPreset = (name: string) => {
@@ -343,6 +354,7 @@ export function App() {
     setLayout(p.layout as typeof layout)
     setDepthOpen(p.depthOpen)
     setOrderBookOpen(p.orderBookOpen)
+    setTapeOpen(p.tapeOpen ?? false)
     setVolumeProfileOpen(p.volumeProfileOpen)
     setSentimentOpen(p.sentimentOpen)
     setMarketListOpen(p.marketListOpen)
@@ -403,7 +415,7 @@ export function App() {
           shortcutsOpen,
           settingsOpen,
           marketListMobileOpen,
-          sidePanelOpen: depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen,
+          sidePanelOpen: depthOpen || orderBookOpen || tapeOpen || volumeProfileOpen || sentimentOpen,
           replayActive: replay !== null,
           selectedDrawing: selectedDrawingId !== null,
         })
@@ -422,6 +434,7 @@ export function App() {
         if (target === 'side-panel') {
           setDepthOpen(false)
           setOrderBookOpen(false)
+          setTapeOpen(false)
           setVolumeProfileOpen(false)
           setSentimentOpen(false)
         }
@@ -445,10 +458,12 @@ export function App() {
     marketListMobileOpen,
     depthOpen,
     orderBookOpen,
+    tapeOpen,
     volumeProfileOpen,
     sentimentOpen,
     setDepthOpen,
     setOrderBookOpen,
+    setTapeOpen,
     setVolumeProfileOpen,
     setSentimentOpen,
     replay,
@@ -1066,7 +1081,7 @@ export function App() {
 
   const statusColor =
     status === 'live' ? 'var(--up)' : status === 'error' ? 'var(--down)' : 'var(--yellow)'
-  const sidePanelOpen = depthOpen || orderBookOpen || volumeProfileOpen || sentimentOpen
+  const sidePanelOpen = depthOpen || orderBookOpen || tapeOpen || volumeProfileOpen || sentimentOpen
   const statusText = error ?? (STATUS_TEXT[status] ? t(STATUS_TEXT[status]) : status)
   // 全局 Esc 链路上存在比顶栏弹层更高的层（与 keydown 'escape' 分支优先级一致）：此时顶栏不劫持 Esc
   const escChainActive =
@@ -1276,8 +1291,8 @@ export function App() {
           onSaveLayoutPreset={saveLayoutPreset}
           onApplyLayoutPreset={applyLayoutPreset}
           onDeleteLayoutPreset={deleteLayoutPreset}
-          panelOrder={panelOrder}
-          onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
+          panelOrder={orderedPanels}
+          onMovePanel={(k, dir) => movePanel(k as PanelKey, dir)}
           renderCandleCap={renderCandleCap}
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           perfActive={perfOpen}
@@ -1317,6 +1332,8 @@ export function App() {
           onToggleDepth={() => setDepthOpen((v) => !v)}
           orderBookActive={orderBookOpen}
           onToggleOrderBook={() => setOrderBookOpen((v) => !v)}
+          tapeActive={tapeOpen}
+          onToggleTape={() => setTapeOpen((v) => !v)}
           vpActive={volumeProfileOpen}
           onToggleVp={() => setVolumeProfileOpen((v) => !v)}
           sentimentActive={sentimentOpen}
@@ -1422,8 +1439,8 @@ export function App() {
           onSaveLayoutPreset={saveLayoutPreset}
           onApplyLayoutPreset={applyLayoutPreset}
           onDeleteLayoutPreset={deleteLayoutPreset}
-          panelOrder={panelOrder}
-          onMovePanel={(k, dir) => movePanel(k as 'depth' | 'orderBook' | 'vp' | 'sentiment', dir)}
+          panelOrder={orderedPanels}
+          onMovePanel={(k, dir) => movePanel(k as PanelKey, dir)}
           renderCandleCap={renderCandleCap}
           onCycleRenderCandleCap={() => setRenderCandleCap(renderCandleCap === 0 ? 2000 : renderCandleCap === 2000 ? 3000 : renderCandleCap === 3000 ? 5000 : 0)}
           perfActive={perfOpen}
@@ -1463,6 +1480,8 @@ export function App() {
           onToggleDepth={() => setDepthOpen((v) => !v)}
           orderBookActive={orderBookOpen}
           onToggleOrderBook={() => setOrderBookOpen((v) => !v)}
+          tapeActive={tapeOpen}
+          onToggleTape={() => setTapeOpen((v) => !v)}
           vpActive={volumeProfileOpen}
           onToggleVp={() => setVolumeProfileOpen((v) => !v)}
           sentimentActive={sentimentOpen}
@@ -1881,7 +1900,7 @@ export function App() {
             />
           )}
           {/* F16 按持久化顺序渲染已开启的侧栏面板 */}
-          {panelOrder.map((k) => {
+          {orderedPanels.map((k) => {
             if (k === 'depth' && depthOpen) {
               return (
                 <Suspense key="depth" fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
@@ -1893,6 +1912,13 @@ export function App() {
               return (
                 <OrderBook key="orderBook" symbol={symbol} depth={depth} onHoverPrice={setObHoverPrice} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))}
                   onQuickOrder={(price, side) => setQuickOrder({ side, price })} onRefresh={() => setDepthReload((n) => n + 1)} />
+              )
+            }
+            if (k === 'tape' && tapeOpen) {
+              return (
+                <Suspense key="tape" fallback={<div style={{ padding: 12, color: 'var(--text-faint)', fontSize: 11 }}>{t('panelState.loading')}</div>}>
+                  <RecentTrades symbol={symbol} onMarkPrice={(price) => setObMarkPrice((prev) => (prev === price ? null : price))} />
+                </Suspense>
               )
             }
             if (k === 'vp' && volumeProfileOpen) {

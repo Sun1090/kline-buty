@@ -5,6 +5,15 @@
 
 ## 当前阶段
 
+**v0.5.23 开发中（2026-09-22）** — v0.5.22 已发布；本批：行情侧栏「成交明细」Tape
+- **v0.5.x Web 特性 · 成交明细 Tape（本批，feat/v05-recent-trades）**：
+  - 侧栏新增第 5 个面板：逐笔成交 5s 轮询累积（现货优先、永续兜底），按成交 id 去重、方向着色、笔数汇总，
+    点击行联动主图标记线；参与面板顺序换位（F16）与布局方案快照（F18，旧快照按未开启兼容）
+  - 纯函数层 `src/data/trades.ts`（parseTrades/mergeTrades/fmtTradeClock）+ `useRecentTrades`；
+    `?perf` 压测模式禁止真实 REST；五语 i18n 新增 `panel.tape/tapeTitle` 与 `tape.*`
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1736 全绿** / chromium E2E market-tape 3 例
+- 下一项：提交本批 → PR → CI → 合并（发布节奏：与后续批次积累后统一发版）
+
 **v0.5.22 开发中（2026-09-21）** — v0.5.21 已发布；本地新特性构想继续（批量积累后发布）
 - **v0.5.x Web 特性 · 提醒面板·列表筛选（本批，feat/v05-alert-filter）**：
   - 新增方向（≥/≤）与状态（全部/待触发/已触发/已过期）过滤，联动列表与批量「全选」
