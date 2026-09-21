@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, renderHook } from '@testing-library/react'
-import { useTpSlGuard } from '../useTpSlGuard'
+import { usePositionSettlement } from '../usePositionSettlement'
 import { EMPTY_POSITIONS, type Positions } from '../../trade/positions'
 import type { Position } from '../../position/pnl'
 
@@ -15,36 +15,47 @@ const longPos = (over: Partial<Position> = {}): Position => ({
   stopLoss: 90,
   ...over,
 })
+const shortPos = (over: Partial<Position> = {}): Position => ({
+  entry: 100,
+  quantity: 1,
+  direction: 'short',
+  takeProfit: 80,
+  stopLoss: 110,
+  ...over,
+})
 
-function setup(over: Partial<Parameters<typeof useTpSlGuard>[0]> = {}) {
+function setup(over: Partial<Parameters<typeof usePositionSettlement>[0]> = {}) {
   const recordClose = vi.fn()
   const setPositionsBySymbol = vi.fn()
   const onExit = vi.fn()
-  const base: Parameters<typeof useTpSlGuard>[0] = {
+  const autoSettled = new WeakSet<Position>()
+  const base: Parameters<typeof usePositionSettlement>[0] = {
     positionsBySymbol: {},
-    currentSymbol: 'BTCUSDT',
+    live: null,
     prices: {},
     takerFeeRate: 0.001,
     recordClose,
     setPositionsBySymbol,
+    autoSettled,
     onExit,
   }
-  const utils = renderHook(() => useTpSlGuard({ ...base, ...over }))
-  return { ...utils, recordClose, setPositionsBySymbol, onExit }
+  const utils = renderHook(() => usePositionSettlement({ ...base, ...over }))
+  return { ...utils, recordClose, setPositionsBySymbol, onExit, autoSettled }
 }
 
 afterEach(cleanup)
 
-describe('useTpSlGuard 跨品种止盈止损守护', () => {
-  it('其他品种触止损：按反向平仓并结算盈亏、清空该槽位', () => {
+describe('usePositionSettlement 止盈止损结算循环', () => {
+  it('其他品种触止损：按轮询价结算、清空槽位并回调', () => {
+    const held: Position = longPos()
     const { recordClose, setPositionsBySymbol, onExit } = setup({
-      positionsBySymbol: { ETHUSDT: { long: longPos(), short: null } },
+      positionsBySymbol: { ETHUSDT: { long: held, short: null } },
       prices: { ETHUSDT: 88 },
     })
     expect(recordClose).toHaveBeenCalledTimes(1)
     expect(recordClose).toHaveBeenCalledWith({
       symbol: 'ETHUSDT',
-      // 平仓流水的 side 记被平掉的方向（与 App 既有结算路径一致）
+      // 平仓流水 side 记被平掉的方向：平多记 buy
       side: 'buy',
       price: 88,
       qty: 1,
@@ -53,53 +64,61 @@ describe('useTpSlGuard 跨品种止盈止损守护', () => {
       feeRate: 0.001,
       pnl: -12,
     })
-    expect(setPositionsBySymbol).toHaveBeenCalledTimes(1)
     const next = (setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol)({
-      ETHUSDT: { long: longPos(), short: null },
+      ETHUSDT: { long: held, short: null },
     })
     expect(next.ETHUSDT).toEqual(EMPTY_POSITIONS)
-    expect(onExit).toHaveBeenCalledTimes(1)
     expect(onExit.mock.calls[0][0][0]).toMatchObject({ reason: 'stopLoss', symbol: 'ETHUSDT' })
   })
 
-  it('当前图表品种交给 K 线级结算，守护不重复处理', () => {
+  it('当前图表品种用 K 线最新价判定（tick 级优先于轮询价）', () => {
     const { recordClose } = setup({
       positionsBySymbol: { BTCUSDT: { long: longPos(), short: null } },
-      currentSymbol: 'BTCUSDT',
-      prices: { BTCUSDT: 88 },
+      live: { symbol: 'BTCUSDT', price: 89 },
+      prices: { BTCUSDT: 105 },
     })
-    expect(recordClose).not.toHaveBeenCalled()
+    expect(recordClose).toHaveBeenCalledTimes(1)
+    expect(recordClose.mock.calls[0][0]).toMatchObject({ symbol: 'BTCUSDT', price: 89, pnl: -11 })
   })
 
-  it('空头命中按买入方向平仓；未达阈值不动', () => {
-    const short: Position = { entry: 100, quantity: 1, direction: 'short', takeProfit: 80, stopLoss: 110 }
+  it('空头命中按卖出方向记流水；价在区间内不动', () => {
     const { recordClose } = setup({
-      positionsBySymbol: { SOLUSDT: { long: null, short } },
+      positionsBySymbol: { SOLUSDT: { long: null, short: shortPos() } },
       prices: { SOLUSDT: 130 },
     })
     expect(recordClose).toHaveBeenCalledTimes(1)
     expect(recordClose.mock.calls[0][0]).toMatchObject({ symbol: 'SOLUSDT', side: 'sell', pnl: -30 })
 
-    const second = setup({
-      positionsBySymbol: { SOLUSDT: { long: null, short } },
+    const idle = setup({
+      positionsBySymbol: { SOLUSDT: { long: null, short: shortPos() } },
       prices: { SOLUSDT: 105 },
     })
-    expect(second.recordClose).not.toHaveBeenCalled()
+    expect(idle.recordClose).not.toHaveBeenCalled()
+  })
+
+  it('结算过的持仓对象登记进 autoSettled，供显式平仓簿记去重', () => {
+    const held = longPos()
+    const { autoSettled } = setup({
+      positionsBySymbol: { ETHUSDT: { long: held, short: null } },
+      prices: { ETHUSDT: 88 },
+    })
+    expect(autoSettled.has(held)).toBe(true)
   })
 
   it('同一命中只结算一次：价源对象换引用重跑 effect 也不重复记账', () => {
     const positionsBySymbol: PositionsBySymbol = { ETHUSDT: { long: longPos(), short: null } }
     const recordClose = vi.fn()
     const setPositionsBySymbol = vi.fn()
-    // 每次渲染都构造新的 prices 对象（内容相同）→ deps 变化会重跑 effect
+    const autoSettled = new WeakSet<Position>()
     const { rerender } = renderHook(() =>
-      useTpSlGuard({
+      usePositionSettlement({
         positionsBySymbol,
-        currentSymbol: 'BTCUSDT',
+        live: null,
         prices: { ETHUSDT: 88 },
         takerFeeRate: 0.001,
         recordClose,
         setPositionsBySymbol,
+        autoSettled,
       }),
     )
     expect(recordClose).toHaveBeenCalledTimes(1)
@@ -109,7 +128,7 @@ describe('useTpSlGuard 跨品种止盈止损守护', () => {
     expect(setPositionsBySymbol).toHaveBeenCalledTimes(1)
   })
 
-  it('价源为空（如 ?perf 压测不联网）时完全静默', () => {
+  it('无任何价源（如 ?perf 压测的非当前品种）时完全静默', () => {
     const { recordClose, onExit } = setup({
       positionsBySymbol: { ETHUSDT: { long: longPos(), short: null } },
       prices: {},

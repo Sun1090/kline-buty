@@ -27,14 +27,14 @@ import { OrderBook } from './components/OrderBook'
 import { QuickOrderWithDepth, type OrderType } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
-import { calcPnl, checkHit, type Position } from './position/pnl'
-import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, settleSlot, type Positions } from './trade/positions'
+import { calcPnl, type Position } from './position/pnl'
+import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { usePendingOrders } from './hooks/usePendingOrders'
 import { useSymbolPrices } from './hooks/useSymbolPrices'
 import { useLimitOrderFills } from './hooks/useLimitOrderFills'
-import { useTpSlGuard } from './hooks/useTpSlGuard'
+import { usePositionSettlement } from './hooks/usePositionSettlement'
 import type { TpSlExit } from './trade/tpsl'
 import { createPendingOrder, ORDERS_PER_SYMBOL_MAX } from './trade/pending'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
@@ -537,31 +537,20 @@ export function App() {
   }
   const { state, hasMore, loadMore, retry, loadDemo, frameStats } = useKlineData(symbol, period)
   const { candles, status, error, refill } = state
-  // J1/J2 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓；按 symbol 隔离
-  // v0.5.x：最新收盘价进依赖——行情触价即结算（此前只在持仓翻转/切币时才检查，静止持仓会漏结算）
+  // J1/J2 显式平仓簿记：上一帧该方向有仓、当前帧已置空 → 记一条平仓流水
+  // （止盈/止损触发统一走 usePositionSettlement，多空与所有品种共用一条链路）
   const lastClosePrice = candles.length > 0 ? candles[candles.length - 1].close : null
   useEffect(() => {
     const prev = prevPositionRef.current[symbol] ?? EMPTY_POSITIONS
     const price = lastClosePrice
     if (price != null) {
-      // TP/SL 触发：任一方向最新价触达 → 独立结算该方向并清空槽位
       for (const slot of ['long', 'short'] as const) {
         const p = prev[slot]
         if (!p) continue
-        // 结算写回会让 position 翻转、本 effect 紧接着再跑一次：已记账的持仓对象不再重复结算
+        // 已由止盈止损链路结算的持仓对象不再重复记账
         if (autoSettledRef.current.has(p)) continue
-        const hit = checkHit(p, price)
-        if (hit) {
-          autoSettledRef.current.add(p)
-          // D5：平仓手续费按用户配置费率计；D10 流水记录费率用于手续费拆分
-          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
-          const { pnl } = calcPnl(p, price)
-          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
-          setPosition((cur) => settleSlot(cur, slot).next)
-          continue
-        }
-        // 显式平仓：上一帧该方向有仓、当前帧已置空 → 结算
         if (position[slot] === null) {
+          // D5：平仓手续费按用户配置费率计；D10 流水记录费率用于手续费拆分
           const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
           const { pnl } = calcPnl(p, price)
           paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
@@ -569,7 +558,7 @@ export function App() {
       }
     }
     prevPositionRef.current[symbol] = position
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 持仓翻转或最新价变化时结算；paper/tradeSettings 变化不应重触发
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 持仓翻转或最新价变化时记账；paper/tradeSettings 变化不应重触发
   }, [position, symbol, lastClosePrice])
   // G15 数据量自适应：超过渲染上限时对传入图表的蜡烛降采样（0=关闭）
   const renderCandles = useMemo(() => {
@@ -671,13 +660,19 @@ export function App() {
     },
     [showOrderToast, t],
   )
-  useTpSlGuard({
+  // 当前图表品种的价源：K 线最新收盘价（tick 级）；其他品种用上面的轮询价
+  const livePrice = useMemo(
+    () => (lastClosePrice !== null ? { symbol, price: lastClosePrice } : null),
+    [symbol, lastClosePrice],
+  )
+  usePositionSettlement({
     positionsBySymbol,
-    currentSymbol: symbol,
+    live: livePrice,
     prices: orderPrices,
     takerFeeRate: tradeSettings.takerFeeRate,
     recordClose: paper.recordClose,
     setPositionsBySymbol,
+    autoSettled: autoSettledRef.current,
     onExit: onTpSlExit,
   })
   useEffect(() => {
