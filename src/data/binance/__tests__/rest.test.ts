@@ -4,6 +4,7 @@ import {
   fetchGlobalLongShortRatio,
   fetchKlines,
   fetchOpenInterest,
+  fetchRecentTrades,
   fetchOpenInterestHistory,
   fetchTicker24h,
   fetchTickers24h,
@@ -374,5 +375,54 @@ describe('COIN-M dapi 兜底（fapi 被网络阻断时回退）', () => {
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
     expect(urls[1]).toBe('/fapi/v1/premiumIndex?symbol=BTCUSDT')
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('fetchRecentTrades', () => {
+  const rawTrades = [
+    { id: 11, price: '63000.50', qty: '0.25', time: 1_700_000_000_000, isBuyerMaker: false },
+    { id: 12, price: '63001.00', qty: '0.10', time: 1_700_000_001_000, isBuyerMaker: true },
+  ]
+
+  it('proxy 模式：/api/v3/trades 单候选，参数与字段解析正确', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'application/json' } }) // ping → proxy
+      .mockResolvedValueOnce({ ok: true, json: async () => rawTrades })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const out = await fetchRecentTrades('BTCUSDT', 30)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[1]).toBe('/api/v3/trades?symbol=BTCUSDT&limit=30')
+    expect(out).toEqual([
+      { id: 11, price: 63000.5, qty: 0.25, time: 1_700_000_000_000, buy: true },
+      { id: 12, price: 63001, qty: 0.1, time: 1_700_000_001_000, buy: false },
+    ])
+  })
+
+  it('direct 模式：现货成交拉不到时回退 USDT-M /fapi/v1/trades', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } }) // ping 非 JSON → direct
+      .mockRejectedValueOnce(new Error('spot blocked'))
+      .mockResolvedValueOnce({ ok: true, json: async () => rawTrades })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const out = await fetchRecentTrades('BTCUSDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[1]).toContain('https://data-api.binance.vision/api/v3/trades?symbol=BTCUSDT&limit=50')
+    expect(urls[2]).toContain('https://fapi.binance.com/fapi/v1/trades?symbol=BTCUSDT&limit=50')
+    expect(out).toHaveLength(2)
+  })
+
+  it('交易符号编码：非法交易对不拼接出错误 URL', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'application/json' } })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchRecentTrades('BTC/USDT')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls[1]).toContain('symbol=BTC%2FUSDT')
   })
 })

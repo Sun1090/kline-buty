@@ -182,6 +182,8 @@ export interface MobileHeaderProps {
   onToggleDepth: () => void
   orderBookActive: boolean
   onToggleOrderBook: () => void
+  tapeActive: boolean
+  onToggleTape: () => void
   vpActive: boolean
   onToggleVp: () => void
   sentimentActive: boolean
@@ -312,6 +314,7 @@ export function MobileHeader(props: MobileHeaderProps) {
     { label: t('panel.alerts'), active: props.alertsActive, onToggle: props.onToggleAlerts, title: t('panel.alertsTitle') },
     { label: t('panel.depth'), active: props.depthActive, onToggle: props.onToggleDepth, title: t('panel.depthTitle') },
     { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: props.onToggleOrderBook, title: t('panel.orderBookTitle') },
+    { label: t('panel.tape'), active: props.tapeActive, onToggle: props.onToggleTape, title: t('panel.tapeTitle') },
     { label: t('panel.vp'), active: props.vpActive, onToggle: props.onToggleVp, title: t('panel.vpTitle') },
     { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: props.onToggleSentiment, title: t('panel.sentimentTitle') },
     ...(props.onToggleMarketList

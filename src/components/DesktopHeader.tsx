@@ -231,6 +231,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
     { label: t('docs.title'), active: props.docsActive === true, onToggle: closeMore(props.onToggleDocs ?? (() => {})), title: t('docs.title') },
     { label: t('panel.depth'), active: props.depthActive, onToggle: closeMore(props.onToggleDepth), title: t('panel.depthTitle') },
     { label: t('panel.orderBook'), active: props.orderBookActive, onToggle: closeMore(props.onToggleOrderBook), title: t('panel.orderBookTitle') },
+    { label: t('panel.tape'), active: props.tapeActive, onToggle: closeMore(props.onToggleTape), title: t('panel.tapeTitle') },
     { label: t('panel.vp'), active: props.vpActive, onToggle: closeMore(props.onToggleVp), title: t('panel.vpTitle') },
     { label: t('panel.sentiment'), active: props.sentimentActive, onToggle: closeMore(props.onToggleSentiment), title: t('panel.sentimentTitle') },
     { label: t('replay.start'), active: props.replayActive, onToggle: closeMore(props.onReplay), title: t('replay.title'), disabled: props.replayDisabled },
@@ -815,7 +816,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             </PanelButton>
             {(props.panelOrder ?? []).map((k, i) => (
               <span key={k} data-testid={`panel-order-${k}`} style={{ display: 'inline-flex', gap: 3, alignItems: 'center', fontSize: 11, color: 'var(--text)' }}>
-                {k === 'depth' ? t('panel.depth') : k === 'orderBook' ? t('panel.orderBook') : k === 'vp' ? t('panel.vp') : t('panel.sentiment')}
+                {k === 'depth' ? t('panel.depth') : k === 'orderBook' ? t('panel.orderBook') : k === 'tape' ? t('panel.tape') : k === 'vp' ? t('panel.vp') : t('panel.sentiment')}
                 <button
                   data-testid={`panel-order-up-${k}`}
                   onClick={() => props.onMovePanel?.(k, -1)}

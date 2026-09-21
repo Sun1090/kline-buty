@@ -135,6 +135,8 @@ export const zh = {
 
     orderBook: '盘口',
     orderBookTitle: '盘口订单簿（买卖档位）',
+    tape: '成交明细',
+    tapeTitle: '最新逐笔成交（价格/数量/时间）',
     vp: '筹码',
     vpTitle: '筹码分布（成交量分布 VPVR）',
     settings: '参数',
@@ -625,6 +627,13 @@ export const zh = {
     ask: '卖',
     imbalance: '盘口买卖失衡：买/卖各占总量的百分比',
   },
+  tape: {
+    title: '最新成交 · {symbol}',
+    time: '时间',
+    qty: '数量',
+    sideSummary: '窗口内主动买/主动卖成交笔数',
+    markHint: '点击标记到主图（再点清除）',
+  },
   trade: {
     buy: "买入",
     sell: "卖出",
@@ -888,6 +897,8 @@ export const en: Messages = {
 
     orderBook: 'Book',
     orderBookTitle: 'Order book ladder',
+    tape: 'Time & Sales',
+    tapeTitle: 'Recent time & sales (price/qty/time)',
     vp: 'VPVR',
     vpTitle: 'Volume profile (VPVR)',
     settings: 'Settings',
@@ -1378,6 +1389,13 @@ export const en: Messages = {
     ask: 'Ask',
     imbalance: 'Order-book imbalance: bid/ask share of total volume',
   },
+  tape: {
+    title: 'Trades · {symbol}',
+    time: 'Time',
+    qty: 'Qty',
+    sideSummary: 'Taker buy/sell trade count in the window',
+    markHint: 'Click to mark on main chart (click again to clear)',
+  },
   trade: {
     buy: "Buy",
     sell: "Sell",
@@ -1632,6 +1650,8 @@ export const ja: Messages = {
 
     orderBook: '板',
     orderBookTitle: '板情報（売買レベルの一覧）',
+    tape: '約定',
+    tapeTitle: '直近の約定一覧（価格/数量/時刻）',
     vp: 'VPVR',
     vpTitle: '出来高プロファイル（VPVR）',
     settings: '設定',
@@ -2122,6 +2142,13 @@ export const ja: Messages = {
     ask: '売り',
     imbalance: '板の買売不均衡：買/売の合計に占める割合',
   },
+  tape: {
+    title: '直近約定 · {symbol}',
+    time: '時刻',
+    qty: '数量',
+    sideSummary: '表示期間内の主動買い/売り約定件数',
+    markHint: 'クリックでメインにマーク（再クリックで解除）',
+  },
   trade: {
     buy: "買い",
     sell: "売り",
@@ -2377,6 +2404,8 @@ export const ko: Messages = {
 
     orderBook: '주문장',
     orderBookTitle: '호가 주문장 (매수/매도 호가)',
+    tape: '체결',
+    tapeTitle: '최근 체결 목록(가격/수량/시간)',
     vp: 'VPVR',
     vpTitle: '거래량 프로파일 (VPVR)',
     settings: '설정',
@@ -2867,6 +2896,13 @@ export const ko: Messages = {
     ask: '매도',
     imbalance: '호가 매매 불균형: 매수/매도 비중',
   },
+  tape: {
+    title: '최근 체결 · {symbol}',
+    time: '시간',
+    qty: '수량',
+    sideSummary: '표시 구간의 매수/매도 체결 건수',
+    markHint: '클릭하여 메인 차트에 표시(다시 클릭 시 해제)',
+  },
   trade: {
     buy: "매수",
     sell: "매도",
@@ -3133,6 +3169,8 @@ export const es: Messages = {
     depthTitle: 'Profundidad del libro de órdenes',
     orderBook: 'Libro',
     orderBookTitle: 'Escalera del libro de órdenes',
+    tape: 'Operaciones',
+    tapeTitle: 'Últimas operaciones (precio/cantidad/hora)',
     vp: 'VPVR',
     vpTitle: 'Perfil de volumen (VPVR)',
     settings: 'Ajustes',
@@ -3622,6 +3660,13 @@ export const es: Messages = {
     bid: 'Compra',
     ask: 'Venta',
     imbalance: 'Desequilibrio del libro: proporción de compra/venta',
+  },
+  tape: {
+    title: 'Operaciones · {symbol}',
+    time: 'Hora',
+    qty: 'Cant.',
+    sideSummary: 'N.º de operaciones comprador/vendedor en la ventana',
+    markHint: 'Haz clic para marcar en el gráfico principal (clic de nuevo para borrar)',
   },
   trade: {
     buy: "Comprar",
