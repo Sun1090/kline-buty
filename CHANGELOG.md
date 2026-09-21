@@ -3,9 +3,9 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
-## [v0.5.23] 成交明细筛选（2026-09-22）
+## [v0.5.23] 成交明细筛选 + 图表右键挂限价单（2026-09-22）
 
-v0.5.22 发布后的第一个特性批次：给刚落地的 Time & Sales 面板补上交易所同级的筛选能力。
+v0.5.22 发布后的特性批次：给刚落地的 Time & Sales 面板补上交易所同级的筛选能力，并把限价挂单入口搬到图表上。
 
 - **Tape 筛选行**：方向（全部 / 主动买 / 主动卖）+ 大单档循环（关 → ×5 → ×10）；
   大单口径为「数量 ≥ 窗口均值 × 倍数」，与方向叠加过滤，用于盯大单/单边吃单
@@ -14,6 +14,12 @@ v0.5.22 发布后的第一个特性批次：给刚落地的 Time & Sales 面板�
   五语 i18n 新增 `tape.filterAll/filterBuy/filterSell/filterSideHint/bigOrder/bigOrderHint/emptyFilter`
 - 测试：单测 +6（均值 / 方向 / 阈值 / 组件筛选与档位循环），E2E market-tape 新增筛选控件用例
 - 验证：typecheck / lint 0 error / audit:i18n / unit **1780** / chromium E2E market-tape 4 例
+- **图表右键挂限价单**：右键菜单新增「挂限价买入/卖出」，直接以点击处的价位开单——
+  快捷下单面板以限价模式打开并预填该价，确认后进入 v0.5.22 已有的挂单队列（触价按挂单价成交）；
+  `QuickOrder` 增 `initialType`，App 以 `chart-request-limit-order` 事件接线并对非法载荷免疫；
+  五语 i18n 新增 `ctx.limitBuy/ctx.limitSell`
+- 测试：右键入口单测 +3（`initialType` 预设、事件 → 挂单入队、非法事件不弹面板），
+  E2E limit-orders 新增右键用例（按现价另一侧选方向以确保挂起）
 
 ## [v0.5.22] 成交明细 Tape + 模拟盘限价挂单 + 提醒列表筛选（2026-09-22）
 

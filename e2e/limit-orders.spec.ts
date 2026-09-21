@@ -86,6 +86,10 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     await ensurePanel(page, '交易流水', 'trade-history-panel')
     await page.getByTestId('trade-maker-fee-rate').fill('0.5')
     await expect(page.getByTestId('trade-maker-fee-rate')).toHaveValue('0.5')
+    // 流水浮层会盖住侧栏盘口的买入按钮（点击被拦截），配置完先收起
+    await openMore(page)
+    await page.getByRole('button', { name: '交易流水' }).click()
+    await expect(page.getByTestId('trade-history-panel')).toHaveCount(0)
 
     const price = await lastPrice(page)
     const limit = Number((price * 1.2).toFixed(2))
@@ -103,19 +107,22 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     const chart = page.locator('.chart-container').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
-    await chart.click({ button: 'right', position: { x: box!.width * 0.55, y: box!.height * 0.45 } })
+    // 取主图偏上位置：与最新价拉开距离，避免挂单价≈现价带来的瞬时成交
+    await chart.click({ button: 'right', position: { x: box!.width * 0.55, y: box!.height * 0.18 } })
 
-    const clicked = Number((await page.getByTestId('ctx-copy-price').innerText()).replace(/[^\d.]/g, ''))
-    expect(clicked).toBeGreaterThan(0)
+    // 菜单文案按价格精度四舍五入，只用于判定方向；精确价位以面板预填值为准
+    const shown = Number((await page.getByTestId('ctx-copy-price').innerText()).replace(/[^\d.]/g, ''))
+    expect(shown).toBeGreaterThan(0)
+    expect(Math.abs(shown - current) / current).toBeGreaterThan(0.002)
     // 高于现价的买单、低于现价的卖单会立即触价成交；反向选择方向才能验证「挂起」路径
-    expect(clicked).not.toBe(current)
-    const side = clicked > current ? 'sell' : 'buy'
+    const side = shown > current ? 'sell' : 'buy'
     await page.getByTestId(`ctx-limit-${side}`).click()
 
     const order = page.getByTestId('quick-order')
     await expect(order).toBeVisible()
     await expect(order.getByTestId('qo-type-limit')).toHaveAttribute('aria-pressed', 'true')
-    await expect(order.getByTestId('qo-price')).toHaveValue(String(clicked))
+    const placed = Number(await order.getByTestId('qo-price').inputValue())
+    expect(Math.abs(placed - shown)).toBeLessThan(0.01)
     await order.getByTestId('qo-qty').fill('0.001')
     await order.getByTestId('qo-confirm').click()
     await expect(page.getByTestId('quick-order')).toHaveCount(0)
@@ -125,7 +132,7 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     const orders = (await stored(page, 'kline-buty:paperOrders')) as { side: string; price: number; qty: number }[]
     expect(orders).toHaveLength(1)
     expect(orders[0].side).toBe(side)
-    expect(orders[0].price).toBe(clicked)
+    expect(orders[0].price).toBe(placed)
     expect(orders[0].qty).toBe(0.001)
   })
 })
