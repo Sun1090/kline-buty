@@ -38,6 +38,9 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
   const [group, setGroup] = useState('')
   /** K13 排序：price=按价格 / time=按创建时间 / symbol=按品种 */
   const [sortKey, setSortKey] = useState<'price' | 'time' | 'symbol'>('time')
+  /** v0.5.x 列表筛选：方向 + 状态（all=不限 / active=待触发 / triggered=已触发 / expired=已过期） */
+  const [filterDir, setFilterDir] = useState<'' | 'above' | 'below'>('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'triggered' | 'expired'>('all')
   /** D9 时间窗口：空=全天；格式 HH:MM（本地时区） */
   const [timeFrom, setTimeFrom] = useState('')
   const [timeTo, setTimeTo] = useState('')
@@ -234,10 +237,22 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
     // time：按 id 时间戳（id 前缀为 Date.now()）降序 → 新在前
     return Number(y.id.split('-')[0]) - Number(x.id.split('-')[0])
   })
+  // v0.5.x 列表筛选：方向 + 状态（active=未触发且未过期）；memo 稳定引用供分组 memo 依赖
+  const visibleAlerts = useMemo(
+    () =>
+      symbolAlerts.filter((a) => {
+        if (filterDir !== '' && a.direction !== filterDir) return false
+        if (filterStatus === 'expired') return isExpired(a)
+        if (filterStatus === 'triggered') return a.triggered
+        if (filterStatus === 'active') return !a.triggered && !isExpired(a)
+        return true
+      }),
+    [symbolAlerts, filterDir, filterStatus],
+  )
   // K2 分组：按 group 分组渲染（未分组排最后）
   const groupedAlerts = useMemo(() => {
-    const map = new Map<string, typeof symbolAlerts>()
-    for (const a of symbolAlerts) {
+    const map = new Map<string, typeof visibleAlerts>()
+    for (const a of visibleAlerts) {
       const g = a.group ?? ''
       if (!map.has(g)) map.set(g, [])
       map.get(g)!.push(a)
@@ -247,7 +262,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
       if (b[0] === '') return -1
       return a[0].localeCompare(b[0])
     })
-  }, [symbolAlerts])
+  }, [visibleAlerts])
 
   return (
     <div
@@ -639,6 +654,70 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           </button>
         ))}
       </div>
+      {/* v0.5.x 列表筛选：方向 + 状态 */}
+      <div data-testid="alert-filter" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <span>{t('alert.filter')}</span>
+        <button
+          data-testid="alert-filter-dir-all"
+          onClick={() => setFilterDir('')}
+          aria-pressed={filterDir === ''}
+          style={{
+            padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
+            background: filterDir === '' ? 'rgba(41,98,255,0.18)' : 'transparent',
+            color: filterDir === '' ? 'var(--accent)' : 'var(--text-dim)',
+          }}
+        >
+          {t('alert.filterAll')}
+        </button>
+        <button
+          data-testid="alert-filter-dir-above"
+          onClick={() => setFilterDir('above')}
+          aria-pressed={filterDir === 'above'}
+          title={t('alert.above')}
+          style={{
+            padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
+            background: filterDir === 'above' ? 'rgba(41,98,255,0.18)' : 'transparent',
+            color: filterDir === 'above' ? 'var(--accent)' : 'var(--text-dim)',
+          }}
+        >
+          ≥
+        </button>
+        <button
+          data-testid="alert-filter-dir-below"
+          onClick={() => setFilterDir('below')}
+          aria-pressed={filterDir === 'below'}
+          title={t('alert.below')}
+          style={{
+            padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
+            background: filterDir === 'below' ? 'rgba(41,98,255,0.18)' : 'transparent',
+            color: filterDir === 'below' ? 'var(--accent)' : 'var(--text-dim)',
+          }}
+        >
+          ≤
+        </button>
+        <span style={{ width: 4 }} />
+        {(['all', 'active', 'triggered', 'expired'] as const).map((s) => (
+          <button
+            key={s}
+            data-testid={`alert-filter-status-${s}`}
+            onClick={() => setFilterStatus(s)}
+            aria-pressed={filterStatus === s}
+            style={{
+              padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
+              background: filterStatus === s ? 'rgba(41,98,255,0.18)' : 'transparent',
+              color: filterStatus === s ? 'var(--accent)' : 'var(--text-dim)',
+            }}
+          >
+            {s === 'all'
+            ? t('alert.filterAll')
+            : s === 'active'
+              ? t('alert.filterActive')
+              : s === 'triggered'
+                ? t('alert.triggered')
+                : t('alert.expired')}
+          </button>
+        ))}
+      </div>
       {/* D9 时间窗口：HH:MM–HH:MM（本地时区），留空=全天 */}
       <div data-testid="alert-time-window" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.timeWindow')}</span>
@@ -710,7 +789,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           <>
             <button
               data-testid="alert-batch-select-all"
-              onClick={() => setSelected(new Set(symbolAlerts.map((a) => a.id)))}
+              onClick={() => setSelected(new Set(visibleAlerts.map((a) => a.id)))}
               style={{ border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 11, cursor: 'pointer', padding: 0 }}
             >
               {t('alert.selectAll')}

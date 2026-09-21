@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.22 开发中（2026-09-21）** — v0.5.21 已发布；本地新特性构想继续（批量积累后发布）
+- **v0.5.x Web 特性 · 提醒面板·列表筛选（本批，feat/v05-alert-filter）**：
+  - 新增方向（≥/≤）与状态（全部/待触发/已触发/已过期）过滤，联动列表与批量「全选」
+  - `visibleAlerts` useMemo 稳定引用；五语 i18n 新增 `alert.filter/filterAll/filterActive`；组件测试 +3
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1716 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.22
+
 **里程碑 v0.5.21 发布完成（2026-09-21）**
 - 版本号：**0.5.21**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.21`（release 25524c3）；发布 PR：#87（rebase 合并 → main）

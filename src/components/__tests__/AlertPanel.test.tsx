@@ -85,7 +85,8 @@ describe('AlertPanel', () => {
   it('已触发提醒显示标记与重置', () => {
     const api = makeApi({ alerts: [{ id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: true }] })
     render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
-    expect(screen.getByText(/已触发/)).toBeDefined()
+    // 行内「已触发」标记（限定 alert-row，避免与筛选状态按钮文案匹配）
+    expect(screen.getByTestId('alert-row').textContent).toContain('已触发')
     fireEvent.click(screen.getByText('重置'))
     expect(api.resetAlert).toHaveBeenCalledWith('a1')
   })
@@ -383,5 +384,48 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
     })
     render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
     expect(screen.queryByTestId('alert-clear-expired')).toBeNull()
+  })
+
+  it('v0.5.x 列表筛选：按方向过滤（above）', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 64000, triggered: false },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    expect(screen.getAllByTestId('alert-row')).toHaveLength(2)
+    fireEvent.click(screen.getByTestId('alert-filter-dir-above'))
+    expect(screen.getAllByTestId('alert-row')).toHaveLength(1)
+    // 过滤后剩余为 above 提醒（其价格 65000 显示在行内）
+    expect(screen.getByTestId('alert-row').textContent).toContain('65000')
+  })
+
+  it('v0.5.x 列表筛选：按状态过滤（已过期）', () => {
+    const now = Date.now()
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, expiresAt: now + 3_600_000 },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'above', price: 64000, triggered: false, expiresAt: now - 1_000 },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.click(screen.getByTestId('alert-filter-status-expired'))
+    expect(screen.getAllByTestId('alert-row')).toHaveLength(1)
+    expect(screen.getByTestId('alert-row').textContent).toContain('已过期')
+  })
+
+  it('v0.5.x 列表筛选：重置为全部后恢复全部行', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 64000, triggered: false },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.click(screen.getByTestId('alert-filter-dir-below'))
+    expect(screen.getAllByTestId('alert-row')).toHaveLength(1)
+    fireEvent.click(screen.getByTestId('alert-filter-dir-all'))
+    expect(screen.getAllByTestId('alert-row')).toHaveLength(2)
   })
 })
