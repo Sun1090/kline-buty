@@ -5,20 +5,17 @@
 
 ## 当前阶段
 
-**v0.5.23 开发中（2026-09-22）** — 已合并三个批次，继续积累 v0.5.x 批次后定档
-- **成交明细筛选（PR #102 → main b0c08b1）**：Tape 面板方向（全部/主动买/主动卖）+ 大单档循环
-  （关 → ×5 → ×10，阈值 = 窗口均值 × 倍数）；纯函数 `filterTape` / `avgTradeQty` / `TAPE_BIG_STEPS`；
-  unit **1780**（+6）/ CI 三浏览器全绿
-- **图表右键挂限价单（PR #105 → main 59698f7）**：右键菜单「挂限价买入/卖出」以点击价位直接打开限价模式下单，
-  确认后进挂单队列；`QuickOrder.initialType` + `chart-request-limit-order` 事件接线；五语 `ctx.limitBuy/limitSell`；
-  unit **1783**（+3）/ chromium E2E limit-orders 4/4；顺带修掉「交易流水浮层遮挡盘口买入按钮」造成的 60s 既有用例超时
-- **A1 渲染判据加固（PR #106 → main fa547b8）**：canvas 像素判据改取主题涨跌色（旧判据实际只认跌色像素），
-  并放宽慢机轮询预算 → 解掉 v0.5.22 release push 主 CI run 537 的唯一失败项
-- **进行中：跨品种止盈止损守护（分支 feat/v05-tpsl-guard）**：切走图表后，其他品种持仓仍按 30s 轮询最新价判定
-  TP/SL，命中即按反向平仓结算、写流水并提示；当前品种继续由 K 线级结算负责；挂单撮合与守护共用一份价源。
-  过程中修掉一个真实缺陷：当前品种的结算 effect 依赖里没有最新价，静止持仓即使触价也不平仓
-  （E2E `tpsl-guard` 首跑即复现）；补上价格依赖并用持仓对象身份去重防重复记账
-- 下一项：本批验证 → PR → 合并，与后续批次一并定档 v0.5.23
+**v0.5.23 定档（2026-09-22）** — 三个特性批次已合并，本提交定版 0.5.22 → 0.5.23（package.json + index.html app-version）
+- 收录：**#102** 成交明细筛选（方向 + 大单阈值，纯函数 `filterTape`/`avgTradeQty`/`TAPE_BIG_STEPS`）、
+  **#105** 图表右键挂限价单（`QuickOrder.initialType` + `chart-request-limit-order` 事件接线）、
+  **#107** 止盈止损结算覆盖（跨品种守护 `planTpSlExits`/`useTpSlGuard`；当前品种结算 effect 补最新价依赖
+  + 持仓对象 WeakSet 去重，修掉「静止持仓触价不平仓」与随之暴露的重复记账风险）
+- 附带质量项：**#104** v0.5.22 发布完成记录、**#106** A1 canvas 渲染判据改取主题涨跌色（旧判据实际只认跌色像素）、
+  限价单 E2E「交易流水浮层遮挡盘口买入」导致的 60s 超时修复
+- 单测规模：v0.5.22 的 1774 → 本版本 **1796**（170 files）
+- 定档门禁：typecheck 干净 / lint 0 error / audit:i18n / unit **1796** / 全量 build 通过
+- 下一项：本 PR 合并 → tag v0.5.23 → Pages live 抽查 → 补「里程碑 v0.5.23 发布完成」记录
+  → 下一批：**持仓止盈止损可编辑（含移动止损）**，并清理 Dependabot #88–#94
 
 **里程碑 v0.5.22 发布完成（2026-09-22）**
 - 版本号：**0.5.22**（package.json / index.html meta app-version）
