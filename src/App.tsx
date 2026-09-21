@@ -27,13 +27,15 @@ import { OrderBook } from './components/OrderBook'
 import { QuickOrderWithDepth, type OrderType } from './components/QuickOrder'
 import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
-import { calcPnl, checkHit } from './position/pnl'
+import { calcPnl, checkHit, type Position } from './position/pnl'
 import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, reverseSlot, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { usePendingOrders } from './hooks/usePendingOrders'
 import { useSymbolPrices } from './hooks/useSymbolPrices'
 import { useLimitOrderFills } from './hooks/useLimitOrderFills'
+import { useTpSlGuard } from './hooks/useTpSlGuard'
+import type { TpSlExit } from './trade/tpsl'
 import { createPendingOrder, ORDERS_PER_SYMBOL_MAX } from './trade/pending'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
 import { tradeStats } from './trade/stats'
@@ -252,6 +254,8 @@ export function App() {
   const [profitTarget, setProfitTarget] = usePersistedState<number>('profitTarget', 0)
   // J2 每品种上次结算快照：切换品种不互相误结算
   const prevPositionRef = useRef<Record<string, Positions>>({})
+  /** TP/SL 自动结算过的持仓对象：结算写回会再触发一次结算 effect，按对象身份去重防重复记账 */
+  const autoSettledRef = useRef<WeakSet<Position>>(new WeakSet())
   // T27：图表右键菜单动作（提醒/清空画线）
   useEffect(() => {
     const onRequestAlert = (e: Event) => {
@@ -279,35 +283,7 @@ export function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- alertsApi/candles 取最新渲染闭包即可，事件监听只挂一次
   }, [])
-  // J1/J2 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓；按 symbol 隔离
-  useEffect(() => {
-    const prev = prevPositionRef.current[symbol] ?? EMPTY_POSITIONS
-    const price = candles[candles.length - 1]?.close ?? null
-    if (price != null) {
-      // TP/SL 触发：任一方向最新价触达 → 独立结算该方向并清空槽位
-      for (const slot of ['long', 'short'] as const) {
-        const p = prev[slot]
-        if (!p) continue
-        const hit = checkHit(p, price)
-        if (hit) {
-          // D5：平仓手续费按用户配置费率计；D10 流水记录费率用于手续费拆分
-          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
-          const { pnl } = calcPnl(p, price)
-          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
-          setPosition((cur) => settleSlot(cur, slot).next)
-          continue
-        }
-        // 显式平仓：上一帧该方向有仓、当前帧已置空 → 结算
-        if (position[slot] === null) {
-          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
-          const { pnl } = calcPnl(p, price)
-          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
-        }
-      }
-    }
-    prevPositionRef.current[symbol] = position
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在 position 翻转时结算；paper/candles 变化不应重触发
-  }, [position, symbol])
+  // J1/J2 双向持仓结算见 candles 就绪之后（同一 effect 需要最新收盘价做触价判定）
   // E4 面板折叠/展开记忆：市场数据面板状态持久化（刷新后恢复上次开合）
   const [alertsOpen, setAlertsOpen] = usePersistedState('alertsOpen', false)
   // E1 站内横幅：监听提醒触发事件（web 渠道由 usePriceAlerts dispatch），4s 自动消失
@@ -561,6 +537,40 @@ export function App() {
   }
   const { state, hasMore, loadMore, retry, loadDemo, frameStats } = useKlineData(symbol, period)
   const { candles, status, error, refill } = state
+  // J1/J2 双向持仓结算：多空独立——各方向各自检查 TP/SL 触发与显式平仓；按 symbol 隔离
+  // v0.5.x：最新收盘价进依赖——行情触价即结算（此前只在持仓翻转/切币时才检查，静止持仓会漏结算）
+  const lastClosePrice = candles.length > 0 ? candles[candles.length - 1].close : null
+  useEffect(() => {
+    const prev = prevPositionRef.current[symbol] ?? EMPTY_POSITIONS
+    const price = lastClosePrice
+    if (price != null) {
+      // TP/SL 触发：任一方向最新价触达 → 独立结算该方向并清空槽位
+      for (const slot of ['long', 'short'] as const) {
+        const p = prev[slot]
+        if (!p) continue
+        // 结算写回会让 position 翻转、本 effect 紧接着再跑一次：已记账的持仓对象不再重复结算
+        if (autoSettledRef.current.has(p)) continue
+        const hit = checkHit(p, price)
+        if (hit) {
+          autoSettledRef.current.add(p)
+          // D5：平仓手续费按用户配置费率计；D10 流水记录费率用于手续费拆分
+          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
+          const { pnl } = calcPnl(p, price)
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
+          setPosition((cur) => settleSlot(cur, slot).next)
+          continue
+        }
+        // 显式平仓：上一帧该方向有仓、当前帧已置空 → 结算
+        if (position[slot] === null) {
+          const fee = feeForPrice(p.entry, p.quantity, tradeSettings.takerFeeRate)
+          const { pnl } = calcPnl(p, price)
+          paper.recordClose({ symbol, side: p.direction === 'long' ? 'buy' : 'sell', price, qty: p.quantity, fee, feeRate: tradeSettings.takerFeeRate, pnl })
+        }
+      }
+    }
+    prevPositionRef.current[symbol] = position
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 持仓翻转或最新价变化时结算；paper/tradeSettings 变化不应重触发
+  }, [position, symbol, lastClosePrice])
   // G15 数据量自适应：超过渲染上限时对传入图表的蜡烛降采样（0=关闭）
   const renderCandles = useMemo(() => {
     if (renderCandleCap > 0 && candles.length > renderCandleCap) return downsampleCandles(candles, renderCandleCap)
@@ -612,11 +622,14 @@ export function App() {
 
   // v0.5.x 限价挂单（Maker）：挂单列表 + 多品种价源 + 触价撮合，成交/撤销走站内横幅
   const pending = usePendingOrders()
-  const orderSymbols = useMemo(
-    () => pending.orders.filter((o) => o.symbol !== symbol).map((o) => o.symbol),
-    [pending.orders, symbol],
-  )
-  const orderPrices = useSymbolPrices(orderSymbols)
+  // 其他品种价源（30s 轮询）：挂单撮合与跨品种止盈止损共用一份，避免重复请求
+  const otherPriceSymbols = useMemo(() => {
+    const symbols = new Set<string>()
+    for (const o of pending.orders) if (o.symbol !== symbol) symbols.add(o.symbol)
+    for (const s of Object.keys(positionsBySymbol)) if (s !== symbol) symbols.add(s)
+    return [...symbols]
+  }, [pending.orders, positionsBySymbol, symbol])
+  const orderPrices = useSymbolPrices(otherPriceSymbols)
   const [orderToast, setOrderToast] = useState<{ id: number; text: string } | null>(null)
   const showOrderToast = useCallback((text: string) => setOrderToast({ id: Date.now(), text }), [])
   const onOrderNotice = useCallback(
@@ -638,6 +651,34 @@ export function App() {
     live: candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,
     prices: orderPrices,
     onNotice: onOrderNotice,
+  })
+  // v0.5.x 跨品种止盈止损：切走图表后其他品种的持仓仍按轮询价结算（当前品种由 K 线级结算负责）
+  const onTpSlExit = useCallback(
+    (exits: TpSlExit[]) => {
+      const first = exits[0]
+      if (!first) return
+      const reason = t(first.reason === 'takeProfit' ? 'trade.tpWord' : 'trade.slWord')
+      showOrderToast(
+        exits.length > 1
+          ? t('trade.tpslToastMulti', {
+              symbol: first.symbol,
+              reason,
+              count: String(exits.length),
+              price: first.price.toFixed(2),
+            })
+          : t('trade.tpslToast', { symbol: first.symbol, reason, price: first.price.toFixed(2) }),
+      )
+    },
+    [showOrderToast, t],
+  )
+  useTpSlGuard({
+    positionsBySymbol,
+    currentSymbol: symbol,
+    prices: orderPrices,
+    takerFeeRate: tradeSettings.takerFeeRate,
+    recordClose: paper.recordClose,
+    setPositionsBySymbol,
+    onExit: onTpSlExit,
   })
   useEffect(() => {
     if (!orderToast) return
