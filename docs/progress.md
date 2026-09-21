@@ -5,16 +5,29 @@
 
 ## 当前阶段
 
-**v0.5.24 开发中（2026-09-22）** — v0.5.23 已发布（tag v0.5.23 @ a573c4e，Pages live 0.5.23）；本批：持仓止盈止损可编辑
-- **v0.5.x Web 特性 · 持仓止盈止损可编辑（分支 feat/v05-position-levels）**：
-  - 仓位面板每个持仓行新增「止盈/止损」行内编辑器：以现值预填、留空即清除，一键保本止损把止损推到开仓价；
-    校验「多头止盈 ≥ 开仓价 ≥ 止损（空头相反）」，两线重合与非正价分别报错且不写回
-  - 纯函数层新增 `src/position/levels.ts`；写回 `positionsBySymbol` 后图表价位线与 v0.5.23 结算链路同步生效
-  - 五语 i18n 新增 `position.levels/levelBreakeven/levelClearHint/levelErrInvalid/levelErrCrossed`
-  - 验证：typecheck / lint 0 err / audit:i18n / unit **1815**（171 files，+19）/
-    chromium E2E `tpsl-guard` 4 例（含改价即触价结算、320px 窄屏换行不横向滚动）；
-    桌面 1280×800 与移动 320×720 均由 E2E 覆盖
-- 下一项：本批 PR → CI → 合并；随后清理 Dependabot #88/#89/#90/#92/#93（已被自动变基，逐个绿则合并）
+**v0.5.24 开发中（2026-09-22）** — v0.5.23 已发布（tag v0.5.23 @ a573c4e，Pages live 0.5.23）；本批积累中，暂不定档
+- **已合并 · 持仓止盈止损可编辑（PR #110 → main）**：仓位面板每个持仓行新增「止盈/止损」行内编辑器
+  （以现值预填、留空即清除、一键保本止损），纯函数层 `src/position/levels.ts`，
+  写回 `positionsBySymbol` 后图表价位线与 v0.5.23 结算链路同步生效；单测 1796 → **1815**
+- **已合并 · Dependabot #88–#94 全部清理**：七条依赖升级 PR 逐条变基合并，`git branch -r` 无遗留
+- **评审中 · 移动止损 + 结算链路合并（分支 feat/v05-trailing-stop，PR #111）**：
+  - `Position.trailPct`：每次价格刷新把止损朝有利方向推进到距现价 t% 处，**回落不回撤**，
+    跌破该线即结算。判定与写回分离——`planTpSlExits` 只认存值止损，
+    `planTrailMoves` 写回推进后的线（同一轮已命中的槽位不再写），写回值随 `positionsBySymbol` 持久化，
+    图表止损线因此自行跟价；面板编辑器加第三格 t%（留空关闭该档）与行内徽标，
+    止损允许存到现价下方的盈利区（边界取开仓价与现价中的较有利者）
+  - 结算链路合并为单条 `usePositionSettlement`（原「当前品种 K 线级结算」与「跨品种守护」两条路径
+    各写一遍判定/记账），`autoSettled` WeakSet + claim key 双保险防重复记账
+  - **修复**：新增第三格后 320px 下三个输入被挤出视口并撑出横向滚动（违反移动端不得横向滚动规则）
+    → 价位行改 `grid auto-fit`，窄屏每格独占一行；窄屏 E2E 用例先跑即复现
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1841**（171 files，+26）/
+    chromium E2E `tpsl-guard` **5/5**；变异校验：移除写回 → hook 4 红、移除 settled 过滤 → 1 红、
+    禁用推进 → 单测 3 红 + E2E 2 红（均已还原并 diff 确认干净）
+  - 视觉：dev server + Playwright 量测 1280 / 390 / 320 三档，面板 `scrollWidth-clientWidth = 0`、
+    徽标与三格输入均在视口内；另记录 `?perf` 压测模式下文档级横向溢出 139px
+    （`chart-indicator-last` 图例宽度所致，非本批引入、真实行情模式为 0）→ 待另批处理
+- 下一项：PR #111 CI 全绿即合并并回收分支/工作树；随后批次候选「图表拖拽止盈/止损线走同一套校验」
+  （现状 `onPositionDrag` 直接写入未校验价，可把止盈拖到开仓价之下）
 
 **里程碑 v0.5.23 发布完成（2026-09-22）**
 - 版本号：**0.5.23**（package.json / index.html meta app-version）
