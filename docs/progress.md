@@ -5,6 +5,13 @@
 
 ## 当前阶段
 
+**v0.5.20 开发中（2026-09-21）** — v0.5.19 已发布；本地新特性构想继续
+- **v0.5.x Web 特性 · 提醒面板·一键清理已过期（本批，feat/v05-alert-clear-expired）**：
+  - 批量操作行新增「清理已过期 (N)」按钮（alert-clear-expired），有到期失效提醒时显示并一键移除
+  - 五语 i18n 新增 `alert.clearExpired`；组件测试 +2；E6 徽标断言限定 alert-row（避免与按钮文案匹配冲突）
+  - 验证：typecheck / lint 0 err / audit:i18n / unit **1710 全绿**
+- 下一项：提交本批 → PR → CI → 合并 → release v0.5.20
+
 **里程碑 v0.5.19 发布完成（2026-09-20）**
 - 版本号：**0.5.19**（package.json / index.html meta app-version）
 - 分支：`release/v0.5.19`（release c34fd13）；发布 PR：#81（rebase 合并 → main）
