@@ -128,7 +128,23 @@ describe('App 跨品种止盈止损守护', () => {
     // 流水里的 pnl 是净额：价差 −12 再扣平仓手续费 0.1
     expect(trades[0]).toMatchObject({ symbol: 'ETHUSDT', kind: 'close', side: 'buy', price: 88, pnl: -12.1 })
     // 横幅提示命中原因（当前语言 zh-CN）
-    expect(await screen.findByTestId('order-toast').catch(() => null)).not.toBeNull()
+    const toast = await screen.findByTestId('order-toast')
+    expect(toast.textContent).toContain('止损')
+    // 触发价按价段自适应（≥1 给四位），不再写死两位小数
+    expect(toast.textContent).toContain('88.0000')
+  })
+
+  it('低价标的止损：横幅里的触发价给足六位，不塌成 0.00', async () => {
+    localStorage.setItem(
+      POSITIONS_KEY,
+      JSON.stringify({ DOGEUSDT: { long: { entry: 0.15, quantity: 1000, direction: 'long', takeProfit: 0.2, stopLoss: 0.12 }, short: null } }),
+    )
+    priceHolder.current = { DOGEUSDT: 0.111234 }
+    render(<App />)
+    await waitFor(() => expect(storedTrades()).toHaveLength(1))
+    const toast = await screen.findByTestId('order-toast')
+    expect(toast.textContent).toContain('0.111234')
+    expect(toast.textContent).not.toMatch(/\b0\.00\b/)
   })
 
   it('价格仍在止盈止损区间内：不动仓、不记流水', async () => {

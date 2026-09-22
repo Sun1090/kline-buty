@@ -100,7 +100,7 @@ import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
 import { checkVersionUpdate, readMetaVersion } from './utils/versionCheck'
 import { storageAdvisory } from './utils/storageMonitor'
-import { fmtPriceWithPrecision } from './utils/format'
+import { fmtPricePrecise, fmtPriceWithPrecision } from './utils/format'
 import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
 import { nextBackTarget } from './chart/backNavigation'
 
@@ -628,7 +628,7 @@ export function App() {
     (n: { kind: 'filled' | 'cancelled'; symbol: string; qty: number; price: number }) =>
       showOrderToast(
         n.kind === 'filled'
-          ? t('trade.filledToast', { symbol: n.symbol, qty: String(n.qty), price: n.price.toFixed(2) })
+          ? t('trade.filledToast', { symbol: n.symbol, qty: String(n.qty), price: fmtPricePrecise(n.price) })
           : t('trade.cancelledToast', { symbol: n.symbol }),
       ),
     [showOrderToast, t],
@@ -657,9 +657,9 @@ export function App() {
               symbol: first.symbol,
               reason,
               count: String(exits.length),
-              price: first.price.toFixed(2),
+              price: fmtPricePrecise(first.price),
             })
-          : t('trade.tpslToast', { symbol: first.symbol, reason, price: first.price.toFixed(2) }),
+          : t('trade.tpslToast', { symbol: first.symbol, reason, price: fmtPricePrecise(first.price) }),
       )
     },
     [showOrderToast, t],
@@ -1250,7 +1250,7 @@ export function App() {
           <span>🔔</span>
           <span>
             <b>{alertToast.symbol.replace('USDT', '/USDT')}</b> {alertToast.direction === 'above' ? '≥' : '≤'} {fmtPriceWithPrecision(alertToast.price)} →{' '}
-            {alertToast.triggeredPrice.toFixed(2)}
+            {fmtPricePrecise(alertToast.triggeredPrice)}
           </span>
           <button
             data-testid="alert-toast-dismiss"
