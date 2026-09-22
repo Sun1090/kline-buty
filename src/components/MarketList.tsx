@@ -4,13 +4,8 @@ import { useI18n } from '../i18n/useI18n'
 import { topRank, useTickerList, type TickerSortKey } from '../hooks/useTickerList'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePersistedState } from '../hooks/usePersistedState'
-import { fmtVolumeBM } from '../utils/format'
+import { fmtPricePrecise as fmtPrice, fmtVolumeBM } from '../utils/format'
 import type { TickerRow } from '../data/binance/rest'
-
-/** 价格格式化：≥1000 两位小数、≥1 四位、否则六位（与行情信息条一致） */
-function fmtPrice(v: number): string {
-  return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
-}
 
 const COLS: { key: TickerSortKey; labelKey: 'pair' | 'lastPrice' | 'change24h' | 'volume'; align: 'left' | 'right' }[] = [
   { key: 'symbol', labelKey: 'pair', align: 'left' },
