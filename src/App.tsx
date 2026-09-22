@@ -1721,8 +1721,15 @@ export function App() {
                 price: order.price,
                 qty: order.qty,
                 marketPrice: candles[candles.length - 1]?.close ?? stats.price,
+                takeProfit: order.takeProfit,
+                stopLoss: order.stopLoss,
               })
-              if (!created || !pending.add(created)) {
+              // 面板已把过关，这里再挡一次：随单价位不成立不该被误报成「挂单已达上限」
+              if (!created) {
+                showOrderToast(t('quickOrder.attachErr'))
+                return
+              }
+              if (!pending.add(created)) {
                 showOrderToast(t('trade.tooManyOrders', { max: String(ORDERS_PER_SYMBOL_MAX) }))
                 return
               }

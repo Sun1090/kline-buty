@@ -40,7 +40,7 @@ describe('QuickOrder 快速下单', () => {
     const handlers = setup()
     fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '2.5' } })
     fireEvent.click(screen.getByTestId('qo-confirm'))
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 2.5, type: 'market' })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 2.5, type: 'market', takeProfit: null, stopLoss: null })
   })
 
   it('余额不足时确认按钮禁用', () => {
@@ -118,7 +118,7 @@ describe('QuickOrder 快速下单', () => {
     const handlers = setup()
     fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '3' } })
     fireEvent.keyDown(screen.getByTestId('quick-order'), { key: 'Enter' })
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 3, type: 'market' })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 3, type: 'market', takeProfit: null, stopLoss: null })
   })
 
   it('v0.5 键盘：非法值 Enter 不下单', () => {
@@ -142,7 +142,7 @@ describe('QuickOrder 快速下单', () => {
     expect(screen.getByTestId('qo-limit-price').textContent).toContain('100.00')
     expect(screen.getByTestId('qo-fee').textContent).toBe('0.0500')
     fireEvent.click(screen.getByTestId('qo-confirm'))
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit' })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit', takeProfit: null, stopLoss: null })
   })
 
   it('v0.5.x 限价模式：挂价高于参考价（下单即吃单）按吃单费率预估', () => {
@@ -170,6 +170,47 @@ describe('QuickOrder 快速下单', () => {
     expect((screen.getByTestId('qo-type-limit') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
     expect((screen.getByTestId('qo-type-market') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(screen.getByTestId('qo-confirm'))
-    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit' })
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit', takeProfit: null, stopLoss: null })
   })
+  it('限价模式随单止盈/止损：填了就带进 onConfirm，留空即 null', () => {
+    const handlers = setup({ initialType: 'limit' })
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '130' } })
+    fireEvent.change(screen.getByTestId('qo-sl'), { target: { value: '90' } })
+    expect(screen.queryByTestId('qo-attach-err')).toBeNull()
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit', takeProfit: 130, stopLoss: 90 })
+  })
+
+  it('随单价位站错一侧 → 行内报错并禁用确认；改对后放行', () => {
+    const handlers = setup({ initialType: 'limit' })
+    // 买单止盈必须高于挂单价：80 不成立
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '80' } })
+    expect(screen.getByTestId('qo-attach-err')).toBeTruthy()
+    expect((screen.getByTestId('qo-confirm') as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).not.toHaveBeenCalled()
+    // 文本垃圾不能当成「未设置」放行
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: 'abc' } })
+    expect((screen.getByTestId('qo-confirm') as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '130' } })
+    expect((screen.getByTestId('qo-confirm') as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit', takeProfit: 130, stopLoss: null })
+  })
+
+  it('市价模式不渲染随单输入，提交携带 null', () => {
+    const handlers = setup()
+    expect(screen.queryByTestId('qo-tp')).toBeNull()
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'market', takeProfit: null, stopLoss: null })
+  })
+
+  it('切回市价模式后，已填的随单价位不再带进订单', () => {
+    const handlers = setup({ initialType: 'limit' })
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '130' } })
+    fireEvent.click(screen.getByTestId('qo-type-market'))
+    fireEvent.click(screen.getByTestId('qo-confirm'))
+    expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'market', takeProfit: null, stopLoss: null })
+  })
+
 })

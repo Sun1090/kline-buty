@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_POSITIONS, applyOrder, hasAny, mergePosition, planReduce, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
+import { DEFAULT_SL_PCT, DEFAULT_TP_PCT, EMPTY_POSITIONS, applyOrder, hasAny, mergePosition, planReduce, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
 import type { Position } from '../../position/pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
@@ -172,4 +172,22 @@ describe('planReduce 部分平仓', () => {
     planReduce(longPos, 1)
     expect(longPos.quantity).toBe(2)
   })
+  it('applyOrder 随单价位（attach）只在开出新槽位时顶掉百分比参考价', () => {
+    const both = applyOrder(EMPTY_POSITIONS, 'buy', 100, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { takeProfit: 130, stopLoss: 88 })
+    expect({ takeProfit: both.long!.takeProfit, stopLoss: both.long!.stopLoss }).toEqual({ takeProfit: 130, stopLoss: 88 })
+    // 只带一条：另一条仍回到参考价（3% → 103）
+    const half = applyOrder(EMPTY_POSITIONS, 'buy', 100, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { takeProfit: null, stopLoss: 88 })
+    expect({ takeProfit: half.long!.takeProfit, stopLoss: half.long!.stopLoss }).toEqual({ takeProfit: 103, stopLoss: 88 })
+    // 空卖单：两线都回参考价（空头止盈在下、止损在上）
+    const none = applyOrder(EMPTY_POSITIONS, 'sell', 100, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { takeProfit: null, stopLoss: null })
+    expect({ takeProfit: none.short!.takeProfit, stopLoss: none.short!.stopLoss }).toEqual({ takeProfit: 97, stopLoss: 102 })
+  })
+
+  it('applyOrder 加仓时忽略 attach：既有价位线优先于随单价位', () => {
+    const held: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 130, stopLoss: 118 }
+    const next = applyOrder({ long: held, short: null }, 'buy', 200, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { takeProfit: 999, stopLoss: 1 })
+    expect({ takeProfit: next.long!.takeProfit, stopLoss: next.long!.stopLoss }).toEqual({ takeProfit: 130, stopLoss: 118 })
+    expect(next.long!.quantity).toBe(4) // 数量照并，只是不动线
+  })
+
 })

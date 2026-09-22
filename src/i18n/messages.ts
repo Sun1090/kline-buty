@@ -724,6 +724,8 @@ export const zh = {
     qtyPreset: "常用数量",
     customPct: "自定义%",
     apply: "应用",
+    attachHint: '随单止盈/止损（可选）：这单成交即写进持仓价位线',
+    attachErr: '止盈/止损需落在挂单价的合理一侧：买单止盈更高、止损更低，卖单相反',
   },
   volumeProfile: {
     title: '筹码分布（最近 300 根）· {symbol}',
@@ -1519,6 +1521,8 @@ export const en: Messages = {
     qtyPreset: "Quick qty",
     customPct: "Custom %",
     apply: "Apply",
+    attachHint: 'Attached TP/SL (optional): applied to the position as soon as this order fills',
+    attachErr: 'Take-profit/stop-loss must sit on the correct side of the limit: TP above and SL below for buys, reversed for sells',
   },
   volumeProfile: {
     title: 'Volume profile (last 300) · {symbol}',
@@ -2305,6 +2309,8 @@ export const ja: Messages = {
     qtyPreset: "よく使う数量",
     customPct: "カスタム%",
     apply: "適用",
+    attachHint: '指値に付ける利確/損切り（任意）：約定と同時に保有序位に反映',
+    attachErr: '利確/損切りは指値価格の正しい側にある必要があります（買いは利確が高く損切りが低く、売りは逆）',
   },
   volumeProfile: {
     title: '出来高プロファイル（直近 300 本）· {symbol}',
@@ -3092,6 +3098,8 @@ export const ko: Messages = {
     qtyPreset: "자주 쓰는 수량",
     customPct: "사용자 정의%",
     apply: "적용",
+    attachHint: '지정가에 동반하는 익절/손절 (선택): 체결 즉시 포지션에 반영',
+    attachErr: '익절/손절은 주문 가격의 올바른 쪽에 있어야 합니다 (매수는 익절 위·손절 아래, 매도는 반대)',
   },
   volumeProfile: {
     title: '거래량 프로파일 (최근 300개) · {symbol}',
@@ -3890,6 +3898,8 @@ export const es: Messages = {
     qtyPreset: "Cant. rápida",
     customPct: "Personalizado %",
     apply: "Aplicar",
+    attachHint: 'TP/SL adjuntos a la orden (opcional): se aplican en cuanto se ejecuta',
+    attachErr: 'El take-profit/stop-loss debe estar al lado correcto del precio límite: en compras TP arriba y SL abajo; en ventas al revés',
   },
   volumeProfile: {
     title: 'Perfil de volumen (últimas 300) · {symbol}',

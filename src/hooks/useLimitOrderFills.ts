@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { fillFeeRate, fillPrice, matchPendingOrders, planFills, type PendingOrder } from '../trade/pending'
-import { EMPTY_POSITIONS, applyOrder, type Positions } from '../trade/positions'
+import { fillFeeRate, fillPrice, levelsAtFill, matchPendingOrders, planFills, type PendingOrder } from '../trade/pending'
+import { DEFAULT_SL_PCT, DEFAULT_TP_PCT, EMPTY_POSITIONS, applyOrder, type Positions } from '../trade/positions'
 import type { OrderSide } from '../trade/order'
 
 type PositionsBySymbol = Record<string, Positions>
@@ -68,7 +68,15 @@ export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
       })
       setPositionsBySymbol((prev) => ({
         ...prev,
-        [order.symbol]: applyOrder(prev[order.symbol] ?? EMPTY_POSITIONS, order.side, price, order.qty),
+        [order.symbol]: applyOrder(
+          prev[order.symbol] ?? EMPTY_POSITIONS,
+          order.side,
+          price,
+          order.qty,
+          DEFAULT_TP_PCT,
+          DEFAULT_SL_PCT,
+          levelsAtFill(order, price),
+        ),
       }))
     }
 
