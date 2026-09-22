@@ -3,6 +3,7 @@ import type { Period } from '../chart/types'
 import { fetchKlines } from '../data/binance/rest'
 import { writeCachedCandles, readCachedCandles } from '../data/cache'
 import { SYMBOL_LIST } from './useSymbolList'
+import { isPerfMode } from '../data/synthetic'
 
 /**
  * N7 数据预取：空闲时（requestIdleCallback）把「相邻品种 + 当前品种更早历史」拉取并写入本地缓存，
@@ -47,6 +48,8 @@ export async function prefetchSymbol(symbol: string, period: Period): Promise<vo
 /** N7 hook：空闲时预取相邻品种 + 当前品种更早历史到缓存 */
 export function usePrefetch(symbol: string, period: Period) {
   useEffect(() => {
+    // ?perf 压测模式的契约是不联网：预取会拿真实历史写进缓存，既无意义又依赖外网
+    if (isPerfMode()) return
     const targets = adjacentSymbols(symbol)
     if (targets.length === 0) return
     let cancelled = false
