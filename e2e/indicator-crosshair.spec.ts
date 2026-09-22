@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test'
  *
  * 断言：设 RSI 副图 → 悬停图表左侧（较早 K 线）→ 信息条显示该时刻的 RSI 值
  * （与「最新值」基线不同）；移出图表 → 恢复最新值（光标无值回落）。
+ * 另断言信息条自身的排版边界：均线行多时换行留在图表内，不撑出文档横向滚动。
  * 依赖 ?perf 合成确定性数据（RSI 逐 bar 变化），不依赖网络。
  */
 
@@ -54,5 +55,50 @@ test.describe('B1 十字光标副图指标取值', () => {
     await expect.poll(() => info.textContent(), { timeout: 8000 }).toMatch(/RSI/)
 
     expect(errors).toHaveLength(0)
+  })
+
+  test('H9 信息条：多周期均线取值换行留在图表内，不撑出文档横向滚动', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    // 7 条主图均线 + 叠加 EMA + VOL 行：单行排布必然宽过图表容器，只有换行才不会溢出
+    await page.addInitScript(() => {
+      const params = JSON.parse(localStorage.getItem('kline-buty:indicatorParams') ?? '{}')
+      localStorage.setItem(
+        'kline-buty:indicatorParams',
+        JSON.stringify({ ...params, maPeriods: [5, 10, 20, 30, 60, 120, 250], maOverlayEma: true }),
+      )
+    })
+    await page.goto('/?perf=600&period=1m')
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
+
+    const info = page.getByTestId('chart-indicator-last')
+    await expect
+      .poll(() => info.textContent(), { timeout: 15_000 })
+      .toMatch(/MA250/)
+
+    const chart = page.locator('.chart-container').first()
+    const [infoBox, chartBox] = [await info.boundingBox(), await chart.boundingBox()]
+    expect(infoBox && chartBox ? infoBox.width <= chartBox.width : false).toBe(true)
+    expect(infoBox ? infoBox.x + infoBox.width : 1e9).toBeLessThanOrEqual((chartBox?.x ?? 0) + (chartBox?.width ?? 0) + 1)
+    // 文档级：不得出现横向滚动条（移动端功能区不横向滚动是同一条硬约束）
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+      )
+      .toBeLessThanOrEqual(0)
+
+    // 窄屏同一条约束：390px 触屏视口下信息条继续换行，图表与信息条都不越界
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect
+      .poll(async () => {
+        const [narrowInfo, narrowChart] = [await info.boundingBox(), await chart.boundingBox()]
+        if (!narrowInfo || !narrowChart) return 1e9
+        return narrowInfo.x + narrowInfo.width - (narrowChart.x + narrowChart.width)
+      })
+      .toBeLessThanOrEqual(1)
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+      )
+      .toBeLessThanOrEqual(0)
   })
 })
