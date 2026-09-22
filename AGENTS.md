@@ -50,3 +50,27 @@ Prefer what's already installed over hand-rolled code: check `package.json` for 
 - Split tasks by module boundary; no large unrelated changes in one pass. UI changes must state how they were verified on desktop and mobile.
 - One commit = one logical topic; don't mix in unrelated knowledge-base batch changes.
 - For batched knowledge-base work via subagents: ≤ 9 files per agent (use grep summaries), don't read full files.
+
+## Product Boundaries (thesis → queue, not checklist)
+
+Boundaries derive from the project thesis above: a free, no-API-key open-source real-time chart backed by Binance public data — implying no backend, no account system, no native-engineering commitments. Queues derive from this boundary; parked ideas are not backlog items unless their entry conditions are met.
+
+### In Scope (thesis-internal queue)
+
+- Verification and deepening of existing engines (replay / orderbook / drawing / indicators)
+- E2E flake source-convergence (synthetic ?perf data contracts, property-based checks instead of pixel drift)
+- Pure frontend capabilities
+
+### Out of Scope (parking; every item carries entry conditions)
+
+- I3 multi-device cloud sync: entry = decision to go SaaS + backend/KV cost accepted (H7/H8 settings-snapshot JSON remains the manual web equivalent)
+- I11 mobile Widget: entry = Capacitor shell project merge decision + native maintenance commitment (PWA remains the web equivalent)
+
+### Upstream Blocked (blocked maintenance, NOT parking)
+
+- TypeScript 7 upgrade: unblocks = typescript-eslint compatibility with the TS7 Go-native compiler (PR comment recorded; re-evaluate on official support)
+
+### Boundary Review Signals (check before moving any boundary)
+
+- Whether H7/H8 JSON manual migration has become materially insufficient
+- Whether native-app scenarios recur and PWA cannot cover them
