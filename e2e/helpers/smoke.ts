@@ -174,6 +174,17 @@ export async function openMore(page: Page) {
   if (expanded !== 'true') await btn.click()
 }
 
+/**
+ * 选一个画线工具并等工具面板真正收起。
+ * 面板是 `position: absolute` 盖在图表上方的：React 还没卸载就发 pointer 事件，
+ * 事件会打在面板上，画线根本没开始（实测约 1/5 撞到这个竞态，表现为「删除」不出现）。
+ */
+export async function pickDrawingTool(page: Page, tool: string, exact = false) {
+  await openDrawing(page)
+  await page.getByRole('button', { name: tool, exact }).click()
+  await expect(page.getByTestId('desktop-drawing-panel')).toHaveCount(0)
+}
+
 /** 打开桌面端「画线」折叠面板（画线工具都在里面）；已开则不动 */
 export async function openDrawing(page: Page) {
   const btn = page.getByTestId('drawing-toggle')
@@ -534,6 +545,85 @@ export async function findHorizontalLineAnchor(page: Page, which: 'min' | 'max')
     centers.sort((a, b) => a.y - b.y)
     return w === 'max' ? centers[centers.length - 1] : centers[0]
   }, which)
+}
+
+/**
+ * 扫描 overlay 上的「画线像素」候选点：行优先，彼此至少 minGap 分离，最多 max 个。
+ * 为什么要一组候选而不是「第一个像素」：
+ * 1. 锚点存的是 (time, price)，实时行情刷新价格刻度后会把线推离创建时的像素，老坐标落在空白处；
+ * 2. overlay 上不止被测画线——B/S 指标标注、价格标签文字、水印都在同一张画布上，
+ *    单点扫描可能取到这些噪音，点上去自然选不中。
+ */
+export async function findDrawnPixels(
+  page: Page,
+  win: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } = {},
+  opts: { max?: number; minGap?: number } = {},
+): Promise<{ x: number; y: number }[]> {
+  return page.evaluate((a) => {
+    const overlay = [...document.querySelectorAll('canvas')].find((c) => {
+      const st = getComputedStyle(c)
+      return st.position === 'absolute' && st.zIndex === '5'
+    })
+    if (!overlay) return []
+    const ctx = overlay.getContext('2d')
+    if (!ctx) return []
+    const { width, height } = overlay
+    const img = ctx.getImageData(0, 0, width, height).data
+    const dpr = window.devicePixelRatio || 1
+    const rect = overlay.getBoundingClientRect()
+    const out: { x: number; y: number }[] = []
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const px = rect.left + x / dpr
+        const py = rect.top + y / dpr
+        if (px < a.xMin || px > a.xMax || py < a.yMin || py > a.yMax) continue
+        const i = (y * width + x) * 4
+        const r = img[i]
+        const g = img[i + 1]
+        const b = img[i + 2]
+        const al = img[i + 3]
+        // 画线像素：主题黄 #f5c02f 或选中蓝 #4e9cf5（含抗锯齿容差）
+        const yellow = al > 100 && r > 190 && g > 130 && g < 235 && b < 110
+        const blue = al > 100 && b > 190 && g > 110 && g < 200 && r < 130
+        if (!(yellow || blue)) continue
+        if (out.some((p) => Math.abs(p.x - px) < a.minGap && Math.abs(p.y - py) < a.minGap)) continue
+        out.push({ x: px, y: py })
+        if (out.length >= a.max) return out
+      }
+    }
+    return out
+  }, { xMin: win.xMin ?? -Infinity, xMax: win.xMax ?? Infinity, yMin: win.yMin ?? -Infinity, yMax: win.yMax ?? Infinity, max: opts.max ?? 8, minGap: opts.minGap ?? 10 })
+}
+
+/**
+ * 逐个尝试候选像素直到 verify 成立，返回真正命中的那个点（全部落空返回 null）。
+ * 触屏用例传入自己的派发函数；verify 里可以顺带把选中态读回来（例如再点开工具菜单确认）。
+ */
+export async function hitDrawnPixelUntil(
+  page: Page,
+  verify: () => Promise<boolean>,
+  win: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } = {},
+  dispatch?: (p: { x: number; y: number }) => Promise<void>,
+): Promise<{ x: number; y: number } | null> {
+  const tap = dispatch ?? ((p: { x: number; y: number }) => page.mouse.click(p.x, p.y))
+  // 分轮重扫：刚提交/刚移动的画线要等下一帧才上屏，一轮扫描可能什么都扫不到；
+  // 轮与轮之间重扫也顺带消化了实时行情带来的位移
+  for (let round = 0; round < 3; round++) {
+    const cands = await findDrawnPixels(page, win)
+    // 先试离整体中心最近的候选：文字标注的可点区域以其锚点（绘制中心）为准，
+    // 行优先扫到的最左像素常在容差之外，先点它等于白跑一轮
+    const focus = cands.length > 1 ? await findDrawnLineCenter(page) : null
+    if (focus) cands.sort((a, b) => Math.hypot(a.x - focus.x, a.y - focus.y) - Math.hypot(b.x - focus.x, b.y - focus.y))
+    for (const c of cands) {
+      await tap(c)
+      for (let i = 0; i < 4; i++) {
+        if (await verify()) return c
+        await page.waitForTimeout(120)
+      }
+    }
+    await page.waitForTimeout(400)
+  }
+  return null
 }
 
 /**

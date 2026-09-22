@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { dragContainerPointer, dragSelectedAnchorUntil, findDrawnLineCenter, findHorizontalBandAnchor, findHorizontalLineAnchor, findVerticalBandAnchor, openDrawing, waitCandlesRendered } from './helpers/smoke'
+import { dragContainerPointer, dragSelectedAnchorUntil, findDrawnLineCenter, findDrawnPixels, hitDrawnPixelUntil, openDrawing, pickDrawingTool, findHorizontalBandAnchor, findHorizontalLineAnchor, findVerticalBandAnchor, waitCandlesRendered } from './helpers/smoke'
 /**
  * 画线工具端到端覆盖（自 smoke.spec.ts 拆出）：绘制 → 落库 → 像素校验 → 删除。
  * 锚点寻找与像素带比对来自 e2e/helpers/smoke.ts。
@@ -12,8 +12,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '水平线' }).click()
+    await pickDrawingTool(page, '水平线')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -47,8 +46,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '垂直线' }).click()
+    await pickDrawingTool(page, '垂直线')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -84,8 +82,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '平行通道' }).click()
+    await pickDrawingTool(page, '平行通道')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -111,8 +108,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 水平通道：拖出两条水平线（上下沿）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '水平通道' }).click()
+    await pickDrawingTool(page, '水平通道')
     await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.55, { steps: 5 })
@@ -136,8 +132,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
     // 切回鼠标后，可见锚点必须可拖：下边框锚点对应 points[1]，拖拽后时间与价格都变化。
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await expect.poll(() => findHorizontalLineAnchor(page, 'max'), { timeout: 5_000 }).not.toBeNull()
     const readHchannel = () =>
       page.evaluate(() => {
@@ -215,8 +210,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // XABCD 形态：五点点击（X/A/B/C/D）集满提交
-    await openDrawing(page)
-    await page.getByRole('button', { name: 'XABCD 形态' }).click()
+    await pickDrawingTool(page, 'XABCD 形态')
     await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.25)
     await page.mouse.click(box!.x + box!.width * 0.42, box!.y + box!.height * 0.4)
     await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.3)
@@ -244,8 +238,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 艾略特波浪：五点点击（1/2/3/4/5）集满提交
-    await openDrawing(page)
-    await page.getByRole('button', { name: '艾略特波浪' }).click()
+    await pickDrawingTool(page, '艾略特波浪')
     await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.4)
     await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.3)
     await page.mouse.click(box!.x + box!.width * 0.58, box!.y + box!.height * 0.4)
@@ -276,8 +269,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '文本' }).click()
+    await pickDrawingTool(page, '文本')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -299,8 +291,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '文本' }).click()
+    await pickDrawingTool(page, '文本')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -385,8 +376,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '文本' }).click()
+    await pickDrawingTool(page, '文本')
     await page.waitForTimeout(200)
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
@@ -451,8 +441,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '周期线' }).click()
+    await pickDrawingTool(page, '周期线')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -547,8 +536,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '斐波那契时间区间' }).click()
+    await pickDrawingTool(page, '斐波那契时间区间')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -643,8 +631,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '趋势角度' }).click()
+    await pickDrawingTool(page, '趋势角度')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -737,8 +724,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '时间区间', exact: true }).click()
+    await pickDrawingTool(page, '时间区间', true)
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -815,8 +801,7 @@ test.describe('画线工具', () => {
     await expect.poll(() => blueBandStats().then((s) => s.cols), { timeout: 10_000 }).toBeGreaterThanOrEqual(2)
 
     // 切回鼠标后，右侧窗口锚点必须可拖：拖尾锚点后时间区间仍保持两点且时间升序。
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await expect.poll(() => findVerticalBandAnchor(page, 'max'), { timeout: 5_000 }).not.toBeNull()
     const beforeTimerange = await readTimerange()
     expect(beforeTimerange).toEqual(saved)
@@ -868,8 +853,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '价格带' }).click()
+    await pickDrawingTool(page, '价格带')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -914,8 +898,7 @@ test.describe('画线工具', () => {
 
     // 切回鼠标 → 选中屏幕下边框锚点并向下拖拽：该锚点对应 points[0]（最低价）。
     // 被拖锚点的时间和价格都应变化；高价端保持不变，且两点仍按价格升序。
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await expect
       .poll(() => findHorizontalBandAnchor(page, 'max'), { timeout: 5_000 })
       .not.toBeNull()
@@ -1062,8 +1045,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '价格区间框' }).click()
+    await pickDrawingTool(page, '价格区间框')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1169,8 +1151,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '持仓计划' }).click()
+    await pickDrawingTool(page, '持仓计划')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1235,8 +1216,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '预测线' }).click()
+    await pickDrawingTool(page, '预测线')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1300,8 +1280,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '日期范围' }).click()
+    await pickDrawingTool(page, '日期范围')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1365,8 +1344,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '斐波那契通道' }).click()
+    await pickDrawingTool(page, '斐波那契通道')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1465,8 +1443,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 矩形：拖出两对角锚点
-    await openDrawing(page)
-    await page.getByRole('button', { name: '矩形' }).click()
+    await pickDrawingTool(page, '矩形')
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.45, { steps: 4 })
@@ -1476,8 +1453,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 射线：锚点 + 方向点
-    await openDrawing(page)
-    await page.getByRole('button', { name: '射线', exact: true }).click()
+    await pickDrawingTool(page, '射线', true)
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
@@ -1496,8 +1472,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 椭圆：拖出两对角锚点（外接框）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '椭圆' }).click()
+    await pickDrawingTool(page, '椭圆')
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.45, { steps: 4 })
@@ -1507,8 +1482,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 圆：圆心 + 半径点
-    await openDrawing(page)
-    await page.getByRole('button', { name: '圆', exact: true }).click()
+    await pickDrawingTool(page, '圆', true)
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
@@ -1527,8 +1501,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 三角形：三点点击（A/B/C）集满提交
-    await openDrawing(page)
-    await page.getByRole('button', { name: '三角形' }).click()
+    await pickDrawingTool(page, '三角形')
     await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.5)
     await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
@@ -1537,8 +1510,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 圆弧：拖出两点定弦
-    await openDrawing(page)
-    await page.getByRole('button', { name: '圆弧' }).click()
+    await pickDrawingTool(page, '圆弧')
     await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.4, { steps: 4 })
@@ -1553,8 +1525,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '楔形' }).click()
+    await pickDrawingTool(page, '楔形')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1653,8 +1624,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '宽度通道' }).click()
+    await pickDrawingTool(page, '宽度通道')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
@@ -1756,8 +1726,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 斐波那契扩展：三点点击（A/B/C）集满提交
-    await openDrawing(page)
-    await page.getByRole('button', { name: '斐波那契扩展' }).click()
+    await pickDrawingTool(page, '斐波那契扩展')
     await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.25)
     await page.mouse.click(box!.x + box!.width * 0.6, box!.y + box!.height * 0.45)
     await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.35)
@@ -1766,8 +1735,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 斐波那契扇形：拖出原点 + 方向点
-    await openDrawing(page)
-    await page.getByRole('button', { name: '斐波那契扇形' }).click()
+    await pickDrawingTool(page, '斐波那契扇形')
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.3)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.5, { steps: 4 })
@@ -1777,16 +1745,14 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 价格标签：单击放置
-    await openDrawing(page)
-    await page.getByRole('button', { name: '价格标签' }).click()
+    await pickDrawingTool(page, '价格标签')
     await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 箭头：拖出 A→B
-    await openDrawing(page)
-    await page.getByRole('button', { name: '箭头' }).click()
+    await pickDrawingTool(page, '箭头')
     await page.mouse.move(box!.x + box!.width * 0.35, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
@@ -1813,8 +1779,7 @@ test.describe('画线工具', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
-    await openDrawing(page)
-    await page.getByRole('button', { name: '斐波那契时间线' }).click()
+    await pickDrawingTool(page, '斐波那契时间线')
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.7, box!.y + box!.height * 0.35, { steps: 4 })
@@ -1866,8 +1831,7 @@ test.describe('画线工具', () => {
     }
 
     // 切回鼠标：点任一竖线仍可选中 → 删除
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await page.mouse.click(box!.x + lineXs[3], box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: '删除' }).click()
@@ -1889,8 +1853,7 @@ test.describe('画线工具', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
-    await openDrawing(page)
-    await page.getByRole('button', { name: '江恩角度线' }).click()
+    await pickDrawingTool(page, '江恩角度线')
     await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.5, { steps: 8 })
@@ -1940,8 +1903,7 @@ test.describe('画线工具', () => {
     await expect.poll(() => yellowPx(), { timeout: 10_000 }).toBeGreaterThan(4000)
 
     // 切回鼠标：反向（A 左侧延长线）命中仍可选中 → 删除
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     // 从 overlay 找反向侧（原点左侧）任一画线像素点（必在某条角度线延长线上），点击选中
     const hit = await page.evaluate(() => {
       const overlay = [...document.querySelectorAll('canvas')].find((c) => {
@@ -1995,8 +1957,7 @@ test.describe('画线工具', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
-    await openDrawing(page)
-    await page.getByRole('button', { name: '江恩箱' }).click()
+    await pickDrawingTool(page, '江恩箱')
     await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.55, { steps: 8 })
@@ -2046,8 +2007,7 @@ test.describe('画线工具', () => {
     await expect.poll(() => yellowPx(), { timeout: 10_000 }).toBeGreaterThan(4000)
 
     // 切回鼠标：点矩形内部（区域命中）→ 选中 → 删除
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await page.mouse.click(box!.x + box!.width * 0.42, box!.y + box!.height * 0.45)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 10_000 })
     await page.getByRole('button', { name: '删除' }).click()
@@ -2071,8 +2031,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 安德鲁叉：三点点击（A 起点 / B / C）集满提交
-    await openDrawing(page)
-    await page.getByRole('button', { name: '安德鲁叉' }).click()
+    await pickDrawingTool(page, '安德鲁叉')
     await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.4)
     await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.25)
     await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.55)
@@ -2120,11 +2079,17 @@ test.describe('画线工具', () => {
       })
     await expect.poll(() => yellowPx(), { timeout: 10_000 }).toBeGreaterThan(1200)
 
-    // 切回鼠标：点中轨射线（A→B/C 中点连线，本用例为水平线）→ 选中 → 删除
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
-    await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 10_000 })
+    // 切回鼠标后重新命中：坐标只能现扫。射线锚在 (time, price) 上，行情刷新价格刻度就会把
+    // 创建像素推到别处（本用例在波动时段隔离态 3/3 红、平静时段 5/5 绿，正是这种环境依赖）
+    await pickDrawingTool(page, '鼠标', true)
+    const selected = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
+    // 提交时就是选中态：不先取消，「删除出现」这条断言从创建起一直成立，测不到命中
+    const blank = { x: box!.x + box!.width * 0.05, y: box!.y + box!.height * 0.95 }
+    await page.mouse.click(blank.x, blank.y)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    // A 点（0.2W）与尾锚点（0.55W）之间逐点尝试，避开两端锚点
+    const hit = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.3, xMax: box!.x + box!.width * 0.5 })
+    expect(hit, 'A 点右侧应存在可命中的射线像素').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(async () => (await readBox()) === null).toBe(true)
@@ -2140,8 +2105,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 趋势线工具画一条线
-    await openDrawing(page)
-    await page.getByRole('button', { name: '趋势线' }).click()
+    await pickDrawingTool(page, '趋势线')
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
@@ -2166,8 +2130,7 @@ test.describe('画线工具', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标（只读）→ 定位画线实际中心 → 按住拖拽整线
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标' }).click()
+    await pickDrawingTool(page, '鼠标')
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const center = (await findDrawnLineCenter(page))!
     await page.mouse.move(center.x, center.y)
@@ -2210,8 +2173,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 画一条趋势线（左→右，锚点按时间排序）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '趋势线' }).click()
+    await pickDrawingTool(page, '趋势线')
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45, { steps: 4 })
@@ -2236,8 +2198,7 @@ test.describe('画线工具', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标 → 拖拽最右侧（尾）锚点；实时行情会平移图表，重试直到仅尾锚点移动
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标' }).click()
+    await pickDrawingTool(page, '鼠标')
     const tailMoved = await dragSelectedAnchorUntil(
       page,
       'max',
@@ -2269,8 +2230,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 画一条射线：锚点 → 方向点（向右上延伸）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '射线', exact: true }).click()
+    await pickDrawingTool(page, '射线', true)
     await page.mouse.move(box!.x + box!.width * 0.4, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, box!.y + box!.height * 0.35, { steps: 4 })
@@ -2295,8 +2255,7 @@ test.describe('画线工具', () => {
     expect(before!.points).toHaveLength(2)
 
     // 切回鼠标 → 拖拽最左侧（首）锚点；实时行情会平移图表，重试直到锚点移动且方向点保留
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标' }).click()
+    await pickDrawingTool(page, '鼠标')
     const anchorMoved = await dragSelectedAnchorUntil(
       page,
       'min',
@@ -2330,8 +2289,7 @@ test.describe('画线工具', () => {
     // 创建垂直射线：A 在上，B 在下方同横坐标（方向向下）
     const ax = box!.x + box!.width * 0.35
     const ay = box!.y + box!.height * 0.35
-    await openDrawing(page)
-    await page.getByRole('button', { name: '垂直射线' }).click()
+    await pickDrawingTool(page, '垂直射线')
     await page.mouse.move(ax, ay)
     await page.mouse.down()
     await page.mouse.move(ax, box!.y + box!.height * 0.65, { steps: 4 })
@@ -2353,8 +2311,7 @@ test.describe('画线工具', () => {
     expect(created!.points).toHaveLength(2)
 
     // 切回鼠标后：下方射线命中；锚点上方同时间不命中
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await page.mouse.click(ax, box!.y + box!.height * 0.8)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
@@ -2382,8 +2339,7 @@ test.describe('画线工具', () => {
 
     // 创建水平射线：A 在左，B 在右侧同高（方向向右）
     const ay = box!.y + box!.height * 0.4
-    await openDrawing(page)
-    await page.getByRole('button', { name: '水平射线' }).click()
+    await pickDrawingTool(page, '水平射线')
     await page.mouse.move(box!.x + box!.width * 0.3, ay)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.65, ay, { steps: 4 })
@@ -2403,21 +2359,29 @@ test.describe('画线工具', () => {
     const created = await readFirst()
     expect(created).not.toBeNull()
     expect(created!.points).toHaveLength(2)
-    // 切回鼠标后：右侧射线命中；锚点左侧同价不命中
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
-    await page.mouse.click(box!.x + box!.width * 0.75, ay)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
-
-    // 点击左侧空白处取消选择，再点锚点后方确认不会重新选中
-    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.7)
+    // 切回鼠标后：右侧射线命中；锚点后方不命中。
+    // 两处坐标都改为现扫：射线锚在 (time, price) 上，实时行情的自动缩放会把创建像素推走
+    await pickDrawingTool(page, '鼠标', true)
+    // 画线提交时就是选中态：不先取消，「删除出现」这条断言从创建起就一直成立，测不到命中
+    const blank = { x: box!.x + box!.width * 0.05, y: box!.y + box!.height * 0.95 }
+    const selected = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
+    await page.mouse.click(blank.x, blank.y)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
-    await page.mouse.click(box!.x + box!.width * 0.12, ay)
+    const onRay = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.6 })
+    expect(onRay, '射线右段应存在可命中的像素').not.toBeNull()
+
+    // 再取消选中，点锚点后方确认不会重新选中：射线所在行的最左像素即射线起点，它左侧 40px 没有线
+    await page.mouse.click(blank.x, blank.y)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    const row = await findDrawnPixels(page, { yMin: onRay!.y - 8, yMax: onRay!.y + 8 }, { max: 1 })
+    expect(row, '射线所在行应有像素').toHaveLength(1)
+    const behind = { x: Math.max(box!.x + 6, row[0].x - 40), y: row[0].y }
+    await page.mouse.click(behind.x, behind.y)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 通过右侧命中删除
-    await page.mouse.click(box!.x + box!.width * 0.75, ay)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const again = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.6 })
+    expect(again, '取消选中后右段仍应可命中').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(readFirst).toBeNull()
@@ -2433,8 +2397,7 @@ test.describe('画线工具', () => {
 
     // 创建延长线：A→B 定方向，渲染和命中都应向两端无限延伸
     const ay = box!.y + box!.height * 0.35
-    await openDrawing(page)
-    await page.getByRole('button', { name: '延长线' }).click()
+    await pickDrawingTool(page, '延长线')
     await page.mouse.move(box!.x + box!.width * 0.4, ay)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.6, ay + box!.height * 0.15, { steps: 4 })
@@ -2455,18 +2418,28 @@ test.describe('画线工具', () => {
     expect(created).not.toBeNull()
     expect(created!.points).toHaveLength(2)
 
-    // 切回鼠标后：A/B 中点命中；远离直线处不选中
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
-    await page.mouse.click(box!.x + box!.width * 0.5, ay + box!.height * 0.075)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    // 切回鼠标后：线体命中；远离直线处不选中。
+    // 坐标全部现扫——直线锚在 (time, price) 上，实时行情会自动缩放/平移，创建像素不再可靠压线
+    await pickDrawingTool(page, '鼠标', true)
+    const blank = { x: box!.x + box!.width * 0.05, y: box!.y + box!.height * 0.95 }
+    const selected = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
+    // 提交后本条画线即选中，先点空白取消，后面的「删除出现」才真的在验证命中
+    await page.mouse.click(blank.x, blank.y)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    const onLine = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.45, xMax: box!.x + box!.width * 0.55 })
+    expect(onLine, '两锚点之间应存在可命中的线体像素').not.toBeNull()
 
-    await page.mouse.click(box!.x + box!.width * 0.78, box!.y + box!.height * 0.78)
+    // 远离直线处不选中：本用例只有这一条画线，垂直于线体 140px 之外必定是空白
+    await page.mouse.click(blank.x, blank.y)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    const below = box!.y + box!.height - onLine!.y > 150
+    const far = { x: onLine!.x, y: onLine!.y + (below ? 140 : -140) }
+    await page.mouse.click(far.x, far.y)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
 
     // 通过线体重新选中并删除，确认持久化同步清理
-    await page.mouse.click(box!.x + box!.width * 0.5, ay + box!.height * 0.075)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const again = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.45, xMax: box!.x + box!.width * 0.55 })
+    expect(again, '取消选中后线体仍应可命中').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(readFirst).toBeNull()
@@ -2483,8 +2456,7 @@ test.describe('画线工具', () => {
     // 单击创建十字线，锚点同时确定时间与价格
     const ax = box!.x + box!.width * 0.45
     const ay = box!.y + box!.height * 0.4
-    await openDrawing(page)
-    await page.getByRole('button', { name: '十字线' }).click()
+    await pickDrawingTool(page, '十字线')
     await page.mouse.click(ax, ay)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
@@ -2503,8 +2475,7 @@ test.describe('画线工具', () => {
     expect(created!.points).toHaveLength(1)
 
     // 切回鼠标后分别验证横线与纵线命中
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await page.mouse.click(ax + 160, ay)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
@@ -2532,8 +2503,7 @@ test.describe('画线工具', () => {
 
     // 多段线：依次点击 3 个顶点，最后双击收尾提交
     // （Playwright 合成点击的 pointerdown.detail 恒为 0，双击收尾用 detail=2 的合成 PointerEvent 模拟真实浏览器双击）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '多段线' }).click()
+    await pickDrawingTool(page, '多段线')
     await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
     await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.5)
     await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.35)
@@ -2568,8 +2538,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
     // 切回鼠标 → 点折线任一段命中选中 → 删除
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标', exact: true }).click()
+    await pickDrawingTool(page, '鼠标', true)
     await page.mouse.click(box!.x + box!.width * 0.32, box!.y + box!.height * 0.4)
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: '删除' }).click()
@@ -2585,8 +2554,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 量度：拖出 A→B（与趋势线同两点手势）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '量度' }).click()
+    await pickDrawingTool(page, '量度')
     await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.35)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.75, box!.y + box!.height * 0.55, { steps: 4 })
@@ -2622,8 +2590,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 速度线：拖出 A→B（与趋势线同两点手势）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '速度线' }).click()
+    await pickDrawingTool(page, '速度线')
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.7, box!.y + box!.height * 0.6, { steps: 4 })
@@ -2662,8 +2629,7 @@ test.describe('画线工具', () => {
     expect(box).not.toBeNull()
 
     // 回归通道：拖出 A→B 定时间窗
-    await openDrawing(page)
-    await page.getByRole('button', { name: '回归通道' }).click()
+    await pickDrawingTool(page, '回归通道')
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.4)
     await page.mouse.down()
     await page.mouse.move(box!.x + box!.width * 0.8, box!.y + box!.height * 0.45, { steps: 4 })
@@ -2704,8 +2670,7 @@ test.describe('画线工具', () => {
       })
 
     // 切回鼠标（只读）→ 点击中线附近可选中（命中检测走 K 线回归线段）
-    await openDrawing(page)
-    await page.getByRole('button', { name: '鼠标' }).click()
+    await pickDrawingTool(page, '鼠标')
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const center = (await findDrawnLineCenter(page))!
     await page.mouse.click(center.x, center.y)
@@ -2923,8 +2888,7 @@ test.describe('画线工具', () => {
     await page.goto('/')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
-    await openDrawing(page)
-    await page.getByRole('button', { name: '备注' }).click()
+    await pickDrawingTool(page, '备注')
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { findDrawingAnchor, findDrawnLineCenter, openDrawing, waitCandlesRendered } from './helpers/smoke'
+import { findDrawingAnchor, findDrawnLineCenter, hitDrawnPixelUntil, openDrawing, waitCandlesRendered } from './helpers/smoke'
 /**
  * 移动端触屏视口（390×844）端到端覆盖（自 smoke 拆出）：无横向溢出、捏合缩放、双击复位、触屏拖线。
  * CDP 触摸派发仅 Chromium，跨浏览器触摸覆盖由 CI 的 chromium 项目承担。
@@ -549,31 +549,29 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(before!.points).toHaveLength(1)
     expect(await count()).toBe(1)
 
-    // 工具已自动切回「鼠标」：无需手动点鼠标，直接触屏拖拽文本本体（黄字/蓝框像素中心）
-    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const center = (await findDrawnLineCenter(page))!
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
-    for (let i = 1; i <= 6; i++) {
-      await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: center.x + i * 8, y: center.y + i * 10 }] })
-      await page.waitForTimeout(25)
+    // 工具已自动切回「鼠标」：无需手动点鼠标，直接触屏拖拽文本本体。
+    // 标注的画线像素是离散字形，取几何中心常常落在字间空白、点下去抓不住——改为逐个候选像素
+    // 试拖，以「落库坐标真的变了」作为命中判据
+    const dragBody = async (start: { x: number; y: number }) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: start.x, y: start.y }] })
+      for (let i = 1; i <= 6; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: start.x + i * 8, y: start.y + i * 10 }] })
+        await page.waitForTimeout(25)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await page.waitForTimeout(300)
     }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await page.waitForTimeout(500)
-
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 1) return false
-          const dT = after.points[0].time - before!.points[0].time
-          const dP = after.points[0].price - before!.points[0].price
-          return after.id === before!.id && (Math.abs(dT) > 0.5 || Math.abs(dP) > 0.01)
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true)
+    const moved = async () => {
+      const after = await readFirst()
+      if (!after || after.points.length !== 1) return false
+      const dT = after.points[0].time - before!.points[0].time
+      const dP = after.points[0].price - before!.points[0].price
+      return after.id === before!.id && (Math.abs(dT) > 0.5 || Math.abs(dP) > 0.01)
+    }
+    const center = await hitDrawnPixelUntil(page, moved, {}, dragBody)
+    expect(center, '文本标注应存在可抓动的像素').not.toBeNull()
 
     // 空白处轻点：工具是 none（已切回鼠标），不会误建新画线（仍 1 条）
     // 落点取离文本最远的对角：点得太近会正好点在本体上，「取消选中」就变成「改选」，
@@ -585,10 +583,18 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(await count()).toBe(1)
 
     // 重新点选文本 → 菜单里的「删除」才存在（文本标注无选中描边，状态只能靠菜单项本身证明）
-    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const reCenter = (await findDrawnLineCenter(page))!
-    await tapAt(reCenter.x, reCenter.y)
-    await page.getByTestId('mobile-menu-drawing').tap()
+    // 拖动后位置已变，像素要重扫；「菜单里出现删除」既是命中判据也是下一步的前提
+    const deleteVisible = async () => {
+      await page.getByTestId('mobile-menu-drawing').tap()
+      const has = (await page.getByRole('button', { name: '删除' }).count()) > 0
+      if (!has) {
+        await page.getByTestId('mobile-menu-drawing').tap() // 收起菜单，换下一个候选像素
+        await page.waitForTimeout(150)
+      }
+      return has
+    }
+    const reCenter = await hitDrawnPixelUntil(page, deleteVisible, {}, (q) => tapAt(q.x, q.y))
+    expect(reCenter, '文本标注应存在可选中的像素').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).tap()
     await expect
       .poll(() => count(), { timeout: 5000 })
