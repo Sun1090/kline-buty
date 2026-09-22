@@ -137,7 +137,9 @@ test.describe('盘口与深度面板', () => {
     await bid.getByTestId('qo-buy').click()
     await expect(page.getByTestId('quick-order')).toBeVisible()
     await expect(page.getByTestId('quick-order').getByText('买入')).toBeVisible()
-    await page.getByTestId('quick-order').locator('input').last().fill('0.01')
+    // 按 testid 定位数量框：曾用 locator('input').last()，v0.5.21 在面板尾部加了「自定义%」输入框后
+    // 它就一直填错格子（qty 留在 1 → 名义金额超余额 → 「余额不足」与「手续费」文案撞车）
+    await page.getByTestId('quick-order').getByTestId('qo-qty').fill('0.01')
     // 价格预填为盘口档位价（容差 2%），金额估算展示
     const buyPrice = Number(await page.getByTestId('qo-price').inputValue())
     expect(Math.abs(buyPrice - bidPrice) / bidPrice).toBeLessThan(0.02)
@@ -164,7 +166,9 @@ test.describe('盘口与深度面板', () => {
     await ask.getByTestId('qo-sell').click()
     await expect(page.getByTestId('quick-order')).toBeVisible()
     await expect(page.getByTestId('quick-order').getByText('卖出')).toBeVisible()
-    await page.getByTestId('quick-order').locator('input').last().fill('0.01')
+    // 按 testid 定位数量框：曾用 locator('input').last()，v0.5.21 在面板尾部加了「自定义%」输入框后
+    // 它就一直填错格子（qty 留在 1 → 名义金额超余额 → 「余额不足」与「手续费」文案撞车）
+    await page.getByTestId('quick-order').getByTestId('qo-qty').fill('0.01')
     await page.getByTestId('qo-confirm').click()
     await expect(page.getByTestId('position-row-short')).toBeVisible({ timeout: 5000 })
     await expect(page.getByTestId('position-row-short')).toContainText(/-?\d+(\.\d+)?/)
