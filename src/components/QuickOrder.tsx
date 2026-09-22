@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, MAKER_FEE_RATE, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { attachedLevelsOk, isMarketable } from '../trade/pending'
+import { riskRewardRatio } from '../drawings/logic'
 import { parseLevel } from '../position/levels'
 import { DEFAULT_LEVERAGE, LEVERAGE_OPTIONS } from '../position/pnl'
 import { useDepth } from '../hooks/useDepth'
@@ -77,6 +78,51 @@ const fillBtnStyle = (color: string): React.CSSProperties => ({
   fontVariantNumeric: 'tabular-nums',
 })
 
+/** 隐含盈亏比：两条随单价位都成立才算得出，与图上 RR 画线工具共用 riskRewardRatio */
+function impliedRiskReward(
+  isLimit: boolean,
+  attachOk: boolean,
+  price: number,
+  attach: QuickOrderAttach,
+): { ratio: number } | null {
+  if (!isLimit || !attachOk || attach.takeProfit === null || attach.stopLoss === null) return null
+  return riskRewardRatio({ price }, { price: attach.stopLoss }, { price: attach.takeProfit })
+}
+
+/** 下单预估区：成交价/名义金额/手续费/合计，限价带随单价位时再加一行隐含盈亏比 */
+function OrderEstimate({ est, isLimit, decimals, rr }: { est: ReturnType<typeof estimateOrder>; isLimit: boolean; decimals: number; rr: { ratio: number } | null }) {
+  const { t } = useI18n()
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+        marginBottom: 10,
+        borderTop: '1px dashed #2a2e39',
+        paddingTop: 8,
+        color: 'var(--text-dim)',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <span data-testid={isLimit ? 'qo-limit-price' : undefined}>
+        {isLimit ? t('quickOrder.price') : t('quickOrder.fill')} <b style={{ color: 'var(--text)' }}>{est.fillPrice.toFixed(decimals)}</b>
+      </span>
+      <span>
+        {t('quickOrder.notional')} <b style={{ color: 'var(--text)' }}>{est.notional.toFixed(2)}</b>
+      </span>
+      <span>
+        {t('quickOrder.fee')}{' '}
+        <b data-testid="qo-fee" style={{ color: 'var(--text)' }}>{est.fee.toFixed(4)}</b>
+      </span>
+      <span>
+        {t('quickOrder.total')} <b style={{ color: 'var(--text)' }}>{est.total.toFixed(2)}</b>
+      </span>
+      {rr !== null && <span data-testid="qo-rr">{t('quickOrder.riskReward', { ratio: rr.ratio.toFixed(2) })}</span>}
+    </div>
+  )
+}
+
 export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRate = TAKER_FEE_RATE, makerFeeRate = MAKER_FEE_RATE, initialType = 'market', onConfirm, onClose }: QuickOrderProps) {
   const { t } = useI18n()
   const [orderType, setOrderType] = useState<OrderType>(initialType)
@@ -108,6 +154,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
   )
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
   const { attach, ok: attachOk } = parseAttach(side, priceNum, tpStr, slStr)
+  const rr = impliedRiskReward(isLimit, attachOk, priceNum, attach)
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
   // v0.5.x 键盘支持：Enter 确认下单（有效且保证金充足时）、Esc 关闭弹层
@@ -357,34 +404,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
           {t('quickOrder.insufficient')}
         </div>
       )}
-      {est && (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            marginBottom: 10,
-            borderTop: '1px dashed #2a2e39',
-            paddingTop: 8,
-            color: 'var(--text-dim)',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          <span data-testid={isLimit ? 'qo-limit-price' : undefined}>
-            {isLimit ? t('quickOrder.price') : t('quickOrder.fill')} <b style={{ color: 'var(--text)' }}>{est.fillPrice.toFixed(priceNum >= 1 ? 2 : 6)}</b>
-          </span>
-          <span>
-            {t('quickOrder.notional')} <b style={{ color: 'var(--text)' }}>{est.notional.toFixed(2)}</b>
-          </span>
-          <span>
-            {t('quickOrder.fee')}{' '}
-            <b data-testid="qo-fee" style={{ color: 'var(--text)' }}>{est.fee.toFixed(4)}</b>
-          </span>
-          <span>
-            {t('quickOrder.total')} <b style={{ color: 'var(--text)' }}>{est.total.toFixed(2)}</b>
-          </span>
-        </div>
-      )}
+      {est && <OrderEstimate est={est} isLimit={isLimit} decimals={priceNum >= 1 ? 2 : 6} rr={rr} />}
 
       <div style={{ display: 'flex', gap: 6 }}>
         <button

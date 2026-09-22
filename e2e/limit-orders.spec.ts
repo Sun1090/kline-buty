@@ -345,13 +345,17 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     await order.getByTestId('qo-tp').fill(String(Number((low * 1.1).toFixed(2))))
     await expect(order.getByTestId('qo-attach-err')).toHaveCount(0)
     await expect(order.getByTestId('qo-confirm')).toBeEnabled()
+    // 只填一条时谈不上风险回报；补上止损后给出隐含盈亏比（reward 0.1 / risk 0.1 → 1.00）
+    await expect(order.getByTestId('qo-rr')).toHaveCount(0)
+    await order.getByTestId('qo-sl').fill(String(Number((low * 0.9).toFixed(2))))
+    await expect(order.getByTestId('qo-rr')).toContainText('1.00')
     await order.getByTestId('qo-confirm').click()
     await expect(page.getByTestId('quick-order')).toHaveCount(0)
 
     await ensurePanel(page, '仓位', 'pending-orders')
     const [kept] = (await stored(page, 'kline-buty:paperOrders')) as { takeProfit: number; stopLoss: number }[]
     expect(kept.takeProfit).toBe(Number((low * 1.1).toFixed(2)))
-    expect(kept.stopLoss).toBeNull()
+    expect(kept.stopLoss).toBe(Number((low * 0.9).toFixed(2)))
   })
 
   test('挂单带杠杆：成交后持仓按该档算强平价（不再退回 1x 口径）', async ({ page }) => {
