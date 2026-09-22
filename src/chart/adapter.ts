@@ -2383,7 +2383,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.moveTo(left, y)
         ctx.lineTo(right, y)
         ctx.stroke()
-        this.drawLabel(ctx, right, y, p.toFixed(2), 'right')
+        this.drawLabel(ctx, right, y, fmtPricePrecise(p), 'right')
       }
       // 边框
       ctx.strokeStyle = userColor + '66'

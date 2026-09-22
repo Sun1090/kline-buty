@@ -23,6 +23,26 @@ const shortPosition: Position = {
 }
 
 describe('PositionPanel', () => {
+  it('低价标的：入场价、推导止盈止损与占位提示给足小数位，不塌成 0.00', () => {
+    render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={0.125} onChange={vi.fn()} />)
+    // 占位提示走价段档位（<1 六位），此前是 toFixed(2) 的「0.13」——把 0.125 直接读成 0.13
+    expect(screen.getByPlaceholderText('0.125000')).toBeDefined()
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: '0.123456' } })
+    fireEvent.change(inputs[1], { target: { value: '100' } })
+    // 百分比模式（默认 3% / 2%）推导出的价位：0.123456×1.03 与 ×0.98
+    expect(screen.getByText('0.127160')).toBeDefined()
+    expect(screen.getByText('0.120987')).toBeDefined()
+    // 强平价同样不该被压成两位
+    expect(screen.getByTestId('position-liq').textContent).toMatch(/0\.\d{4,}/)
+  })
+
+  it('已持低价仓位：槽位摘要里的开仓均价按价段展示完整', () => {
+    const pos: Position = { entry: 0.123456, quantity: 1000, direction: 'long', takeProfit: 0.13, stopLoss: 0.12 }
+    render(<PositionPanel positions={{ long: pos, short: null }} currentPrice={0.125} onChange={vi.fn()} />)
+    expect(screen.getByText(/@ 0\.123456/)).toBeDefined()
+  })
+
   it('开多：输入价格数量 → 开仓回调写入 long 槽（含 TP/SL）', () => {
     const onChange = vi.fn()
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={63000} onChange={onChange} />)

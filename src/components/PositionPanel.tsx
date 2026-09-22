@@ -11,6 +11,7 @@ import {
   suggestLevels,
 } from '../position/pnl'
 import { applyLevels, breakevenStop, type LevelError, type LevelInput } from '../position/levels'
+import { fmtPricePrecise } from '../utils/format'
 import { EMPTY_POSITIONS, mergePosition, planReduce, type Positions } from '../trade/positions'
 import type { PendingOrder } from '../trade/pending'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -130,7 +131,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
   }
 
   const fillPrice = () => {
-    if (currentPrice !== null && entry === '') setEntry(currentPrice.toFixed(2))
+    if (currentPrice !== null && entry === '') setEntry(fmtPricePrecise(currentPrice))
   }
 
   const settle = (slot: 'long' | 'short') => {
@@ -300,7 +301,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
             >
               <span style={{ fontWeight: 600, color: key === 'long' ? 'var(--up)' : 'var(--down)' }}>{t(label)}</span>
               <span style={{ color: 'var(--text-dim)', fontVariantNumeric: 'tabular-nums' }}>
-                {t('position.qtyShort')} {p.quantity} @ {p.entry.toFixed(2)}
+                {t('position.qtyShort')} {p.quantity} @ {fmtPricePrecise(p.entry)}
               </span>
               {active && (
                 <span style={{ color, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
@@ -727,7 +728,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.entry')}</span>
-        <input style={inputStyle} value={entry} placeholder={currentPrice ? String(currentPrice.toFixed(2)) : t('common.price')} onChange={(e) => setEntry(e.target.value)} onFocus={fillPrice} />
+        <input style={inputStyle} value={entry} placeholder={currentPrice ? fmtPricePrecise(currentPrice) : t('common.price')} onChange={(e) => setEntry(e.target.value)} onFocus={fillPrice} />
         <button
           onClick={fillPrice}
           style={{ background: 'none', border: '1px solid #2a2e39', borderRadius: 4, color: 'var(--text-dim)', cursor: 'pointer', fontSize: 11, padding: '3px 6px' }}
@@ -781,7 +782,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               style={inputStyle}
               type="number"
               value={tpPrice}
-              placeholder={levels ? levels.takeProfit.toFixed(2) : t('common.price')}
+              placeholder={levels ? fmtPricePrecise(levels.takeProfit) : t('common.price')}
               onChange={(e) => setTpPrice(e.target.value)}
             />
           </div>
@@ -791,7 +792,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               style={inputStyle}
               type="number"
               value={slPrice}
-              placeholder={levels ? levels.stopLoss.toFixed(2) : t('common.price')}
+              placeholder={levels ? fmtPricePrecise(levels.stopLoss) : t('common.price')}
               onChange={(e) => setSlPrice(e.target.value)}
             />
           </div>
@@ -800,8 +801,8 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
 
       {levelMode === 'pct' && levels && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
-          <span>{t('position.tpLine')} <b style={{ color: 'var(--up)' }}>{levels.takeProfit.toFixed(2)}</b></span>
-          <span>{t('position.slLine')} <b style={{ color: 'var(--down)' }}>{levels.stopLoss.toFixed(2)}</b></span>
+          <span>{t('position.tpLine')} <b style={{ color: 'var(--up)' }}>{fmtPricePrecise(levels.takeProfit)}</b></span>
+          <span>{t('position.slLine')} <b style={{ color: 'var(--down)' }}>{fmtPricePrecise(levels.stopLoss)}</b></span>
         </div>
       )}
 
@@ -809,9 +810,9 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10, color: 'var(--text-dim)' }}>
           <span>{t('position.margin')} <b style={{ color: 'var(--text)' }}>{margin!.toFixed(2)} USDT</b> · {t('position.leverage')} <b style={{ color: 'var(--text)' }}>{leverage}x</b></span>
           {liqPrice !== null && (
-            <span>
+            <span data-testid="position-liq">
               {t('position.liqPrice')}{' '}
-              <b style={{ color: direction === 'long' ? 'var(--down)' : 'var(--up)' }}>{liqPrice.toFixed(2)}</b>
+              <b style={{ color: direction === 'long' ? 'var(--down)' : 'var(--up)' }}>{fmtPricePrecise(liqPrice)}</b>
             </span>
           )}
         </div>

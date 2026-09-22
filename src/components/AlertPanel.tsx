@@ -440,7 +440,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
       <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
         <input
           style={inputStyle}
-          placeholder={currentPrice ? String(currentPrice.toFixed(2)) : t('common.price')}
+          placeholder={currentPrice ? fmtPricePrecise(currentPrice) : t('common.price')}
           value={price}
           aria-invalid={!valid && price !== ''}
           onChange={(e) => setPrice(e.target.value)}
