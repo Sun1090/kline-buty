@@ -51,15 +51,15 @@ test('G4 行情列表搜索：输入关键词过滤交易对，清空恢复', as
   const search = page.getByTestId('market-search')
   await search.waitFor({ timeout: 15_000 })
   // 行情行依赖实时数据：等首行渲染后再计数
-  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
-  const before = await page.locator('[data-testid^="market-row-"]').count()
+  await expect(page.locator('[data-testid^="market-row-"]:not([data-testid^="market-row-select-"])').first()).toBeVisible({ timeout: 20_000 })
+  const before = await page.locator('[data-testid^="market-row-"]:not([data-testid^="market-row-select-"])').count()
   expect(before).toBeGreaterThan(0)
   await search.fill('ETH')
-  const after = await page.locator('[data-testid^="market-row-"]').count()
+  const after = await page.locator('[data-testid^="market-row-"]:not([data-testid^="market-row-select-"])').count()
   expect(after).toBeLessThan(before)
   expect(after).toBeGreaterThan(0)
   await search.fill('')
-  await expect(page.locator('[data-testid^="market-row-"]')).toHaveCount(before)
+  await expect(page.locator('[data-testid^="market-row-"]:not([data-testid^="market-row-select-"])')).toHaveCount(before)
 })
 
 test('G4 榜单视图：切涨幅榜 Top10，行带序号；再切成交榜', async ({ page }) => {
@@ -68,7 +68,7 @@ test('G4 榜单视图：切涨幅榜 Top10，行带序号；再切成交榜', as
   await tabRank.click()
   await expect(page.getByTestId('market-rank-change')).toBeVisible()
   await page.getByTestId('market-rank-volume').click()
-  const rows = page.locator('[data-testid^="market-row-"]')
+  const rows = page.locator('[data-testid^="market-row-"]:not([data-testid^="market-row-select-"])')
   await expect(rows.first()).toBeVisible()
   expect(await rows.count()).toBeLessThanOrEqual(10)
 })
