@@ -42,13 +42,19 @@ async function openLimitOrder(page: Page, price: number, qty: number) {
   return order
 }
 
-/** 填好即提交（可选随单止盈/止损价） */
-async function placeLimitBuy(page: Page, price: number, qty: number, levels?: { tp?: number; sl?: number }) {
+/** 填好即提交（可选随单止盈/止损价与杠杆档位） */
+async function placeLimitBuy(
+  page: Page,
+  price: number,
+  qty: number,
+  levels?: { tp?: number; sl?: number; leverage?: number },
+) {
   const order = await openLimitOrder(page, price, qty)
   if (!order) return
   if (levels) {
     if (levels.tp !== undefined) await order.getByTestId('qo-tp').fill(String(levels.tp))
     if (levels.sl !== undefined) await order.getByTestId('qo-sl').fill(String(levels.sl))
+    if (levels.leverage !== undefined) await order.getByTestId('qo-leverage').selectOption(String(levels.leverage))
   }
   await order.getByTestId('qo-confirm').click()
   await expect(page.getByTestId('quick-order')).toHaveCount(0)
@@ -346,6 +352,29 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     const [kept] = (await stored(page, 'kline-buty:paperOrders')) as { takeProfit: number; stopLoss: number }[]
     expect(kept.takeProfit).toBe(Number((low * 1.1).toFixed(2)))
     expect(kept.stopLoss).toBeNull()
+  })
+
+  test('挂单带杠杆：成交后持仓按该档算强平价（不再退回 1x 口径）', async ({ page }) => {
+    const price = await lastPrice(page)
+    const entry = Number((price * 0.9).toFixed(2))
+    await placeLimitBuy(page, entry, 0.001, { leverage: 20 })
+
+    await ensurePanel(page, '仓位', 'pending-orders')
+    const [pending] = (await stored(page, 'kline-buty:paperOrders')) as { id: string; leverage: number }[]
+    expect(pending.leverage).toBe(20)
+
+    // 触价成交后落到持仓
+    await page.getByTestId(`pending-order-edit-${pending.id}`).click()
+    const editor = page.getByTestId(`pending-order-editor-${pending.id}`)
+    await editor.getByTestId(`pending-order-price-${pending.id}`).fill(String(Number((price * 1.2).toFixed(2))))
+    await editor.getByTestId(`pending-order-edit-confirm-${pending.id}`).click()
+    await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
+
+    const positions = (await stored(page, 'kline-buty:positionsBySymbol')) as Record<
+      string,
+      { long: { entry: number; leverage?: number } | null }
+    >
+    expect(positions.BTCUSDT.long!.leverage).toBe(20)
   })
 
 })

@@ -23,6 +23,8 @@ export interface PendingOrder {
    */
   takeProfit?: number | null
   stopLoss?: number | null
+  /** 随单杠杆（成交开出新槽位时写进持仓，用于保证金率与强平价）；非法或未选 → null 按不设杠杆 */
+  leverage?: number | null
 }
 
 export interface PendingOrderInput {
@@ -39,6 +41,8 @@ export interface PendingOrderInput {
   /** 随单附带的止盈/止损价，非法（非正/非有限/站在挂单价错误一侧）→ 整单被拒 */
   takeProfit?: number | null
   stopLoss?: number | null
+  /** 随单杠杆：只有 ≥1 的有限数才认，其余按「不设杠杆」而不是拒单（档位由选择器给出，坏值只可能来自存量数据） */
+  leverage?: number | null
 }
 
 /** 同一交易对最多挂单数（防止误点堆出长列表） */
@@ -86,6 +90,8 @@ export function createPendingOrder(input: PendingOrderInput): PendingOrder | nul
   const takeProfit = input.takeProfit ?? null
   const stopLoss = input.stopLoss ?? null
   if (!attachedLevelsOk(side, price, { takeProfit, stopLoss })) return null
+  const lev = input.leverage
+  const leverage = typeof lev === 'number' && Number.isFinite(lev) && lev >= 1 ? lev : null
   const now = input.now ?? Date.now()
   return {
     id: input.id ?? `${now}-${idSuffix()}`,
@@ -97,6 +103,7 @@ export function createPendingOrder(input: PendingOrderInput): PendingOrder | nul
     marketable: isMarketable({ side, price }, input.marketPrice),
     takeProfit,
     stopLoss,
+    leverage,
   }
 }
 
@@ -151,6 +158,7 @@ export function parsePendingOrders(raw: unknown): PendingOrder[] {
       qty: Number(d.qty),
       now: Number.isFinite(Number(d.createdAt)) ? Number(d.createdAt) : Date.now(),
       id: d.id,
+      leverage: Number(d.leverage),
     })
     if (!order) continue
     // 费率归属以入单当时的判定为准：重载入库时已无从得知当时最新价，只认存量标记
