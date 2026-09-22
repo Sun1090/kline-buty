@@ -145,6 +145,24 @@ export function requiredPoints(type: DrawingTool | DrawingType): number {
   return 2
 }
 
+/**
+ * 留白像素 → 锚点时间。图表库里最新 K 线右侧（以及首根 K 线左侧）的留白换不出时间，
+ * 而那段留白正是画未来目标位、延伸线和拖拽落点的主要位置。索引→像素是线性映射，
+ * 用参考根与它前一根的像素差求出根宽，就能反解出对齐某根 K 线的整根偏移。
+ * 根宽不可用时返回 null，由调用方放弃这次落点。
+ */
+export function anchorTimeInWhitespace(args: {
+  x: number
+  refX: number
+  refTime: number
+  prevX: number
+  periodSeconds: number
+}): number | null {
+  const spacing = args.refX - args.prevX
+  if (!(spacing > 0)) return null
+  return args.refTime + Math.round((args.x - args.refX) / spacing) * args.periodSeconds
+}
+
 /** 斐波那契扩展分位（<1 为回撤区，≥1 为向 B 外侧延伸区） */
 export const FIB_EXT_LEVELS = [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.272, 1.618, 2.618]
 

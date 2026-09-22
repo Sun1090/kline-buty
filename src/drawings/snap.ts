@@ -36,6 +36,11 @@ export function snapToGrid(price: number, step: number): number {
  */
 export function snapToCandle(time: number, price: number, candles: Candle[], mode: SnapMode = 'ohlc'): { time: number; price: number } {
   if (candles.length === 0 || mode === 'off') return { time, price }
+  // 落在留白里（最新一根之后、首根之前）的时间不对应任何 K 线：继续吸附会把锚点拽回首/末根，
+  // 等于把「画在未来」的落点挪回最新一根。时间原样保留，价格仍按与 K 线无关的网格步长对齐。
+  if (time > candles[candles.length - 1].time || time < candles[0].time) {
+    return { time, price: mode === 'grid' ? snapToGrid(price, gridStep(price)) : price }
+  }
   // 二分找最近的开盘时刻
   let lo = 0
   let hi = candles.length - 1
