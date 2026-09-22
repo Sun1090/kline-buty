@@ -2504,18 +2504,26 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.drawingTool === 'none') {
       // 手指接触面远大于鼠标光标，锚点判定单独放宽；整线/选中仍用桌面阈值，避免误抢相邻画线
       const anchorThreshold = e.pointerType === 'touch' ? TOUCH_ANCHOR_THRESHOLD_PX : undefined
-      const time = this.chart.timeScale().coordinateToTime(x)
+      const time = this.timeAtPixel(x)
       const price = this.mainSeries.coordinateToPrice(y)
-      const startTime = time !== null ? Number(time) : 0
-      const startPrice = price !== null ? Number(price) : 0
+      // 拖拽起点必须换算得出时间/价格：拿不到就不进入拖拽。此前用 0 兜底，第一次 pointermove
+      // 就按「当前时刻 − 0」算位移，整条线会被甩到几十亿秒之外（表现为一拖就消失）。
+      const origin = time !== null && price !== null ? { startTime: Number(time), startPrice: Number(price) } : null
       const selected = this.selectedDrawingId
         ? this.drawings.find((d) => d.id === this.selectedDrawingId)
         : null
+      const hit = hitTestDrawings(
+        this.drawings,
+        x,
+        y,
+        (t, p) => this.project(t, p),
+        (d) => (d.type === 'regchan' ? this.regchanSegments(d) : null),
+      )
 
-      if (selected) {
+      if (origin && selected) {
         const anchorIdx = nearestAnchor(selected, x, y, (t, p) => this.project(t, p), anchorThreshold)
         if (anchorIdx !== null) {
-          this.dragEdit = { id: selected.id, kind: 'anchor', anchorIdx, startTime, startPrice, orig: selected }
+          this.dragEdit = { id: selected.id, kind: 'anchor', anchorIdx, ...origin, orig: selected }
           this.dragPreview = selected
           this.container.setPointerCapture?.(e.pointerId)
           this.container.style.cursor = 'grabbing'
@@ -2525,17 +2533,10 @@ export class LightweightChartAdapter implements ChartApi {
         }
       }
 
-      const hit = hitTestDrawings(
-        this.drawings,
-        x,
-        y,
-        (t, p) => this.project(t, p),
-        (d) => (d.type === 'regchan' ? this.regchanSegments(d) : null),
-      )
-      if (hit && hit === this.selectedDrawingId) {
-        const hitDrawing = this.drawings.find((d) => d.id === hit)
+      if (origin && hit && hit === this.selectedDrawingId) {
+        const hitDrawing = this.drawings.find((dd) => dd.id === hit)
         if (!hitDrawing) return
-        this.dragEdit = { id: hit, kind: 'move', startTime, startPrice, orig: hitDrawing }
+        this.dragEdit = { id: hit, kind: 'move', ...origin, orig: hitDrawing }
         this.dragPreview = hitDrawing
         this.container.setPointerCapture?.(e.pointerId)
         this.container.style.cursor = 'grabbing'
