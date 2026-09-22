@@ -243,12 +243,25 @@ describe('editPendingOrder 改价', () => {
     const next = editPendingOrder(list, 'b', { price: 260, qty: 0.5 })
     expect(next).not.toBeNull()
     expect(next!.map((o) => o.id)).toEqual(['a', 'b'])
-    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000 })
+    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000, marketable: false })
     expect(next![0]).toBe(list[0]) // 未改动的条目保持原引用
   })
 
   it('订单不存在 → null（不改列表）', () => {
     expect(editPendingOrder(list, 'nope', { price: 1, qty: 1 })).toBeNull()
+  })
+
+  it('改到越过最新价 → 重算跨价差归属，费率随之在 Taker / Maker 之间切换', () => {
+    const resting = [order({ id: 'a', side: 'buy', price: 90, qty: 1, marketable: false })]
+    // 买单从 90 抬到 101（现价 100）：这单开始吃单
+    expect(editPendingOrder(resting, 'a', { price: 101, qty: 1 }, 100)![0].marketable).toBe(true)
+    // 贴价（与现价持平）仍算排队
+    expect(editPendingOrder(resting, 'a', { price: 100, qty: 1 }, 100)![0].marketable).toBe(false)
+    // 改回现价之下：又变回挂单
+    const crossed = [order({ id: 'a', side: 'buy', price: 101, qty: 1, marketable: true })]
+    expect(editPendingOrder(crossed, 'a', { price: 95, qty: 1 }, 100)![0].marketable).toBe(false)
+    // 不传最新价（无从判定）沿用原归属
+    expect(editPendingOrder(crossed, 'a', { price: 95, qty: 1 })![0].marketable).toBe(true)
   })
 
   it('价格或数量非法 → null：非正、0、NaN、Infinity', () => {

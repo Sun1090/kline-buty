@@ -26,8 +26,9 @@ export interface PendingOrdersApi {
   orders: PendingOrder[]
   /** 新增挂单（同品种上限 + 全局条数裁剪）；被拒绝时返回 false */
   add: (order: PendingOrder) => boolean
-  /** 改价：只换挂单价与数量；订单不存在或数值非法返回 false（不改列表） */
-  edit: (id: string, patch: PendingOrderPatch) => boolean
+  /** 改价：只换挂单价与数量；订单不存在或数值非法返回 false（不改列表）。
+   * 传 marketPrice（改价时的最新价）则重算跨价差归属，费率随之切换 Maker / Taker */
+  edit: (id: string, patch: PendingOrderPatch, marketPrice?: number | null) => boolean
   /** 按 id 批量移除（用户撤销 / 撮合落地） */
   remove: (ids: string[]) => void
   clear: () => void
@@ -52,8 +53,8 @@ export function usePendingOrders(): PendingOrdersApi {
     return true
   }, [])
 
-  const edit = useCallback((id: string, patch: PendingOrderPatch) => {
-    const next = editPendingOrder(ordersRef.current, id, patch)
+  const edit = useCallback((id: string, patch: PendingOrderPatch, marketPrice?: number | null) => {
+    const next = editPendingOrder(ordersRef.current, id, patch, marketPrice)
     if (!next) return false
     setOrders(() => {
       persistOrders(next)

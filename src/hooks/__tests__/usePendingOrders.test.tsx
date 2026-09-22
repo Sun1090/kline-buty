@@ -84,6 +84,16 @@ describe('usePendingOrders', () => {
     expect(JSON.parse(localStorage.getItem(KEY) ?? '[]')).toEqual(result.current.orders)
   })
 
+  it('edit 带最新价时重算跨价差归属并写穿存储', () => {
+    localStorage.setItem(KEY, JSON.stringify([order('a', { side: 'buy', price: 90, qty: 1, marketable: false })]))
+    const { result } = renderHook(() => usePendingOrders())
+    act(() => {
+      expect(result.current.edit('a', { price: 105, qty: 1 }, 100)).toBe(true)
+    })
+    expect(result.current.orders[0]).toMatchObject({ price: 105, marketable: true })
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '[]')[0]).toMatchObject({ price: 105, marketable: true })
+  })
+
   it('edit 非法或订单不存在 → false 且列表不动', () => {
     localStorage.setItem(KEY, JSON.stringify([order('a', { price: 100, qty: 1 })]))
     const { result } = renderHook(() => usePendingOrders())

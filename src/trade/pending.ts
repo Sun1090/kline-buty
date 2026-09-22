@@ -137,19 +137,28 @@ export interface PendingOrderPatch {
 /**
  * 改价：只换挂单价与数量，id / 品种 / 方向 / 入单时刻保持不变（同价多条的 FIFO 顺位不因改价而变）。
  * 订单不存在、价格或数量非正/非有限 → null，由调用方提示而不是静默丢单。
+ * 给了 `marketPrice`（改价那一刻的最新价）就重算跨价差归属：把买单抬过现价，
+ * 这单从改价起就在吃单，费率随之从 Maker 切到 Taker；不给则沿用原判定。
  */
 export function editPendingOrder(
   orders: PendingOrder[],
   id: string,
   patch: PendingOrderPatch,
+  marketPrice?: number | null,
 ): PendingOrder[] | null {
   const idx = orders.findIndex((o) => o.id === id)
   if (idx < 0) return null
   const { price, qty } = patch
   if (!Number.isFinite(price) || price <= 0) return null
   if (!Number.isFinite(qty) || qty <= 0) return null
+  const target = orders[idx]
   const next = [...orders]
-  next[idx] = { ...orders[idx], price, qty }
+  next[idx] = {
+    ...target,
+    price,
+    qty,
+    marketable: marketPrice === undefined ? target.marketable : isMarketable({ side: target.side, price }, marketPrice),
+  }
   return next
 }
 
