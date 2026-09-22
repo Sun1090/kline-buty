@@ -116,8 +116,10 @@ jobs:
       # 确定性规格集：全部 ?perf 合成数据驱动，不依赖币安网络连通性（GitHub 运行器到
       # 币安的出口/geo 不可控）。实时数据冒烟（smoke/feature-gaps）留本地。
       # grep-invert 排除盘口驱动的「模拟交易」（订单簿走实时 WS）。
+      # limit-orders / tpsl-guard 同为纯 ?perf 规格，v0.5.24 起补进清单：
+      # 它们此前不在 CI 里，导致成交价与止盈止损结算的回归只能靠本地全量跑发现。
       - name: E2E tests
-        run: npx playwright test e2e/alerts-features.spec.ts e2e/drawing-semantics.spec.ts e2e/indicator-crosshair.spec.ts e2e/marker-render.spec.ts e2e/new-features.spec.ts e2e/period-alignment.spec.ts e2e/period-anchor.spec.ts e2e/period-crosshair.spec.ts e2e/recent-features.spec.ts e2e/snapshot-gallery.spec.ts e2e/stress-large-data.spec.ts e2e/trade-settings.spec.ts --grep-invert "模拟交易"
+        run: npx playwright test e2e/alerts-features.spec.ts e2e/drawing-semantics.spec.ts e2e/indicator-crosshair.spec.ts e2e/limit-orders.spec.ts e2e/marker-render.spec.ts e2e/new-features.spec.ts e2e/period-alignment.spec.ts e2e/period-anchor.spec.ts e2e/period-crosshair.spec.ts e2e/recent-features.spec.ts e2e/snapshot-gallery.spec.ts e2e/stress-large-data.spec.ts e2e/tpsl-guard.spec.ts e2e/trade-settings.spec.ts --grep-invert "模拟交易"
       - name: Upload E2E report on failure
         uses: actions/upload-artifact@v7
         with:
