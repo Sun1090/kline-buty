@@ -7,8 +7,8 @@ import type { PendingOrder } from '../../trade/pending'
 afterEach(cleanup)
 
 const orders: PendingOrder[] = [
-  { id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 0.5, createdAt: 1 },
-  { id: 'b', symbol: 'ETHUSDT', side: 'sell', price: 3_500, qty: 2, createdAt: 2 },
+  { id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 0.5, createdAt: 1, marketable: false },
+  { id: 'b', symbol: 'ETHUSDT', side: 'sell', price: 3_500, qty: 2, createdAt: 2, marketable: false },
 ]
 
 describe('PendingOrders 挂单列表', () => {

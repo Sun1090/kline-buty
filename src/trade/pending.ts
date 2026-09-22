@@ -1,8 +1,9 @@
 import type { OrderSide } from './order'
 
 /**
- * 限价挂单（Maker 单）领域模型：触价即成交、不计滑点；
- * 市场价已优于挂单价时按市场价成交（价格改善，见 `fillPrice`）。
+ * 限价挂单领域模型：触价即成交、不计滑点；市场价已优于挂单价时按市场价成交
+ * （价格改善，见 `fillPrice`）。挂在盘口等价的限价单按 Maker 费率计费，
+ * 而下单即跨过价差的（marketable limit）吃穿盘口，交易所按 Taker 计费。
  * 撮合判定放在纯函数层，余额与持仓落地由调用方（App 撮合循环）处理。
  */
 export interface PendingOrder {
@@ -14,6 +15,8 @@ export interface PendingOrder {
   qty: number
   /** 下单时刻（ms）：同价多条时按此 FIFO 撮合 */
   createdAt: number
+  /** 下单时的最新价已优于挂单价 → 这单从提交那一刻就在吃单（Taker） */
+  marketable: boolean
 }
 
 export interface PendingOrderInput {
@@ -25,12 +28,24 @@ export interface PendingOrderInput {
   now?: number
   /** 订单 id（默认时间戳 + 随机后缀） */
   id?: string
+  /** 下单时的最新价：用于判定是否即刻跨价差；缺价（未连上行情的品种）按未跨计 */
+  marketPrice?: number | null
 }
 
 /** 同一交易对最多挂单数（防止误点堆出长列表） */
 export const ORDERS_PER_SYMBOL_MAX = 10
 
 const idSuffix = () => Math.random().toString(36).slice(2, 8)
+
+/**
+ * 是否已跨过价差：买价高于最新价、卖价低于最新价（价缺时按未跨计）。
+ * 取严格不等号：与最新价相等的挂单是「贴价排队」，交易所按 Maker 计——我们只有最新价
+ * （没有买卖一），按贴价处理更贴近用户点「买」时的意图。
+ */
+export function isMarketable(order: { side: OrderSide; price: number }, market: number | null | undefined): boolean {
+  if (typeof market !== 'number' || !Number.isFinite(market) || market <= 0) return false
+  return order.side === 'buy' ? order.price > market : order.price < market
+}
 
 /** 创建挂单：交易对为空、价格/数量非正或非有限值 → null（调用方拦截，不产生脏数据） */
 export function createPendingOrder(input: PendingOrderInput): PendingOrder | null {
@@ -41,7 +56,15 @@ export function createPendingOrder(input: PendingOrderInput): PendingOrder | nul
   if (!Number.isFinite(qty) || qty <= 0) return null
   if (side !== 'buy' && side !== 'sell') return null
   const now = input.now ?? Date.now()
-  return { id: input.id ?? `${now}-${idSuffix()}`, symbol, side, price, qty, createdAt: now }
+  return {
+    id: input.id ?? `${now}-${idSuffix()}`,
+    symbol,
+    side,
+    price,
+    qty,
+    createdAt: now,
+    marketable: isMarketable({ side, price }, input.marketPrice),
+  }
 }
 
 /** 单条撮合判定：买单价 ≤ 触发、卖单价 ≥ 触发（价格缺失/非法永不成交） */
@@ -92,6 +115,8 @@ export function parsePendingOrders(raw: unknown): PendingOrder[] {
       id: d.id,
     })
     if (!order) continue
+    // 费率归属以入单当时的判定为准：重载入库时已无从得知当时最新价，只认存量标记
+    order.marketable = d.marketable === true
     seen.add(order.id)
     out.push(order)
   }
@@ -110,11 +135,16 @@ export function fillPrice(order: PendingOrder, market: number | null | undefined
   return order.side === 'buy' ? Math.min(order.price, market) : Math.max(order.price, market)
 }
 
+/** 成交费率：挂在盘口等触价成交的挂单按 Maker；下单即跨过价差的吃单按 Taker */
+export function fillFeeRate(order: PendingOrder, rates: { maker: number; taker: number }): number {
+  return order.marketable ? rates.taker : rates.maker
+}
+
 export interface FillPlanItem {
   order: PendingOrder
-  /** 名义金额 = 成交价 × 数量（Maker 单无滑点） */
+  /** 名义金额 = 成交价 × 数量（限价单无滑点） */
   notional: number
-  /** 挂单费率计的手续费 */
+  /** 按该单费率计的手续费 */
   fee: number
 }
 
@@ -127,12 +157,13 @@ export interface FillPlan {
 /**
  * 撮合落地计划：按 FIFO 顺序累计名义金额 + 手续费，超出可用余额的挂单不成交。
  * 同一轮多条成交必须累计判定——开仓只即时扣手续费，余额不会随开仓递减。
- * `priceOf` 给出该订单的实际成交价（默认挂单价），名义金额与费用按成交价计。
+ * `priceOf` 给出该订单的实际成交价（默认挂单价），名义金额与费用按成交价计；
+ * `feeRateOf` 给出该订单的费率（Maker / Taker 由挂单是否跨价差决定）。
  */
 export function planFills(
   filled: PendingOrder[],
   balance: number,
-  feeRate: number,
+  feeRateOf: (order: PendingOrder) => number,
   priceOf: (order: PendingOrder) => number = (order) => order.price,
 ): FillPlan {
   const accepted: FillPlanItem[] = []
@@ -141,7 +172,7 @@ export function planFills(
   for (let i = 0; i < filled.length; i++) {
     const order = filled[i]
     const notional = priceOf(order) * order.qty
-    const fee = notional * feeRate
+    const fee = notional * feeRateOf(order)
     // FIFO：一旦承接不下，后续订单全部撤销（不插队成交）
     if (used + notional + fee > balance) {
       rejected.push(...filled.slice(i))

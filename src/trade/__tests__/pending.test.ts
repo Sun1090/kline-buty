@@ -3,6 +3,7 @@ import {
   ORDERS_PER_SYMBOL_MAX,
   canAddOrder,
   createPendingOrder,
+  fillFeeRate,
   fillsAt,
   matchPendingOrders,
   parsePendingOrders,
@@ -18,6 +19,7 @@ const order = (over: Partial<PendingOrder> = {}): PendingOrder => ({
   price: 60_000,
   qty: 0.5,
   createdAt: 1_000,
+  marketable: false,
   ...over,
 })
 
@@ -26,7 +28,19 @@ describe('createPendingOrder', () => {
     const created = createPendingOrder({ symbol: ' btcusdt ', side: 'sell', price: 60000, qty: 0.2, now: 1234 })
     expect(created).not.toBeNull()
     expect(created!.id.startsWith('1234-')).toBe(true)
-    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234 })
+    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234, marketable: false })
+  })
+
+  it('下单时最新价已优于挂单价 → 记为跨价差（Taker）；贴价与无价按未跨计', () => {
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(true)
+    // 与最新价持平是「贴价排队」：交易所按 Maker 计，我们只有最新价，按未跨处理
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, marketPrice: 60_000 })!.marketable).toBe(false)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 40_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(false)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 40_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(true)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 50_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(false)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 60_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(false)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1 })!.marketable).toBe(false)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, marketPrice: null })!.marketable).toBe(false)
   })
 
   it('非法输入返回 null（空品种/非正价格/非正数量/非有限值/方向非法）', () => {
@@ -94,9 +108,17 @@ describe('parsePendingOrders', () => {
       { id: 'w', symbol: 'BTCUSDT', side: 'buy', price: 1, qty: 0 },
     ]
     expect(parsePendingOrders(raw).map((o) => o.id)).toEqual(['x', 'y'])
-    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7 })
+    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7, marketable: false })
     expect(parsePendingOrders('nope')).toEqual([])
     expect(parsePendingOrders(null)).toEqual([])
+  })
+
+  it('存量标记随条目还原：跨价差的单重载后仍是 Taker（重载时无从得知当时最新价）', () => {
+    const out = parsePendingOrders([
+      { id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 2, qty: 3, createdAt: 5, marketable: true },
+      { id: 'b', symbol: 'BTCUSDT', side: 'buy', price: 2, qty: 3, createdAt: 6 },
+    ])
+    expect(out.map((o) => o.marketable)).toEqual([true, false])
   })
 
   it('缺失 createdAt 时用当前时间兜底（不产生 NaN 排序键）', () => {
@@ -117,7 +139,7 @@ describe('canAddOrder', () => {
 
 describe('planFills', () => {
   it('按挂单价计名义金额与挂单费率手续费（Maker 无滑点）', () => {
-    const { accepted, rejected } = planFills([order({ price: 100, qty: 2 })], 1_000, 0.0005)
+    const { accepted, rejected } = planFills([order({ price: 100, qty: 2 })], 1_000, () => 0.0005)
     expect(rejected).toEqual([])
     expect(accepted).toEqual([{ order: order({ price: 100, qty: 2 }), notional: 200, fee: 0.1 }])
   })
@@ -127,14 +149,14 @@ describe('planFills', () => {
     const b = order({ id: 'b', price: 100, qty: 1, createdAt: 2 })
     const c = order({ id: 'c', price: 100, qty: 1, createdAt: 3 })
     // 余额只够一条（100 + 0.05 费）
-    const { accepted, rejected } = planFills([a, b, c], 100.05, 0.0005)
+    const { accepted, rejected } = planFills([a, b, c], 100.05, () => 0.0005)
     expect(accepted.map((x) => x.order.id)).toEqual(['a'])
     expect(rejected.map((x) => x.id)).toEqual(['b', 'c'])
   })
 
   it('空列表 / 余额为 0 安全', () => {
-    expect(planFills([], 10_000, 0.001)).toEqual({ accepted: [], rejected: [] })
-    expect(planFills([order()], 0, 0.001).rejected).toHaveLength(1)
+    expect(planFills([], 10_000, () => 0.001)).toEqual({ accepted: [], rejected: [] })
+    expect(planFills([order()], 0, () => 0.001).rejected).toHaveLength(1)
   })
 })
 
@@ -163,20 +185,52 @@ describe('fillPrice 成交价与价格改善', () => {
 describe('planFills 的成交价入参', () => {
   it('priceOf 提供改善后的市场价：名义额与手续费都按成交价计', () => {
     const o = order({ price: 100, qty: 2 })
-    const { accepted } = planFills([o], 1_000, 0.0005, () => 90)
+    const { accepted } = planFills([o], 1_000, () => 0.0005, () => 90)
     expect(accepted).toEqual([{ order: o, notional: 180, fee: 0.09 }])
   })
 
   it('余额按成交价口径判定：挂单价会超预算但市场价可承接', () => {
     const o = order({ price: 100, qty: 1 })
     // 挂单价口径需 100 + 0.05 费 → 余额 100.04 承接不下
-    expect(planFills([o], 100.04, 0.0005).accepted).toHaveLength(0)
+    expect(planFills([o], 100.04, () => 0.0005).accepted).toHaveLength(0)
     // 市场价 90 口径只需 90 + 0.045 → 同一笔余额即可承接
-    expect(planFills([o], 90.05, 0.0005, () => 90).accepted).toHaveLength(1)
+    expect(planFills([o], 90.05, () => 0.0005, () => 90).accepted).toHaveLength(1)
   })
 
   it('不传 priceOf 时保持原口径（挂单价即成交价）', () => {
     const o = order({ price: 100, qty: 2 })
-    expect(planFills([o], 1_000, 0.0005).accepted[0].notional).toBe(200)
+    expect(planFills([o], 1_000, () => 0.0005).accepted[0].notional).toBe(200)
+  })
+})
+
+describe('fillFeeRate 费率归属', () => {
+  const rates = { maker: 0.0002, taker: 0.0005 }
+
+  it('挂在盘口等价的挂单按 Maker，下单即跨过价差的按 Taker', () => {
+    expect(fillFeeRate(order({ marketable: false }), rates)).toBe(0.0002)
+    expect(fillFeeRate(order({ marketable: true }), rates)).toBe(0.0005)
+  })
+})
+
+describe('planFills 按单取费率', () => {
+  it('同一轮里 Maker 与 Taker 各自计费，余额累计也按各自手续费', () => {
+    const maker = order({ id: 'm', price: 100, qty: 1, createdAt: 1, marketable: false })
+    const taker = order({ id: 't', price: 100, qty: 1, createdAt: 2, marketable: true })
+    const { accepted, rejected } = planFills([maker, taker], 1_000, (o) => fillFeeRate(o, { maker: 0.001, taker: 0.01 }), (o) => o.price)
+    expect(rejected).toEqual([])
+    expect(accepted.map((a) => [a.order.id, a.fee])).toEqual([
+      ['m', 0.1],
+      ['t', 1],
+    ])
+  })
+
+  it('Taker 的高费率会计入余额承接判定：Maker 能承接的额度 Taker 未必能', () => {
+    const maker = order({ id: 'm', price: 100, qty: 1, marketable: false })
+    const taker = order({ id: 't', price: 100, qty: 1, marketable: true })
+    const rateOf = (o: PendingOrder) => fillFeeRate(o, { maker: 0.001, taker: 0.01 })
+    // 余额 101.05：Maker 一条（100.1）后剩 0.95，Taker 需 101 → 撤销
+    expect(planFills([maker, taker], 101.05, rateOf).accepted.map((a) => a.order.id)).toEqual(['m'])
+    // 同为 100.1 时 Maker 刚好承接、Taker 承接不下
+    expect(planFills([taker], 100.1, rateOf).accepted).toEqual([])
   })
 })

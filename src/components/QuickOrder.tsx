@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, MAKER_FEE_RATE, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
+import { isMarketable } from '../trade/pending'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-/** 下单类型：市价（即时成交、计滑点）/ 限价（挂单、触达按挂单价成交） */
+/** 下单类型：市价（即时成交、计滑点）/ 限价（挂单，触价按当时市场价成交） */
 export type OrderType = 'market' | 'limit'
 
 interface QuickOrderProps {
@@ -16,7 +17,7 @@ interface QuickOrderProps {
   ask?: number | null
   /** 模拟账户可用余额（USDT）：传入时显示并拦截保证金不足 */
   balance?: number | null
-  /** 吃单/挂单费率（可选，默认内置常量）：限价模式按挂单费率且不计滑点 */
+  /** 吃单/挂单费率（可选，默认内置常量）：限价模式不计滑点，跨参考价的按吃单费率、挂在盘口等价的按挂单费率 */
   takerFeeRate?: number
   makerFeeRate?: number
   /** 打开时的下单类型（默认市价）：图表右键「挂限价单」传 limit */
@@ -65,14 +66,15 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
   const priceNum = Number(priceStr)
   const qtyNum = Number(qtyStr)
   const valid = Number.isFinite(priceNum) && priceNum > 0 && Number.isFinite(qtyNum) && qtyNum > 0
-  // 限价（Maker）单按挂单价成交：无滑点、按挂单费率；市价单按吃单费率 + 可配滑点
+  // 限价单无滑点；费率看这单的性质：挂在盘口等价按 Maker，下单即跨过参考价按 Taker。市价单按 Taker + 可配滑点
   const isLimit = orderType === 'limit'
+  const limitRate = isMarketable({ side, price: priceNum }, price) ? takerFeeRate : makerFeeRate
   const est = useMemo(
     () =>
       valid
-        ? estimateOrder(priceNum, qtyNum, side, isLimit ? 0 : DEFAULT_SLIPPAGE_RATIO, isLimit ? makerFeeRate : takerFeeRate)
+        ? estimateOrder(priceNum, qtyNum, side, isLimit ? 0 : DEFAULT_SLIPPAGE_RATIO, isLimit ? limitRate : takerFeeRate)
         : null,
-    [valid, priceNum, qtyNum, side, isLimit, makerFeeRate, takerFeeRate],
+    [valid, priceNum, qtyNum, side, isLimit, limitRate, takerFeeRate],
   )
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
 

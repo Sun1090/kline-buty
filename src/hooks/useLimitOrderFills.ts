@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { fillPrice, matchPendingOrders, planFills, type PendingOrder } from '../trade/pending'
+import { fillFeeRate, fillPrice, matchPendingOrders, planFills, type PendingOrder } from '../trade/pending'
 import { EMPTY_POSITIONS, applyOrder, type Positions } from '../trade/positions'
 import type { OrderSide } from '../trade/order'
 
@@ -18,11 +18,13 @@ export interface LimitOrderFillDeps {
   /** 撮合后从挂单列表移除（成交 + 因余额不足撤销） */
   remove: (ids: string[]) => void
   balance: number
-  /** 记账开仓（成交价为挂单价或改善后的市场价，手续费按挂单费率） */
+  /** 记账开仓（成交价为挂单价或改善后的市场价，费率按该单是否跨价差取 Maker / Taker） */
   recordOpen: (args: { symbol: string; side: OrderSide; price: number; qty: number; fee: number; feeRate: number }) => void
   /** 写回某品种持仓（hedge 模式合并；支持非当前图表品种） */
   setPositionsBySymbol: (fn: (prev: PositionsBySymbol) => PositionsBySymbol) => void
   makerFeeRate: number
+  /** 下单即跨过价差的限价单按吃单计，用 Taker 费率 */
+  takerFeeRate: number
   /** 当前图表品种的最新价（K 线级，优先于轮询价表） */
   live: { symbol: string; price: number } | null
   /** 其他品种的 30s 轮询最新价 */
@@ -32,12 +34,13 @@ export interface LimitOrderFillDeps {
 }
 
 /**
- * 限价挂单撮合循环：任一品种价格触达挂单价即成交（Maker 单、无滑点），市场价更优时按市场价成交，
- * 余额承接不下的按 FIFO 撤销。
+ * 限价挂单撮合循环：任一品种价格触达挂单价即成交（无滑点），市场价更优时按市场价成交，
+ * 余额承接不下的按 FIFO 撤销。费率按挂单性质分：等价的挂单算 Maker、
+ * 下单即跨过价差的算 Taker。
  * settledRef 记录已处理订单 id 保证幂等：deps 抖动或 StrictMode 双跑都不会重复记账。
  */
 export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
-  const { orders, remove, balance, recordOpen, setPositionsBySymbol, makerFeeRate, live, prices, onNotice } = deps
+  const { orders, remove, balance, recordOpen, setPositionsBySymbol, makerFeeRate, takerFeeRate, live, prices, onNotice } = deps
   const settledRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -49,7 +52,8 @@ export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
     for (const order of fresh) settledRef.current.add(order.id)
 
     // 市场价优于挂单价 → 按市场价成交（价格改善），持仓与流水都记这个价
-    const { accepted, rejected } = planFills(fresh, balance, makerFeeRate, (o) => fillPrice(o, priceOf(o.symbol)))
+    const rates = { maker: makerFeeRate, taker: takerFeeRate }
+    const { accepted, rejected } = planFills(fresh, balance, (o) => fillFeeRate(o, rates), (o) => fillPrice(o, priceOf(o.symbol)))
     remove([...accepted.map((a) => a.order.id), ...rejected.map((o) => o.id)])
 
     for (const { order, fee } of accepted) {
@@ -60,7 +64,7 @@ export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
         price,
         qty: order.qty,
         fee,
-        feeRate: makerFeeRate,
+        feeRate: fillFeeRate(order, rates),
       })
       setPositionsBySymbol((prev) => ({
         ...prev,
@@ -78,5 +82,5 @@ export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
         price: fillPrice(noticeOrder, priceOf(noticeOrder.symbol)),
       })
     }
-  }, [orders, remove, balance, recordOpen, setPositionsBySymbol, makerFeeRate, live, prices, onNotice])
+  }, [orders, remove, balance, recordOpen, setPositionsBySymbol, makerFeeRate, takerFeeRate, live, prices, onNotice])
 }

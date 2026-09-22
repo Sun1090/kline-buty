@@ -71,7 +71,7 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(orders).toEqual([])
   })
 
-  test('限价买入挂在现价上方：立即成交并按市场价改善（不付出挂单价）', async ({ page }) => {
+  test('限价买入挂在现价上方：立即成交并按市场价改善，费率按吃单（Taker）计', async ({ page }) => {
     const price = await lastPrice(page)
     const limit = Number((price * 1.2).toFixed(2))
     await placeLimitBuy(page, limit, 0.001)
@@ -80,23 +80,27 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     // 成交后移出挂单队列（直接读存储，避免多层浮层互相遮挡点击）
     expect((await stored(page, 'kline-buty:paperOrders')) ?? []).toEqual([])
 
-    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; price: number; qty: number; feeRate: number }[]
+    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; price: number; qty: number; feeRate: number; fee: number }[]
     expect(trades).toHaveLength(1)
-    // 成交价取市场价（价格改善），而不是被跨过的挂单价；费率仍是挂单费率
+    // 成交价取市场价（价格改善），而不是被跨过的挂单价
     expect(trades[0].kind).toBe('open')
     expect(trades[0].price).toBeLessThan(limit)
     expect(trades[0].price).toBeGreaterThan(price * 0.9)
     expect(trades[0].qty).toBe(0.001)
-    expect(trades[0].feeRate).toBeLessThan(0.001)
+    // 下单即跨过价差 = 这单从提交起就在吃单，按 Taker 费率（默认 0.1%）而非挂单费率
+    expect(trades[0].feeRate).toBeCloseTo(0.001, 10)
+    expect(trades[0].fee).toBeCloseTo(trades[0].price * trades[0].qty * 0.001, 10)
 
     await ensurePanel(page, '交易流水', 'trade-history-panel')
     await expect(page.getByTestId('trade-history-row')).toHaveCount(1)
   })
 
-  test('挂单（Maker）费率可配置且计入成交手续费', async ({ page }) => {
+  test('挂单（Maker）费率可配置，但不作用于跨过价差的即时成交', async ({ page }) => {
     await ensurePanel(page, '交易流水', 'trade-history-panel')
     await page.getByTestId('trade-maker-fee-rate').fill('0.5')
     await expect(page.getByTestId('trade-maker-fee-rate')).toHaveValue('0.5')
+    // 配置确实落库（0.5% → 0.005），只是这单是 Taker，用不到它
+    expect(await stored(page, 'kline-buty:makerFeeRate')).toBeCloseTo(0.005, 10)
     // 流水浮层会盖住图表（右键点不到），配置完先收起
     await openMore(page)
     await page.getByRole('button', { name: '交易流水' }).click()
@@ -109,8 +113,31 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
     const trades = (await stored(page, 'kline-buty:paperTrades')) as { feeRate: number; fee: number; price: number; qty: number }[]
     expect(trades).toHaveLength(1)
+    expect(trades[0].feeRate).toBeCloseTo(0.001, 10)
+    expect(trades[0].fee).toBeCloseTo(trades[0].price * trades[0].qty * 0.001, 10)
+  })
+
+  test('挂在盘口的限价单触价成交：按改善价成交并按挂单（Maker）费率计费', async ({ page }) => {
+    const price = await lastPrice(page)
+    // 重载会先跑 beforeEach 注册的 clear，故费率与该单一起在 clear 之后补种
+    await page.addInitScript(([limit]) => {
+      localStorage.setItem('kline-buty:makerFeeRate', String(0.005))
+      localStorage.setItem(
+        'kline-buty:paperOrders',
+        JSON.stringify([{ id: 'resting', symbol: 'BTCUSDT', side: 'buy', price: limit, qty: 0.001, createdAt: 1, marketable: false }]),
+      )
+    }, [Number((price * 1.2).toFixed(2))] as const)
+    await page.reload()
+    await expect(page.getByTestId('order-toast')).toContainText('限价单已成交', { timeout: 20_000 })
+
+    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; price: number; qty: number; feeRate: number; fee: number }[]
+    expect(trades).toHaveLength(1)
+    expect(trades[0].kind).toBe('open')
+    expect(trades[0].qty).toBe(0.001)
     expect(trades[0].feeRate).toBeCloseTo(0.005, 10)
-    expect(trades[0].fee).toBeCloseTo(trades[0].price * trades[0].qty * 0.005, 6)
+    expect(trades[0].fee).toBeCloseTo(trades[0].price * trades[0].qty * 0.005, 10)
+    // 存量单重载后仍是挂单身份：重载时无从得知入单当时的最新价，只认 marketable 标记
+    expect(trades[0].price).toBeGreaterThan(price * 0.9)
   })
 
   test('图表右键挂限价单：菜单价位预填，挂单方向落在现价另一侧即挂起', async ({ page }) => {

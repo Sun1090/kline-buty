@@ -255,7 +255,7 @@ describe('PositionPanel', () => {
         currentPrice={110}
         onChange={vi.fn()}
         symbol="BTCUSDT"
-        pendingOrders={[{ id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 1 }]}
+        pendingOrders={[{ id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 1, marketable: false }]}
         onCancelOrder={onCancelOrder}
       />,
     )

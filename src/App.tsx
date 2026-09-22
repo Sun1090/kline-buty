@@ -638,6 +638,7 @@ export function App() {
     recordOpen: paper.recordOpen,
     setPositionsBySymbol,
     makerFeeRate: tradeSettings.makerFeeRate,
+    takerFeeRate: tradeSettings.takerFeeRate,
     live: candles.length > 0 ? { symbol, price: candles[candles.length - 1].close } : null,
     prices: orderPrices,
     onNotice: onOrderNotice,
@@ -1711,8 +1712,15 @@ export function App() {
           onClose={() => setQuickOrder(null)}
           onConfirm={(order) => {
             if (order.type === 'limit') {
-              // 限价挂单：先入队，由 useLimitOrderFills 在价格触达时按挂单价成交
-              const created = createPendingOrder({ symbol, side: order.side, price: order.price, qty: order.qty })
+              // 限价挂单：先入队，由 useLimitOrderFills 在价格触达时按挂单价成交；
+              // 下单时的最新价决定这单是等价的挂单（Maker）还是已经在吃单（Taker）
+              const created = createPendingOrder({
+                symbol,
+                side: order.side,
+                price: order.price,
+                qty: order.qty,
+                marketPrice: candles[candles.length - 1]?.close ?? stats.price,
+              })
               if (!created || !pending.add(created)) {
                 showOrderToast(t('trade.tooManyOrders', { max: String(ORDERS_PER_SYMBOL_MAX) }))
                 return
