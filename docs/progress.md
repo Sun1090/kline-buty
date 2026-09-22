@@ -5,7 +5,34 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.24 定档中（2026-09-22）** — 发布分支 `release/v0.5.24`（基于 main 2ea5dd2）
+**里程碑 v0.5.24 发布完成（2026-09-22）**
+- 版本号：**0.5.24**（package.json / package-lock 根版本 / index.html meta app-version）
+- 分支：`release/v0.5.24`（release 1708769）；发布 PR：#114（rebase 合并 → main **54f9773**）
+- tag/release：Release Tag workflow 自动打 **tag v0.5.24** @ 54f9773（幂等）
+- 定档门禁：typecheck ✅ / lint 0 err（29 条既有 warning）✅ / audit:i18n ✅ / unit **1862** ✅ /
+  全量 build（含 docs 站合并）✅；发布 PR CI 三浏览器 E2E + CodeQL + Pages + Android 全绿
+- 部署与 live 抽查：
+  - Pages ✅ 首页 200 且 `app-version=0.5.24`、`/knowledge/` 200
+  - 真实 bundle ✅ 主包含本版新文案（移动止损 / 保本止损 / 挂限价买入），535KB 单包
+  - Vercel ⚠ 仍受账号级 **build-rate-limit** 滞后（本会话多次 PR/预览构建触顶，约 24h 自动恢复），非代码问题
+- 回滚：`git revert` 本次 release 提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 发布后本地全量 chromium E2E（197 例）暴露出 **CI 规格清单的盲区**：CI 只跑固定 ?perf 规格集，
+  `limit-orders` / `tpsl-guard` 两个纯合成数据规格从未进过 CI，而 `smoke` / `feature-gaps` 等实时数据规格
+  按设计留本地——已按该标准在 test/v05-e2e-gaps 批次补齐（见「当前阶段」下一条）
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓）
+
+**进行中 · E2E 健康度批次（分支 test/v05-e2e-gaps）**
+- 修掉本地全量跑出的真实腐化：持仓行按钮从 1 个变 3 个（平仓/反手/止盈止损）后
+  `smoke` 两处用 `posRow.getByRole('button')` 触发 strict mode violation；
+  `feature-gaps` G4 榜单用 `[data-testid^="market-row-"]` 计数把行内的 `market-row-select-*` 一起算进去（20>10）
+- 修掉依赖缺陷结算旧行为的夹具：`smoke` 手动开仓用例填死价 100（真实价 ~8.6 万），
+  在 v0.5.24 的诚实触价结算下会被瞬时平掉 → 改为按顶栏实时价下单、数量压到余额之内
+- CI 清单补 `limit-orders` + `tpsl-guard`（纯 ?perf 驱动，符合该作业自述的入选标准）
+- 已知非回归（环境/几何依赖，留本地观察）：`recent-features`/`smoke` 的盘口驱动「模拟交易」用例
+  在本沙箱拿不到订单簿数据（bid count 0，K 线实时价正常），CI 本就 grep-invert 排除；
+  `smoke` 移动端文本标注 tap 流与 `period-anchor` 偶发抖动待单独排查
+
+
 - 版本号：**0.5.23 → 0.5.24**（package.json + package-lock 根版本 + index.html meta app-version）
 - 本版收录（v0.5.23 之后合并的四个批次）：
   - #110 持仓止盈止损可编辑：仓位面板行内编辑器（预填/留空清除/一键保本止损）+ `src/position/levels.ts`
