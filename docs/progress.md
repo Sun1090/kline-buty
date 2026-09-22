@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-**进行中 · v0.5.27 批次积累（基线 main 17c3538 = v0.5.26 + #136/#138/#139/#140/#142/#143/#144）**
+**进行中 · v0.5.27 批次积累（基线 main 8a72156 = v0.5.26 + #136/#138/#139/#140/#142/#143/#144/#145/#146）**
 - **#136 → main 95861ee** `fix(chart)`：右键菜单价位收口到展示精度。十字光标价格是像素反算的
   浮点尾数（`50766.61229625584`），复制/加提醒/挂限价单三个出口原样带走；改为 `setCtxMenu` 前
   经 `roundPricePrecise` 收口，并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成
@@ -39,18 +39,25 @@
   报错原文即缺陷（`expected '0.0020.020.0' to contain '0.00001234'`）；真浏览器 `?symbol=SHIBUSDT` 实测：
   桌面 1440 与 320×640 下盘口显示 `0.00000589…0.00000604`、价差 `0.00000001`，单元格无裁切、
   文档级横向溢出 0，深度图最长 SVG 标签右边缘 743 < viewBox 760。CI 三浏览器 E2E 15m18s 全绿后合并
-- **在飞 #145** `fix(chart)`（分支 `fix/v05-volma-legend` @ a110cdb，worktree `wt-volma`）：
-  `chart-indicator-last` 图例与十字光标 tooltip 对副图线一律 `toFixed(2)`，而 VOL 副图的 `VOL-MA`
-  是成交量——实测同一行里 `VOL: 12226.86M` 与 `VOL-MA: 12751049433.00` 并排。抽 `fmtSubLineValue`
-  按副图类型分派（volume 走 `fmtVolume`，KDJ/RSI/MACD 等小数值保持两位）。单测 1946 → 1947，
+- **#145 → main 67caa34** `fix(chart)`：`chart-indicator-last` 图例与十字光标 tooltip
+  对副图线一律 `toFixed(2)`，而 VOL 副图的 `VOL-MA` 是成交量——线上实测同一行里
+  `VOL: 2242.77M` 与 `VOL-MA: 1163738465.60` 并排。抽 `fmtSubLineValue` 按副图类型分派
+  （volume 走 `fmtVolume`，KDJ/RSI/MACD 等小数值保持两位）。单测 1946 → 1947，
   helper 改回无条件 `toFixed(2)` 后新用例红在 `expected 'VOL: 12750.00M…' to contain 'VOL-MA: 12750.00M'`
-- **在飞 #146** `fix(ui)`（分支 `fix/v05-statsbar-narrow-wrap` @ 1137041，worktree `wt-statsbar`）：
-  行情信息条是 flex 行 + `overflowX: auto`、字段全 `flexShrink: 0`，320px 下内容撑到 498px
-  （容器溢出 **178px**）：最新价切在右边缘、⚙（字段配置唯一入口）推到 `right: 480` 不滚动点不到，
-  直接违反「移动端功能区域换行、不出现横向滚动条、320px 关键控件立即可见」。改 `flexWrap: wrap`
-  + `gap: '4px 20px'`：320 下高 29 → 51px 折两行，1440 仍单行 29px。`recent-features` 补 320px
-  几何回归（容器无横向溢出 + 变高证明确实折行 + 两控件在视口内），改回旧样式重建后红在
-  `Received: 178`；该规格 25 条全绿
+- **#146 → main 8a72156** `fix(ui)`：行情信息条是 flex 行 + `overflowX: auto`、字段全
+  `flexShrink: 0`，320px 下内容撑到 498px（容器溢出 **178px**）：最新价切在右边缘、
+  ⚙（字段配置唯一入口）推到 `right: 480` 不滚动点不到，直接违反「移动端功能区域换行、
+  不出现横向滚动条、320px 关键控件立即可见」。改 `flexWrap: wrap` + `gap: '4px 20px'`：
+  320 下高 29 → 51px 折两行，1440 仍单行 29px。`recent-features` 补 320px 几何回归
+  （容器无横向溢出 + 变高证明确实折行 + 两控件在视口内），改回旧样式重建后红在 `Received: 178`；
+  该规格 25 条全绿，CI 三浏览器 E2E 15m52s 通过
+- 线上抽查（#144 合并后，Pages run 35730825242 success）：Pages bundle 已换成
+  `index-BO_I5MFp.js`，产物里 grep 到新的四档阈值 `>=1e3?2:e>=1?4:e>=1e-4?6:8`；真浏览器打开
+  `?symbol=SHIBUSDT` 读到现价 `0.00000609`、盘口档位 `0.00000609 / 0610 / 0611 / 0612 …`
+  逐档可区分、价差 `0.00000001`（改前整列 `0.00`），同一屏图例里 `VOL-MA: 1163738465.60`
+  正好把 #145 要修的缺陷也拍到了
+- Vercel 侧仍是构建限流：线上 `kline-buty.vercel.app` 的现价还停在 `▲0.000006`（旧档位），
+  等配额恢复的下一轮构建自然追上；Pages 是主部署，不阻塞
 - 部署状态：main CI（含三浏览器 E2E）**15m47s success**、Pages success、线上 bundle 已换成
   `index-CTJTU6hj.js`、`/knowledge/` 200；Vercel 仍是账号级 **build-rate-limit**（`retry in 24 hours`，
   同一天 #139 那轮自己就通过了、#144 这轮也通过了）——非必需检查、不阻塞合并，按既定判断忽略
