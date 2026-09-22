@@ -1,16 +1,18 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * G2 视觉回归测试：Playwright 截图对比 + 基线库（基线落在 e2e/__screenshots__/ 下，随仓库提交）。
+ * G2 视觉回归测试：Playwright 截图对比 + 基线库（基线落在 `e2e/visual.spec.ts-snapshots/`，随仓库提交）。
  *
- * - 仅 chromium 维护基线：截图依赖平台字体/GPU 合成，跨浏览器/firefox+webkit 跳过后仍随
- *   `npm run e2e` 全量跑通，不阻塞多浏览器兼容。
+ * - 基线按平台分文件（`<name>-chromium-darwin.png` / `-linux.png`）：截图依赖平台字体与合成器，
+ *   跨平台共用一份必然常红。darwin 由本地 `npm run test:visual` 维护，linux 由
+ *   `Visual baseline (Linux)` workflow 手工生成并当场复跑验证确定性；firefox+webkit 跳过本规格，
+ *   仍随 `npm run e2e` 全量跑通，不阻塞多浏览器兼容。
  * - 用 `?perf=N` 合成数据保证 K 线形态确定性（不依赖交易所实时行情），
  *   `animations: 'disabled'` + `maxDiffPixelRatio: 0.02` 吸收实时帧跳动的最末根与最新价文字。
  * - 基线更新：`npx playwright test e2e/visual.spec.ts --project=chromium --update-snapshots`
  *
- * 新提交若意外改动布局/配色，CI 之外的本地 `npm run e2e` 会在此报差异——有意的 UI 变更
- * 用上面的 update 命令重新生成基线并随提交一起记录原因。
+ * 新提交若意外改动布局/配色，本地 `npm run e2e`（以及 CI 里带 linux 基线之后的 E2E job）会在此报差异
+ * ——有意的 UI 变更用上面的 update 命令重新生成基线并随提交一起记录原因。
  */
 
 async function gotoStablePerf(page: Page) {
