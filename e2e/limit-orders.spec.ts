@@ -22,15 +22,15 @@ async function lastPrice(page: Page): Promise<number> {
 }
 
 /**
- * 从图表右键「挂限价买入」打开快速下单 → 按给定价格/数量提交。
+ * 从图表右键「挂限价买入」打开快速下单并填好价格/数量（不提交，供用例继续摆弄）。
  * 不走盘口：订单簿依赖实时深度流，CI 运行器上拿不到数据（该作业只跑 ?perf 确定性规格），
  * 而图表右键入口同样直达限价模式，且只依赖合成 K 线。
  */
-async function placeLimitBuy(page: Page, price: number, qty: number) {
+async function openLimitOrder(page: Page, price: number, qty: number) {
   const chart = page.locator('.chart-container').first()
   const box = await chart.boundingBox()
   expect(box).not.toBeNull()
-  if (!box) return
+  if (!box) return null
   await chart.click({ button: 'right', position: { x: box.width * 0.5, y: box.height * 0.5 } })
   await page.getByTestId('ctx-limit-buy').click()
   const order = page.getByTestId('quick-order')
@@ -39,6 +39,17 @@ async function placeLimitBuy(page: Page, price: number, qty: number) {
   await expect(order.getByTestId('qo-type-limit')).toHaveAttribute('aria-pressed', 'true')
   await order.getByTestId('qo-price').fill(String(price))
   await order.getByTestId('qo-qty').fill(String(qty))
+  return order
+}
+
+/** 填好即提交（可选随单止盈/止损价） */
+async function placeLimitBuy(page: Page, price: number, qty: number, levels?: { tp?: number; sl?: number }) {
+  const order = await openLimitOrder(page, price, qty)
+  if (!order) return
+  if (levels) {
+    if (levels.tp !== undefined) await order.getByTestId('qo-tp').fill(String(levels.tp))
+    if (levels.sl !== undefined) await order.getByTestId('qo-sl').fill(String(levels.sl))
+  }
   await order.getByTestId('qo-confirm').click()
   await expect(page.getByTestId('quick-order')).toHaveCount(0)
 }
@@ -277,4 +288,64 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(kept.find((o) => o.id === 'o1')).toMatchObject({ price: 42_500, qty: 0.004 })
     expect(kept.find((o) => o.id === 'o2')).toMatchObject({ price: 3_900, qty: 2 })
   })
+  test('挂单附带止盈/止损：列表标出 TP/SL，成交后持仓用的就是这两条线', async ({ page }) => {
+    const price = await lastPrice(page)
+    const low = Number((price * 0.8).toFixed(2))
+    const tp = Number((price * 1.5).toFixed(2))
+    const sl = Number((price * 0.75).toFixed(2))
+    await placeLimitBuy(page, low, 0.001, { tp, sl })
+
+    await ensurePanel(page, '仓位', 'pending-orders')
+    const [pending] = (await stored(page, 'kline-buty:paperOrders')) as {
+      id: string
+      takeProfit: number
+      stopLoss: number
+    }[]
+    expect({ takeProfit: pending.takeProfit, stopLoss: pending.stopLoss }).toEqual({ takeProfit: tp, stopLoss: sl })
+    await expect(page.getByTestId(`pending-order-levels-${pending.id}`)).toBeVisible()
+
+    // 改价抬过现价 → 触价成交（成交价取市场价，两线都仍在正确一侧）
+    await page.getByTestId(`pending-order-edit-${pending.id}`).click()
+    const editor = page.getByTestId(`pending-order-editor-${pending.id}`)
+    await editor.getByTestId(`pending-order-price-${pending.id}`).fill(String(Number((price * 1.2).toFixed(2))))
+    await editor.getByTestId(`pending-order-edit-confirm-${pending.id}`).click()
+    await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
+
+    const positions = (await stored(page, 'kline-buty:positionsBySymbol')) as Record<
+      string,
+      { long: { entry: number; takeProfit: number; stopLoss: number } | null }
+    >
+    // 参考价会是 entry×1.03/×0.98；这里是随单价位（1.5×/0.75×）赢
+    expect(positions.BTCUSDT.long).toMatchObject({ takeProfit: tp, stopLoss: sl })
+  })
+
+  test('随单价位站错一侧 → 面板内报错、确认禁用，改对后才受理', async ({ page }) => {
+    const price = await lastPrice(page)
+    const low = Number((price * 0.8).toFixed(2))
+    const order = await openLimitOrder(page, low, 0.001)
+    expect(order).not.toBeNull()
+    if (!order) return
+
+    // 买单止盈必须高于挂单价：填到挂单价之下即不成立
+    await order.getByTestId('qo-tp').fill(String(Number((low * 0.9).toFixed(2))))
+    await expect(order.getByTestId('qo-attach-err')).toBeVisible()
+    // 按钮 disabled 即已挡住提交（Playwright 对禁用按钮的 click 会一直等可用性，不去点它）
+    await expect(order.getByTestId('qo-confirm')).toBeDisabled()
+
+    // 填成文本垃圾同样拦下（不能当成「未设置」放行）
+    await order.getByTestId('qo-tp').fill('abc')
+    await expect(order.getByTestId('qo-confirm')).toBeDisabled()
+
+    await order.getByTestId('qo-tp').fill(String(Number((low * 1.1).toFixed(2))))
+    await expect(order.getByTestId('qo-attach-err')).toHaveCount(0)
+    await expect(order.getByTestId('qo-confirm')).toBeEnabled()
+    await order.getByTestId('qo-confirm').click()
+    await expect(page.getByTestId('quick-order')).toHaveCount(0)
+
+    await ensurePanel(page, '仓位', 'pending-orders')
+    const [kept] = (await stored(page, 'kline-buty:paperOrders')) as { takeProfit: number; stopLoss: number }[]
+    expect(kept.takeProfit).toBe(Number((low * 1.1).toFixed(2)))
+    expect(kept.stopLoss).toBeNull()
+  })
+
 })

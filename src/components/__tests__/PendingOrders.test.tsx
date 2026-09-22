@@ -102,4 +102,19 @@ describe('PendingOrders 挂单列表', () => {
     expect(screen.queryAllByTestId('pending-order-row')).toHaveLength(0)
     expect(screen.getByTestId('pending-orders-count').textContent).toBe('0')
   })
+  it('带随单价位的挂单标出 TP/SL，未带的不标；只带一条也标', () => {
+    render(
+      <PendingOrders
+        orders={[...orders, { id: 'c', symbol: 'SOLUSDT', side: 'buy', price: 150, qty: 1, createdAt: 3, marketable: false, takeProfit: 170, stopLoss: null }]}
+        symbol="BTCUSDT"
+        onCancel={vi.fn()}
+      />,
+    )
+    const badge = screen.getByTestId('pending-order-levels-c')
+    expect(badge.textContent).toBe('TP/SL')
+    expect(badge.getAttribute('title')).toContain('170')
+    expect(screen.queryByTestId('pending-order-levels-a')).toBeNull()
+    expect(screen.queryByTestId('pending-order-levels-b')).toBeNull()
+  })
+
 })

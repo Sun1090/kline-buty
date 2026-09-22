@@ -17,6 +17,10 @@ export interface Positions {
 
 export const EMPTY_POSITIONS: Positions = { long: null, short: null }
 
+/** 新开仓的参考止盈/止损百分比（没有随单价位时的兜底，改默认值只需改这里） */
+export const DEFAULT_TP_PCT = 3
+export const DEFAULT_SL_PCT = 2
+
 /** 方向对应槽位 key */
 export function slotFor(side: OrderSide): 'long' | 'short' {
   return side === 'buy' ? 'long' : 'short'
@@ -42,21 +46,33 @@ export function mergePosition(existing: Position | null | undefined, opened: Pos
 /**
  * J1 开仓/加仓（hedge mode）：只影响对应方向槽位。
  * 已有同方向持仓 → 加权合并；无持仓 → 新建并按百分比参考价给止盈/止损。
+ * `attach`（限价单随单价位）只在开出新槽位时顶掉参考价；加仓沿用用户既有价位线，
+ * 随单不该把它们重置掉（同 `mergePosition` 的口径）。
  */
 export function applyOrder(
   positions: Positions,
   side: OrderSide,
   price: number,
   qty: number,
-  tpPct = 3,
-  slPct = 2,
+  tpPct = DEFAULT_TP_PCT,
+  slPct = DEFAULT_SL_PCT,
+  attach?: { takeProfit: number | null; stopLoss: number | null } | null,
 ): Positions {
   const slot = slotFor(side)
   const existing = positions[slot]
   if (!existing) {
     const direction = side === 'buy' ? 'long' : 'short'
     const levels = suggestLevels(price, direction, tpPct, slPct)
-    return { ...positions, [slot]: { entry: price, quantity: qty, direction, takeProfit: levels.takeProfit, stopLoss: levels.stopLoss } }
+    return {
+      ...positions,
+      [slot]: {
+        entry: price,
+        quantity: qty,
+        direction,
+        takeProfit: attach?.takeProfit ?? levels.takeProfit,
+        stopLoss: attach?.stopLoss ?? levels.stopLoss,
+      },
+    }
   }
   return { ...positions, [slot]: mergePosition(existing, { ...existing, entry: price, quantity: qty }) }
 }
@@ -83,8 +99,8 @@ export function reverseSlot(
   positions: Positions,
   slot: 'long' | 'short',
   price: number,
-  tpPct = 3,
-  slPct = 2,
+  tpPct = DEFAULT_TP_PCT,
+  slPct = DEFAULT_SL_PCT,
 ): { next: Positions; closed: Position | null } {
   const closed = positions[slot]
   if (!closed) return { next: positions, closed: null }
