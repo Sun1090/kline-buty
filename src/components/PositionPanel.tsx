@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
 import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
 import { applyLevels, breakevenStop, type LevelError, type LevelInput } from '../position/levels'
-import { EMPTY_POSITIONS, planReduce, type Positions } from '../trade/positions'
+import { EMPTY_POSITIONS, mergePosition, planReduce, type Positions } from '../trade/positions'
 import type { PendingOrder } from '../trade/pending'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useI18n } from '../i18n/useI18n'
@@ -113,7 +113,8 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
       stopLoss: levelMode === 'pct' ? levels!.stopLoss : slNum,
       leverage,
     }
-    onChange({ ...positions, [direction]: pos })
+    // 同方向已有持仓 → 加仓合并（数量与均价相加，价位线沿用既有持仓），不覆盖旧仓
+    onChange({ ...positions, [direction]: mergePosition(positions[direction], pos) })
     setEntry('')
     setQuantity('')
   }

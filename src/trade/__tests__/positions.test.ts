@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_POSITIONS, applyOrder, hasAny, planReduce, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
+import { EMPTY_POSITIONS, applyOrder, hasAny, mergePosition, planReduce, reverseSlot, settleSlot, slotFor, totalQuantity, type Positions } from '../positions'
 import type { Position } from '../../position/pnl'
 
 const longPos: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
@@ -23,6 +23,34 @@ describe('positions（J1 双向持仓纯函数）', () => {
     const next = applyOrder(base, 'buy', 200, 2)
     expect(next.long!.quantity).toBe(4)
     expect(next.long!.entry).toBe(150) // (100×2 + 200×2)/4
+  })
+
+  it('applyOrder 加仓保留既有止盈/止损/移动止损：不按新均价重算默认线', () => {
+    const held: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 130, stopLoss: 118, trailPct: 1.5 }
+    const next = applyOrder({ long: held, short: null }, 'buy', 200, 2)
+    // 新均价 150，按默认 3%/2% 会给出 154.5 / 147 —— 那是把用户自己拖出来的线抹掉
+    expect(next.long).toEqual({ entry: 150, quantity: 4, direction: 'long', takeProfit: 130, stopLoss: 118, trailPct: 1.5 })
+  })
+
+  it('applyOrder 首次建仓仍按成交价给出百分比参考价', () => {
+    const next = applyOrder(EMPTY_POSITIONS, 'buy', 100, 2)
+    expect(next.long).toEqual({ entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 })
+  })
+
+  it('mergePosition：无既有持仓直接收下新仓；有则加权且沿用既有价位线与杠杆', () => {
+    const opened: Position = { entry: 200, quantity: 2, direction: 'long', takeProfit: 206, stopLoss: 196, leverage: 5 }
+    expect(mergePosition(null, opened)).toBe(opened)
+    expect(mergePosition(undefined, opened)).toBe(opened)
+    const existing: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 130, stopLoss: 118, trailPct: 1.5, leverage: 10 }
+    expect(mergePosition(existing, opened)).toEqual({
+      entry: 150,
+      quantity: 4,
+      direction: 'long',
+      takeProfit: 130,
+      stopLoss: 118,
+      trailPct: 1.5,
+      leverage: 10,
+    })
   })
 
   it('hedge：buy 单只影响 long 槽，不影响 short 槽', () => {
@@ -96,6 +124,8 @@ describe('reverseSlot（v0.5.x 反手）', () => {
     // 原 short 3 手 @100 + 新反向 2 手 @200 → (100×3 + 200×2)/5 = 140
     expect(next.short!.quantity).toBe(5)
     expect(next.short!.entry).toBe(140)
+    // 反向落进已有空仓：沿用该仓自己定的价位线（默认重算会是 135.8 / 142.8）
+    expect(next.short).toMatchObject({ takeProfit: 97, stopLoss: 103 })
   })
 
   it('空槽位 → 原样返回（不新建）', () => {
