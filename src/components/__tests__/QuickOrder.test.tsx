@@ -228,4 +228,25 @@ describe('QuickOrder 快速下单', () => {
     expect(handlers.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ type: 'limit', leverage: 1 }))
   })
 
+  it('两条随单价位都成立时显示隐含盈亏比（reward/risk），缺一即不显示', () => {
+    setup({ initialType: 'limit' })
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '130' } })
+    fireEvent.change(screen.getByTestId('qo-sl'), { target: { value: '90' } })
+    // 挂单价 100：reward 30 / risk 10 → 3.00
+    expect(screen.getByTestId('qo-rr').textContent).toContain('3.00')
+    // 只填止盈 → 无从谈风险，不显示
+    fireEvent.change(screen.getByTestId('qo-sl'), { target: { value: '' } })
+    expect(screen.queryByTestId('qo-rr')).toBeNull()
+    // 填了但站错一侧（买单止盈低于挂单价）→ 校验未过，不显示
+    fireEvent.change(screen.getByTestId('qo-sl'), { target: { value: '90' } })
+    fireEvent.change(screen.getByTestId('qo-tp'), { target: { value: '80' } })
+    expect(screen.queryByTestId('qo-rr')).toBeNull()
+  })
+
+  it('市价模式不渲染随单输入，也就无从显示盈亏比', () => {
+    setup()
+    expect(screen.queryByTestId('qo-tp')).toBeNull()
+    expect(screen.queryByTestId('qo-rr')).toBeNull()
+  })
+
 })
