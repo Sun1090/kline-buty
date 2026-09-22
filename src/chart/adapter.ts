@@ -70,7 +70,7 @@ import {
 import { snapToCandle, type SnapMode } from '../drawings/snap'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
-import { fmtAxisPrice } from '../utils/format'
+import { fmtAxisPrice, fmtPricePrecise } from '../utils/format'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
 
@@ -843,7 +843,7 @@ export class LightweightChartAdapter implements ChartApi {
         if (ap) {
           const d = new Date(anchor.time * 1000).toLocaleDateString()
           const t = new Date(anchor.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          this.drawLabel(ctx, ap.x, ap.y - 10, `📍 ${anchor.price.toFixed(2)} · ${d} ${t}`, 'left')
+          this.drawLabel(ctx, ap.x, ap.y - 10, `📍 ${fmtPricePrecise(anchor.price)} · ${d} ${t}`, 'left')
         }
       }
       // I14 拖拽辅助线：从被拖锚点沿当前指针位置画水平/垂直对齐参考虚线（价格/时间对齐）
@@ -950,7 +950,7 @@ export class LightweightChartAdapter implements ChartApi {
     ctx.save()
     ctx.font = `${this.fs(10)}px system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`
     ctx.textBaseline = 'bottom'
-    const label = `${p.price.toFixed(2)} · ${date} ${time}`
+    const label = `${fmtPricePrecise(p.price)} · ${date} ${time}`
     // 背景色块提升可读性
     ctx.fillStyle = this.theme.background
     const w = ctx.measureText(label).width + 8
@@ -1018,7 +1018,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.moveTo(0, a.y)
       ctx.lineTo(this.overlay.width / (window.devicePixelRatio || 1), a.y)
       ctx.stroke()
-      this.drawLabel(ctx, a.x, a.y, d.points[0].price.toFixed(2), 'left')
+      this.drawLabel(ctx, a.x, a.y, fmtPricePrecise(d.points[0].price), 'left')
       if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
@@ -1047,7 +1047,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.moveTo(a.x, 0)
       ctx.lineTo(a.x, h)
       ctx.stroke()
-      this.drawLabel(ctx, a.x, a.y, `${d.points[0].price.toFixed(2)} · ${new Date(d.points[0].time * 1000).toLocaleDateString()}`, 'left')
+      this.drawLabel(ctx, a.x, a.y, `${fmtPricePrecise(d.points[0].price)} · ${new Date(d.points[0].time * 1000).toLocaleDateString()}`, 'left')
       if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
@@ -1133,7 +1133,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.beginPath()
       ctx.arc(a.x, a.y, 3, 0, Math.PI * 2)
       ctx.fill()
-      this.drawLabel(ctx, a.x, a.y, d.points[0].price.toFixed(2), 'left')
+      this.drawLabel(ctx, a.x, a.y, fmtPricePrecise(d.points[0].price), 'left')
       if (selected) this.drawAnchor(ctx, a.x, a.y)
       return
     }
@@ -1223,7 +1223,7 @@ export class LightweightChartAdapter implements ChartApi {
           ctx.moveTo(x0, y)
           ctx.lineTo(x1, y)
           ctx.stroke()
-          this.drawLabel(ctx, x0, y, `${level.toFixed(3)} ${price.toFixed(2)}`, isExt ? 'right' : 'left')
+          this.drawLabel(ctx, x0, y, `${level.toFixed(3)} ${fmtPricePrecise(price)}`, isExt ? 'right' : 'left')
         }
         // 摆幅框
         ctx.strokeStyle = userColor + '66'
@@ -1450,7 +1450,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.lineTo(w, p.y)
         ctx.stroke()
         const price = p === p1 ? d.points[0].price : d.points[1].price
-        this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
+        this.drawLabel(ctx, 0, p.y, fmtPricePrecise(price), 'left')
         if (selected) {
           // 锚点必须画在时间投影处：nearestAnchor 按同一投影点判定，x=0 会导致可见锚点不可拖。
           // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
@@ -1557,7 +1557,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.lineTo(w, p.y)
         ctx.stroke()
         const price = p === p1 ? d.points[0].price : d.points[1].price
-        this.drawLabel(ctx, 0, p.y, price.toFixed(2), 'left')
+        this.drawLabel(ctx, 0, p.y, fmtPricePrecise(price), 'left')
         if (selected) {
           // 锚点必须画在时间投影处：nearestAnchor 按同一投影点判定，x=0 会导致可见锚点不可拖。
           // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
@@ -1585,8 +1585,8 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.strokeStyle = selected ? '#4e9cf5' : userColor
       ctx.lineWidth = selected ? 1.6 : 1
       ctx.strokeRect(left, top, right - left, bottom - top)
-      this.drawLabel(ctx, left, top, Math.max(pa.price, pb.price).toFixed(2), 'left')
-      this.drawLabel(ctx, left, bottom, Math.min(pa.price, pb.price).toFixed(2), 'left')
+      this.drawLabel(ctx, left, top, fmtPricePrecise(Math.max(pa.price, pb.price)), 'left')
+      this.drawLabel(ctx, left, bottom, fmtPricePrecise(Math.min(pa.price, pb.price)), 'left')
       const info = priceRangeInfo(pa, pb)
       this.drawLabel(ctx, (left + right) / 2, top - 8, `+${info.diff.toFixed(2)} (+${info.pct.toFixed(2)}%)`, 'left')
       if (selected) {
@@ -1627,7 +1627,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.stroke()
         ctx.setLineDash([])
         const tag = i === 0 ? 'E' : i === 1 ? 'S' : 'T'
-        this.drawLabel(ctx, pt.x + 4, pt.y, `${tag}:${p!.price.toFixed(2)}`, 'left')
+        this.drawLabel(ctx, pt.x + 4, pt.y, `${tag}:${fmtPricePrecise(p!.price)}`, 'left')
         if (selected) {
           ctx.fillStyle = '#4e9cf5'
           this.drawAnchor(ctx, pt.x, pt.y)
@@ -1733,7 +1733,7 @@ export class LightweightChartAdapter implements ChartApi {
         ctx.lineTo(w, pt.y)
         ctx.stroke()
         ctx.setLineDash([])
-        this.drawLabel(ctx, 0, pt.y, p!.price.toFixed(2), 'left')
+        this.drawLabel(ctx, 0, pt.y, fmtPricePrecise(p!.price), 'left')
         if (selected) {
           // 锚点必须画在时间投影处：nearestAnchor 按同一投影点判定，x=0 会导致可见锚点不可拖。
           // drawLabel 结尾会把 fillStyle 改为黄色；锚点必须显式恢复选中蓝。
@@ -2048,7 +2048,7 @@ export class LightweightChartAdapter implements ChartApi {
       ctx.moveTo(a.x, a.y)
       ctx.lineTo(w + 2, a.y)
       ctx.stroke()
-      this.drawLabel(ctx, a.x, a.y, d.points[0].price.toFixed(2), 'left')
+      this.drawLabel(ctx, a.x, a.y, fmtPricePrecise(d.points[0].price), 'left')
       for (const pt of [a, b]) this.drawAnchor(ctx, pt.x, pt.y)
       return
     }
