@@ -1,5 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { adjacentSymbols, prefetchSymbol } from '../usePrefetch'
+// @vitest-environment jsdom
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
+import { adjacentSymbols, prefetchSymbol, usePrefetch } from '../usePrefetch'
 
 const LIST = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT']
 
@@ -76,6 +78,25 @@ describe('prefetchSymbol（O7 覆盖预取三态）', () => {
     ;(readCachedCandles as ReturnType<typeof vi.fn>).mockReturnValue(null)
     ;(fetchKlines as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network'))
     await expect(prefetchSymbol('BTCUSDT', '1m')).resolves.toBeUndefined()
+    expect(writeCachedCandles).not.toHaveBeenCalled()
+  })
+
+})
+
+describe('usePrefetch ?perf 压测模式', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/?perf=600')
+  })
+  afterEach(() => {
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('压测模式下不预取相邻品种历史（契约：?perf 不联网）', async () => {
+    renderHook(() => usePrefetch('BTCUSDT', '1m'))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20))
+    })
+    expect(fetchKlines).not.toHaveBeenCalled()
     expect(writeCachedCandles).not.toHaveBeenCalled()
   })
 })
