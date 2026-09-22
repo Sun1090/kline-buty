@@ -21,13 +21,22 @@ async function lastPrice(page: Page): Promise<number> {
   return value
 }
 
-/** 从盘口买档打开快速下单 → 切限价模式 → 按给定价格/数量提交 */
+/**
+ * 从图表右键「挂限价买入」打开快速下单 → 按给定价格/数量提交。
+ * 不走盘口：订单簿依赖实时深度流，CI 运行器上拿不到数据（该作业只跑 ?perf 确定性规格），
+ * 而图表右键入口同样直达限价模式，且只依赖合成 K 线。
+ */
 async function placeLimitBuy(page: Page, price: number, qty: number) {
-  await ensurePanel(page, '盘口', 'order-book')
-  await page.getByTestId('ob-bid').first().getByTestId('qo-buy').click()
+  const chart = page.locator('.chart-container').first()
+  const box = await chart.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+  await chart.click({ button: 'right', position: { x: box.width * 0.5, y: box.height * 0.5 } })
+  await page.getByTestId('ctx-limit-buy').click()
   const order = page.getByTestId('quick-order')
   await expect(order).toBeVisible()
-  await order.getByTestId('qo-type-limit').click()
+  // 右键入口已处于限价模式，价位随后按入参覆写
+  await expect(order.getByTestId('qo-type-limit')).toHaveAttribute('aria-pressed', 'true')
   await order.getByTestId('qo-price').fill(String(price))
   await order.getByTestId('qo-qty').fill(String(qty))
   await order.getByTestId('qo-confirm').click()
@@ -88,7 +97,7 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     await ensurePanel(page, '交易流水', 'trade-history-panel')
     await page.getByTestId('trade-maker-fee-rate').fill('0.5')
     await expect(page.getByTestId('trade-maker-fee-rate')).toHaveValue('0.5')
-    // 流水浮层会盖住侧栏盘口的买入按钮（点击被拦截），配置完先收起
+    // 流水浮层会盖住图表（右键点不到），配置完先收起
     await openMore(page)
     await page.getByRole('button', { name: '交易流水' }).click()
     await expect(page.getByTestId('trade-history-panel')).toHaveCount(0)
