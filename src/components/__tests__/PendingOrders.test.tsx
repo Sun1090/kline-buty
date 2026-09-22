@@ -38,6 +38,57 @@ describe('PendingOrders 挂单列表', () => {
     expect(onSwitchSymbol).toHaveBeenCalledWith('ETHUSDT')
   })
 
+  it('未提供 onEdit 时不渲染改价入口', () => {
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} />)
+    expect(screen.queryByTestId('pending-order-edit-a')).toBeNull()
+  })
+
+  it('改价：展开即预填该单的价格与数量，确认按解析后的数值回调并收起', () => {
+    const onEdit = vi.fn(() => true)
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} onEdit={onEdit} />)
+    fireEvent.click(screen.getByTestId('pending-order-edit-a'))
+    const editor = screen.getByTestId('pending-order-editor-a')
+    expect(editor).toBeTruthy()
+    const price = screen.getByTestId('pending-order-price-a') as HTMLInputElement
+    const qty = screen.getByTestId('pending-order-qty-a') as HTMLInputElement
+    expect(price.value).toBe('60000')
+    expect(qty.value).toBe('0.5')
+    fireEvent.change(price, { target: { value: '58000' } })
+    fireEvent.change(qty, { target: { value: '0.25' } })
+    fireEvent.click(screen.getByTestId('pending-order-edit-confirm-a'))
+    expect(onEdit).toHaveBeenCalledWith('a', { price: 58000, qty: 0.25 })
+    expect(screen.queryByTestId('pending-order-editor-a')).toBeNull()
+  })
+
+  it('改价：数量非法直接拦截，不回调', () => {
+    const onEdit = vi.fn(() => true)
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} onEdit={onEdit} />)
+    fireEvent.click(screen.getByTestId('pending-order-edit-a'))
+    fireEvent.change(screen.getByTestId('pending-order-qty-a'), { target: { value: '0' } })
+    fireEvent.click(screen.getByTestId('pending-order-edit-confirm-a'))
+    expect(onEdit).not.toHaveBeenCalled()
+    expect(screen.getByTestId('pending-order-edit-error')).toBeTruthy()
+    expect(screen.getByTestId('pending-order-editor-a')).toBeTruthy()
+  })
+
+  it('改价：onEdit 返回 false（单已被撮合/撤销）→ 报错且编辑器仍在', () => {
+    const onEdit = vi.fn(() => false)
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} onEdit={onEdit} />)
+    fireEvent.click(screen.getByTestId('pending-order-edit-a'))
+    fireEvent.click(screen.getByTestId('pending-order-edit-confirm-a'))
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('pending-order-edit-error')).toBeTruthy()
+  })
+
+  it('改价：取消按钮收起编辑器且不回调', () => {
+    const onEdit = vi.fn(() => true)
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} onEdit={onEdit} />)
+    fireEvent.click(screen.getByTestId('pending-order-edit-b'))
+    fireEvent.click(screen.getByTestId('pending-order-edit-cancel-b'))
+    expect(screen.queryByTestId('pending-order-editor-b')).toBeNull()
+    expect(onEdit).not.toHaveBeenCalled()
+  })
+
   it('空列表展示空态与 0 计数', () => {
     render(<PendingOrders orders={[]} symbol="BTCUSDT" onCancel={vi.fn()} />)
     expect(screen.queryAllByTestId('pending-order-row')).toHaveLength(0)

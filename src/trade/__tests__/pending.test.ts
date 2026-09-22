@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ORDERS_PER_SYMBOL_MAX,
   canAddOrder,
+  editPendingOrder,
   createPendingOrder,
   fillFeeRate,
   fillsAt,
@@ -232,5 +233,27 @@ describe('planFills 按单取费率', () => {
     expect(planFills([maker, taker], 101.05, rateOf).accepted.map((a) => a.order.id)).toEqual(['m'])
     // 同为 100.1 时 Maker 刚好承接、Taker 承接不下
     expect(planFills([taker], 100.1, rateOf).accepted).toEqual([])
+  })
+})
+
+describe('editPendingOrder 改价', () => {
+  const list = [order({ id: 'a', price: 100, qty: 1 }), order({ id: 'b', side: 'sell', price: 200, qty: 2 })]
+
+  it('只换价格与数量：id/品种/方向/入单时刻与列表顺序不变', () => {
+    const next = editPendingOrder(list, 'b', { price: 260, qty: 0.5 })
+    expect(next).not.toBeNull()
+    expect(next!.map((o) => o.id)).toEqual(['a', 'b'])
+    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000 })
+    expect(next![0]).toBe(list[0]) // 未改动的条目保持原引用
+  })
+
+  it('订单不存在 → null（不改列表）', () => {
+    expect(editPendingOrder(list, 'nope', { price: 1, qty: 1 })).toBeNull()
+  })
+
+  it('价格或数量非法 → null：非正、0、NaN、Infinity', () => {
+    for (const patch of [{ price: 0, qty: 1 }, { price: -5, qty: 1 }, { price: Number.NaN, qty: 1 }, { price: 100, qty: 0 }, { price: 100, qty: -1 }, { price: 100, qty: Number.POSITIVE_INFINITY }]) {
+      expect(editPendingOrder(list, 'a', patch)).toBeNull()
+    }
   })
 })

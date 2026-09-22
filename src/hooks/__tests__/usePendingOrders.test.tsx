@@ -69,6 +69,32 @@ describe('usePendingOrders', () => {
     expect(JSON.parse(localStorage.getItem(KEY) ?? '[]')).toHaveLength(1)
   })
 
+  it('edit 改价：列表与存储同步，只动价格与数量', () => {
+    localStorage.setItem(KEY, JSON.stringify([order('a', { price: 100, qty: 1 }), order('b', { price: 200, qty: 2 })]))
+    const { result } = renderHook(() => usePendingOrders())
+    let ok = false
+    act(() => {
+      ok = result.current.edit('b', { price: 260, qty: 0.5 })
+    })
+    expect(ok).toBe(true)
+    expect(result.current.orders.map((o) => [o.id, o.price, o.qty])).toEqual([
+      ['a', 100, 1],
+      ['b', 260, 0.5],
+    ])
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '[]')).toEqual(result.current.orders)
+  })
+
+  it('edit 非法或订单不存在 → false 且列表不动', () => {
+    localStorage.setItem(KEY, JSON.stringify([order('a', { price: 100, qty: 1 })]))
+    const { result } = renderHook(() => usePendingOrders())
+    act(() => {
+      expect(result.current.edit('a', { price: 0, qty: 1 })).toBe(false)
+      expect(result.current.edit('ghost', { price: 120, qty: 1 })).toBe(false)
+    })
+    expect(result.current.orders.map((o) => [o.price, o.qty])).toEqual([[100, 1]])
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '[]')).toHaveLength(1)
+  })
+
   it('clear 清空列表与存储', () => {
     localStorage.setItem(KEY, JSON.stringify([order('a')]))
     const { result } = renderHook(() => usePendingOrders())

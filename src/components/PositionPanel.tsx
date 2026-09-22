@@ -32,6 +32,8 @@ interface PositionPanelProps {
   symbol?: string
   pendingOrders?: PendingOrder[]
   onCancelOrder?: (id: string) => void
+  /** 挂单改价：返回 false 表示未受理，行内报错 */
+  onEditOrder?: (id: string, patch: { price: number; qty: number }) => boolean
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -52,7 +54,7 @@ const DIRECTION_ROW: { key: 'long' | 'short'; label: 'position.long' | 'position
   { key: 'short', label: 'position.short' },
 ]
 
-export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, onReduce, todayPnl, symbol, pendingOrders, onCancelOrder }: PositionPanelProps) {
+export function PositionPanel({ positions, currentPrice, balance, onChange, otherSymbols, onSwitchSymbol, onSettleSymbol, onReverse, onReduce, todayPnl, symbol, pendingOrders, onCancelOrder, onEditOrder }: PositionPanelProps) {
   const { t } = useI18n()
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
@@ -632,6 +634,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
           orders={pendingOrders}
           symbol={symbol ?? ''}
           onCancel={onCancelOrder}
+          onEdit={onEditOrder}
           onSwitchSymbol={onSwitchSymbol}
         />
       )}
