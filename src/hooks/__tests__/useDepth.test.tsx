@@ -51,6 +51,41 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+describe('useDepth ?perf 合成盘口', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/?perf=600')
+  })
+  afterEach(() => {
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('压测模式不开 WS：档位由合成中价铺出，随中价更新', async () => {
+    const { result, rerender } = renderHook(({ mid }: { mid: number | null }) => useDepth('BTCUSDT', 0, mid), {
+      initialProps: { mid: 50_000 },
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(FakeWs.instances).toHaveLength(0)
+    expect(result.current).not.toBeNull()
+    const firstBid = result.current!.bids[0].price
+    expect(firstBid).toBeLessThan(50_000)
+
+    rerender({ mid: 60_000 })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current!.bids[0].price).toBeGreaterThan(firstBid)
+    expect(FakeWs.instances).toHaveLength(0)
+  })
+
+  it('中价尚未就绪时保持无盘口（不铺假档位）', () => {
+    const { result } = renderHook(() => useDepth('BTCUSDT', 0, null))
+    expect(result.current).toBeNull()
+    expect(FakeWs.instances).toHaveLength(0)
+  })
+})
+
 describe('useDepth（盘口深度 WS）', () => {
   it('收到深度消息 → snapshot 更新（O7 覆盖数据分支）', async () => {
     const { result } = renderHook(() => useDepth('BTCUSDT'))
