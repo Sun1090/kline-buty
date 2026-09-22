@@ -592,3 +592,27 @@ test.describe('v0.5.x 快速下单面板窄屏几何', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
   })
 })
+
+test.describe('v0.5.x 行情信息条窄屏几何', () => {
+  test('320px：信息条换行而不是横向滚动，最新价与配置入口都在视口内', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    await page.setViewportSize({ width: 320, height: 720 })
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    // 信息条本身：容器 scrollWidth 不得大于 clientWidth（溢出即横向滚动）
+    const strip = page.locator('[data-testid="live-price"]').locator('xpath=ancestor::*[@role="region"][1]')
+    await expect(strip).toBeVisible()
+    const geo = await strip.evaluate((el) => {
+      const box = el as HTMLElement
+      return { overflow: box.scrollWidth - box.clientWidth, h: Math.round(box.getBoundingClientRect().height) }
+    })
+    expect(geo.overflow).toBeLessThanOrEqual(1)
+    // 换行后信息条变高（单行约 24px）：证明是折行而不是把内容挤掉
+    expect(geo.h).toBeGreaterThan(28)
+
+    await expect(page.getByTestId('live-price')).toBeInViewport()
+    await expect(page.getByTestId('statsbar-config-toggle')).toBeInViewport()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
+  })
+})
