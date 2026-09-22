@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { DepthRow } from '../depth/aggregate'
 import { buildDepthWsUrls, detectMode, readCustomBases, toCoinMSymbol } from '../data/binance/endpoints'
+import { isPerfMode } from '../data/synthetic'
+import { generateSyntheticDepth } from '../data/syntheticDepth'
 
 export interface DepthSnapshot {
   bids: DepthRow[]
@@ -18,11 +20,19 @@ const RECONNECT_MS = 2000
  * 盘口深度：WS depth20@100ms 实时流（代理/直连自动探测）。
  * 直连模式候选链：spot stream 优先，连接失败/超时/首消息超时回退 USDT-M 期货流（流名同构），
  * 解决部分网络环境 spot WS 被阻断导致盘口/深度无数据的问题。
+ * `?perf` 压测模式下不开 WS：档位由 `perfMid`（当前合成价）铺出，保持「压测不联网」契约。
  */
-export function useDepth(symbol: string, reloadNonce = 0): DepthSnapshot | null {
+export function useDepth(symbol: string, reloadNonce = 0, perfMid?: number | null): DepthSnapshot | null {
   const [snapshot, setSnapshot] = useState<DepthSnapshot | null>(null)
+  const perf = isPerfMode()
 
   useEffect(() => {
+    if (!perf) return
+    setSnapshot(generateSyntheticDepth(perfMid))
+  }, [perf, symbol, perfMid])
+
+  useEffect(() => {
+    if (perf) return
     let alive = true
     let ws: WebSocket | null = null
     let reconnectTimer: number | undefined
@@ -121,7 +131,7 @@ export function useDepth(symbol: string, reloadNonce = 0): DepthSnapshot | null 
       window.clearTimeout(connectTimer)
       window.clearTimeout(firstMsgTimer)
     }
-  }, [symbol, reloadNonce])
+  }, [symbol, reloadNonce, perf])
 
   return snapshot
 }

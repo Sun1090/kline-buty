@@ -606,7 +606,8 @@ export function App() {
   }, [alertsApi.alerts, lang])
   // G12 盘口手动刷新：递增 nonce 触发 useDepth 重连拉取最新快照
   const [depthReload, setDepthReload] = useState(0)
-  const depth = useDepth(symbol, depthReload)
+  // ?perf 压测模式不开 WS：把合成价交给 hook 铺档位（保持「压测不联网」契约）
+  const depth = useDepth(symbol, depthReload, candles[candles.length - 1]?.close ?? stats.price)
   const sentiment = useSentiment(symbol)
   const drawings = drawingsBySymbol[symbol] ?? []
 

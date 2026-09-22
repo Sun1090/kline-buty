@@ -328,7 +328,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
 
 /** 带盘口的快捷下单面板：仅在挂载期间（面板打开时）订阅深度 WS，取买一/卖一供一键填价 */
 export function QuickOrderWithDepth(props: Omit<QuickOrderProps, 'bid' | 'ask'>) {
-  const snapshot = useDepth(props.symbol)
+  const snapshot = useDepth(props.symbol, 0, props.price)
   const bid = snapshot?.bids[0]?.price ?? null
   const ask = snapshot?.asks[0]?.price ?? null
   return <QuickOrder {...props} bid={bid} ask={ask} />

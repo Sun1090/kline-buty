@@ -41,6 +41,32 @@ test.describe('2026-08 新功能回归', () => {
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
   })
 
+  test('盘口在 ?perf 压测模式下走合成档位：两端都有数据、价差与失衡可算', async ({ page }) => {
+    // 压测模式的契约是「数据源全部合成、不联网」：深度此前仍去连真实 WS，
+    // 于是无网络的运行器上盘口整块空着，依赖档位下单的用例也进不了确定性清单。
+    await openMore(page)
+    await page.getByRole('button', { name: '盘口' }).click()
+    const book = page.getByTestId('order-book')
+    await expect(book).toBeVisible()
+    // 档位会按聚合粒度合并，行数不必等于原始 20 档；两端成规模地有数据即可
+    await expect(page.getByTestId('ob-bid')).not.toHaveCount(0)
+    await expect(page.getByTestId('ob-ask')).not.toHaveCount(0)
+    expect(await page.getByTestId('ob-bid').count()).toBeGreaterThan(4)
+    expect(await page.getByTestId('ob-ask').count()).toBeGreaterThan(4)
+    // 买一 < 卖一：价差为正且显示出来
+    const bestBid = Number((await page.getByTestId('ob-bid').first().getAttribute('data-price')) ?? '0')
+    const bestAsk = Number((await page.getByTestId('ob-ask').first().getAttribute('data-price')) ?? '0')
+    expect(bestBid).toBeGreaterThan(0)
+    expect(bestAsk).toBeGreaterThan(bestBid)
+    await expect(page.getByTestId('ob-spread')).toContainText(/[\d.,]+/)
+    await expect(page.getByTestId('ob-imbalance')).toBeVisible()
+    // 合成档位随最新价走：不是一次性快照
+    const first = await page.getByTestId('ob-bid').first().getAttribute('data-price')
+    await expect
+      .poll(async () => await page.getByTestId('ob-bid').first().getAttribute('data-price'), { timeout: 15_000 })
+      .not.toBe(first)
+  })
+
   test('模拟交易：档位填价、百分比仓位、余额撮合、流水持久化与清空', async ({ page }) => {
     await openMore(page)
     await page.getByRole('button', { name: '盘口' }).click()
