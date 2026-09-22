@@ -103,8 +103,13 @@ export function decodePng(buf: Buffer): { width: number; height: number; data: U
   return { width, height, data }
 }
 
-export async function waitCandlesRendered(page: Page) {
-  const hasCandles = () =>
+/**
+ * 等图表真正可用：画布出现红绿像素，且已入仓 K 线根数达标。
+ * 只判像素会被「首根 WS tick 先到、历史 K 线还在路上」骗过——那时图上只有一两根柱子，
+ * 画线手势因换不出时间被正当丢弃，用例就表现为「删除按钮等不到」的偶发红。
+ */
+export async function waitCandlesRendered(page: Page, minBars = 60) {
+  const hasCandlePixels = () =>
     page.waitForFunction(
       () => {
         const cs = [...document.querySelectorAll('canvas')]
@@ -127,13 +132,20 @@ export async function waitCandlesRendered(page: Page) {
       },
       { timeout: 30_000 },
     )
+  const ready = async () => {
+    await hasCandlePixels()
+    await expect.poll(
+      async () => Number(await page.locator('.chart-container').first().getAttribute('data-candles')) || 0,
+      { message: `K 线根数未达 ${minBars}，图表仍在加载历史数据`, timeout: 30_000 },
+    ).toBeGreaterThanOrEqual(minBars)
+  }
   try {
-    await hasCandles()
+    await ready()
   } catch {
     // 首次冷启动直连币安偶发慢：刷新页面重试一次
     await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    await hasCandles()
+    await ready()
   }
 }
 
