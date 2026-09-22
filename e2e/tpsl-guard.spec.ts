@@ -149,6 +149,41 @@ test.describe('v0.5 止盈止损结算', () => {
     expect(positions.BTCUSDT.long).toBeNull()
   })
 
+  test('同方向加仓：均价与数量合并，自己定的止盈/止损线不被重置', async ({ page }) => {
+    await page.addInitScript(
+      ([key, payload]) => localStorage.setItem(key, JSON.stringify({ BTCUSDT: { long: payload, short: null } })),
+      [
+        POSITIONS_KEY,
+        { entry: 40_000, quantity: 0.002, direction: 'long', takeProfit: 90_000, stopLoss: 47_000 },
+      ] as const,
+    )
+    await page.goto('/?perf=600&period=1m')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const market = Number((await page.getByTestId('live-price').innerText()).replace(/[^\d.]/g, ''))
+
+    const panel = await openPositionPanel(page)
+    await panel.getByRole('button', { name: '开多', exact: true }).click()
+    const inputs = panel.locator('input')
+    // 开仓价交给输入框「聚焦即填现价」；数量加 0.001（表单默认止盈 3% / 止损 2%）
+    await inputs.nth(0).click()
+    await inputs.nth(1).fill('0.001')
+    await page.getByRole('button', { name: '开仓', exact: true }).click()
+
+    type Held = { BTCUSDT: { long: { entry: number; quantity: number; takeProfit: number; stopLoss: number } } }
+    await expect
+      .poll(async () => ((await stored(page, POSITIONS_KEY)) as Held).BTCUSDT.long?.quantity ?? 0)
+      .toBeCloseTo(0.003, 12)
+    const held = (await stored(page, POSITIONS_KEY)) as Held
+    // 均价上移但仍低于现价；两条线保持用户设定值——按新均价重算会得到 ≈44.9k / 42.7k
+    expect(held.BTCUSDT.long.entry).toBeGreaterThan(40_000)
+    expect(held.BTCUSDT.long.entry).toBeLessThan(market)
+    expect(held.BTCUSDT.long.takeProfit).toBe(90_000)
+    expect(held.BTCUSDT.long.stopLoss).toBe(47_000)
+    // 加仓不是结算：不该出现平仓流水
+    const rows = (((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close')
+    expect(rows).toHaveLength(0)
+  })
+
 /** 打开「仓位」面板：桌面走 header-more，窄屏（<768px）走 mobile-more 弹层 */
 async function openPositionPanel(page: Page) {
   const desktop = page.getByTestId('header-more')

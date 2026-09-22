@@ -34,6 +34,19 @@ describe('PositionPanel', () => {
     expect(p.long).toEqual(expect.objectContaining({ entry: 100, quantity: 2, direction: 'long' }))
   })
 
+  it('已有同方向持仓再开仓 → 加仓合并：均价与数量相加，价位线沿用既有持仓', () => {
+    const onChange = vi.fn()
+    const held: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 130, stopLoss: 118, trailPct: 1.5 }
+    render(<PositionPanel positions={{ long: held, short: null }} currentPrice={63000} onChange={onChange} />)
+    const inputs = screen.getAllByDisplayValue('')
+    fireEvent.change(inputs[0], { target: { value: '200' } })
+    fireEvent.change(inputs[1], { target: { value: '2' } })
+    fireEvent.click(screen.getByText('开仓'))
+    const p = onChange.mock.calls[0][0] as { long: Position | null }
+    // 表单默认 3%/2% 会给出 206/196：合并按既有持仓的线，不按新均价重算
+    expect(p.long).toEqual({ entry: 150, quantity: 4, direction: 'long', takeProfit: 130, stopLoss: 118, trailPct: 1.5 })
+  })
+
   it('开空：TP 低于入场，写入 short 槽', () => {
     const onChange = vi.fn()
     render(<PositionPanel positions={EMPTY_POSITIONS} currentPrice={63000} onChange={onChange} />)

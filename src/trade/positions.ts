@@ -28,8 +28,20 @@ export function oppositeSlot(slot: 'long' | 'short'): 'long' | 'short' {
 }
 
 /**
+ * 同方向合并：数量相加、开仓价按数量加权，价位线（止盈/止损/移动止损）与杠杆沿用既有持仓——
+ * 那几条线是用户行内编辑或图上拖出来的，加一注不该把它们重置回表单默认值。
+ * 无既有持仓则原样收下新仓。
+ */
+export function mergePosition(existing: Position | null | undefined, opened: Position): Position {
+  if (!existing) return opened
+  const quantity = existing.quantity + opened.quantity
+  const entry = (existing.entry * existing.quantity + opened.entry * opened.quantity) / quantity
+  return { ...existing, entry, quantity }
+}
+
+/**
  * J1 开仓/加仓（hedge mode）：只影响对应方向槽位。
- * 已有同方向持仓 → 加权合并；无持仓 → 新建。
+ * 已有同方向持仓 → 加权合并；无持仓 → 新建并按百分比参考价给止盈/止损。
  */
 export function applyOrder(
   positions: Positions,
@@ -46,11 +58,7 @@ export function applyOrder(
     const levels = suggestLevels(price, direction, tpPct, slPct)
     return { ...positions, [slot]: { entry: price, quantity: qty, direction, takeProfit: levels.takeProfit, stopLoss: levels.stopLoss } }
   }
-  // 同方向加权合并
-  const newQty = existing.quantity + qty
-  const newEntry = (existing.entry * existing.quantity + price * qty) / newQty
-  const levels = suggestLevels(newEntry, existing.direction, tpPct, slPct)
-  return { ...positions, [slot]: { ...existing, entry: newEntry, quantity: newQty, takeProfit: levels.takeProfit, stopLoss: levels.stopLoss } }
+  return { ...positions, [slot]: mergePosition(existing, { ...existing, entry: price, quantity: qty }) }
 }
 
 /**
