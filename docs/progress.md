@@ -5,7 +5,35 @@
 
 ## 当前阶段
 
-**里程碑 v0.5.27 发布完成（2026-09-22）**
+**里程碑 v0.5.28 发布完成（2026-09-23）**
+- 版本号：**0.5.28**（package.json / package-lock 根两处 / index.html meta `app-version`）
+- 分支：`release/v0.5.28`；发布 PR：**#156**（rebase 合并 → main **53b7ed7**，合并后即删远端分支）
+- 本版收录（v0.5.27 之后合并的批次，明细见下）：#151 单测超时预算、#152 e2e 纳入类型检查（含一条
+  从未生效的 `expect.poll` 选项 → 空转断言）、**#153 留白里的画线点击不再被静默丢弃 + 拖拽起点不再用
+  `0` 兜底**、#154 画线命中族最后两处固定像素
+- tag：Release Tag workflow 自动打 **tag v0.5.28** @ 53b7ed7（run 35774975247，幂等不覆盖旧 tag）
+- 定档门禁：`npm run precheck` **All checks passed in 92.8s**（typecheck 含 e2e 工程 / lint 0 error /
+  `audit:i18n` / 单测 **1960**（172 files）/ 含 docs 站合并的完整构建）；
+  本地全量 chromium E2E（复用该构建产物，`--retries=2`）**214 passed / 0 failed / 0 flaky，10.2m**
+  ——对照 v0.5.27 定档时的 210 passed / 2 flaky / 1 failed，这次没有轮换红也没有需要重生成的视觉基线；
+  发布 PR CI 三浏览器 E2E 一次通过
+- 部署与 live 抽查（Pages run 35774975215 success @ 53b7ed7）：
+  - 首页 200 且 meta `app-version=0.5.28`，bundle 换成 `assets/index-BGnsK3CB.js`
+  - 真浏览器线上（1280×800）选「垂直线」→ 在右缘留白 x=1220 单击 → **落库 1 条**、
+    overlay 竖线扫到 1217 列（点击列 ±3px）、`pageerror` 0：#153 的修复在线上生效
+  - Vercel 侧仍是账号级 **build-rate-limit**（`upgradeToPro=build-rate-limit`，提示 24h 后重试），
+    配额恢复的下一次构建自然追上；Pages 是主部署，不阻塞本版
+- 风险 / 回滚：**数据结构未变**（画线仍是 `{ id, type, points:[{time, price}] }`，提醒/挂单/仓位字段
+  未动），无迁移脚本。唯一的新取值域是「锚点时间可以晚于最新一根」：回滚到 0.5.27 后这些线读作
+  `timeToCoordinate → null` 而静默不画，不报错、不影响其他线——用户视角是「那几条线消失了」，
+  故回滚前提示用快照画廊导出画线。回滚 = `git revert` release 提交 53b7ed7；远端 tag 误打用 `gh api` 删除
+- 同批文档 PR：**#155**（本文件「v0.5.27 之后」批次记录 + 本版发布记录）。其 CI 首跑红在
+  `[webkit] period-anchor A2`（`点「回到最新」应让按钮消失`，45s 预算用尽），与 v0.5.27 发布 PR 上
+  同名同点的那条一致；**重跑失败作业 → 15m24s 全绿**，其余七项首跑即绿。本 PR 只改 `docs/progress.md`，
+  不含任何代码路径
+- 下一里程碑：**v0.5.x 继续**，排队项见上一节的 ③④⑤⑥
+
+**v0.5.27 之后（v0.5.28 候补批次，2026-09-23）**
 - 版本号：**0.5.27**（package.json / package-lock 根两处 / index.html meta `app-version`）
 - 分支：`release/v0.5.27`；发布 PR：**#148**（rebase 合并 → main **b7ea36d**，合并后即删远端分支）
 - 本版收录（v0.5.26 之后合并的批次，明细见下）：#136 右键菜单价位收口、#139 提醒价按价段自适应、
