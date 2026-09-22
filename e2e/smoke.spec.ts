@@ -711,21 +711,24 @@ test.describe('K 线应用冒烟', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     await openMore(page)
     await page.getByRole('button', { name: '仓位' }).click()
     await expect(page.getByText('模拟仓位')).toBeVisible()
     await page.getByRole('button', { name: '开空' }).click()
     const inputs = page.getByRole('region', { name: '模拟仓位' }).locator('input')
-    await inputs.nth(0).fill('100')
-    await inputs.nth(1).fill('1')
+    // 开仓价交给输入框自身的「聚焦即填现价」：真实行情下写死价格既会失真，
+    // 也会被 v0.5.24 起的触价结算立刻平掉；数量按现价留足 10,000 模拟余额
+    await inputs.nth(0).click()
+    await inputs.nth(1).fill('0.05')
     // 填价后止盈/止损参考价行出现（表单有效时预览；开仓后表单清空会隐藏，须在开仓前断言）
     await expect(page.getByText('止盈线', { exact: false })).toBeVisible()
     await page.getByRole('button', { name: '开仓' }).click()
     const posRow = page.getByTestId('position-row-short')
     await expect(posRow).toBeVisible()
     await expect(posRow).toContainText(/-?\d+(\.\d+)?/)
-    // 平仓（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
-    await posRow.getByRole('button').click()
+    // 平仓：行内现有 平仓/反手/止盈止损 三个按钮，按可及名称取「平仓」（作用域在行内，不会命中「全部平仓」）
+    await posRow.getByRole('button', { name: '平仓 开空' }).click()
     await expect(page.getByRole('button', { name: '开仓' })).toBeVisible()
   })
 
@@ -5905,6 +5908,8 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
+  // 开仓价靠输入框聚焦时自动填现价 → 必须先等到实时价到位，否则按钮一直禁用
+  await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
   // 展开「更多」面板，点「仓位」
   await page.getByTestId('header-more').click()
   await page.getByRole('button', { name: '仓位', exact: true }).click()
@@ -5912,15 +5917,16 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
   await expect(page.getByRole('region', { name: '模拟仓位' })).toBeVisible()
   // 输入开仓价 + 数量，点开仓
   const inputs = page.getByRole('region', { name: '模拟仓位' }).locator('input')
-  await inputs.nth(0).fill('100')
-  await inputs.nth(1).fill('2')
+  // 开仓价由输入框聚焦时自动填入现价（同上：不写死价格，也不被瞬时结算平掉）
+  await inputs.nth(0).click()
+  await inputs.nth(1).fill('0.05')
   await page.getByRole('button', { name: '开仓', exact: true }).click()
   // 开仓后出现持仓行且含浮动盈亏数值（「浮动盈亏」标签早已移除，改为断言数值存在）
   const posRow = page.getByTestId('position-row-long')
   await expect(posRow).toBeVisible()
   await expect(posRow).toContainText(/-?\d+(\.\d+)?/)
-  // 平仓（该行唯一按钮即「平仓」；避免 name 子串命中「全部平仓」）
-  await posRow.getByRole('button').click()
+  // 平仓：行内现有 平仓/反手/止盈止损 三个按钮，按可及名称取「平仓」（作用域在行内，不会命中「全部平仓」）
+  await posRow.getByRole('button', { name: '平仓 开多' }).click()
   // 面板回到未开仓态（开仓按钮重新出现）
   await expect(page.getByRole('button', { name: '开仓', exact: true })).toBeVisible()
 })
