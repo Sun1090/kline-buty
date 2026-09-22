@@ -128,6 +128,22 @@ describe('ChartView 渲染路径（O7）', () => {
     expect(screen.queryByTestId('chart-retry')).toBeNull()
   })
 
+  it('VOL 副图的均量线走成交量缩写：图例不出现 11 位原始数字', () => {
+    const heavy = Array.from({ length: 60 }, (_, i) => ({
+      time: 1786797540 + i * 60,
+      open: 100,
+      high: 101,
+      low: 99,
+      close: 100,
+      volume: 12_750_000_000,
+      isClosed: true,
+    }))
+    render(<ChartView {...base} candles={heavy} />)
+    const badge = screen.getByTestId('chart-indicator-last')
+    expect(badge.textContent).toContain('VOL-MA: 12750.00M')
+    expect(badge.textContent).not.toContain('12750000000')
+  })
+
   it('O7：RSI 副图时显示指标末尾值一览 + 副图 Y 轴固定切换按钮（H12）', () => {
     render(<ChartView {...base} candles={makeCandles(200)} subIndicator="rsi" />)
     // 指标末尾值一览（chart-indicator-last）在数据存在时显示
