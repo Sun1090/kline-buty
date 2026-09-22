@@ -140,6 +140,59 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(trades[0].price).toBeGreaterThan(price * 0.9)
   })
 
+  test('挂单改价：把挂在现价下方的买单抬到现价上方，随即触价成交', async ({ page }) => {
+    const price = await lastPrice(page)
+    const low = Number((price * 0.8).toFixed(2))
+    await placeLimitBuy(page, low, 0.001)
+
+    await ensurePanel(page, '仓位', 'pending-orders')
+    await expect(page.getByTestId('pending-orders-count')).toHaveText('1')
+    const pending = (await stored(page, 'kline-buty:paperOrders')) as { id: string; price: number; qty: number }[]
+    expect(pending[0].price).toBe(low)
+    const id = pending[0].id
+
+    await page.getByTestId(`pending-order-edit-${id}`).click()
+    const editor = page.getByTestId(`pending-order-editor-${id}`)
+    await expect(editor).toBeVisible()
+    // 展开即预填当前挂价与数量
+    await expect(editor.getByTestId(`pending-order-price-${id}`)).toHaveValue(String(low))
+    await expect(editor.getByTestId(`pending-order-qty-${id}`)).toHaveValue('0.001')
+    await editor.getByTestId(`pending-order-price-${id}`).fill(String(Number((price * 1.2).toFixed(2))))
+    await editor.getByTestId(`pending-order-qty-${id}`).fill('0.002')
+    await editor.getByTestId(`pending-order-edit-confirm-${id}`).click()
+    await expect(editor).toHaveCount(0)
+
+    await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
+    expect((await stored(page, 'kline-buty:paperOrders')) ?? []).toEqual([])
+    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; qty: number }[]
+    expect(trades).toHaveLength(1)
+    expect(trades[0].kind).toBe('open')
+    expect(trades[0].qty).toBe(0.002)
+  })
+
+  test('挂单改价：非法数量面板内报错，挂单原样留着', async ({ page }) => {
+    const price = await lastPrice(page)
+    await placeLimitBuy(page, Number((price * 0.8).toFixed(2)), 0.001)
+    await ensurePanel(page, '仓位', 'pending-orders')
+    const [target] = (await stored(page, 'kline-buty:paperOrders')) as { id: string }[]
+
+    const editor = page.getByTestId(`pending-order-editor-${target.id}`)
+    await page.getByTestId(`pending-order-edit-${target.id}`).click()
+    await editor.getByTestId(`pending-order-qty-${target.id}`).fill('0')
+    await editor.getByTestId(`pending-order-edit-confirm-${target.id}`).click()
+    await expect(page.getByTestId('pending-order-edit-error')).toBeVisible()
+    await expect(editor).toBeVisible()
+
+    const kept = (await stored(page, 'kline-buty:paperOrders')) as { id: string; qty: number }[]
+    expect(kept).toHaveLength(1)
+    expect(kept[0].qty).toBe(0.001)
+    expect((await stored(page, 'kline-buty:paperTrades')) ?? []).toEqual([])
+
+    await editor.getByTestId(`pending-order-edit-cancel-${target.id}`).click()
+    await expect(editor).toHaveCount(0)
+    expect(((await stored(page, 'kline-buty:paperOrders')) as unknown[])).toHaveLength(1)
+  })
+
   test('图表右键挂限价单：菜单价位预填，挂单方向落在现价另一侧即挂起', async ({ page }) => {
     const current = await lastPrice(page)
     const chart = page.locator('.chart-container').first()

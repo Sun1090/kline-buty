@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { canAddOrder, parsePendingOrders, type PendingOrder } from '../trade/pending'
+import { canAddOrder, editPendingOrder, parsePendingOrders, type PendingOrder, type PendingOrderPatch } from '../trade/pending'
 
 const ORDERS_KEY = 'paperOrders'
 /** 全局挂单条数上限（超出丢弃最旧，防止列表无限增长） */
@@ -26,6 +26,8 @@ export interface PendingOrdersApi {
   orders: PendingOrder[]
   /** 新增挂单（同品种上限 + 全局条数裁剪）；被拒绝时返回 false */
   add: (order: PendingOrder) => boolean
+  /** 改价：只换挂单价与数量；订单不存在或数值非法返回 false（不改列表） */
+  edit: (id: string, patch: PendingOrderPatch) => boolean
   /** 按 id 批量移除（用户撤销 / 撮合落地） */
   remove: (ids: string[]) => void
   clear: () => void
@@ -44,6 +46,16 @@ export function usePendingOrders(): PendingOrdersApi {
     if (!canAddOrder(ordersRef.current, order.symbol) || ordersRef.current.length >= PENDING_MAX) return false
     setOrders((prev) => {
       const next = [...prev, order].slice(-PENDING_MAX)
+      persistOrders(next)
+      return next
+    })
+    return true
+  }, [])
+
+  const edit = useCallback((id: string, patch: PendingOrderPatch) => {
+    const next = editPendingOrder(ordersRef.current, id, patch)
+    if (!next) return false
+    setOrders(() => {
       persistOrders(next)
       return next
     })
@@ -74,5 +86,5 @@ export function usePendingOrders(): PendingOrdersApi {
     [],
   )
 
-  return { orders, add, remove, clear, canAdd }
+  return { orders, add, edit, remove, clear, canAdd }
 }

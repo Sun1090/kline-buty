@@ -1782,6 +1782,7 @@ export function App() {
           symbol={symbol}
           pendingOrders={pending.orders}
           onCancelOrder={(id) => pending.remove([id])}
+          onEditOrder={(id, patch) => pending.edit(id, patch)}
           currentPrice={candles[candles.length - 1]?.close ?? stats.price}
           balance={paper.balance}
           todayPnl={todayRealizedPnl(paper.trades)}

@@ -129,6 +129,30 @@ export function canAddOrder(orders: PendingOrder[], symbol: string): boolean {
   return orders.filter((o) => o.symbol === target).length < ORDERS_PER_SYMBOL_MAX
 }
 
+export interface PendingOrderPatch {
+  price: number
+  qty: number
+}
+
+/**
+ * 改价：只换挂单价与数量，id / 品种 / 方向 / 入单时刻保持不变（同价多条的 FIFO 顺位不因改价而变）。
+ * 订单不存在、价格或数量非正/非有限 → null，由调用方提示而不是静默丢单。
+ */
+export function editPendingOrder(
+  orders: PendingOrder[],
+  id: string,
+  patch: PendingOrderPatch,
+): PendingOrder[] | null {
+  const idx = orders.findIndex((o) => o.id === id)
+  if (idx < 0) return null
+  const { price, qty } = patch
+  if (!Number.isFinite(price) || price <= 0) return null
+  if (!Number.isFinite(qty) || qty <= 0) return null
+  const next = [...orders]
+  next[idx] = { ...orders[idx], price, qty }
+  return next
+}
+
 /** 成交价：市场价优于挂单价时按市场价成交（价格改善），市场价缺失时退回挂单价 */
 export function fillPrice(order: PendingOrder, market: number | null | undefined): number {
   if (typeof market !== 'number' || !Number.isFinite(market) || market <= 0) return order.price
