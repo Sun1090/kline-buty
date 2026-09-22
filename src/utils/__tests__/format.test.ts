@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK, fmtAxisPrice } from '../format'
+import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK, fmtAxisPrice, roundPricePrecise } from '../format'
+
+describe('roundPricePrecise（浮点读数收口到展示精度）', () => {
+  it('≥1000 只留两位小数：十字光标的原始尾数不外泄', () => {
+    expect(roundPricePrecise(50766.61229625584)).toBe(50766.61)
+  })
+  it('≥1 留四位', () => {
+    expect(roundPricePrecise(12.3456789)).toBe(12.3457)
+  })
+  it('<1 留六位', () => {
+    expect(roundPricePrecise(0.000123456789)).toBe(0.000123)
+  })
+  it('收口后的数值再格式化不产生多余尾数，且可重复（幂等）', () => {
+    const once = roundPricePrecise(50766.61229625584)
+    expect(fmtPricePrecise(once)).toBe('50766.61')
+    expect(roundPricePrecise(once)).toBe(once)
+  })
+})
 
 describe('fmtPricePrecise（高精度：十字光标/信息条）', () => {
   it('≥1000 两位小数', () => {

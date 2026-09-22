@@ -41,7 +41,7 @@ import { useSubIndicatorWorker } from '../hooks/useSubIndicatorWorker'
 import { useI18n } from '../i18n/useI18n'
 import { localeFor, chartLabelsFor, type MessageKey } from '../i18n/messages'
 import { clampTooltipPos } from './tooltipPos'
-import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume } from '../utils/format'
+import { fmtPricePrecise as fmtPrice, fmtVolumeMK as fmtVolume, roundPricePrecise } from '../utils/format'
 import { exportScreenshotWithDisclaimer, shareScreenshotWithDisclaimer } from './exportDisclaimer'
 import { saveSnapshot, defaultSnapshotName } from '../utils/snapshotGallery'
 
@@ -1072,7 +1072,8 @@ export function ChartView({
         if (!pt) return
         e.preventDefault()
         setCtxCopied(false)
-        setCtxMenu({ x: e.clientX, y: e.clientY, price: pt.price, time: pt.time })
+        // 光标价格是像素反算的浮点尾数，先收口到展示精度再进菜单：复制/提醒/挂单三个出口都用它
+        setCtxMenu({ x: e.clientX, y: e.clientY, price: roundPricePrecise(pt.price), time: pt.time })
       }}
     >
       <div ref={containerRef} className="chart-container" style={{ width: '100%', height: '100%' }} />

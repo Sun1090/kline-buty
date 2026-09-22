@@ -3,9 +3,22 @@
  * 各档位对应固定 UI 场景：精度是刻意的展示策略，调用方按场景选函数，不要在组件内另写阈值。
  */
 
-/** 高精度价格：≥1000 两位小数、≥1 四位、否则六位（十字光标信息窗 / 行情信息条） */
+/** 高精度价格的小数位：≥1000 两位、≥1 四位、否则六位，展示与数值收口共用这一套阈值 */
+export function pricePreciseDigits(v: number): number {
+  return v >= 1000 ? 2 : v >= 1 ? 4 : 6
+}
+
+/** 高精度价格：十字光标信息窗 / 行情信息条 */
 export function fmtPricePrecise(v: number): string {
-  return v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4) : v.toFixed(6)
+  return v.toFixed(pricePreciseDigits(v))
+}
+
+/**
+ * 把浮点价位收口到展示精度后仍返回数值。
+ * 十字光标读数是像素反算的浮点值（50766.61229625584），直接预填进下单/提醒输入框会暴露原始尾数。
+ */
+export function roundPricePrecise(v: number): number {
+  return Number(v.toFixed(pricePreciseDigits(v)))
 }
 
 /** 紧凑价格：≥1000 一位小数、否则两位（盘口 / 深度图，窄列容不下更长小数） */
@@ -34,7 +47,7 @@ export function fmtVolumeMK(v: number): string {
  * Intl 在窄环境下可能抛异常（极旧引擎），回退为纯 toFixed。
  */
 export function fmtPriceLocale(v: number, locale: string): string {
-  const digits = v >= 1000 ? 2 : v >= 1 ? 4 : 6
+  const digits = pricePreciseDigits(v)
   try {
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 0,
