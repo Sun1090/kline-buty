@@ -10,6 +10,12 @@ export interface Position {
   trailPct?: number
 }
 
+/** 可选杠杆档位（手动开仓表单与快速下单共用一套，不再各写一份） */
+export const LEVERAGE_OPTIONS = [1, 2, 5, 10, 20, 50, 100]
+
+/** 未显式选杠杆时的默认档：两条开仓路径共用，避免同一动作两种口径 */
+export const DEFAULT_LEVERAGE = 10
+
 export interface PnlResult {
   pnl: number
   pnlPct: number

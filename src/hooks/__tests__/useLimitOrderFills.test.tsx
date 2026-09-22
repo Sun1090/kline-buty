@@ -16,6 +16,7 @@ const order = (over: Partial<PendingOrder> = {}): PendingOrder => ({
   createdAt: 1,
   // 默认按「挂在盘口等价」的挂单（Maker）；跨价差的单由用例显式置 true
   marketable: false,
+  leverage: null,
   ...over,
 })
 
@@ -177,6 +178,23 @@ describe('useLimitOrderFills', () => {
     const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
     const next = updater({ BTCUSDT: held })
     expect({ takeProfit: next.BTCUSDT.long!.takeProfit, stopLoss: next.BTCUSDT.long!.stopLoss }).toEqual({ takeProfit: 130, stopLoss: 118 })
+  })
+
+  it('成交把随单杠杆写进新开仓位；并入既有持仓时沿用既有杠杆', () => {
+    const { setPositionsBySymbol } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, leverage: 20 })],
+      live: { symbol: 'BTCUSDT', price: 100 },
+    })
+    const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
+    expect(updater({ BTCUSDT: EMPTY_POSITIONS }).BTCUSDT.long!.leverage).toBe(20)
+
+    const held: Positions = { long: { entry: 100, quantity: 1, direction: 'long', takeProfit: 130, stopLoss: 118, leverage: 5 }, short: null }
+    const again = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, leverage: 100 })],
+      live: { symbol: 'BTCUSDT', price: 100 },
+    })
+    const second = again.setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
+    expect(second({ BTCUSDT: held }).BTCUSDT.long!.leverage).toBe(5)
   })
 
 })

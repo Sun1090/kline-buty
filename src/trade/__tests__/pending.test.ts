@@ -22,6 +22,7 @@ const order = (over: Partial<PendingOrder> = {}): PendingOrder => ({
   qty: 0.5,
   createdAt: 1_000,
   marketable: false,
+  leverage: null,
   ...over,
 })
 
@@ -30,7 +31,7 @@ describe('createPendingOrder', () => {
     const created = createPendingOrder({ symbol: ' btcusdt ', side: 'sell', price: 60000, qty: 0.2, now: 1234 })
     expect(created).not.toBeNull()
     expect(created!.id.startsWith('1234-')).toBe(true)
-    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234, marketable: false, takeProfit: null, stopLoss: null })
+    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234, marketable: false, takeProfit: null, stopLoss: null, leverage: null })
   })
 
   it('下单时最新价已优于挂单价 → 记为跨价差（Taker）；贴价与无价按未跨计', () => {
@@ -64,6 +65,16 @@ describe('createPendingOrder', () => {
     // 非正 / 非有限
     expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: 0 })).toBeNull()
     expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: Number.NaN })).toBeNull()
+  })
+
+  it('随单杠杆：≥1 的有限数才认，其余按「不设杠杆」而不是拒单', () => {
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, leverage: 10 })!.leverage).toBe(10)
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, leverage: 1 })!.leverage).toBe(1)
+    for (const bad of [0, 0.5, -3, Number.NaN, Number.POSITIVE_INFINITY, null, undefined]) {
+      const created = createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, leverage: bad as never })
+      expect(created).not.toBeNull() // 坏杠杆不牵连整单
+      expect(created!.leverage).toBeNull()
+    }
   })
 
   it('非法输入返回 null（空品种/非正价格/非正数量/非有限值/方向非法）', () => {
@@ -131,9 +142,19 @@ describe('parsePendingOrders', () => {
       { id: 'w', symbol: 'BTCUSDT', side: 'buy', price: 1, qty: 0 },
     ]
     expect(parsePendingOrders(raw).map((o) => o.id)).toEqual(['x', 'y'])
-    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7, marketable: false, takeProfit: null, stopLoss: null })
+    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7, marketable: false, takeProfit: null, stopLoss: null, leverage: null })
     expect(parsePendingOrders('nope')).toEqual([])
     expect(parsePendingOrders(null)).toEqual([])
+  })
+
+  it('存量杠杆还原：合法档位留下、坏值归 null、老数据缺字段按未设置', () => {
+    const restored = parsePendingOrders([
+      { id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 1, leverage: 20 },
+      { id: 'b', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 2, leverage: 0.5 },
+      { id: 'c', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 3, leverage: '10' },
+      { id: 'd', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 4 },
+    ])
+    expect(restored.map((o) => o.leverage)).toEqual([20, null, 10, null])
   })
 
   it('随单价位还原：合法保留、任一不成立则整对摘掉但单子保住、老数据缺字段按未设置', () => {
@@ -282,7 +303,7 @@ describe('editPendingOrder 改价', () => {
     const next = editPendingOrder(list, 'b', { price: 260, qty: 0.5 })
     expect(next).not.toBeNull()
     expect(next!.map((o) => o.id)).toEqual(['a', 'b'])
-    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000, marketable: false, takeProfit: null, stopLoss: null })
+    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000, marketable: false, takeProfit: null, stopLoss: null, leverage: null })
     expect(next![0]).toBe(list[0]) // 未改动的条目保持原引用
   })
 

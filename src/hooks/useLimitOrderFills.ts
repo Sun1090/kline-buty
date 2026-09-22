@@ -75,7 +75,7 @@ export function useLimitOrderFills(deps: LimitOrderFillDeps): void {
           order.qty,
           DEFAULT_TP_PCT,
           DEFAULT_SL_PCT,
-          levelsAtFill(order, price),
+          { ...levelsAtFill(order, price), leverage: order.leverage ?? null },
         ),
       }))
     }

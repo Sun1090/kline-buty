@@ -190,4 +190,14 @@ describe('planReduce 部分平仓', () => {
     expect(next.long!.quantity).toBe(4) // 数量照并，只是不动线
   })
 
+  it('applyOrder attach 的杠杆只在新开槽位写入；加仓沿用既有杠杆', () => {
+    const fresh = applyOrder(EMPTY_POSITIONS, 'buy', 100, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { leverage: 20 })
+    expect(fresh.long!.leverage).toBe(20)
+    // 未给杠杆 → 不写这个字段（旧仓按 1x 全额口径显示）
+    expect('leverage' in applyOrder(EMPTY_POSITIONS, 'buy', 100, 2)).toBe(false)
+    const held: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 130, stopLoss: 118, leverage: 5 }
+    const merged = applyOrder({ long: held, short: null }, 'buy', 200, 2, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { leverage: 100 })
+    expect(merged.long!.leverage).toBe(5)
+  })
+
 })

@@ -29,7 +29,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { estimateOrder, feeForPrice, type OrderSide } from './trade/order'
 import { calcPnl, type Position } from './position/pnl'
 import { dragLevel } from './position/levels'
-import { EMPTY_POSITIONS, applyOrder as applyHedgeOrder, planReduce, reverseSlot, settleSlot, type Positions } from './trade/positions'
+import { DEFAULT_SL_PCT, DEFAULT_TP_PCT, EMPTY_POSITIONS, applyOrder as applyHedgeOrder, planReduce, reverseSlot, settleSlot, type Positions } from './trade/positions'
 import { usePaperAccount, type TradeRecord } from './hooks/usePaperAccount'
 import { useTradeSettings } from './hooks/useTradeSettings'
 import { usePendingOrders } from './hooks/usePendingOrders'
@@ -1723,6 +1723,7 @@ export function App() {
                 marketPrice: candles[candles.length - 1]?.close ?? stats.price,
                 takeProfit: order.takeProfit,
                 stopLoss: order.stopLoss,
+                leverage: order.leverage,
               })
               // 面板已把过关，这里再挡一次：随单价位不成立不该被误报成「挂单已达上限」
               if (!created) {
@@ -1741,7 +1742,7 @@ export function App() {
             if (!paper.canOpen(est.notional, est.fee)) return
             paper.recordOpen({ symbol, side: order.side, price: est.fillPrice, qty: order.qty, fee: est.fee, feeRate: tradeSettings.takerFeeRate })
             // J1 双向持仓（hedge）：buy 只影响 long 槽、sell 只影响 short 槽
-            setPosition((prev) => applyHedgeOrder(prev, order.side, est.fillPrice, order.qty))
+            setPosition((prev) => applyHedgeOrder(prev, order.side, est.fillPrice, order.qty, DEFAULT_TP_PCT, DEFAULT_SL_PCT, { leverage: order.leverage }))
             setPositionOpen(true)
             setTradesOpen(false)
             setQuickOrder(null)

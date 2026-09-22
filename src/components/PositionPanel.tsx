@@ -1,6 +1,15 @@
 import { useRef, useState } from 'react'
 import type { Position } from '../position/pnl'
-import { calcPnl, calcLiquidationPrice, calcMargin, liquidationRisk, marginRate, suggestLevels } from '../position/pnl'
+import {
+  DEFAULT_LEVERAGE,
+  LEVERAGE_OPTIONS,
+  calcPnl,
+  calcLiquidationPrice,
+  calcMargin,
+  liquidationRisk,
+  marginRate,
+  suggestLevels,
+} from '../position/pnl'
 import { applyLevels, breakevenStop, type LevelError, type LevelInput } from '../position/levels'
 import { EMPTY_POSITIONS, mergePosition, planReduce, type Positions } from '../trade/positions'
 import type { PendingOrder } from '../trade/pending'
@@ -37,7 +46,6 @@ interface PositionPanelProps {
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
-const LEVERAGE_OPTIONS = [1, 2, 5, 10, 20, 50, 100]
 
 const inputStyle: React.CSSProperties = {
   width: 88,
@@ -59,7 +67,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
   const [entry, setEntry] = useState<string>('')
   const [quantity, setQuantity] = useState<string>('')
   const [direction, setDirection] = useState<'long' | 'short'>('long')
-  const [leverage, setLeverage] = useState(10)
+  const [leverage, setLeverage] = useState(DEFAULT_LEVERAGE)
   const [tpPct, setTpPct] = useState('3')
   const [slPct, setSlPct] = useState('2')
   // 止盈/止损模式：pct=百分比参考价，price=手动输入价位

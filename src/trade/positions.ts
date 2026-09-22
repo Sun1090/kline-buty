@@ -43,11 +43,18 @@ export function mergePosition(existing: Position | null | undefined, opened: Pos
   return { ...existing, entry, quantity }
 }
 
+/** 成交落地时随单带过来的价位与杠杆（缺省项沿用参考价 / 不设杠杆） */
+export interface OrderAttach {
+  takeProfit?: number | null
+  stopLoss?: number | null
+  leverage?: number | null
+}
+
 /**
  * J1 开仓/加仓（hedge mode）：只影响对应方向槽位。
  * 已有同方向持仓 → 加权合并；无持仓 → 新建并按百分比参考价给止盈/止损。
- * `attach`（限价单随单价位）只在开出新槽位时顶掉参考价；加仓沿用用户既有价位线，
- * 随单不该把它们重置掉（同 `mergePosition` 的口径）。
+ * `attach`（限价单随单价位与杠杆）只在开出新槽位时顶掉参考价；加仓沿用用户既有
+ * 价位线与杠杆，随单不该把它们重置掉（同 `mergePosition` 的口径）。
  */
 export function applyOrder(
   positions: Positions,
@@ -56,23 +63,22 @@ export function applyOrder(
   qty: number,
   tpPct = DEFAULT_TP_PCT,
   slPct = DEFAULT_SL_PCT,
-  attach?: { takeProfit: number | null; stopLoss: number | null } | null,
+  attach?: OrderAttach | null,
 ): Positions {
   const slot = slotFor(side)
   const existing = positions[slot]
   if (!existing) {
     const direction = side === 'buy' ? 'long' : 'short'
     const levels = suggestLevels(price, direction, tpPct, slPct)
-    return {
-      ...positions,
-      [slot]: {
-        entry: price,
-        quantity: qty,
-        direction,
-        takeProfit: attach?.takeProfit ?? levels.takeProfit,
-        stopLoss: attach?.stopLoss ?? levels.stopLoss,
-      },
+    const opened: Position = {
+      entry: price,
+      quantity: qty,
+      direction,
+      takeProfit: attach?.takeProfit ?? levels.takeProfit,
+      stopLoss: attach?.stopLoss ?? levels.stopLoss,
     }
+    if (attach?.leverage) opened.leverage = attach.leverage
+    return { ...positions, [slot]: opened }
   }
   return { ...positions, [slot]: mergePosition(existing, { ...existing, entry: price, quantity: qty }) }
 }
