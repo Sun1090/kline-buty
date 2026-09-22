@@ -65,6 +65,10 @@ export default defineConfig({
   },
   test: {
     setupFiles: ['vitest.setup.ts'],
+    // 默认 5s 在 CPU 争用下会误报：实测两份全量套件并行 + 8 个占核进程时 26 条同红，
+    // 报错 100% 是 `Test timed out in 5000ms`、零条断言失败（独占负载下 1952 全绿）。
+    // 取 15s 覆盖约 3× 的降速，避免把资源饥饿误读成应用回归。
+    testTimeout: 15_000,
     exclude: ['**/perf.test.ts', '**/e2e/**', '**/node_modules/**', '**/dist/**', 'docs-site/**'],
     coverage: {
       provider: 'v8',
