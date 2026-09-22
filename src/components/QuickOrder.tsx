@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, MAKER_FEE_RATE, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
 import { attachedLevelsOk, isMarketable } from '../trade/pending'
 import { parseLevel } from '../position/levels'
+import { DEFAULT_LEVERAGE, LEVERAGE_OPTIONS } from '../position/pnl'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -29,7 +30,7 @@ interface QuickOrderProps {
   makerFeeRate?: number
   /** 打开时的下单类型（默认市价）：图表右键「挂限价单」传 limit */
   initialType?: OrderType
-  onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType } & QuickOrderAttach) => void
+  onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType; leverage: number } & QuickOrderAttach) => void
   onClose: () => void
 }
 
@@ -86,6 +87,8 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
   // 随单止盈/止损（仅限价）：留空即不附带
   const [tpStr, setTpStr] = useState('')
   const [slStr, setSlStr] = useState('')
+  // 随单杠杆：成交落到新仓位后，保证金率与强平价都按这一档算（与手动开仓表单同默认档）
+  const [leverage, setLeverage] = useState(DEFAULT_LEVERAGE)
   // M5 焦点陷阱：下单弹层内 Tab 循环
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
@@ -109,7 +112,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
   // v0.5.x 键盘支持：Enter 确认下单（有效且保证金充足时）、Esc 关闭弹层
   const confirmable = valid && !insufficient && attachOk
-  const submit = () => onConfirm({ side, price: priceNum, qty: qtyNum, type: orderType, ...attach })
+  const submit = () => onConfirm({ side, price: priceNum, qty: qtyNum, type: orderType, leverage, ...attach })
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && confirmable) {
       e.preventDefault()
@@ -251,6 +254,22 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
           )}
         </>
       )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('position.leverage')}</span>
+        <select
+          data-testid="qo-leverage"
+          aria-label={t('position.leverage')}
+          style={{ ...inputStyle, width: 'auto', flex: 1 }}
+          value={leverage}
+          onChange={(e) => setLeverage(Number(e.target.value))}
+        >
+          {LEVERAGE_OPTIONS.map((l) => (
+            <option key={l} value={l}>
+              {l}x
+            </option>
+          ))}
+        </select>
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.qty')}</span>
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
