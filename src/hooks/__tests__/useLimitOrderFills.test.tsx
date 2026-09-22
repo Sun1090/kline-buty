@@ -14,6 +14,8 @@ const order = (over: Partial<PendingOrder> = {}): PendingOrder => ({
   price: 100,
   qty: 1,
   createdAt: 1,
+  // 默认按「挂在盘口等价」的挂单（Maker）；跨价差的单由用例显式置 true
+  marketable: false,
   ...over,
 })
 
@@ -29,6 +31,7 @@ function setup(over: Partial<Parameters<typeof useLimitOrderFills>[0]> = {}) {
     recordOpen,
     setPositionsBySymbol,
     makerFeeRate: 0.0005,
+    takerFeeRate: 0.002,
     live: { symbol: 'BTCUSDT', price: 500 },
     prices: {},
     onNotice,
@@ -115,6 +118,23 @@ describe('useLimitOrderFills', () => {
     const afterFirst = updater({ BTCUSDT: EMPTY_POSITIONS })
     const second = setPositionsBySymbol.mock.calls[1][0] as (prev: PositionsBySymbol) => PositionsBySymbol
     expect(second(afterFirst).BTCUSDT.long).toEqual(expect.objectContaining({ entry: 80, quantity: 3 }))
+  })
+
+  it('下单即跨价差（marketable）→ 按 Taker 费率记账，成交价仍是改善后的市场价', () => {
+    const { recordOpen } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, marketable: true })],
+      live: { symbol: 'BTCUSDT', price: 90 },
+    })
+    expect(recordOpen).toHaveBeenCalledWith({ symbol: 'BTCUSDT', side: 'buy', price: 90, qty: 1, fee: 0.18, feeRate: 0.002 })
+  })
+
+  it('同批里挂单价与跨价差单并存：各按自身费率，余额按各自手续费累计承接', () => {
+    const maker = order({ id: 'm', createdAt: 1, side: 'buy', price: 100, qty: 1 })
+    const taker = order({ id: 't', createdAt: 2, side: 'buy', price: 100, qty: 1, marketable: true })
+    // 市场价 90：Maker 90+0.045、Taker 90+0.18 → 余额 180.2 只够一条
+    const { recordOpen } = setup({ orders: [maker, taker], live: { symbol: 'BTCUSDT', price: 90 }, balance: 180.2 })
+    expect(recordOpen.mock.calls.map((c) => c[0].feeRate)).toEqual([0.0005])
+    expect(recordOpen.mock.calls.map((c) => c[0].symbol)).toEqual(['BTCUSDT'])
   })
 
   it('幂等：同一批挂单重复渲染不会二次记账', () => {

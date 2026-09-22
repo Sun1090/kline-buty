@@ -145,6 +145,17 @@ describe('QuickOrder 快速下单', () => {
     expect(handlers.onConfirm).toHaveBeenCalledWith({ side: 'buy', price: 100, qty: 1, type: 'limit' })
   })
 
+  it('v0.5.x 限价模式：挂价高于参考价（下单即吃单）按吃单费率预估', () => {
+    setup({ makerFeeRate: 0.0005, takerFeeRate: 0.001 })
+    fireEvent.click(screen.getByTestId('qo-type-limit'))
+    // 参考价 100：贴价 100 排队（Maker 0.0500），抬到 101 就跨过价差 → Taker 0.1010
+    expect(screen.getByTestId('qo-fee').textContent).toBe('0.0500')
+    fireEvent.change(screen.getByTestId('qo-price'), { target: { value: '101' } })
+    expect(screen.getByTestId('qo-fee').textContent).toBe('0.1010')
+    fireEvent.change(screen.getByTestId('qo-price'), { target: { value: '99' } })
+    expect(screen.getByTestId('qo-fee').textContent).toBe('0.0495')
+  })
+
   it('v0.5.x 市价模式按吃单费率 + 滑点计费，切回市价即恢复', () => {
     setup({ takerFeeRate: 0.001 })
     fireEvent.click(screen.getByTestId('qo-type-limit'))

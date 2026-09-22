@@ -13,6 +13,7 @@ const order = (id: string, over: Partial<PendingOrder> = {}): PendingOrder => ({
   price: 100,
   qty: 1,
   createdAt: 1,
+  marketable: false,
   ...over,
 })
 
