@@ -33,7 +33,12 @@
   发布 PR CI 三浏览器 E2E（15m23s）+ CodeQL + Knowledge + Build + Audit 全绿
 - 部署与 live 抽查：
   - Pages ✅ run 35702634449 success（2m39s）；首页 200 且 meta `app-version=0.5.26`、`/knowledge/` 200
-  - 真实 bundle ✅ `assets/index-Dl7VHveG.js`（574KB）含本版新文案：随单 / 止盈价 / 隐含盈亏比 / 杠杆
+  - 真实 bundle ✅ `assets/index-Dl7VHveG.js`（574KB）含本版新文案：随单 / 止盈价 / 隐含盈亏比 / 杠杆，
+    以及 `qo-tp` / `qo-sl` / `qo-leverage` / `qo-rr` 四个新 testid
+  - 真浏览器抽查 ✅ 线上首页 8 张 canvas、实时价 85539.08 在走；右键「挂限价买入」打开的下单面板
+    落在限价态、杠杆默认 10（可选 1/2/5/10/20/50/100）、填入 +3% / −2% 价位后显示「隐含盈亏比 1.50 : 1」
+  - 同一轮抽查顺手抓到 **#136 的现场证据**：预填价格框是 `85413.83052287581`——
+    菜单上「复制价格 85413.83」是展示值，交给面板的却是像素反算的全精度浮点
   - Vercel ⚠ 仍是账号级 **build-rate-limit**（提示 24h 恢复），非代码问题，不阻塞发布
 - 回滚：`git revert` 本次 release 提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**（在飞两批次见「当前阶段」；已知遗留：marketable 即时成交不计滑点、
