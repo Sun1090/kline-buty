@@ -42,9 +42,11 @@ async function panIntoHistory(page: Page) {
 }
 
 test.describe('A2 周期切换右侧锚定', () => {
-  // webkit 在重负载 CI runner 下合成数据大窗口切周期锚定收敛可达数十秒（v0.5.13 复现），
-  // 放宽整测预算，避免单步断言时长总和撞上 60s 测试级超时
-  test.setTimeout(150_000)
+  // webkit 在重负载 CI runner 下合成数据大窗口切周期锚定收敛可达数十秒（v0.5.13 复现）。
+  // 预算必须盖得住本用例自己声明的每步上限之和：初始就绪 30s + 5 次 waitPerfReady 20s
+  // + 45s×2 + 8s×3 + 15s×2 ≈ 266s；原先写 150s，慢机上必然在某个动作上被全局超时打断
+  // （CI 上就红在最后的 back-to-latest 点击）。取 280s 留一点拖拽余量。
+  test.setTimeout(280_000)
   test('停在最新切周期不越界；回看切周期不跳最新（双向稳定 + 范围显示）', async ({ page, browserName }) => {
     // firefox：Playwright 合成鼠标事件与 lightweight-charts pressedMouseMove 不兼容（真机正常），
     // 拖拽平移在 firefox CI 无法合成；回看→切周期锚定由 chromium/webkit 覆盖
@@ -88,10 +90,18 @@ test.describe('A2 周期切换右侧锚定', () => {
     await expect(visibleRange).toBeVisible()
 
     // 点「回到最新」→ 回到最新，按钮消失；再切 1m 仍最新（稳定往返）
-    // 合成 tick（1.5s 间隔）+ 周期切换会触发图表重渲染 → 点击前等渲染稳定，force 忽略瞬时 detach
-    await page.waitForTimeout(500)
-    await back.click({ force: true })
-    await expect(back).toHaveCount(0, { timeout: 15000 })
+    // 合成 tick（1.5s 间隔）+ 周期切换让按钮所在的重渲染窗口反复出现，单次 click 的
+    // 稳定性等待可能一直吃预算；有界重试既保留真实点击语义，又不会把整测时间耗在同一等待上
+    await expect
+      .poll(
+        async () => {
+          if (!(await back.isVisible().catch(() => false))) return true
+          await back.click({ force: true, timeout: 4_000 }).catch(() => undefined)
+          return false
+        },
+        { timeout: 30_000, message: '点「回到最新」应让按钮消失' },
+      )
+      .toBe(true)
     await page.getByTestId('period-1m').click()
     await waitPerfReady(page, '1m')
     await expect(back).toHaveCount(0, { timeout: 15000 })
