@@ -60,6 +60,11 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
+/** 副图线取值展示：VOL 副图的均量线是成交量，与柱体同一套缩写；其余副图线（KDJ/RSI/MACD…）是小数值 */
+function fmtSubLineValue(kind: SubIndicatorKind | undefined, v: number): string {
+  return kind === 'volume' ? fmtVolume(v) : v.toFixed(2)
+}
+
 /** A11 可视范围时间短格式：UTC 或本地时区，MM-DD HH:MM（跨年纪年） */
 function fmtRangeTime(time: number, tz: 'utc' | 'local', locale: string): string {
   const d = new Date(time * 1000)
@@ -1046,7 +1051,7 @@ export function ChartView({
     if (sarV !== undefined) rows.push({ label: 'SAR', value: fmtPrice(sarV), color: 'var(--text)' })
     for (const l of subData?.lines ?? []) {
       const v = subLineMaps.get(l.id)?.get(tooltip.time)
-      if (v !== undefined) rows.push({ label: l.id, value: v.toFixed(2), color: 'var(--text)' })
+      if (v !== undefined) rows.push({ label: l.id, value: fmtSubLineValue(subData?.kind, v), color: 'var(--text)' })
     }
     if (subData?.hist) {
       const h = subData.hist.find((x) => x.time === tooltip.time)
@@ -1466,7 +1471,7 @@ export function ChartView({
         if (main.length === 0 && sub.length === 0 && subHist === null) return null
         const rows: { id: string; value: string }[] = [
           ...main.map((v) => ({ id: v.id, value: fmtPrice(v.value) })),
-          ...sub.map((v) => ({ id: v.id, value: v.value.toFixed(2) })),
+          ...sub.map((v) => ({ id: v.id, value: fmtSubLineValue(subData?.kind, v.value) })),
         ]
         if (subHist !== null) {
           rows.unshift({ id: subData?.kind === 'macd' ? 'MACD' : 'VOL', value: subData?.kind === 'macd' ? subHist.toFixed(3) : fmtVolume(subHist) })
