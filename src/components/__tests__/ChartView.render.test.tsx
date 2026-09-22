@@ -54,6 +54,7 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       keyboardPlaceAnchor = vi.fn()
       keyboardPlaceAnchorAtCrosshair = vi.fn()
       takeScreenshot = vi.fn(() => null)
+      priceAt = vi.fn(() => ({ time: 1786797540, price: 50766.61229625584 }))
       startRegionSelect = vi.fn()
       cancelRegionSelect = vi.fn()
       onRegionCapture = vi.fn()
@@ -139,5 +140,45 @@ describe('ChartView 渲染路径（O7）', () => {
     if (toggle) {
       expect(toggle.getAttribute('aria-pressed')).toBe('false')
     }
+  })
+})
+
+// 右键菜单的三个出口（复制 / 提醒 / 挂单）共用同一份 ctxMenu.price：
+// 光标价是像素反算的浮点值，收口不到位就会把 50766.61229625584 送进下单面板
+describe('ChartView 右键菜单价位口径', () => {
+  function openMenu() {
+    const { container } = render(<ChartView {...base} candles={makeCandles(200)} />)
+    fireEvent.contextMenu(container.firstElementChild as HTMLElement, { clientX: 120, clientY: 200 })
+  }
+
+  it('「买入限价」交出的挂单价已收口到展示精度', () => {
+    openMenu()
+    const seen: { price: number }[] = []
+    const listener = (e: Event) => seen.push((e as CustomEvent<{ price: number }>).detail)
+    window.addEventListener('chart-request-limit-order', listener)
+    fireEvent.click(screen.getByTestId('ctx-limit-buy'))
+    window.removeEventListener('chart-request-limit-order', listener)
+    // 未收口时这里会是 50766.61229625584
+    expect(seen).toHaveLength(1)
+    expect(seen[0].price).toBe(50766.61)
+  })
+
+  it('「添加提醒」交出的触发价同样收口', () => {
+    openMenu()
+    const seen: { price: number }[] = []
+    const listener = (e: Event) => seen.push((e as CustomEvent<{ price: number }>).detail)
+    window.addEventListener('chart-request-alert', listener)
+    fireEvent.click(screen.getByTestId('ctx-add-alert'))
+    window.removeEventListener('chart-request-alert', listener)
+    expect(seen).toHaveLength(1)
+    expect(seen[0].price).toBe(50766.61)
+  })
+
+  it('「复制价格」写入剪贴板的是收口后的字符串', () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    openMenu()
+    fireEvent.click(screen.getByTestId('ctx-copy-price'))
+    expect(writeText).toHaveBeenCalledWith('50766.61')
   })
 })
