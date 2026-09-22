@@ -67,7 +67,7 @@ async function drawHorizontalAndOpenLayers(page: Page) {
 const storedDrawingsCount = (page: Page) =>
   page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
     } catch {
       return 0
@@ -88,7 +88,7 @@ test('I15 图层重命名：行内改字落库并显示新名', async ({ page })
   await input.fill('斐波那契线')
   await input.press('Enter')
   await expect(page.getByText('斐波那契线', { exact: true })).toBeVisible()
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}'))
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>)
   const names = Object.values(stored as Record<string, Array<{ name?: string }>>)
     .flat()
     .map((d) => d.name)
@@ -134,12 +134,12 @@ test('C4 组级显隐/锁定：seed 分组画线 → 组头按钮联动组内行
   await expect(page.getByTestId('drawing-layer-row')).toHaveCount(3)
   // 组级隐藏 A组（组内均未隐藏 → 点击后 whole group hidden）
   await page.getByTestId('drawing-group-eye-A组').click()
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}'))
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>)
   const hidden = (stored as { BTCUSDT: Array<{ group?: string; hidden?: boolean }> }).BTCUSDT.filter((d) => d.group === 'A组')
   expect(hidden.every((d) => d.hidden)).toBe(true)
   // 组级锁定 → data-active 体现
   await page.getByTestId('drawing-group-lock-A组').click()
-  const locked = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}'))
+  const locked = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>)
   const lockStates = (locked as { BTCUSDT: Array<{ group?: string; locked?: boolean }> }).BTCUSDT.filter((d) => d.group === 'A组')
   expect(lockStates.every((d) => d.locked)).toBe(true)
 })
@@ -158,7 +158,7 @@ test('C15 跟随最新价：持仓计划工具 → 图层开启跟随开关', as
   const checkbox = page.getByTestId('drawing-follow-latest-checkbox')
   await checkbox.waitFor({ timeout: 10_000 })
   await checkbox.click()
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}'))
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>)
   const follow = (stored as { BTCUSDT: Array<{ type?: string; followLatest?: boolean }> }).BTCUSDT.find((d) => d.type === 'position')
   expect(follow?.followLatest).toBe(true)
 })

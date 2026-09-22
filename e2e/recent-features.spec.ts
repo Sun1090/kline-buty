@@ -27,7 +27,7 @@ async function drawHorizontalLine(page: Page) {
   await page.mouse.move(box!.x + box!.width * 0.47, box!.y + box!.height * 0.4)
   await page.mouse.up()
   await expect.poll(() => page.evaluate(() => {
-    const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+    const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
     return Object.values(all).flat().length
   })).toBeGreaterThan(0)
 }
@@ -267,12 +267,12 @@ test.describe('2026-08 新功能回归', () => {
 
     await page.getByTestId('drawing-layer-hide-all').click()
     await expect.poll(() => page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { hidden?: boolean }[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, { hidden?: boolean }[]>
       return Object.values(all).flat().every((drawing) => drawing.hidden)
     })).toBe(true)
     await page.getByTestId('drawing-layer-show-all').click()
     await expect.poll(() => page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { hidden?: boolean }[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, { hidden?: boolean }[]>
       return Object.values(all).flat().every((drawing) => !drawing.hidden)
     })).toBe(true)
 
@@ -318,7 +318,7 @@ test.describe('2026-08 新功能回归', () => {
     page.once('dialog', (dialog) => dialog.accept())
     await page.getByTestId('ctx-clear-drawings').click()
     await expect.poll(() => page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
       return Object.values(all).flat().length
     })).toBe(0)
 
@@ -384,7 +384,7 @@ test.describe('2026-08 新功能回归', () => {
     await page.getByTestId('drawing-layer-undo').click()
     await expect(page.getByTestId('drawing-layer-empty')).toBeVisible()
     await expect.poll(() => page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
       return Object.values(all).flat().length
     })).toBe(0)
     await page.getByTestId('drawing-layer-redo').click()
@@ -474,7 +474,7 @@ test.describe('2026-08 新功能回归', () => {
     // 先画一条线并拿到其持久化 id
     await drawHorizontalLine(page)
     const drawingId = await page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { id: string }[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, { id: string }[]>
       return Object.values(all).flat()[0]?.id as string
     })
     expect(drawingId).toBeTruthy()
