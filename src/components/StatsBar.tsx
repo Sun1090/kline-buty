@@ -97,12 +97,12 @@ export function StatsBar({ stats, live, period, lastCandleTime, volumeSurge, gap
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 20,
+        flexWrap: 'wrap',
+        gap: '4px 20px',
         padding: '4px 16px',
         borderBottom: '1px solid var(--border)',
         background: 'var(--panel)',
         flexShrink: 0,
-        overflowX: 'auto',
       }}
     >
       {/* G3 市场类型徽标：合约/现货（现货隐藏费率/强平/未平仓口径） */}
