@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { findDrawnPixels, pickDrawingTool, waitCandlesRendered } from './helpers/smoke'
 
 /**
  * I5 画线语义识别：按当前品种已画图形建议指标（semantics.ts 纯函数 + 设置面板一键应用）。
@@ -42,6 +43,55 @@ async function drawHorizontalLine(page: Page) {
     }),
   ).toBeGreaterThan(0)
 }
+
+test.describe('留白画线：最新 K 线右侧仍是可画区', () => {
+  test('绘图区右缘单击 → 画得出来，且线就落在点击的那一列像素上', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    await page.goto('/?perf=600')
+    await waitCandlesRendered(page)
+    await pickDrawingTool(page, '垂直线')
+    const box = await page.locator('.chart-container').first().boundingBox()
+    expect(box).not.toBeNull()
+    // 绘图区右缘不含右侧价格轴，rightOffset 留出的「未来」空隙就在这条边之前
+    const plotRight = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('canvas')]
+          .map((c) => c.getBoundingClientRect())
+          .filter((r) => r.width > 300)
+          .sort((a, b) => a.width - b.width)[0].right,
+    )
+    const y = box!.y + box!.height * 0.45
+    const readAnchors = () =>
+      page.evaluate(() => {
+        const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { type: string; points: { time: number }[] }[]>
+        return Object.values(all)
+          .flat()
+          .flatMap((d) => (d.type === 'vertical' ? d.points.map((p) => p.time) : []))
+      })
+    const place = async (x: number) => {
+      await page.mouse.move(x, y)
+      await page.mouse.down()
+      await page.mouse.move(x + 1, y, { steps: 2 })
+      await page.mouse.up()
+      await page.waitForTimeout(400)
+    }
+    // 先取一根数据范围内的锚点作基准，再点留白：两者都要画得出来
+    const insideX = plotRight - 300
+    await place(insideX)
+    const edgeX = plotRight - 2
+    await place(edgeX)
+    await expect.poll(readAnchors).toHaveLength(2)
+    const sorted = (await readAnchors()).slice().sort((a, b) => a - b)
+    // 1) 留白里的点击不再被静默丢弃，且时间落在基准之后（顺序与像素一致）
+    expect(sorted[1] ?? 0).toBeGreaterThan(sorted[0] ?? 0)
+    // 2) 线就画在点击处：锚点被拽回最新一根时，这里会红（渲染位置差出几十像素）
+    const win = { yMin: box!.y, yMax: box!.y + box!.height }
+    const edgePixels = await findDrawnPixels(page, { ...win, xMin: edgeX - 6, xMax: edgeX + 6 })
+    expect(edgePixels.length).toBeGreaterThan(0)
+    const insidePixels = await findDrawnPixels(page, { ...win, xMin: insideX - 6, xMax: insideX + 6 })
+    expect(insidePixels.length).toBeGreaterThan(0)
+  })
+})
 
 test.describe('I5 画线语义识别', () => {
   test.use({ acceptDownloads: true })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  anchorTimeInWhitespace,
   channelLine,
   createDrawing,
   cycleLines,
@@ -2064,5 +2065,37 @@ describe('extractDrawingStyle / applyDrawingStyle（I11 格式刷）', () => {
     expect(restored.color).toBe('#4e9cf5')
     expect(restored.fontSize).toBe(20)
     expect(restored.id).toBe('x1')
+  })
+})
+
+describe('anchorTimeInWhitespace（留白落点外推）', () => {
+  // 参考根（通常取最新一根）画在 1000px，它前一根在 960px → 根宽 40px
+  const base = { refX: 1000, prevX: 960, refTime: 1_700_000_000, periodSeconds: 60 }
+
+  it('最新 K 线右侧留白：按根宽折算成整根偏移的未来时间', () => {
+    expect(anchorTimeInWhitespace({ ...base, x: 1000 })).toBe(1_700_000_000)
+    expect(anchorTimeInWhitespace({ ...base, x: 1080 })).toBe(1_700_000_000 + 2 * 60)
+    expect(anchorTimeInWhitespace({ ...base, x: 1400 })).toBe(1_700_000_000 + 10 * 60)
+  })
+
+  it('首根 K 线左侧留白：同一套映射给出更早的时间', () => {
+    expect(anchorTimeInWhitespace({ ...base, x: 920 })).toBe(1_700_000_000 - 2 * 60)
+  })
+
+  it('不足一根的偏移对齐到最近的一根，锚点永远落在真实刻度上', () => {
+    expect(anchorTimeInWhitespace({ ...base, x: 1019 })).toBe(1_700_000_000)
+    expect(anchorTimeInWhitespace({ ...base, x: 1021 })).toBe(1_700_000_000 + 60)
+    expect(anchorTimeInWhitespace({ ...base, x: 981 })).toBe(1_700_000_000)
+  })
+
+  it('越远越晚、越左越早，同一像素结果稳定', () => {
+    const times = [900, 960, 1000, 1080, 1240].map((x) => anchorTimeInWhitespace({ ...base, x }))
+    expect(times).toEqual([1_699_999_880, 1_699_999_940, 1_700_000_000, 1_700_000_120, 1_700_000_360])
+    expect(anchorTimeInWhitespace({ ...base, x: 1080 })).toBe(anchorTimeInWhitespace({ ...base, x: 1080 }))
+  })
+
+  it('根宽不可用（两根重合或倒挂）时放弃落点，不吐出看似合法的时间', () => {
+    expect(anchorTimeInWhitespace({ ...base, prevX: 1000, x: 1200 })).toBeNull()
+    expect(anchorTimeInWhitespace({ ...base, prevX: 1040, x: 1200 })).toBeNull()
   })
 })

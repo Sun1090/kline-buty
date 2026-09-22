@@ -59,6 +59,24 @@ describe('snapToCandle（C3 吸附三态）', () => {
   it('空数据返回原样', () => {
     expect(snapToCandle(100, 10, [], 'ohlc')).toEqual({ time: 100, price: 10 })
   })
+
+  it('最新一根之后的留白：不拽回首/末根，时间原样保留（画在未来的落点）', () => {
+    expect(snapToCandle(360, 13.4, candles, 'time')).toEqual({ time: 360, price: 13.4 })
+    expect(snapToCandle(360, 13.4, candles, 'ohlc').time).toBe(360)
+    // 留白里价格仍按网格对齐（与 K 线无关）
+    expect(snapToCandle(360, 13.44, candles, 'grid')).toEqual({ time: 360, price: 13.4 })
+  })
+
+  it('首根之前的留白同样不吸附时间', () => {
+    expect(snapToCandle(40, 10.5, candles, 'time')).toEqual({ time: 40, price: 10.5 })
+  })
+
+  it('留白边界：正好落在首/末根开盘时刻仍按该根 K 线吸附', () => {
+    // 边界若写成 >= 会把首/末根本身也当留白放过，OHLC 价格就不再吸附
+    expect(snapToCandle(300, 13.1, candles, 'ohlc')).toEqual({ time: 300, price: 13 })
+    expect(snapToCandle(100, 10.9, candles, 'ohlc')).toEqual({ time: 100, price: 11 })
+    expect(snapToCandle(299, 10.5, candles, 'time').time).toBe(300)
+  })
 })
 
 describe('normalizeSnapMode（C3 旧值兼容）', () => {

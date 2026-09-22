@@ -29,6 +29,7 @@ import type { Candle } from './types'
 import type { ValuePoint } from '../indicators/sma'
 import { acceptDragPrice, detectHover, resolveDragPrice, type PositionLineKey } from './dragState'
 import {
+  anchorTimeInWhitespace,
   channelLine,
   DEFAULT_TEXT_FONT_SIZE,
   fibExtPrices,
@@ -784,10 +785,22 @@ export class LightweightChartAdapter implements ChartApi {
 
   /** 坐标投影：time/price → 屏幕坐标（主图 pane） */
   private project(time: number, price: number) {
-    const x = this.chart.timeScale().timeToCoordinate(time as never)
+    const timeScale = this.chart.timeScale()
+    // 留白里的时间（最新一根之后、首根之前）换不出像素，按「首根时间 + 整根偏移」反解索引再取像素：
+    // 与 anchorTimeInWhitespace 互为逆运算，落点、渲染与命中因此始终在同一套坐标上。
+    const rawX = timeScale.timeToCoordinate(time as never)
+    const x = rawX === null ? this.coordinateForBlankTime(time) : Number(rawX)
     const y = this.mainSeries.priceToCoordinate(price)
     if (x === null || y === null) return null
     return { x, y }
+  }
+
+  private coordinateForBlankTime(time: number): number | null {
+    const first = this.lastCandles[0]
+    if (!first || !(this.periodSeconds > 0)) return null
+    const index = Math.round((time - first.time) / this.periodSeconds)
+    const x = this.chart.timeScale().logicalToCoordinate(index as never)
+    return x === null ? null : Number(x)
   }
 
   private draw() {
@@ -2426,6 +2439,29 @@ export class LightweightChartAdapter implements ChartApi {
     this.draw()
   }
 
+  /**
+   * 像素 → 锚点时间。数据范围内的直接问时间轴；范围外（最新 K 线右侧或首根左侧的留白）
+   * 库里恒返回 null，此前手势被静默丢弃，表现为「点了没反应」，见 anchorTimeInWhitespace。
+   * 只有一根 K 线时求不出根宽，仍返回 null。
+   */
+  private timeAtPixel(x: number): number | null {
+    const timeScale = this.chart.timeScale()
+    const direct = timeScale.coordinateToTime(x)
+    if (direct !== null && direct !== undefined) return Number(direct)
+    const n = this.lastCandles.length
+    if (n < 2) return null
+    const refX = timeScale.logicalToCoordinate((n - 1) as never)
+    const prevX = timeScale.logicalToCoordinate((n - 2) as never)
+    if (refX === null || prevX === null) return null
+    return anchorTimeInWhitespace({
+      x,
+      refX: Number(refX),
+      prevX: Number(prevX),
+      refTime: this.lastCandles[n - 1].time,
+      periodSeconds: this.periodSeconds,
+    })
+  }
+
   private onPointerDown = (e: PointerEvent) => {
     this.lastDownDetail = e.detail
     const rect = this.container.getBoundingClientRect()
@@ -2443,7 +2479,7 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线模式：按下点 = 当前 time/price（释放时作为锚点提交），capture 指针
     if (this.drawingTool !== 'none') {
-      const time = this.chart.timeScale().coordinateToTime(x)
+      const time = this.timeAtPixel(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
         this.drawingDown = this.snapPoint(Number(time), Number(price))
@@ -2529,7 +2565,7 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线预览（仅当前手势内跟随）
     if (this.drawingDown) {
-      const time = this.chart.timeScale().coordinateToTime(x)
+      const time = this.timeAtPixel(x)
       const price = this.mainSeries.coordinateToPrice(y)
       if (time !== null && price !== null) {
         this.drawingPreview = this.snapPoint(Number(time), Number(price))
@@ -2540,7 +2576,7 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线编辑拖拽：本地预览 + 重绘（不逐帧回调，提交时才写回）
     if (this.dragEdit) {
-      const time = this.chart.timeScale().coordinateToTime(x)
+      const time = this.timeAtPixel(x)
       const price = this.mainSeries.coordinateToPrice(y)
       const orig = this.dragEdit.orig
       if (time !== null && price !== null && orig) {
