@@ -91,6 +91,69 @@ test.describe('留白画线：最新 K 线右侧仍是可画区', () => {
     const insidePixels = await findDrawnPixels(page, { ...win, xMin: insideX - 6, xMax: insideX + 6 })
     expect(insidePixels.length).toBeGreaterThan(0)
   })
+
+  test('留白里的线可以再选中并拖动，位移与手势一致', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    await page.goto('/?perf=600')
+    await waitCandlesRendered(page)
+    await pickDrawingTool(page, '垂直线')
+    const box = await page.locator('.chart-container').first().boundingBox()
+    expect(box).not.toBeNull()
+    const plotRight = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('canvas')]
+          .map((c) => c.getBoundingClientRect())
+          .filter((r) => r.width > 300)
+          .sort((a, b) => a.width - b.width)[0].right,
+    )
+    const y = box!.y + box!.height * 0.45
+    const readTimes = () =>
+      page.evaluate(() => {
+        const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, { type: string; points: { time: number }[] }[]>
+        return Object.values(all)
+          .flat()
+          .flatMap((d) => (d.type === 'vertical' ? d.points.map((p) => p.time) : []))
+      })
+    const x = plotRight - 2
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x + 1, y, { steps: 2 })
+    await page.mouse.up()
+    await expect.poll(readTimes).toHaveLength(1)
+    // 退出画线工具，改成对这条线做「选中 → 整线拖拽」
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(
+      () => {
+        const e = document.querySelector('.chart-container')
+        return !!e && getComputedStyle(e).cursor !== 'crosshair'
+      },
+      undefined,
+      { timeout: 5_000 },
+    )
+    const drawn = await findDrawnPixels(page, { ...{ yMin: box!.y, yMax: box!.y + box!.height }, xMin: x - 6, xMax: x + 6 })
+    expect(drawn.length).toBeGreaterThan(0)
+    const anchorX = drawn[0]?.x ?? 0
+    await page.mouse.click(anchorX, y)
+    await page.waitForTimeout(300)
+    const before = (await readTimes())[0] ?? 0
+    await page.mouse.move(anchorX, y)
+    await page.mouse.down()
+    await page.mouse.move(anchorX + 24, y, { steps: 6 })
+    await page.mouse.up()
+    // 位移要落在时间轴上：拖 24px 就是几根 K 线，不能整条甩飞或原地不动
+    await expect
+      .poll(
+        async () => {
+          const times = await readTimes()
+          return times.length === 1 && times[0] !== before ? 'moved' : times.length > 1 ? 'duplicated' : 'same'
+        },
+        { timeout: 8_000 },
+      )
+      .toBe('moved')
+    const moved = await findDrawnPixels(page, { yMin: box!.y, yMax: box!.y + box!.height, xMin: anchorX + 12 })
+    expect(moved.length).toBeGreaterThan(0)
+    expect(Math.abs(moved[0]!.x - (anchorX + 24))).toBeLessThanOrEqual(8)
+  })
 })
 
 test.describe('I5 画线语义识别', () => {
