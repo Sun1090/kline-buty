@@ -48,6 +48,21 @@ describe('AlertPanel', () => {
     expect(screen.getByText('删除')).toBeDefined()
   })
 
+  it('提醒价展示：E10 精度缺省按价段自适应、指定则照它（0.000123 不再显示成 0.00）', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'p1', symbol: 'BTCUSDT', direction: 'below', price: 0.000321, triggered: false },
+        { id: 'p2', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false, pricePrecision: 0 },
+      ],
+      history: [{ alertId: 'p1', symbol: 'BTCUSDT', direction: 'below', price: 0.000123, triggeredPrice: 0.000125, at: 1790000000000 }],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={0.0002} alertsApi={api} />)
+    expect(screen.getByText(/≤ 0\.000321/)).toBeDefined()
+    expect(screen.getByText(/^≥ 65000$/)).toBeDefined()
+    // 触发历史不落 E10 精度，同样按价段自适应，而不是写死两位
+    expect(screen.getByText(/≤ 0\.000123 → 0\.000125/)).toBeDefined()
+  })
+
   it('只显示当前品种的提醒', () => {
     const api = makeApi({ alerts: [
       { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false },

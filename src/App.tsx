@@ -100,6 +100,7 @@ import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
 import { checkVersionUpdate, readMetaVersion } from './utils/versionCheck'
 import { storageAdvisory } from './utils/storageMonitor'
+import { fmtPriceWithPrecision } from './utils/format'
 import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
 import { nextBackTarget } from './chart/backNavigation'
 
@@ -1248,7 +1249,7 @@ export function App() {
         >
           <span>🔔</span>
           <span>
-            <b>{alertToast.symbol.replace('USDT', '/USDT')}</b> {alertToast.direction === 'above' ? '≥' : '≤'} {alertToast.price.toFixed(2)} →{' '}
+            <b>{alertToast.symbol.replace('USDT', '/USDT')}</b> {alertToast.direction === 'above' ? '≥' : '≤'} {fmtPriceWithPrecision(alertToast.price)} →{' '}
             {alertToast.triggeredPrice.toFixed(2)}
           </span>
           <button

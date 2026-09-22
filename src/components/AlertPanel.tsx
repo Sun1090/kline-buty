@@ -5,7 +5,7 @@ import { isExpired } from '../alerts/engine'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { adaptiveThreshold } from '../alerts/engine'
 import { useI18n } from '../i18n/useI18n'
-import { fmtPricePrecise } from '../utils/format'
+import { fmtPricePrecise, fmtPriceWithPrecision } from '../utils/format'
 
 interface AlertPanelProps {
   symbol: string
@@ -132,8 +132,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
   const expiryMs = expiresAt.trim() === '' ? undefined : new Date(expiresAt).getTime()
   // E10 价格精度：空=自动
   const precisionNum = precision === '' ? undefined : Number(precision)
-  /** 提醒目标价展示：按价格精度格式化（缺省 2 位） */
-  const displayPrice = (a: { price: number; pricePrecision?: number }) => a.price.toFixed(a.pricePrecision ?? 2)
+  /** 提醒目标价展示：按 E10 精度格式化，未指定精度时按价段自适应 */
+  const displayPrice = (a: { price: number; pricePrecision?: number }) => fmtPriceWithPrecision(a.price, a.pricePrecision)
   /** 提交提醒：含 E15 备注 / E6 到期 / E10 精度 */
   const submitAlert = () => {
     if (!valid || !intervalValid) return
@@ -950,7 +950,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
             {history.map((h, i) => (
               <div key={`${h.alertId}-${h.at}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)', fontSize: 11 }}>
                 <span>
-                  {h.symbol.replace('USDT', '/USDT')} {h.direction === 'above' ? '≥' : '≤'} {h.price.toFixed(2)} → {h.triggeredPrice.toFixed(2)}
+                  {h.symbol.replace('USDT', '/USDT')} {h.direction === 'above' ? '≥' : '≤'} {fmtPriceWithPrecision(h.price)} → {fmtPriceWithPrecision(h.triggeredPrice)}
                 </span>
                 <span style={{ color: 'var(--text-faint)' }}>
                   {new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

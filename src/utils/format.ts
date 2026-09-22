@@ -21,6 +21,14 @@ export function roundPricePrecise(v: number): number {
   return Number(v.toFixed(pricePreciseDigits(v)))
 }
 
+/**
+ * 带可选精度的价格展示：给了小数位就照它，没给按价段自动（与 fmtPricePrecise 同档位）。
+ * 提醒的 E10 精度是「可选项」，缺省写死两位小数会让 0.00012 这样的目标价显示成「0.00」。
+ */
+export function fmtPriceWithPrecision(v: number, precision?: number): string {
+  return precision === undefined ? fmtPricePrecise(v) : v.toFixed(precision)
+}
+
 /** 紧凑价格：≥1000 一位小数、否则两位（盘口 / 深度图，窄列容不下更长小数） */
 export function fmtPriceCompact(v: number): string {
   return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
