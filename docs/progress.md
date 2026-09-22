@@ -5,19 +5,31 @@
 
 ## 当前阶段
 
-**进行中 · v0.5.27 批次积累（基线 main b5313a6 = v0.5.26）**
-- 在飞 **#136** `fix(chart)`：右键菜单价位收口到展示精度（分支 `fix/v05-ctx-price-precision`，
-  worktree `wt-ctx-price`）——十字光标价格是像素反算的浮点尾数（`50766.61229625584`），
-  复制/加提醒/挂限价单三个出口原样带走。改为 `setCtxMenu` 前经 `roundPricePrecise` 收口，
-  并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成 `pricePreciseDigits`；
-  单测 1933 → **1940**，三条新用例逐一对应三个出口，撤掉收口即三条全红（实测报出原始尾数）
-- 在飞 `test/v05-e2e-flake-hardening`（worktree `wt-e2e-flakes`）：画线命中族改按**当前渲染像素**定位。
-  安德鲁叉从「全量连跑偶发红」恶化成隔离态 **3/3 常红**，同一条用例在平静行情下又 5/5 绿——
-  命中点写死成创建时的像素，能否压线取决于这期间价格刻度有没有被行情刷新。
-  新增 `findDrawnPixel(page, 窗口)` 扫 overlay 取真实像素；顺带发现更要紧的问题：
-  **画线提交后本就是选中态，删除按钮一直亮着**，所以「点线 → 删除出现」这条正向断言是空的。
-  现在先点已验证无像素的空白取消选中并断言面板收起，再点扫描到的像素断言出现——
-  把命中点整体下移 60px，三条用例同时红，才算真的在验证命中
+**进行中 · v0.5.27 批次积累（基线 main 56f3a5b = v0.5.26 + #136/#138/#139/#140）**
+- **#136 → main 95861ee** `fix(chart)`：右键菜单价位收口到展示精度。十字光标价格是像素反算的
+  浮点尾数（`50766.61229625584`），复制/加提醒/挂限价单三个出口原样带走；改为 `setCtxMenu` 前
+  经 `roundPricePrecise` 收口，并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成
+  `pricePreciseDigits`。单测 1933 → 1940，三条新用例对应三个出口，撤掉收口即三条全红
+- **#138 → main 05d4616** `test(e2e)`：画线命中族改按**当前渲染像素**定位（安德鲁叉隔离态 3/3 常红）。
+  三条规矩一起立：坐标现扫（`findDrawnPixels`）、逐候选试到命中（`hitDrawnPixelUntil`，候选按离整体
+  中心排序——文字标注的可点区在锚点，最左字形像素在容差外）、选工具后等面板收起（`pickDrawingTool`，
+  面板 `position:absolute` 盖在图表上，63 处调用点统一）。**顺带修掉一条空转断言**：画线提交即选中态，
+  「删除」一直亮着，所以「点线 → 删除出现」永远为真；现在先取消选中并断言面板收起，命中点下移 60px
+  三条同时红才算数。全量 `smoke-drawings` 40 条 `--retries=0` 全绿
+- **#139 → main 8d5f014** `fix(alerts)`：提醒价未指定 E10 精度时按价段自适应展示。字段注释写着
+  「缺省按价段自适应」，实现却三处写死两位小数（提醒行/触发历史/站内横幅），低价标的整行塌成 `0.00`；
+  新增 `fmtPriceWithPrecision`，存储层不动。单测 1940 → 1943，e2e 提醒用例补 0.000123 一条
+- **#140 → main 56f3a5b** `fix(chart)`：画线与仓位的价格标签同根因的图表侧，14 处 `toFixed(2)` 换
+  `fmtPricePrecise`（比例/百分比/斐波那契 level 不是价位，保持原样）。真实构建产物 + 真浏览器核对：
+  XRP/USDT 现价 1.5223656145781868 的水平线标签读到 **`1.5224`**（改前 `1.52`）
+- 部署状态：main CI（含三浏览器 E2E）**15m47s success**、Pages success、线上 bundle 已换成
+  `index-CTJTU6hj.js`、`/knowledge/` 200；Vercel 仍是账号级 **build-rate-limit**（`retry in 24 hours`，
+  同一天 #139 那轮自己就通过了）——非必需检查、不阻塞合并，按既定判断忽略
+- 本轮 CI 的一次真实红：#140 首跑 webkit 两条红（A2 flaky 后恢复 + `alerts-features` E6 报
+  `page.reload: WebKit encountered an internal error` 浏览器进程崩）。判定为 runner 侧偶发，
+  重跑失败作业 → 15m4s 全绿后才合并，没有靠重跑掩盖断言
+- 下一项（已排队）：`test(e2e)` 斐波那契时间线「≥15 强列」像素阈值在负载高时会少数一条竖线
+  （7 只扫到 6，本地约 1/8），应改为从落库 anchors 推期望列位而不是硬阈值
 
 **里程碑 v0.5.26 发布完成（2026-09-22）**
 - 版本号：**0.5.26**（package.json / package-lock 根版本 / index.html meta app-version）
