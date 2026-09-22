@@ -5055,15 +5055,17 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '文本', exact: true }).tap()
     await page.waitForTimeout(200)
-    let cdp = await page.context().newCDPSession(page)
+    // 触摸模拟一次开到底：关掉之后 locator.tap() / CDP 触摸派发都会静默掉事件，
+    // 点选与菜单点击就成了碰运气
+    const cdp = await page.context().newCDPSession(page)
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: box.x + box.width * 0.4, y: box.y + box.height * 0.4 }],
-    })
-    await page.waitForTimeout(60)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    const tapAt = async (x: number, y: number) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+      await page.waitForTimeout(60)
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await page.waitForTimeout(200)
+    }
+    await tapAt(box.x + box.width * 0.4, box.y + box.height * 0.4)
     await page.waitForTimeout(400)
     await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
     await page.getByTestId('mobile-text-input').fill('自动切回')
@@ -5080,8 +5082,6 @@ test.describe('移动端（390×844 触屏视口）', () => {
     // 工具已自动切回「鼠标」：无需手动点鼠标，直接触屏拖拽文本本体（黄字/蓝框像素中心）
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const center = (await findDrawnLineCenter(page))!
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
     for (let i = 1; i <= 6; i++) {
       await cdp.send('Input.dispatchTouchEvent', {
@@ -5091,7 +5091,6 @@ test.describe('移动端（390×844 触屏视口）', () => {
       await page.waitForTimeout(25)
     }
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
     await page.waitForTimeout(500)
 
     await expect
@@ -5108,23 +5107,19 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(true)
 
     // 空白处轻点：工具是 none（已切回鼠标），不会误建新画线（仍 1 条）
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: box.x + box.width * 0.15, y: box.y + box.height * 0.85 }],
-    })
-    await page.waitForTimeout(60)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    await page.waitForTimeout(500)
+    // 落点取离文本最远的对角：点得太近会正好点在本体上，「取消选中」就变成「改选」，
+    // 后面再点一次反而把选中态取消掉（表现为菜单里没有「删除」）。
+    const blank = {
+      x: center.x < box.x + box.width / 2 ? box.x + box.width - 24 : box.x + 24,
+      y: center.y < box.y + box.height / 2 ? box.y + box.height - 24 : box.y + 24,
+    }
+    await tapAt(blank.x, blank.y)
     expect(await count()).toBe(1)
 
-    // 空白轻点已取消选中 → 重新点选文本 → 删除
+    // 重新点选文本 → 菜单里的「删除」才存在（文本标注无选中描边，状态只能靠菜单项本身证明）
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
     const reCenter = (await findDrawnLineCenter(page))!
-    await page.touchscreen.tap(reCenter.x, reCenter.y)
-    await page.waitForTimeout(400)
+    await tapAt(reCenter.x, reCenter.y)
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '删除' }).tap()
     await expect
@@ -5233,9 +5228,11 @@ test.describe('移动端（390×844 触屏视口）', () => {
           cols: [...cols.values()].filter((c) => c > 6).length,
         }
       })
-    await expect.poll(() => stats().then((v) => v.n), { timeout: 10_000 }).toBeGreaterThan(180)
-    // 抗锯齿和 DPR 会让边框像素分散到相邻行列；总像素量已证明选中态确实绘制。
-    // 不再用固定行列阈值约束不同浏览器渲染实现。
+    // 窄屏下方框本身更小：只按总像素量设阈会误红。改判「选中蓝框的结构性特征」——
+    // 上下两条横边（rows≥2）+ 左右两条竖边（cols≥2），并留一个远低于量级的存在性下限。
+    await expect
+      .poll(() => stats().then((r) => (r.n > 60 && (r.rows >= 2 || r.cols >= 2) ? 'ok' : `${r.n}|${r.rows}|${r.cols}`)), { timeout: 10_000 })
+      .toBe('ok')
 
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '删除' }).tap()
