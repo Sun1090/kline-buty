@@ -228,4 +228,46 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     expect(orders[0].price).toBe(placed)
     expect(orders[0].qty).toBe(0.001)
   })
+
+  test('窄屏 320px：改价编辑器换行展示，四个控件都在视口内且面板不横向溢出', async ({ page }) => {
+    // 重载前注册的 init script 会在 beforeEach 的 clear 之后执行，故种子数据要一起补
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'kline-buty:paperOrders',
+        JSON.stringify([
+          { id: 'o1', symbol: 'BTCUSDT', side: 'buy', price: 41_000, qty: 0.001, createdAt: 1, marketable: false },
+          { id: 'o2', symbol: 'ETHUSDT', side: 'sell', price: 3_900, qty: 2, createdAt: 2, marketable: false },
+        ]),
+      )
+    })
+    await page.setViewportSize({ width: 320, height: 720 })
+    await page.reload()
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    const more = page.getByTestId('mobile-more')
+    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+    await page.getByRole('button', { name: '仓位', exact: true }).click()
+    const panel = page.getByRole('region', { name: '模拟仓位' })
+    await expect(panel).toBeVisible()
+
+    await panel.getByTestId('pending-order-edit-o1').click()
+    const editor = panel.getByTestId('pending-order-editor-o1')
+    await expect(editor).toBeVisible()
+    for (const id of ['pending-order-price-o1', 'pending-order-qty-o1', 'pending-order-edit-confirm-o1', 'pending-order-edit-cancel-o1']) {
+      await expect(panel.getByTestId(id)).toBeInViewport()
+    }
+    expect(await panel.evaluate((node) => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(0)
+
+    // 窄屏下真的改一笔：价格与数量都落库，另一条挂单不受影响
+    await panel.getByTestId('pending-order-price-o1').fill('42500')
+    await panel.getByTestId('pending-order-qty-o1').fill('0.004')
+    await panel.getByTestId('pending-order-edit-confirm-o1').click()
+    await expect(editor).toHaveCount(0)
+    const kept = (await stored(page, 'kline-buty:paperOrders')) as { id: string; price: number; qty: number }[]
+    expect(kept.find((o) => o.id === 'o1')).toMatchObject({ price: 42_500, qty: 0.004 })
+    expect(kept.find((o) => o.id === 'o2')).toMatchObject({ price: 3_900, qty: 2 })
+  })
 })
