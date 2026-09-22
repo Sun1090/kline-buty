@@ -8,7 +8,7 @@ export function pricePreciseDigits(v: number): number {
   return v >= 1000 ? 2 : v >= 1 ? 4 : 6
 }
 
-/** 高精度价格：十字光标信息窗 / 行情信息条 */
+/** 高精度价格：十字光标信息窗 / 行情信息条 / 画线与仓位的价格标签 */
 export function fmtPricePrecise(v: number): string {
   return v.toFixed(pricePreciseDigits(v))
 }
