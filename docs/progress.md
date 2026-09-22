@@ -5,6 +5,30 @@
 
 ## 当前阶段
 
+**里程碑 v0.5.25 发布完成（2026-09-22）**
+- 版本号：**0.5.25**（package.json / package-lock 根版本 / index.html meta app-version）
+- 分支：`release/v0.5.25`；发布 PR：**#123**（rebase 合并 → main **231aebc**，合并后即删远端分支）
+- 本版收录（v0.5.24 之后合并的批次）：#115 E2E 腐化修复 + 确定性清单补齐、#116 信息条超宽换行、
+  #117 部分平仓（减仓）、#118 同方向加仓合并并保留价位线、#119 跨价差限价单按 Taker 计费、
+  #120 partial-close 进 CI、#121 挂单改价（含按当下最新价重算费率归属）、#122 移动端触摸用例稳定化
+- tag/release：Release Tag workflow 自动打 **tag v0.5.25** @ 231aebc（run 35685437363，9s 成功）
+- 定档门禁：typecheck ✅ / lint 0 err（既有 warning 若干）✅ / audit:i18n ✅ / unit **1902**（172 files）✅ /
+  全量 build（含 docs 站合并）✅；发布 PR CI 三浏览器 E2E（15m10s）+ CodeQL + Knowledge + Build + Audit 全绿
+- 部署与 live 抽查：
+  - Pages ✅ run 35685437425 success；首页 200 且 meta `app-version=0.5.25`、`/knowledge/` 200、`manifest.webmanifest` 200
+  - 真实 bundle ✅ `assets/index-BgT2r73A.js`（569KB）含本版新文案：减仓 / 改价 / 吃单费率 / 挂单价 / 价格改善
+  - 真浏览器抽查 ✅ 线上首页渲染出 canvas、顶栏实时价 85692.00（真实行情在走），无空屏
+  - Vercel ⚠ 仍是账号级 **build-rate-limit**（提示 24h 恢复），非代码问题，不阻塞发布
+- 回滚：`git revert` 本次 release 提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 发布后仍在飞的两个批次（都已 rebase 到 231aebc）：
+  - **#124** `?perf` 压测模式补齐「不联网」契约：合成盘口档位（`src/data/syntheticDepth.ts`）+ 停掉真实历史预取，
+    perf 模式下对外请求 5 → 0
+  - **#125** 挂单改价编辑器的 320px 窄屏回归——顺带记一次有价值的变异失败：只用「控件在视口内 + 无横向溢出」
+    断言时，撤掉编辑器 `flexWrap` 用例**照样绿**（274px 恰好塞下被压扁的四个控件），补「控件排成 ≥2 行」后才真正承重。
+    教训：溢出类断言必须配一条「确实换行」的正向断言，否则测的是运气
+- 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 需登录态与原生平台，暂缓；
+  候选见文末「已知遗留」：marketable 即时成交不计滑点、`smoke.spec.ts` 体量过大待拆分）
+
 **里程碑 v0.5.24 发布完成（2026-09-22）**
 - 版本号：**0.5.24**（package.json / package-lock 根版本 / index.html meta app-version）
 - 分支：`release/v0.5.24`（release 1708769）；发布 PR：#114（rebase 合并 → main **54f9773**）
@@ -21,7 +45,7 @@
   按设计留本地——已按该标准在 test/v05-e2e-gaps 批次补齐（见「当前阶段」下一条）
 - 下一里程碑：**v0.5.x 继续**（I3 云同步 / I11 移动端 Widget 外部能力暂缓）
 
-**进行中 · E2E 健康度批次（分支 test/v05-e2e-gaps）**
+**已收口 · E2E 健康度批次（test/v05-e2e-gaps → PR #115，已并入 v0.5.25）**
 - 修掉本地全量跑出的真实腐化：持仓行按钮从 1 个变 3 个（平仓/反手/止盈止损）后
   `smoke` 两处用 `posRow.getByRole('button')` 触发 strict mode violation；
   `feature-gaps` G4 榜单用 `[data-testid^="market-row-"]` 计数把行内的 `market-row-select-*` 一起算进去（20>10）
@@ -31,6 +55,7 @@
 - 已知非回归（环境/几何依赖，留本地观察）：`recent-features`/`smoke` 的盘口驱动「模拟交易」用例
   在本沙箱拿不到订单簿数据（bid count 0，K 线实时价正常），CI 本就 grep-invert 排除；
   `smoke` 移动端文本标注 tap 流与 `period-anchor` 偶发抖动待单独排查
+  （订单簿拿不到数据 → #124 的 `?perf` 合成档位解决；移动端 tap 流 → #122 解决；`period-anchor` 仍待观察）
 
 
 - 版本号：**0.5.23 → 0.5.24**（package.json + package-lock 根版本 + index.html meta app-version）
