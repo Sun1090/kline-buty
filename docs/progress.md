@@ -5,15 +5,39 @@
 
 ## 当前阶段
 
-**进行中 · v0.5.26 批次积累（基线 main f00eeb6 = v0.5.25 + #124/#125/#126）**
-- **#127** `feat(trade)`：限价挂单附带止盈止损（分支 `feat/v05-limit-levels`，worktree `kline-buty-attach`）——
-  入单校验「站在挂单价正确一侧」、存量非法整对摘掉、改价逐条复检、成交前按成交价复检（`levelsAtFill`）、
-  attach 只作用新槽位；面板两行可选价位 + 列表 TP/SL 标记；五语 i18n；单测 1910 → **1925**、E2E 9/9；
-  5 处变异校验全部实测红/绿两侧
-- **#128** `fix(ui)`：快速下单面板 320px 下左半截被裁出屏幕（面板宽 375、左边界 −71，main 上即存在）——
-  三行按钮允许换行 + 面板按包含块限宽；E2E 断言面板边界/控件不被裁/零横向溢出，撤掉 `flexWrap` 即红（x = −14）
-- 下一项（已排队）：`feat(trade)` 快速下单携带杠杆——现 QuickOrder 的市价/限价成交落地都不写 `leverage`，
-  挂单成交出来的仓位在持仓面板里按 1x 显示保证金率与强平价，而手动开仓默认 10x，同一动作两套口径
+**进行中 · v0.5.27 批次积累（基线 main b5313a6 = v0.5.26）**
+- 在飞 **#136** `fix(chart)`：右键菜单价位收口到展示精度（分支 `fix/v05-ctx-price-precision`，
+  worktree `wt-ctx-price`）——十字光标价格是像素反算的浮点尾数（`50766.61229625584`），
+  复制/加提醒/挂限价单三个出口原样带走。改为 `setCtxMenu` 前经 `roundPricePrecise` 收口，
+  并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成 `pricePreciseDigits`；
+  单测 1933 → **1940**，三条新用例逐一对应三个出口，撤掉收口即三条全红（实测报出原始尾数）
+- 在飞 `test/v05-e2e-flake-hardening`（worktree `wt-e2e-flakes`）：画线命中族改按**当前渲染像素**定位。
+  安德鲁叉从「全量连跑偶发红」恶化成隔离态 **3/3 常红**，同一条用例在平静行情下又 5/5 绿——
+  命中点写死成创建时的像素，能否压线取决于这期间价格刻度有没有被行情刷新。
+  新增 `findDrawnPixel(page, 窗口)` 扫 overlay 取真实像素；顺带发现更要紧的问题：
+  **画线提交后本就是选中态，删除按钮一直亮着**，所以「点线 → 删除出现」这条正向断言是空的。
+  现在先点已验证无像素的空白取消选中并断言面板收起，再点扫描到的像素断言出现——
+  把命中点整体下移 60px，三条用例同时红，才算真的在验证命中
+
+**里程碑 v0.5.26 发布完成（2026-09-22）**
+- 版本号：**0.5.26**（package.json / package-lock 根版本 / index.html meta app-version）
+- 分支：`release/v0.5.26`；发布 PR：**#135**（rebase 合并 → main **b5313a6**，合并后即删远端分支）
+- 本版收录（v0.5.25 之后合并的批次）：#124 `?perf` 合成盘口 + 停真实历史预取（对外请求 5 → 0）、
+  #125 挂单改价编辑器 320px 窄屏回归、#127 限价挂单附带止盈止损（成交按成交价复检）、
+  #128 快速下单面板 320px 左半截裁出屏幕、#131 period-anchor A2 时间预算与上限对齐、
+  #132 快速下单携带杠杆并透传成交仓位、#133 `smoke.spec.ts` 5952 行拆成 5 个规格（87 条用例标题逐条比对不变）
+  + 顺带修掉两条自 v0.5.21 起就红着的腐化、#134 下单面板显示随单价位的隐含盈亏比
+- tag/release：Release Tag workflow 自动打 **tag v0.5.26** @ b5313a6（run 35702634440，14s 成功）
+- 定档门禁：typecheck ✅ / lint 0 err（30 条既有 warning）✅ / audit:i18n ✅ / unit **1933**（172 files）✅ /
+  全量 build（含 docs 站合并）✅ / 本地全量 chromium E2E **210 passed**（2 条时序 flaky 重试即绿）；
+  发布 PR CI 三浏览器 E2E（15m23s）+ CodeQL + Knowledge + Build + Audit 全绿
+- 部署与 live 抽查：
+  - Pages ✅ run 35702634449 success（2m39s）；首页 200 且 meta `app-version=0.5.26`、`/knowledge/` 200
+  - 真实 bundle ✅ `assets/index-Dl7VHveG.js`（574KB）含本版新文案：随单 / 止盈价 / 隐含盈亏比 / 杠杆
+  - Vercel ⚠ 仍是账号级 **build-rate-limit**（提示 24h 恢复），非代码问题，不阻塞发布
+- 回滚：`git revert` 本次 release 提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
+- 下一里程碑：**v0.5.x 继续**（在飞两批次见「当前阶段」；已知遗留：marketable 即时成交不计滑点、
+  e2e 规格不在 typecheck 覆盖内、低价币提醒行按 `pricePrecision ?? 2` 展示成 `0.00`）
 
 **里程碑 v0.5.25 发布完成（2026-09-22）**
 - 版本号：**0.5.25**（package.json / package-lock 根版本 / index.html meta app-version）
