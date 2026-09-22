@@ -10,6 +10,16 @@ const POSITIONS_KEY = 'kline-buty:positionsBySymbol'
 const TRADES_KEY = 'kline-buty:paperTrades'
 const BALANCE_KEY = 'kline-buty:paperBalance'
 
+interface SlotState {
+  entry: number
+  quantity: number
+  direction: string
+  takeProfit: number
+  stopLoss: number
+  trailPct: number
+}
+type PositionsState = Record<string, { long: SlotState | null; short: SlotState | null }>
+
 interface TradeRow {
   symbol: string
   kind: string
@@ -20,6 +30,19 @@ interface TradeRow {
 
 function stored(page: Page, key: string) {
   return page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null') as unknown, key)
+}
+
+const slotOf = async (page: Page) =>
+  ((await stored(page, POSITIONS_KEY)) as PositionsState).BTCUSDT.long
+
+/** 等减仓流水落库：持仓与流水由两次不同的 state 写入，负载高时后者会落后于前者 */
+async function closes(page: Page, expected: number) {
+  await expect
+    .poll(async () =>
+      (((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close').length,
+    )
+    .toBe(expected)
+  return (((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close')
 }
 
 /** 打开「仓位」面板：桌面走 header-more，窄屏（<768px）走 mobile-more 弹层 */
@@ -33,7 +56,8 @@ async function openPositionPanel(page: Page) {
   return panel
 }
 
-// 止盈 90k / 止损 30k 都远在合成价（≈50.7k）之外 → 结算链路不会插手，纯看手动减仓
+// 止盈 90k / 止损 30k 都远在合成价（≈50.7k）之外 → 结算链路不会插手，纯看手动减仓。
+// 带 trailPct 是为了顺带验证「减仓不丢已推进的移动止损」：止损线由 tick 自行上移，与减仓无关。
 const SEED = { entry: 40_000, quantity: 0.002, direction: 'long', takeProfit: 90_000, stopLoss: 30_000, trailPct: 2 }
 
 test.describe('v0.5 模拟盘部分平仓', () => {
@@ -51,6 +75,8 @@ test.describe('v0.5 模拟盘部分平仓', () => {
     const market = Number((await page.getByTestId('live-price').innerText()).replace(/[^\d.]/g, ''))
 
     const panel = await openPositionPanel(page)
+    const before = await slotOf(page)
+    expect(before?.quantity).toBe(0.002)
     await panel.getByTestId('position-reduce-toggle-long').click()
     // 预填一半
     await expect(panel.getByTestId('position-reduce-qty-long')).toHaveValue(String(SEED.quantity / 2))
@@ -59,21 +85,20 @@ test.describe('v0.5 模拟盘部分平仓', () => {
     const remaining = await panel.getByTestId('position-reduce-editor-long').count()
     expect(remaining).toBe(0)
     await expect
-      .poll(async () => {
-        const p = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: { quantity: number } | null } }
-        return p.BTCUSDT.long?.quantity ?? 0
-      })
+      .poll(async () => (await slotOf(page))?.quantity ?? 0)
       .toBeCloseTo(0.0015, 12)
-    const kept = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: typeof SEED } }
-    // 开仓价与价位线原样保留
-    expect(kept.BTCUSDT.long).toMatchObject({ entry: 40_000, takeProfit: 90_000, stopLoss: 30_000, trailPct: 2 })
+    const kept = await slotOf(page)
+    // 开仓价、止盈线、移动止损比例原样保留；止损线只允许由 tick 单向上推进
+    expect(kept?.entry).toBe(40_000)
+    expect(kept?.takeProfit).toBe(90_000)
+    expect(kept?.trailPct).toBe(2)
+    expect(kept?.stopLoss).toBeGreaterThanOrEqual(before?.stopLoss ?? 0)
 
-    const closes = (((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close')
-    expect(closes).toHaveLength(1)
-    expect(closes[0]).toMatchObject({ symbol: 'BTCUSDT', side: 'buy' })
-    expect(closes[0].qty).toBeCloseTo(0.0005, 12)
+    const rows = await closes(page, 1)
+    expect(rows[0]).toMatchObject({ symbol: 'BTCUSDT', side: 'buy' })
+    expect(rows[0].qty).toBeCloseTo(0.0005, 12)
     // 按现价结算：减仓价就是当时的最新价
-    expect(Math.abs(closes[0].price - market)).toBeLessThan(market * 0.02)
+    expect(Math.abs(rows[0].price - market)).toBeLessThan(market * 0.02)
     // 浮盈落袋：余额高于初始 10,000
     const balance = (await stored(page, BALANCE_KEY)) as number
     expect(balance).toBeGreaterThan(10_000)
@@ -84,14 +109,14 @@ test.describe('v0.5 模拟盘部分平仓', () => {
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     const panel = await openPositionPanel(page)
     await panel.getByTestId('position-reduce-toggle-long').click()
-    for (const bad of ['0.5', '0', 'abc']) {
+    // 数量框是 input[type=number]：非数字被浏览器直接吞掉，非法只有超量/零/负数三种
+    for (const bad of ['0.5', '0', '-1']) {
       await panel.getByTestId('position-reduce-qty-long').fill(bad)
       await panel.getByTestId('position-reduce-confirm-long').click()
       await expect(panel.getByTestId('position-reduce-error')).toBeVisible()
     }
-    const kept = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: { quantity: number } } }
-    expect(kept.BTCUSDT.long.quantity).toBe(0.002)
-    expect((((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close')).toHaveLength(0)
+    expect((await slotOf(page))?.quantity).toBe(0.002)
+    expect(await closes(page, 0)).toHaveLength(0)
   })
 
   test('减到全量：等价于全平，槽位清空且只记一条 close', async ({ page }) => {
@@ -102,15 +127,9 @@ test.describe('v0.5 模拟盘部分平仓', () => {
     await panel.getByTestId('position-reduce-qty-long').fill(String(0.002))
     await panel.getByTestId('position-reduce-confirm-long').click()
 
-    await expect
-      .poll(async () => {
-        const p = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: unknown } }
-        return p.BTCUSDT.long
-      })
-      .toBeNull()
-    const closes = (((await stored(page, TRADES_KEY)) ?? []) as TradeRow[]).filter((r) => r.kind === 'close')
-    expect(closes).toHaveLength(1)
-    expect(closes[0].qty).toBeCloseTo(0.002, 12)
+    await expect.poll(() => slotOf(page)).toBeNull()
+    const rows = await closes(page, 1)
+    expect(rows[0].qty).toBeCloseTo(0.002, 12)
     await expect(panel.getByText('暂无持仓')).toBeVisible()
   })
 
@@ -131,11 +150,7 @@ test.describe('v0.5 模拟盘部分平仓', () => {
     expect(overflow).toBeLessThanOrEqual(1)
     // 真实减一次：320px 下交互可用
     await panel.getByTestId('position-reduce-ratio-long-50').click()
-    await expect
-      .poll(async () => {
-        const p = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: { quantity: number } | null } }
-        return p.BTCUSDT.long?.quantity ?? 0
-      })
-      .toBeCloseTo(0.001, 12)
+    await expect.poll(async () => (await slotOf(page))?.quantity ?? 0).toBeCloseTo(0.001, 12)
+    await closes(page, 1)
   })
 })
