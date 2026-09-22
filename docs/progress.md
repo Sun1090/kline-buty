@@ -5,7 +5,42 @@
 
 ## 当前阶段
 
-**进行中 · v0.5.27 批次积累（基线 main 8a72156 = v0.5.26 + #136/#138/#139/#140/#142/#143/#144/#145/#146）**
+**里程碑 v0.5.27 发布完成（2026-09-22）**
+- 版本号：**0.5.27**（package.json / package-lock 根两处 / index.html meta `app-version`）
+- 分支：`release/v0.5.27`；发布 PR：**#148**（rebase 合并 → main **b7ea36d**，合并后即删远端分支）
+- 本版收录（v0.5.26 之后合并的批次，明细见下）：#136 右键菜单价位收口、#139 提醒价按价段自适应、
+  #140 画线与仓位图上标签、#142 持仓/toast/价格区间框、#144 低价标的档位补齐（四档）、
+  #145 VOL-MA 图例缩写、#146 行情信息条 320px 换行；测试侧 #138 画线命中按当前像素 + 空转断言、
+  #143 斐波那契时间线改跑 `?perf`；文档 #141/#147
+- tag/release：Release Tag workflow 自动打 **tag v0.5.27** @ 28bee4d（run 35742211218，幂等不覆盖旧 tag）
+- 定档门禁：`npm run precheck` **All checks passed in 198.1s**（typecheck / lint 0 error /
+  audit:i18n / unit **1952**（172 files）/ 全量 build 含 docs 站合并）；
+  本地全量 chromium E2E **210 passed / 2 flaky / 1 failed**（12.3m）——唯一红是移动端视觉基线，
+  由 #146 换行导致整页下移 22px 超出 `maxDiffPixelRatio: 0.02`，按该规格自述的做法重生成
+  （桌面三张基线未受影响、照常通过），重生成后连跑两次 4/4 绿；
+  发布 PR CI 三浏览器 E2E 首跑 **1 红**（webkit `period-anchor` A2，`back` 应为 0 实到 1，
+  初始 + 两次重试同红）——先排除自身：实测 CI 视口 1280×800 下信息条仍是单行
+  （chromium 29px / webkit 27px、容器溢出 0），#146 未改桌面布局，且同内容在 #146 自己的
+  PR 上 15m52s 全绿 → 判定 webkit runner 侧偶发，**重跑失败作业 → 15m15s 全绿后才合并**
+- 部署与 live 抽查（Pages run 35742211206 success @ 28bee4d）：
+  - 首页 200 且 meta `app-version=0.5.27`；`/knowledge/` 200
+  - 线上 bundle 换成 `assets/index-CuIKYx4P.js`（574KB），产物内 grep 到四档阈值
+    `>=1e3?2:e>=1?4:e>=1e-4?6:8`
+  - 真浏览器线上 `?symbol=SHIBUSDT`：8 张 canvas、文档级横向溢出 0、现价 `0.00000596`，
+    盘口档位 `0.00000596 / 0597 / 0598 / 0599` **逐档可区分**、价差 `0.00000001`（#144 生效），
+    图例 `VOL-MA: 17236.00M` 已缩写（#145 生效，改前是 `1163738465.60` 这样的 10 位原始数字）
+  - Vercel 侧仍是账号级 **build-rate-limit**：`kline-buty.vercel.app` 停在 0.5.26 产物
+    （线上实测现价仍 `▲0.000006` 旧档位），等配额恢复的下一轮构建自然追上；Pages 是主部署，不阻塞
+- 风险 / 回滚：本版全部是展示层格式化与一处 flex 布局，**持久化数据结构与下单口径未变**，
+  无 DB / 迁移；回滚 = `git revert` release 提交（b7ea36d）与视觉基线提交（28bee4d），
+  远端 tag 误打用 `gh api` 删除
+- 下一里程碑：**v0.5.x 继续**。已排队的下一项：
+  ① `App.integration.test.tsx` 在 CPU 争用下 6 条同红（单跑与独占负载全绿，CI 未受影响）——
+  需要一条能稳定复现负载的复现手段再决定是加预算还是拆用例；
+  ② `e2e/*.spec.ts` 不在 `tsconfig` 的 `include` 里，CI 的 Typecheck 作业从不检查它们；
+  ③ 视觉基线只在本地跑、CI 不覆盖，这次「基线自 #124 起就漂了（`合约`→`现货`）却无人察觉」正是盲区本身
+
+**v0.5.27 批次明细（发布前逐条记录）**
 - **#136 → main 95861ee** `fix(chart)`：右键菜单价位收口到展示精度。十字光标价格是像素反算的
   浮点尾数（`50766.61229625584`），复制/加提醒/挂限价单三个出口原样带走；改为 `setCtxMenu` 前
   经 `roundPricePrecise` 收口，并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成
