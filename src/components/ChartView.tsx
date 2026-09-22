@@ -1081,7 +1081,9 @@ export function ChartView({
         setCtxMenu({ x: e.clientX, y: e.clientY, price: roundPricePrecise(pt.price), time: pt.time })
       }}
     >
-      <div ref={containerRef} className="chart-container" style={{ width: '100%', height: '100%' }} />
+      {/* data-candles：已入仓的 K 线根数。画布上有红绿像素不等于「图表可用」——首根 WS tick 先到、
+          历史 K 线还在路上时同样有像素，而此时的手势与断言都落在只有一两根柱子的图上 */}
+      <div ref={containerRef} className="chart-container" data-candles={candles.length} style={{ width: '100%', height: '100%' }} />
       {candles.length === 0 && (
         <div
           style={{
