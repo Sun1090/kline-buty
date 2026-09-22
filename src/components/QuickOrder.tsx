@@ -108,6 +108,11 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
         fontSize: 12,
         boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
         minWidth: 240,
+        // 窄屏（320px 档）下面板不得越过视口：absolute + right 的 shrink-to-fit 会按最宽一行的
+        // max-content 撑到 375px，左半截（连「价格/数量」标签）被裁到屏幕外。
+        // 换行让行能收缩到容器内，这条限宽把面板钉在包含块里（两者都不可省：只留限宽时
+        // 行仍撑到 min-content，面板依旧越界 14px）
+        maxWidth: 'calc(100% - 32px)',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -169,7 +174,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
         <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.price')}</span>
         <input data-testid="qo-price" style={inputStyle} value={priceStr} onChange={(e) => setPriceStr(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
         <span style={{ color: 'var(--text-dim)', width: 70 }} />
         {bid != null && (
           <button data-testid="qo-bid" onClick={() => setPriceStr(String(bid))} title={t('quickOrder.bid')} style={fillBtnStyle('var(--down)')}>
@@ -187,7 +192,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
       </div>
       {/* D8 手数预设：一键填入常用数量 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
         <span style={{ color: 'var(--text-dim)', width: 70 }} />
         {QTY_PRESETS.map((q) => (
           <button
@@ -202,7 +207,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
         ))}
       </div>
       {balance != null && priceNum > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
           <span style={{ color: 'var(--text-dim)', width: 70 }} />
           {[25, 50, 75, 100].map((pct) => (
             <button
