@@ -37,7 +37,7 @@ async function drawHorizontalLine(page: Page) {
   await page.mouse.up()
   await expect.poll(() =>
     page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
       return Object.values(all).flat().length
     }),
   ).toBeGreaterThan(0)
@@ -85,7 +85,7 @@ test.describe('I5 画线语义识别', () => {
     await page.mouse.up()
     await expect.poll(() =>
       page.evaluate(() => {
-        const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+        const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
         return Object.values(all).flat().length
       }),
     ).toBeGreaterThan(0)

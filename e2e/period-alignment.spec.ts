@@ -13,7 +13,7 @@ interface PerfProbe {
   candles?: { time: number }[]
 }
 
-async function probe(page: Page): Promise<PerfProbe> {
+async function probe(page: Page): Promise<PerfProbe | undefined> {
   return page.evaluate(() => window.__klineButyPerf as PerfProbe | undefined)
 }
 
@@ -31,18 +31,17 @@ function inspectCandles(cs: { time: number }[], stepSec: number) {
 
 /** 等待某周期压测数据就绪（period 匹配且根数符合预期），返回该周期蜡烛快照 */
 async function waitReady(page: Page, period: string, count: number): Promise<{ time: number }[]> {
-  let cs: { time: number }[] | null = null
-  await expect
-    .poll(
-      async () => {
-        const p = await probe(page)
-        cs = p?.period === period && p.candles?.length === count ? p.candles : null
-        return cs !== null
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(true)
-  return cs as { time: number }[]
+  const read = async () => {
+    const p = await probe(page)
+    return p?.period === period && p.candles?.length === count ? p.candles : null
+  }
+  const deadline = Date.now() + 20_000
+  for (;;) {
+    const cs = await read()
+    if (cs) return cs
+    if (Date.now() > deadline) throw new Error(`压测数据未就绪：${period} 期望 ${count} 根`)
+    await page.waitForTimeout(200)
+  }
 }
 
 /** 主图 canvas 出现行情像素（红跌/绿涨任一），证明切周期后图表重新渲染 */

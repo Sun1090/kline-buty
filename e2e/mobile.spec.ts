@@ -592,7 +592,7 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
   // 落库：type=horizontal、单锚点
   const saved = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
       return arr[0] ?? null
     } catch {
@@ -633,7 +633,7 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)[0]?.length ?? -1
     } catch {
       return -2
@@ -699,7 +699,7 @@ test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 
   // 落库：type=text + 文本内容
   const saved = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       const arr = Object.values(d)[0] as { type: string; text?: string }[]
       return arr[0] ?? null
     } catch {
@@ -717,7 +717,7 @@ test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)[0]?.length ?? -1
     } catch {
       return -2
@@ -784,7 +784,7 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
   // 落库：type=channel、2 锚点
   const saved = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
       return arr[0] ?? null
     } catch {
@@ -825,7 +825,7 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)[0]?.length ?? -1
     } catch {
       return -2
@@ -1106,7 +1106,7 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
       async () =>
         page.evaluate(() => {
           try {
-            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
             return Object.values(d)
               .flat()
               .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
@@ -1119,7 +1119,7 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
     .toBe(1)
   const saved = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)
         .flat()
         .find((x: unknown) => (x as { type?: string }).type === 'triangle') as
@@ -1144,7 +1144,7 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
   await page.waitForTimeout(500)
   const count = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)
         .flat()
         .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
@@ -1161,7 +1161,7 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
     } catch {
       return -2
@@ -1211,7 +1211,7 @@ test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 �
       async () =>
         page.evaluate(() => {
           try {
-            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+            const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
             return Object.values(d)
               .flat()
               .filter((x: unknown) => (x as { type?: string }).type === 'bezier').length
@@ -1224,7 +1224,7 @@ test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 �
     .toBe(1)
   const saved = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)
         .flat()
         .find((x: unknown) => (x as { type?: string }).type === 'bezier') as
@@ -1251,7 +1251,7 @@ test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 �
   await page.waitForTimeout(500)
   const count = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d)
         .flat()
         .filter((x: unknown) => (x as { type?: string }).type === 'bezier').length
@@ -1268,7 +1268,7 @@ test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 �
   await page.waitForTimeout(400)
   const after = await page.evaluate(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+      const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
       return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
     } catch {
       return -2
@@ -1298,7 +1298,7 @@ test('移动端：系统取消指针 → 三角形不误提交，已确认锚点
   const savedTriangles = () =>
     page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'triangle').length
@@ -1340,7 +1340,7 @@ test('移动端：系统取消指针 → 三角形不误提交，已确认锚点
   const countAll = () =>
     page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
       } catch {
         return -2

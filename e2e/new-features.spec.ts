@@ -116,7 +116,7 @@ test.describe('2026-09 新功能回归（J/K/L 阶段）', () => {
     await page.keyboard.press('Enter')
     // 画线提交后落库
     await expect.poll(() => page.evaluate(() => {
-      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+      const all = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]> as Record<string, unknown[]>
       return Object.values(all).flat().length
     })).toBeGreaterThan(0)
   })

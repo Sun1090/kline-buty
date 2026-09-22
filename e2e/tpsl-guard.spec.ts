@@ -145,7 +145,7 @@ test.describe('v0.5 止盈止损结算', () => {
 
     await page.waitForTimeout(5_000)
     expect((await stored(page, TRADES_KEY)) as TradeRow[]).toHaveLength(1)
-    positions = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: unknown } }
+    positions = (await stored(page, POSITIONS_KEY)) as { BTCUSDT: { long: { stopLoss: number } | null } }
     expect(positions.BTCUSDT.long).toBeNull()
   })
 

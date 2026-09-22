@@ -27,7 +27,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d).reduce((n, arr) => n + (arr as unknown[]).length, 0)
             } catch {
               return 0
@@ -61,7 +61,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'vertical').length
@@ -118,7 +118,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'hchannel').length
@@ -137,7 +137,7 @@ test.describe('画线工具', () => {
     const readHchannel = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d).flat().filter((x: unknown) => (x as { type?: string }).type === 'hchannel')
           return (arr[0] as { id: string; points: { time: number; price: number }[] }) ?? null
         } catch {
@@ -221,7 +221,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const xs = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'xabcd')
@@ -249,7 +249,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'elliott').length
@@ -314,7 +314,7 @@ test.describe('画线工具', () => {
     // 落库：多行文本 + fontSize + color
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)[0] as { type: string; text?: string; fontSize?: number; color?: string }[]
         return arr[0] ?? null
       } catch {
@@ -363,7 +363,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(async () => (await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d)[0]?.length ?? -1
       } catch {
         return -2
@@ -407,7 +407,7 @@ test.describe('画线工具', () => {
     await expect(page.getByPlaceholder('文本内容')).toHaveCount(0)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)[0] as { type: string; text?: string }[]
         return arr[0] ?? null
       } catch {
@@ -425,7 +425,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)[0]?.length ?? -1
             } catch {
               return -2
@@ -456,7 +456,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'cycle')
@@ -470,7 +470,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'cycle')
@@ -521,7 +521,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(async () => (await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'cycle').length
@@ -551,7 +551,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'fibtz')
@@ -565,7 +565,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'fibtz')
@@ -616,7 +616,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(async () => (await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'fibtz').length
@@ -646,7 +646,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'angle')
@@ -660,7 +660,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'angle')
@@ -705,7 +705,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'angle').length
@@ -739,7 +739,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
@@ -754,7 +754,7 @@ test.describe('画线工具', () => {
     const readTimerange = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)
             .flat()
             .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
@@ -834,7 +834,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'timerange').length
@@ -868,7 +868,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pband')
@@ -882,11 +882,11 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'pband')
-        return (arr[0] as { points: { time: number; price: number }[] }) ?? null
+        return (arr[0] as { id: string; type: string; points: { time: number; price: number }[] }) ?? null
       } catch {
         return null
       }
@@ -905,7 +905,7 @@ test.describe('画线工具', () => {
     const readPband = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)
             .flat()
             .filter((x: unknown) => (x as { type?: string }).type === 'pband')
@@ -1027,7 +1027,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pband').length
@@ -1060,7 +1060,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
@@ -1073,7 +1073,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'pricerange')
@@ -1133,7 +1133,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
@@ -1167,7 +1167,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'position').length
@@ -1180,7 +1180,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'position')
@@ -1198,7 +1198,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'position').length
@@ -1231,7 +1231,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
@@ -1244,7 +1244,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'forecast')
@@ -1262,7 +1262,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
@@ -1294,7 +1294,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'daterange').length
@@ -1307,7 +1307,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'daterange')
@@ -1326,7 +1326,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'daterange').length
@@ -1359,7 +1359,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel')
@@ -1373,7 +1373,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel')
@@ -1424,7 +1424,7 @@ test.describe('画线工具', () => {
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(async () => (await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'fibchannel').length
@@ -1539,7 +1539,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'wedge')
@@ -1553,7 +1553,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'wedge')
@@ -1576,9 +1576,9 @@ test.describe('画线工具', () => {
           const st = getComputedStyle(c)
           return st.position === 'absolute' && st.zIndex === '5'
         })
-        if (!overlay) return 0
+        if (!overlay) return { n: 0, cols: 0 }
         const ctx = overlay.getContext('2d')
-        if (!ctx) return 0
+        if (!ctx) return { n: 0, cols: 0 }
         const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
         let n = 0
         const xCols = new Set<number>()
@@ -1606,7 +1606,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'wedge').length
@@ -1637,7 +1637,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pchannel')
@@ -1651,7 +1651,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'pchannel')
@@ -1673,9 +1673,9 @@ test.describe('画线工具', () => {
           const st = getComputedStyle(c)
           return st.position === 'absolute' && st.zIndex === '5'
         })
-        if (!overlay) return 0
+        if (!overlay) return { n: 0, cols: 0 }
         const ctx = overlay.getContext('2d')
-        if (!ctx) return 0
+        if (!ctx) return { n: 0, cols: 0 }
         const img = ctx.getImageData(0, 0, overlay.width, overlay.height).data
         let n = 0
         const xCols = new Set<number>()
@@ -1703,7 +1703,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pchannel').length
@@ -1860,7 +1860,7 @@ test.describe('画线工具', () => {
     const readGann = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: { time: number; price: number }[] }[]
           return arr[0] ?? null
         } catch {
@@ -1964,7 +1964,7 @@ test.describe('画线工具', () => {
     const readBox = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: { time: number; price: number }[] }[]
           return arr[0] ?? null
         } catch {
@@ -2037,7 +2037,7 @@ test.describe('画线工具', () => {
     const readBox = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: { time: number; price: number }[] }[]
           return arr[0] ?? null
         } catch {
@@ -2111,7 +2111,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             points: { time: number; price: number }[]
@@ -2179,7 +2179,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             points: { time: number; price: number }[]
@@ -2236,7 +2236,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             points: { time: number; price: number }[]
@@ -2295,7 +2295,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
           return arr.find((x) => x.type === 'vray') ?? null
         } catch {
@@ -2345,7 +2345,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
           return arr.find((x) => x.type === 'hray') ?? null
         } catch {
@@ -2403,7 +2403,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
           return arr.find((x) => x.type === 'extended') ?? null
         } catch {
@@ -2459,7 +2459,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { id: string; type: string; points: unknown[] }[]
           return arr.find((x) => x.type === 'cross') ?? null
         } catch {
@@ -2527,7 +2527,7 @@ test.describe('画线工具', () => {
     )
     await expect.poll(() => page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         return Object.values(d).flat().some((x: unknown) => (x as { type?: string }).type === 'polyline')
       } catch { return false }
     }), { timeout: 5000 }).toBe(true)
@@ -2560,7 +2560,7 @@ test.describe('画线工具', () => {
     // 落库：2 锚点（A→B 顺序）
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
         return arr[0] ?? null
       } catch {
@@ -2599,7 +2599,7 @@ test.describe('画线工具', () => {
     // 落库：type=speedlines、2 锚点、A→B 方向保持（time 递增）
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
         return arr[0] ?? null
       } catch {
@@ -2638,8 +2638,8 @@ test.describe('画线工具', () => {
     // 落库：type=regchan、2 锚点（按时间排序）
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
-        const arr = Object.values(d)[0] as { type: string; points: { time: number; price: number }[] }[]
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
+        const arr = Object.values(d)[0] as { id: string; type: string; points: { time: number; price: number }[] }[]
         return arr[0] ?? null
       } catch {
         return null
@@ -2653,7 +2653,7 @@ test.describe('画线工具', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             type: string
@@ -2714,7 +2714,7 @@ test.describe('画线工具', () => {
     const storedDrawings = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           return Object.values(d)
             .flat()
             .map((x) => ({
@@ -2902,7 +2902,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'note').length
@@ -2915,7 +2915,7 @@ test.describe('画线工具', () => {
       .toBe(1)
     let saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'note')
@@ -2931,7 +2931,7 @@ test.describe('画线工具', () => {
     await waitCandlesRendered(page)
     saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'note')
@@ -2955,7 +2955,7 @@ test.describe('画线工具', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'note').length

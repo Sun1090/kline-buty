@@ -372,7 +372,7 @@ test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止�
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'rr')
@@ -386,7 +386,7 @@ test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止�
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'rr')
@@ -436,7 +436,7 @@ test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止�
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'rr').length
@@ -469,7 +469,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'parray')
@@ -483,7 +483,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'parray')
@@ -530,7 +530,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'parray').length
@@ -648,8 +648,8 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await page.getByRole('button', { name: 'Ichimoku', exact: true }).click()
     await expect
       .poll(
-        () =>
-          page.evaluate(() => {
+        async () => {
+          const v = await page.evaluate<{ cloud: number; orange: number }>(() => {
             let cloud = 0
             let orange = 0
             for (const c of document.querySelectorAll('canvas')) {
@@ -665,8 +665,9 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
               }
             }
             return { cloud, orange }
-          }),
-        (v) => v.cloud > 60 && v.orange > 40,
+          })
+          return v.cloud > 60 && v.orange > 40
+        },
         { timeout: 15_000 },
       )
       .toBeTruthy()

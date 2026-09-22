@@ -211,7 +211,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             points: { time: number; price: number }[]
@@ -306,7 +306,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             points: { time: number; price: number }[]
@@ -405,7 +405,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             type: string
             text?: string
@@ -474,7 +474,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)[0]?.length ?? -1
             } catch {
               return -2
@@ -500,7 +500,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as {
             id: string
             type: string
@@ -514,7 +514,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const count = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           return Object.values(d)[0]?.length ?? -1
         } catch {
           return -2
@@ -577,8 +577,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
     // 落点取离文本最远的对角：点得太近会正好点在本体上，「取消选中」就变成「改选」，
     // 后面再点一次反而把选中态取消掉（表现为菜单里没有「删除」）。
     const blank = {
-      x: center.x < box.x + box.width / 2 ? box.x + box.width - 24 : box.x + 24,
-      y: center.y < box.y + box.height / 2 ? box.y + box.height - 24 : box.y + 24 }
+      x: center!.x < box.x + box.width / 2 ? box.x + box.width - 24 : box.x + 24,
+      y: center!.y < box.y + box.height / 2 ? box.y + box.height - 24 : box.y + 24 }
     await tapAt(blank.x, blank.y)
     expect(await count()).toBe(1)
 
@@ -641,7 +641,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
@@ -654,7 +654,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'pricerange')
@@ -713,7 +713,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'pricerange').length
@@ -761,7 +761,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'position').length
@@ -774,7 +774,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'position')
@@ -793,7 +793,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'position').length
@@ -845,7 +845,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
@@ -858,7 +858,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'forecast')
@@ -877,7 +877,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'forecast').length
@@ -929,7 +929,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'daterange').length
@@ -942,7 +942,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'daterange')
@@ -962,7 +962,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'daterange').length
@@ -1028,7 +1028,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
 
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'note')
@@ -1046,7 +1046,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'note').length
@@ -1075,7 +1075,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     const readFirst = () =>
       page.evaluate(() => {
         try {
-          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+          const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
           const arr = Object.values(d)[0] as { type: string; text?: string }[]
           return arr[0] ?? null
         } catch {
@@ -1135,7 +1135,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)[0]?.length ?? -1
             } catch {
               return -2
@@ -1185,7 +1185,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               const arr = Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
@@ -1199,7 +1199,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       .toBe(1)
     const saved = await page.evaluate(() => {
       try {
-        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+        const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
         const arr = Object.values(d)
           .flat()
           .filter((x: unknown) => (x as { type?: string }).type === 'timerange')
@@ -1247,7 +1247,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         () =>
           page.evaluate(() => {
             try {
-              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}')
+              const d = JSON.parse(localStorage.getItem('kline-buty:drawings') ?? '{}') as Record<string, unknown[]>
               return Object.values(d)
                 .flat()
                 .filter((x: unknown) => (x as { type?: string }).type === 'timerange').length
