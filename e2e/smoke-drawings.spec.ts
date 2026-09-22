@@ -2472,18 +2472,38 @@ test.describe('画线工具', () => {
 
     // 切回鼠标后分别验证横线与纵线命中
     await pickDrawingTool(page, '鼠标', true)
-    await page.mouse.click(ax + 160, ay)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const selected = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
+    // 提交时就是选中态：不先取消，「删除出现」这条断言从创建起一直为真，测不到命中
+    await page.mouse.click(box!.x + box!.width * 0.05, box!.y + box!.height * 0.95)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    // 命中坐标只能现扫：横线锚在 price 上，行情刷新价格刻度会把创建像素推到别处
+    const onH = await hitDrawnPixelUntil(page, selected, {
+      xMin: ax + 120,
+      xMax: ax + 220,
+      yMin: ay - 120,
+      yMax: ay + 120,
+    })
+    expect(onH, '锚点右侧应存在可命中的横线像素').not.toBeNull()
 
     // 点击空白取消选择；再点击远离横线的纵线上仍应命中
     await page.mouse.click(box!.x + box!.width * 0.8, box!.y + box!.height * 0.82)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
-    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.7)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const onV = await hitDrawnPixelUntil(
+      page,
+      async () => {
+        const ok = await selected()
+        if (!ok) return false
+        // 必须命中纵线（横向偏移在容差内），否则是横线像素被误当成命中
+        const p = await findDrawnLineCenter(page)
+        return p !== null && Math.abs(p.x - ax) <= 60
+      },
+      { xMin: ax - 60, xMax: ax + 60, yMin: ay + 140, yMax: ay + 300 },
+    )
+    expect(onV, '横线下方应存在可命中的纵线像素').not.toBeNull()
 
     // 回到横线命中并删除
-    await page.mouse.click(box!.x + box!.width * 0.8, ay)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const onH2 = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.72, xMax: box!.x + box!.width * 0.9 })
+    expect(onH2, '右侧横线上应再次命中').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
     await expect.poll(readFirst).toBeNull()
@@ -2535,8 +2555,18 @@ test.describe('画线工具', () => {
 
     // 切回鼠标 → 点折线任一段命中选中 → 删除
     await pickDrawingTool(page, '鼠标', true)
-    await page.mouse.click(box!.x + box!.width * 0.32, box!.y + box!.height * 0.4)
-    await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
+    const selectedPoly = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
+    // 提交即选中态：先点空白取消，否则「删除出现」从创建起一直为真，测不到命中
+    await page.mouse.click(box!.x + box!.width * 0.05, box!.y + box!.height * 0.95)
+    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+    // 命中坐标现扫：三个顶点锚在 (time, price) 上，行情刷新刻度后 0.32W/0.4H 未必还落在段上
+    const onPoly = await hitDrawnPixelUntil(page, selectedPoly, {
+      xMin: box!.x + box!.width * 0.15,
+      xMax: box!.x + box!.width * 0.9,
+      yMin: box!.y,
+      yMax: box!.y + box!.height * 0.85,
+    })
+    expect(onPoly, '折线段上应存在可命中的像素').not.toBeNull()
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
   })
