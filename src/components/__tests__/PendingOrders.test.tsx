@@ -56,8 +56,16 @@ describe('PendingOrders 挂单列表', () => {
     fireEvent.change(price, { target: { value: '58000' } })
     fireEvent.change(qty, { target: { value: '0.25' } })
     fireEvent.click(screen.getByTestId('pending-order-edit-confirm-a'))
-    expect(onEdit).toHaveBeenCalledWith('a', { price: 58000, qty: 0.25 })
+    expect(onEdit).toHaveBeenCalledWith('a', { price: 58000, qty: 0.25 }, null)
     expect(screen.queryByTestId('pending-order-editor-a')).toBeNull()
+  })
+
+  it('改价：把最新价一并交给上层，供其重算 Maker / Taker 归属', () => {
+    const onEdit = vi.fn(() => true)
+    render(<PendingOrders orders={orders} symbol="BTCUSDT" onCancel={vi.fn()} onEdit={onEdit} currentPrice={61_000} />)
+    fireEvent.click(screen.getByTestId('pending-order-edit-a'))
+    fireEvent.click(screen.getByTestId('pending-order-edit-confirm-a'))
+    expect(onEdit).toHaveBeenCalledWith('a', { price: 60_000, qty: 0.5 }, 61_000)
   })
 
   it('改价：数量非法直接拦截，不回调', () => {

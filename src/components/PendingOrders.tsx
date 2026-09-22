@@ -6,11 +6,13 @@ import { useI18n } from '../i18n/useI18n'
 
 interface PendingOrdersProps {
   orders: PendingOrder[]
+  /** 当前品种最新价：改价时用于重算跨价差（费率归属） */
+  currentPrice?: number | null
   /** 当前主图品种（行内高亮） */
   symbol: string
   onCancel: (id: string) => void
   /** 改价：返回 false 表示未受理（订单已被撮合/撤销或数值非法），行内报错 */
-  onEdit?: (id: string, patch: { price: number; qty: number }) => boolean
+  onEdit?: (id: string, patch: { price: number; qty: number }, marketPrice?: number | null) => boolean
   /** 点击行切主图品种（未传则行不可点击） */
   onSwitchSymbol?: (symbol: string) => void
 }
@@ -26,7 +28,7 @@ const tinyBtn: CSSProperties = {
 }
 
 /** 限价挂单列表：方向/挂单价/数量 + 改价 + 撤销；空态保留标题行，避免面板高度跳动 */
-export function PendingOrders({ orders, symbol, onCancel, onEdit, onSwitchSymbol }: PendingOrdersProps) {
+export function PendingOrders({ orders, symbol, onCancel, onEdit, currentPrice, onSwitchSymbol }: PendingOrdersProps) {
   const { t } = useI18n()
   // 一次只展开一条挂单的编辑器；数量与价格以字符串承载，确认时才校验
   const [editId, setEditId] = useState<string | null>(null)
@@ -42,7 +44,9 @@ export function PendingOrders({ orders, symbol, onCancel, onEdit, onSwitchSymbol
   const submit = (id: string) => {
     const price = Number(draft.price)
     const qty = Number(draft.qty)
-    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(qty) || qty <= 0 || !onEdit?.(id, { price, qty })) {
+    // 改价按当下挂价重算 Maker / Taker 归属，故把最新价一并交给上层
+    const ok = Number.isFinite(price) && price > 0 && Number.isFinite(qty) && qty > 0 && onEdit?.(id, { price, qty }, currentPrice ?? null)
+    if (!ok) {
       setError(true)
       return
     }

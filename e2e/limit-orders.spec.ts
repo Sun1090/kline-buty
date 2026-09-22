@@ -164,10 +164,12 @@ test.describe('v0.5 模拟盘限价挂单', () => {
 
     await expect(page.getByTestId('order-toast')).toContainText('限价单已成交')
     expect((await stored(page, 'kline-buty:paperOrders')) ?? []).toEqual([])
-    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; qty: number }[]
+    const trades = (await stored(page, 'kline-buty:paperTrades')) as { kind: string; qty: number; feeRate: number }[]
     expect(trades).toHaveLength(1)
     expect(trades[0].kind).toBe('open')
     expect(trades[0].qty).toBe(0.002)
+    // 改价把买单抬过现价 → 这单从改价起就在吃单，按 Taker 费率（默认 0.1%）计
+    expect(trades[0].feeRate).toBeCloseTo(0.001, 10)
   })
 
   test('挂单改价：非法数量面板内报错，挂单原样留着', async ({ page }) => {

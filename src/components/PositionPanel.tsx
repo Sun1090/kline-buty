@@ -32,8 +32,8 @@ interface PositionPanelProps {
   symbol?: string
   pendingOrders?: PendingOrder[]
   onCancelOrder?: (id: string) => void
-  /** 挂单改价：返回 false 表示未受理，行内报错 */
-  onEditOrder?: (id: string, patch: { price: number; qty: number }) => boolean
+  /** 挂单改价：返回 false 表示未受理，行内报错；marketPrice 为改价时的最新价（重算费率归属） */
+  onEditOrder?: (id: string, patch: { price: number; qty: number }, marketPrice?: number | null) => boolean
 }
 
 /** 杠杆档位速选（D1：模拟交易杠杆选择） */
@@ -635,6 +635,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
           symbol={symbol ?? ''}
           onCancel={onCancelOrder}
           onEdit={onEditOrder}
+          currentPrice={currentPrice}
           onSwitchSymbol={onSwitchSymbol}
         />
       )}
