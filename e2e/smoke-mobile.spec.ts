@@ -1408,8 +1408,15 @@ test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page })
   await page.getByRole('button', { name: '添加提醒', exact: true }).click()
   // 列表出现该提醒
   await expect(page.getByText(/999999/)).toBeVisible()
-  // 删除
-  await page.getByRole('button', { name: '删除', exact: true }).click()
+  // 低价标的：未指定 E10 精度时按价段自适应展示，不能塌成「0.00」
+  // （方向切到「≤」，否则 0.000123 对 BTC 现价会立即触发、提醒行不再是这条断言的目标）
+  await page.getByText('价格 ≤').click()
+  await priceInput.fill('0.000123')
+  await page.getByRole('button', { name: '添加提醒', exact: true }).click()
+  await expect(page.getByTestId('alert-row').filter({ hasText: '0.000123' })).toBeVisible()
+  // 逐条删除（两条提醒各一个删除按钮）
+  await page.getByRole('button', { name: '删除', exact: true }).first().click()
+  await page.getByRole('button', { name: '删除', exact: true }).first().click()
   // 列表为空
   await expect(page.getByText('暂无提醒')).toBeVisible()
 })

@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtVolumeBM, fmtVolumeMK, fmtAxisPrice, roundPricePrecise } from '../format'
+import { fmtPriceCompact, fmtPriceLocale, fmtPriceMedium, fmtPricePrecise, fmtPriceWithPrecision, fmtVolumeBM, fmtVolumeMK, fmtAxisPrice, roundPricePrecise } from '../format'
+
+describe('fmtPriceWithPrecision（可选精度：未指定时按价段自适应）', () => {
+  it('未指定精度跟随 fmtPricePrecise 档位，低价不会塌成 0.00', () => {
+    expect(fmtPriceWithPrecision(0.000123)).toBe('0.000123')
+    expect(fmtPriceWithPrecision(3.5)).toBe('3.5000')
+    expect(fmtPriceWithPrecision(65432.1)).toBe('65432.10')
+  })
+  it('指定了精度就照它，包含 0 位', () => {
+    expect(fmtPriceWithPrecision(65000, 0)).toBe('65000')
+    expect(fmtPriceWithPrecision(65000.456, 1)).toBe('65000.5')
+    expect(fmtPriceWithPrecision(0.000123456, 3)).toBe('0.000')
+  })
+})
 
 describe('roundPricePrecise（浮点读数收口到展示精度）', () => {
   it('≥1000 只留两位小数：十字光标的原始尾数不外泄', () => {
