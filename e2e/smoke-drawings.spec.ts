@@ -1765,17 +1765,13 @@ test.describe('画线工具', () => {
   test('画线：斐波那契时间线 → 拖 A→B → 7 条竖线（黄金分割）→ 删除', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
-    await page.goto('/')
-    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
-    await waitCandlesRendered(page)
-    // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
-    await page.getByRole('button', { name: '5分', exact: true }).click()
-    await page.waitForTimeout(800)
-    await page.getByRole('button', { name: '1分', exact: true }).click()
-    await waitCandlesRendered(page)
-    // 实时行情右边缘平移会让图表轻微挪动：等一拍稳定后再画
-    await page.waitForTimeout(600)
-    const chart = page.locator('main div').first()
+    // 用 ?perf 合成数据：本用例断言的是「七条竖线落在黄金分割列位」这种像素级几何，
+    // 实时行情会持续平移时间轴与价格刻度，列分组数会随负载在 6/7 之间跳（本地约 1/8 红）。
+    // 合成数据下同一条用例 10 次跑出完全相同的列位。
+    await page.addInitScript(() => localStorage.clear())
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const chart = page.locator('.chart-container').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
 
