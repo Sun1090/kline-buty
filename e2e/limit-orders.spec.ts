@@ -256,6 +256,13 @@ test.describe('v0.5 模拟盘限价挂单', () => {
     for (const id of ['pending-order-price-o1', 'pending-order-qty-o1', 'pending-order-edit-confirm-o1', 'pending-order-edit-cancel-o1']) {
       await expect(panel.getByTestId(id)).toBeInViewport()
     }
+    // 去掉 flexWrap 时四个控件只是被压扁（274px 刚好塞下），视口与溢出断言照样过；
+    // 真正兜住「换行展示」的是控件确实排成了两行。
+    const rowCount = await editor.evaluate((node) => {
+      const tops = Array.from(node.children).map((c) => Math.round((c as HTMLElement).getBoundingClientRect().y))
+      return tops.filter((y, i) => !tops.slice(0, i).some((o) => Math.abs(o - y) <= 4)).length
+    })
+    expect(rowCount).toBeGreaterThanOrEqual(2)
     expect(await panel.evaluate((node) => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
