@@ -1477,8 +1477,12 @@ export function ChartView({
               position: 'absolute',
               left: 10,
               bottom: 40,
+              // 指标行多时（MA×n + VOL + MACD）一行装不下：限宽换行，避免撑出横向滚动
+              maxWidth: 'calc(100% - 20px)',
               display: 'flex',
-              gap: 12,
+              flexWrap: 'wrap',
+              columnGap: 12,
+              rowGap: 2,
               fontSize: 11,
               color: 'var(--text-dim)',
               opacity: 0.85,
