@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-**进行中 · v0.5.27 批次积累（基线 main 56f3a5b = v0.5.26 + #136/#138/#139/#140）**
+**进行中 · v0.5.27 批次积累（基线 main 17c3538 = v0.5.26 + #136/#138/#139/#140/#142/#143/#144）**
 - **#136 → main 95861ee** `fix(chart)`：右键菜单价位收口到展示精度。十字光标价格是像素反算的
   浮点尾数（`50766.61229625584`），复制/加提醒/挂限价单三个出口原样带走；改为 `setCtxMenu` 前
   经 `roundPricePrecise` 收口，并把 `fmtPricePrecise`/`fmtPriceLocale` 各写一遍的阈值抽成
@@ -22,14 +22,45 @@
 - **#140 → main 56f3a5b** `fix(chart)`：画线与仓位的价格标签同根因的图表侧，14 处 `toFixed(2)` 换
   `fmtPricePrecise`（比例/百分比/斐波那契 level 不是价位，保持原样）。真实构建产物 + 真浏览器核对：
   XRP/USDT 现价 1.5223656145781868 的水平线标签读到 **`1.5224`**（改前 `1.52`）
+- **#142 → main 401a8f9** `fix(ui)`：同一族里剩下的三个出口——持仓面板（入场/止盈/止损/强平 8 处）、
+  成交与止盈止损 toast（含 `alertToast.triggeredPrice` 这条自查漏项）、价格区间框标签。
+  单测 1943 → 1946，`position-liq` testid 落测
+- **#143 → main a2df4c3** `test(e2e)`：斐波那契时间线的竖线计数从「实时行情 + ≥15 像素强列」阈值
+  改为跑 `?perf=600` 合成数据——同一份代码在负载高时 7 条只扫到 6 条（本地约 1/8）。
+  改完 10/10 次扫出同一组列位 `[200,321,396,456,516,602,712]`；把 `FIB_LEVELS` 去掉 `0.786` 重建后
+  用例红在 `Expected length: 7 / Received length: 6`，说明断言仍然抓得住应用回归。
+  顺带去掉切周期强制 fitContent 的 hack 与两处固定等待
+- **#144 → main 17c3538** `fix(ui)`：价位 < 0.01 的标的（SHIB/PEPE/1000SATS）整列塌成 `0.00`——
+  盘口 16 档、成交流、挂单价、深度图轴标、筹码分布、主图价格轴与 MA 图例全中。根因是展示档位缺最小档：
+  `fmtPriceCompact` 对 <1 只给两位、`fmtPriceMedium`/`fmtAxisPrice` 只给四位，`pricePreciseDigits`
+  的六位对 `0.00000598` 也只剩一位有效数字。补第四档（<1e-4 → 八位）、三个紧凑档改为共用同一套阈值，
+  `QuickOrder` 的 `decimals` 与 `MarketList` 的本地阈值一并收口。0.0001 以上行为不变
+  （#139 的 `0.000123` 用例仍绿）。单测 1946 → **1951**；变异检验把三个档改回旧值 → 6 条新用例全红，
+  报错原文即缺陷（`expected '0.0020.020.0' to contain '0.00001234'`）；真浏览器 `?symbol=SHIBUSDT` 实测：
+  桌面 1440 与 320×640 下盘口显示 `0.00000589…0.00000604`、价差 `0.00000001`，单元格无裁切、
+  文档级横向溢出 0，深度图最长 SVG 标签右边缘 743 < viewBox 760。CI 三浏览器 E2E 15m18s 全绿后合并
+- **在飞 #145** `fix(chart)`（分支 `fix/v05-volma-legend` @ a110cdb，worktree `wt-volma`）：
+  `chart-indicator-last` 图例与十字光标 tooltip 对副图线一律 `toFixed(2)`，而 VOL 副图的 `VOL-MA`
+  是成交量——实测同一行里 `VOL: 12226.86M` 与 `VOL-MA: 12751049433.00` 并排。抽 `fmtSubLineValue`
+  按副图类型分派（volume 走 `fmtVolume`，KDJ/RSI/MACD 等小数值保持两位）。单测 1946 → 1947，
+  helper 改回无条件 `toFixed(2)` 后新用例红在 `expected 'VOL: 12750.00M…' to contain 'VOL-MA: 12750.00M'`
+- **在飞 #146** `fix(ui)`（分支 `fix/v05-statsbar-narrow-wrap` @ 1137041，worktree `wt-statsbar`）：
+  行情信息条是 flex 行 + `overflowX: auto`、字段全 `flexShrink: 0`，320px 下内容撑到 498px
+  （容器溢出 **178px**）：最新价切在右边缘、⚙（字段配置唯一入口）推到 `right: 480` 不滚动点不到，
+  直接违反「移动端功能区域换行、不出现横向滚动条、320px 关键控件立即可见」。改 `flexWrap: wrap`
+  + `gap: '4px 20px'`：320 下高 29 → 51px 折两行，1440 仍单行 29px。`recent-features` 补 320px
+  几何回归（容器无横向溢出 + 变高证明确实折行 + 两控件在视口内），改回旧样式重建后红在
+  `Received: 178`；该规格 25 条全绿
 - 部署状态：main CI（含三浏览器 E2E）**15m47s success**、Pages success、线上 bundle 已换成
   `index-CTJTU6hj.js`、`/knowledge/` 200；Vercel 仍是账号级 **build-rate-limit**（`retry in 24 hours`，
-  同一天 #139 那轮自己就通过了）——非必需检查、不阻塞合并，按既定判断忽略
+  同一天 #139 那轮自己就通过了、#144 这轮也通过了）——非必需检查、不阻塞合并，按既定判断忽略
 - 本轮 CI 的一次真实红：#140 首跑 webkit 两条红（A2 flaky 后恢复 + `alerts-features` E6 报
   `page.reload: WebKit encountered an internal error` 浏览器进程崩）。判定为 runner 侧偶发，
   重跑失败作业 → 15m4s 全绿后才合并，没有靠重跑掩盖断言
-- 下一项（已排队）：`test(e2e)` 斐波那契时间线「≥15 强列」像素阈值在负载高时会少数一条竖线
-  （7 只扫到 6，本地约 1/8），应改为从落库 anchors 推期望列位而不是硬阈值
+- **更正一条既有遗留记录**：v0.5.24 记的「`?perf` 模式文档级横向溢出 139px（`chart-indicator-last`
+  图例宽度所致）」经实测不成立——合成数据成交量只有 116，改前该位置就是 `VOL-MA: 116.00`，
+  320px 下 `?perf` 与真实行情的 `scrollWidth - innerWidth` 都是 0。真正的横向溢出在行情信息条
+  （容器级 178px，见 #146），与图例无关
 
 **里程碑 v0.5.26 发布完成（2026-09-22）**
 - 版本号：**0.5.26**（package.json / package-lock 根版本 / index.html meta app-version）
@@ -123,8 +154,10 @@
   - 每条新断言都做变异校验：移除止损写回 → hook 4 红；移除 settled 过滤 → 1 红；禁用推进 → 单测 3 红 + E2E 2 红；
     去掉价格改善 → 5 红；把 App 里的 `dragLevel` 换回直写 → 2 红；头部层改回 95 → 层叠用例红
   - 遮挡类断言改用 `elementFromPoint` 直断层叠（只靠 click 会被 Playwright 的重试机制补上，缺陷态照样绿、只是变慢）
-- 已知遗留（不阻塞发布）：`?perf` 压测模式下文档级横向溢出 139px（`chart-indicator-last` 图例宽度所致，
-  真实行情模式为 0）；限价单跨价差成交仍按挂单（Maker）费率计费——交易所会把这类判为 Taker，
+- 已知遗留（不阻塞发布）：~~`?perf` 压测模式下文档级横向溢出 139px（`chart-indicator-last` 图例宽度所致，
+  真实行情模式为 0）~~ **v0.5.27 实测归因有误**：`?perf` 与真实行情在 320px 的文档级溢出都是 0，
+  图例不是溢出源；真正的横向滚动在行情信息条容器（178px，见「当前阶段」#146）；
+  限价单跨价差成交仍按挂单（Maker）费率计费——交易所会把这类判为 Taker，
   费率语义待单独一批决定
 - 回滚：`git revert` 反向提交；远端 tag 误打用 `gh api` 删除；无 DB/迁移
 - 下一里程碑：**v0.5.x 继续**——候选「模拟盘部分平仓（按数量/比例减仓）」，
