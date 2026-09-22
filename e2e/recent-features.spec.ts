@@ -557,3 +557,38 @@ test.describe('2026-08 新功能回归', () => {
     await page2.close()
   })
 })
+
+test.describe('v0.5.x 快速下单面板窄屏几何', () => {
+  test('320px：面板整块落在视口内，标签与按钮都可见，无横向滚动', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    await page.setViewportSize({ width: 320, height: 720 })
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    const chart = page.locator('.chart-container').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+    await chart.click({ button: 'right', position: { x: box.width * 0.5, y: box.height * 0.5 } })
+    await page.getByTestId('ctx-limit-buy').click()
+    const order = page.getByTestId('quick-order')
+    await expect(order).toBeVisible()
+
+    const geo = await order.evaluate((n) => {
+      const el = n as HTMLElement
+      const r = el.getBoundingClientRect()
+      // 越出左边界 = 被裁到屏幕外（320px 档只剩两个裸输入框，正是本次要修的缺陷）
+      const clipped = Array.from(el.querySelectorAll('span,b,button,input,label')).filter(
+        (c) => Math.round(c.getBoundingClientRect().x) < 0,
+      ).length
+      return { x: Math.round(r.x), right: Math.round(r.right), overflow: el.scrollWidth - el.clientWidth, clipped }
+    })
+    expect(geo.x).toBeGreaterThanOrEqual(0)
+    expect(geo.right).toBeLessThanOrEqual(320)
+    expect(geo.clipped).toBe(0)
+    expect(geo.overflow).toBeLessThanOrEqual(1)
+    await expect(order.getByText('价格', { exact: true })).toBeInViewport()
+    await expect(order.getByTestId('qo-pct-100')).toBeInViewport()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
+  })
+})
