@@ -1,12 +1,19 @@
 import { useMemo, useRef, useState } from 'react'
 import { estimateOrder, DEFAULT_SLIPPAGE_RATIO, MAKER_FEE_RATE, TAKER_FEE_RATE, type OrderSide } from '../trade/order'
-import { isMarketable } from '../trade/pending'
+import { attachedLevelsOk, isMarketable } from '../trade/pending'
+import { parseLevel } from '../position/levels'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 /** 下单类型：市价（即时成交、计滑点）/ 限价（挂单，触价按当时市场价成交） */
 export type OrderType = 'market' | 'limit'
+
+/** 限价单可随带的止盈/止损价（null = 不附带），成交后写进新开仓位的价位线 */
+export interface QuickOrderAttach {
+  takeProfit: number | null
+  stopLoss: number | null
+}
 
 interface QuickOrderProps {
   symbol: string
@@ -22,7 +29,7 @@ interface QuickOrderProps {
   makerFeeRate?: number
   /** 打开时的下单类型（默认市价）：图表右键「挂限价单」传 limit */
   initialType?: OrderType
-  onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType }) => void
+  onConfirm: (order: { side: OrderSide; price: number; qty: number; type: OrderType } & QuickOrderAttach) => void
   onClose: () => void
 }
 
@@ -35,6 +42,23 @@ const inputStyle: React.CSSProperties = {
   background: 'var(--bg)',
   color: 'var(--text)',
   boxSizing: 'border-box',
+}
+
+/**
+ * 解析随单止盈/止损两行输入：留空 = 不附带（null）；填坏（非数字、非正）
+ * 与站错挂单价一侧都算不成立——`parseLevel` 用 undefined 表示「填了但坏了」，
+ * 必须折成非法值再交给 `attachedLevelsOk`，否则 'abc' 会被当成未设置而放行。
+ */
+function parseAttach(side: OrderSide, price: number, tpStr: string, slStr: string): { attach: QuickOrderAttach; ok: boolean } {
+  const tp = parseLevel(tpStr)
+  const sl = parseLevel(slStr)
+  return {
+    attach: { takeProfit: typeof tp === 'number' ? tp : null, stopLoss: typeof sl === 'number' ? sl : null },
+    ok: attachedLevelsOk(side, price, {
+      takeProfit: tp === undefined ? Number.NaN : tp,
+      stopLoss: sl === undefined ? Number.NaN : sl,
+    }),
+  }
 }
 
 /** D8 手数预设：常用数量一键填入（覆盖 BTC 级别小数与主流币整数档） */
@@ -59,6 +83,9 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
   const [qtyStr, setQtyStr] = useState('1')
   // v0.5.x 自定义百分比仓位输入（余额占比，含开仓手续费预留）
   const [customPct, setCustomPct] = useState('')
+  // 随单止盈/止损（仅限价）：留空即不附带
+  const [tpStr, setTpStr] = useState('')
+  const [slStr, setSlStr] = useState('')
   // M5 焦点陷阱：下单弹层内 Tab 循环
   const rootRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, rootRef)
@@ -77,11 +104,12 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
     [valid, priceNum, qtyNum, side, isLimit, limitRate, takerFeeRate],
   )
   const insufficient = est != null && balance != null && est.notional + est.fee > balance
+  const { attach, ok: attachOk } = parseAttach(side, priceNum, tpStr, slStr)
 
   const accent = side === 'buy' ? 'var(--up)' : 'var(--down)'
   // v0.5.x 键盘支持：Enter 确认下单（有效且保证金充足时）、Esc 关闭弹层
-  const confirmable = valid && !insufficient
-  const submit = () => onConfirm({ side, price: priceNum, qty: qtyNum, type: orderType })
+  const confirmable = valid && !insufficient && attachOk
+  const submit = () => onConfirm({ side, price: priceNum, qty: qtyNum, type: orderType, ...attach })
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && confirmable) {
       e.preventDefault()
@@ -146,7 +174,14 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
           <button
             key={tp}
             data-testid={`qo-type-${tp}`}
-            onClick={() => setOrderType(tp)}
+            onClick={() => {
+              setOrderType(tp)
+              // 随单价位只对限价单有意义：切走就清空，不留隐形的待提交状态
+              if (tp !== 'limit') {
+                setTpStr('')
+                setSlStr('')
+              }
+            }}
             aria-pressed={orderType === tp}
             title={t('trade.limitHint')}
             style={{
@@ -182,6 +217,35 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
           </button>
         )}
       </div>
+      {isLimit && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }} title={t('quickOrder.attachHint')}>
+            <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('position.tpPrice')}</span>
+            <input
+              data-testid="qo-tp"
+              aria-label={t('position.tpPrice')}
+              style={inputStyle}
+              value={tpStr}
+              onChange={(e) => setTpStr(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }} title={t('quickOrder.attachHint')}>
+            <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('position.slPrice')}</span>
+            <input
+              data-testid="qo-sl"
+              aria-label={t('position.slPrice')}
+              style={inputStyle}
+              value={slStr}
+              onChange={(e) => setSlStr(e.target.value)}
+            />
+          </div>
+          {!attachOk && (
+            <div data-testid="qo-attach-err" style={{ color: 'var(--down)', fontSize: 10, marginTop: -4, marginBottom: 8 }}>
+              {t('quickOrder.attachErr')}
+            </div>
+          )}
+        </>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 70 }}>{t('quickOrder.qty')}</span>
         <input data-testid="qo-qty" style={inputStyle} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />

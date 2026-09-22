@@ -9,6 +9,7 @@ import {
   matchPendingOrders,
   parsePendingOrders,
   fillPrice,
+  levelsAtFill,
   planFills,
   type PendingOrder,
 } from '../pending'
@@ -29,7 +30,7 @@ describe('createPendingOrder', () => {
     const created = createPendingOrder({ symbol: ' btcusdt ', side: 'sell', price: 60000, qty: 0.2, now: 1234 })
     expect(created).not.toBeNull()
     expect(created!.id.startsWith('1234-')).toBe(true)
-    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234, marketable: false })
+    expect({ ...created!, id: '' }).toEqual({ id: '', symbol: 'BTCUSDT', side: 'sell', price: 60000, qty: 0.2, createdAt: 1234, marketable: false, takeProfit: null, stopLoss: null })
   })
 
   it('下单时最新价已优于挂单价 → 记为跨价差（Taker）；贴价与无价按未跨计', () => {
@@ -42,6 +43,27 @@ describe('createPendingOrder', () => {
     expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 60_000, qty: 1, marketPrice: 50_000 })!.marketable).toBe(false)
     expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1 })!.marketable).toBe(false)
     expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, marketPrice: null })!.marketable).toBe(false)
+  })
+
+  it('随单止盈/止损：合法即带上，站在挂单价错误一侧或非法 → 整单被拒', () => {
+    const buy = createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: 66_000, stopLoss: 58_000 })
+    expect({ takeProfit: buy!.takeProfit, stopLoss: buy!.stopLoss }).toEqual({ takeProfit: 66_000, stopLoss: 58_000 })
+    // 卖单方向相反：止盈在下、止损在上
+    const sell = createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 60_000, qty: 1, takeProfit: 54_000, stopLoss: 62_000 })
+    expect({ takeProfit: sell!.takeProfit, stopLoss: sell!.stopLoss }).toEqual({ takeProfit: 54_000, stopLoss: 62_000 })
+    // 只带一条也成立，另一条按未设置
+    const one = createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, stopLoss: 58_000 })
+    expect({ takeProfit: one!.takeProfit, stopLoss: one!.stopLoss }).toEqual({ takeProfit: null, stopLoss: 58_000 })
+    // 与挂单价相等：成交那一瞬即触发，按误输入拒绝
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: 60_000 })).toBeNull()
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, stopLoss: 60_000 })).toBeNull()
+    // 站错方向：买单止盈不得在挂单价之下、止损不得在之上；卖单反之
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: 59_000 })).toBeNull()
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, stopLoss: 61_000 })).toBeNull()
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'sell', price: 60_000, qty: 1, takeProfit: 61_000 })).toBeNull()
+    // 非正 / 非有限
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: 0 })).toBeNull()
+    expect(createPendingOrder({ symbol: 'BTCUSDT', side: 'buy', price: 60_000, qty: 1, takeProfit: Number.NaN })).toBeNull()
   })
 
   it('非法输入返回 null（空品种/非正价格/非正数量/非有限值/方向非法）', () => {
@@ -109,9 +131,26 @@ describe('parsePendingOrders', () => {
       { id: 'w', symbol: 'BTCUSDT', side: 'buy', price: 1, qty: 0 },
     ]
     expect(parsePendingOrders(raw).map((o) => o.id)).toEqual(['x', 'y'])
-    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7, marketable: false })
+    expect(parsePendingOrders(raw)[1]).toEqual({ id: 'y', symbol: 'ETHUSDT', side: 'sell', price: 3000, qty: 2, createdAt: 7, marketable: false, takeProfit: null, stopLoss: null })
     expect(parsePendingOrders('nope')).toEqual([])
     expect(parsePendingOrders(null)).toEqual([])
+  })
+
+  it('随单价位还原：合法保留、任一不成立则整对摘掉但单子保住、老数据缺字段按未设置', () => {
+    const restored = parsePendingOrders([
+      { id: 'a', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 1, takeProfit: 120, stopLoss: 90 },
+      { id: 'b', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 2, takeProfit: 80, stopLoss: 90 },
+      { id: 'c', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 3, takeProfit: 120 },
+      { id: 'd', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 4 },
+      { id: 'e', symbol: 'BTCUSDT', side: 'buy', price: 100, qty: 1, createdAt: 5, takeProfit: -3, stopLoss: 90 },
+    ])
+    expect(restored.map((o) => [o.takeProfit, o.stopLoss])).toEqual([
+      [120, 90],
+      [null, null], // 止盈站到挂单价下方：整对摘掉
+      [120, null],
+      [null, null],
+      [null, 90], // 止盈字段本身坏了 → 只丢这一条，另一条照常保留
+    ])
   })
 
   it('存量标记随条目还原：跨价差的单重载后仍是 Taker（重载时无从得知当时最新价）', () => {
@@ -243,7 +282,7 @@ describe('editPendingOrder 改价', () => {
     const next = editPendingOrder(list, 'b', { price: 260, qty: 0.5 })
     expect(next).not.toBeNull()
     expect(next!.map((o) => o.id)).toEqual(['a', 'b'])
-    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000, marketable: false })
+    expect(next![1]).toEqual({ id: 'b', symbol: 'BTCUSDT', side: 'sell', price: 260, qty: 0.5, createdAt: 1_000, marketable: false, takeProfit: null, stopLoss: null })
     expect(next![0]).toBe(list[0]) // 未改动的条目保持原引用
   })
 
@@ -262,11 +301,43 @@ describe('editPendingOrder 改价', () => {
     expect(editPendingOrder(crossed, 'a', { price: 95, qty: 1 }, 100)![0].marketable).toBe(false)
     // 不传最新价（无从判定）沿用原归属
     expect(editPendingOrder(crossed, 'a', { price: 95, qty: 1 })![0].marketable).toBe(true)
+
+  })
+
+  it('改价越过随单价位时逐条复检：不成立的那条摘掉，成立的那条留着', () => {
+    const withLevels = [order({ id: 'c', side: 'buy', price: 100, qty: 1, takeProfit: 120, stopLoss: 90 })]
+    const levelsOf = (price: number) => {
+      const [o] = editPendingOrder(withLevels, 'c', { price, qty: 1 })!
+      return [o.takeProfit, o.stopLoss]
+    }
+    expect(levelsOf(110)).toEqual([120, 90])
+    expect(levelsOf(130)).toEqual([null, 90]) // 止盈掉到挂单价之下
+    expect(levelsOf(80)).toEqual([120, null]) // 止损跑到挂单价之上
+    expect(levelsOf(120)).toEqual([null, 90]) // 与止盈相等即不成立
   })
 
   it('价格或数量非法 → null：非正、0、NaN、Infinity', () => {
     for (const patch of [{ price: 0, qty: 1 }, { price: -5, qty: 1 }, { price: Number.NaN, qty: 1 }, { price: 100, qty: 0 }, { price: 100, qty: -1 }, { price: 100, qty: Number.POSITIVE_INFINITY }]) {
       expect(editPendingOrder(list, 'a', patch)).toBeNull()
     }
+  })
+})
+
+describe('levelsAtFill 随单价位成交前复检', () => {
+  it('以成交价取界：成交价可能优于挂单价，站错一侧的线丢弃', () => {
+    // 买单挂 100、市场 95 更优 → 以 95 成交，止盈 98 已在成交价之上（对多头是止损位）→ 摘掉
+    expect(levelsAtFill(order({ side: 'buy', price: 100, takeProfit: 120, stopLoss: 98 }), 95)).toEqual({ takeProfit: 120, stopLoss: null })
+    expect(levelsAtFill(order({ side: 'buy', price: 100, takeProfit: 120, stopLoss: 98 }), 100)).toEqual({ takeProfit: 120, stopLoss: 98 })
+    // 卖单价格改善向上：止盈须不高于成交价、止损须不低于成交价；相等按界内放行
+    expect(levelsAtFill(order({ side: 'sell', price: 100, takeProfit: 80, stopLoss: 105 }), 105)).toEqual({ takeProfit: 80, stopLoss: 105 })
+    // 成交价涨到 110：止损 105 已站到开仓价之下（空头即「成交就触发」）→ 摘掉
+    expect(levelsAtFill(order({ side: 'sell', price: 100, takeProfit: 80, stopLoss: 105 }), 110)).toEqual({ takeProfit: 80, stopLoss: null })
+  })
+
+  it('未设置、非正、非有限 → 一律 null（不写出脏价位）', () => {
+    expect(levelsAtFill(order({ side: 'buy' }), 100)).toEqual({ takeProfit: null, stopLoss: null })
+    expect(levelsAtFill(order({ side: 'buy', takeProfit: null, stopLoss: undefined }), 100)).toEqual({ takeProfit: null, stopLoss: null })
+    expect(levelsAtFill(order({ side: 'buy', takeProfit: -5, stopLoss: Number.NaN }), 100)).toEqual({ takeProfit: null, stopLoss: null })
+    expect(levelsAtFill(order({ side: 'buy', takeProfit: 120, stopLoss: 90 }), Number.NaN)).toEqual({ takeProfit: null, stopLoss: null })
   })
 })

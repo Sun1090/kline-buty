@@ -17,6 +17,12 @@ export interface PendingOrder {
   createdAt: number
   /** 下单时的最新价已优于挂单价 → 这单从提交那一刻就在吃单（Taker） */
   marketable: boolean
+  /**
+   * 随单附带的止盈/止损价：成交开出新槽位时直接落到持仓上（复检见 `levelsAtFill`）；
+   * 成交并入了既有持仓则沿用既有线，不覆盖用户已经设好的价位。未设置为 null
+   */
+  takeProfit?: number | null
+  stopLoss?: number | null
 }
 
 export interface PendingOrderInput {
@@ -30,10 +36,32 @@ export interface PendingOrderInput {
   id?: string
   /** 下单时的最新价：用于判定是否即刻跨价差；缺价（未连上行情的品种）按未跨计 */
   marketPrice?: number | null
+  /** 随单附带的止盈/止损价，非法（非正/非有限/站在挂单价错误一侧）→ 整单被拒 */
+  takeProfit?: number | null
+  stopLoss?: number | null
 }
 
 /** 同一交易对最多挂单数（防止误点堆出长列表） */
 export const ORDERS_PER_SYMBOL_MAX = 10
+
+/**
+ * 随单价位是否成立：买单止盈高于挂单价、止损低于挂单价，卖单相反。
+ * 严格不等号——与挂单价相等的线会在成交那一瞬即触发结算，是误输入而非策略。
+ * null / undefined 表示「未设置」，恒通过；非正数、非有限数视为非法。
+ */
+export function attachedLevelsOk(
+  side: OrderSide,
+  price: number,
+  levels: { takeProfit?: number | null; stopLoss?: number | null },
+): boolean {
+  const check = (level: number | null | undefined, above: boolean): boolean => {
+    if (level === null || level === undefined) return true
+    if (!Number.isFinite(level) || level <= 0) return false
+    return above ? level > price : level < price
+  }
+  const longSide = side === 'buy'
+  return check(levels.takeProfit ?? null, longSide) && check(levels.stopLoss ?? null, !longSide)
+}
 
 const idSuffix = () => Math.random().toString(36).slice(2, 8)
 
@@ -47,7 +75,7 @@ export function isMarketable(order: { side: OrderSide; price: number }, market: 
   return order.side === 'buy' ? order.price > market : order.price < market
 }
 
-/** 创建挂单：交易对为空、价格/数量非正或非有限值 → null（调用方拦截，不产生脏数据） */
+/** 创建挂单：交易对为空、价格/数量非正或非有限值、随单价位不成立 → null（调用方拦截，不产生脏数据） */
 export function createPendingOrder(input: PendingOrderInput): PendingOrder | null {
   const symbol = (input.symbol ?? '').trim().toUpperCase()
   const { price, qty, side } = input
@@ -55,6 +83,9 @@ export function createPendingOrder(input: PendingOrderInput): PendingOrder | nul
   if (!Number.isFinite(price) || price <= 0) return null
   if (!Number.isFinite(qty) || qty <= 0) return null
   if (side !== 'buy' && side !== 'sell') return null
+  const takeProfit = input.takeProfit ?? null
+  const stopLoss = input.stopLoss ?? null
+  if (!attachedLevelsOk(side, price, { takeProfit, stopLoss })) return null
   const now = input.now ?? Date.now()
   return {
     id: input.id ?? `${now}-${idSuffix()}`,
@@ -64,6 +95,8 @@ export function createPendingOrder(input: PendingOrderInput): PendingOrder | nul
     qty,
     createdAt: now,
     marketable: isMarketable({ side, price }, input.marketPrice),
+    takeProfit,
+    stopLoss,
   }
 }
 
@@ -99,6 +132,11 @@ export function matchPendingOrders(
 }
 
 /** 持久化/导入反序列化：逐条校验，非法条目与重复 id 丢弃（保持原顺序） */
+const positiveOrNull = (v: unknown): number | null => {
+  const n = Number(v)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 export function parsePendingOrders(raw: unknown): PendingOrder[] {
   if (!Array.isArray(raw)) return []
   const seen = new Set<string>()
@@ -117,6 +155,12 @@ export function parsePendingOrders(raw: unknown): PendingOrder[] {
     if (!order) continue
     // 费率归属以入单当时的判定为准：重载入库时已无从得知当时最新价，只认存量标记
     order.marketable = d.marketable === true
+    // 存量数据不可信：随单价位任一非法（非正、越过挂单价）就整对摘掉，但单子本身要保住
+    const tp = positiveOrNull(d.takeProfit)
+    const sl = positiveOrNull(d.stopLoss)
+    const levelsOk = attachedLevelsOk(order.side, order.price, { takeProfit: tp, stopLoss: sl })
+    order.takeProfit = levelsOk ? tp : null
+    order.stopLoss = levelsOk ? sl : null
     seen.add(order.id)
     out.push(order)
   }
@@ -153,11 +197,16 @@ export function editPendingOrder(
   if (!Number.isFinite(qty) || qty <= 0) return null
   const target = orders[idx]
   const next = [...orders]
+  const tp = target.takeProfit ?? null
+  const sl = target.stopLoss ?? null
   next[idx] = {
     ...target,
     price,
     qty,
     marketable: marketPrice === undefined ? target.marketable : isMarketable({ side: target.side, price }, marketPrice),
+    // 改价把挂单价挪到某条随单价位的另一侧时，那条线已不成立（会即时触发），逐条摘掉
+    takeProfit: attachedLevelsOk(target.side, price, { takeProfit: tp }) ? tp : null,
+    stopLoss: attachedLevelsOk(target.side, price, { stopLoss: sl }) ? sl : null,
   }
   return next
 }
@@ -171,6 +220,26 @@ export function fillPrice(order: PendingOrder, market: number | null | undefined
 /** 成交费率：挂在盘口等触价成交的挂单按 Maker；下单即跨过价差的吃单按 Taker */
 export function fillFeeRate(order: PendingOrder, rates: { maker: number; taker: number }): number {
   return order.marketable ? rates.taker : rates.maker
+}
+
+/**
+ * 随单价位落到持仓前的复检：以**成交价**为准（成交价可能优于挂单价，见 `fillPrice`）。
+ * 站在成交价错误一侧的线会被持仓编辑器自身拒绝（止损卡在开仓价之上），故直接丢弃：
+ * 多头止盈不得低于开仓价、止损不得高于开仓价，空头相反；相等按界内放行，与 `levels.ts` 同口径。
+ */
+export function levelsAtFill(
+  order: PendingOrder,
+  price: number,
+): { takeProfit: number | null; stopLoss: number | null } {
+  const longSide = order.side === 'buy'
+  const keep = (level: number | null | undefined, above: boolean): number | null => {
+    if (typeof level !== 'number' || !Number.isFinite(level) || level <= 0) return null
+    return above ? (level >= price ? level : null) : level <= price ? level : null
+  }
+  return {
+    takeProfit: keep(order.takeProfit, longSide),
+    stopLoss: keep(order.stopLoss, !longSide),
+  }
 }
 
 export interface FillPlanItem {

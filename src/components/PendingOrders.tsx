@@ -95,6 +95,15 @@ export function PendingOrders({ orders, symbol, onCancel, onEdit, currentPrice, 
               </span>
               <span style={{ flex: 1, textAlign: 'right' }}>{fmtPriceCompact(o.price)}</span>
               <span style={{ color: 'var(--text-dim)' }}>×{fmtCompact(o.qty)}</span>
+              {(o.takeProfit != null || o.stopLoss != null) && (
+                <span
+                  data-testid={`pending-order-levels-${o.id}`}
+                  title={`${t('position.levels')}: ${o.takeProfit ?? '-'} / ${o.stopLoss ?? '-'}`}
+                  style={{ color: 'var(--text-faint)', fontSize: 10, whiteSpace: 'nowrap' }}
+                >
+                  TP/SL
+                </span>
+              )}
               {onEdit && (
                 <button
                   data-testid={`pending-order-edit-${o.id}`}

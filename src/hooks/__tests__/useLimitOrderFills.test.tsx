@@ -146,4 +146,37 @@ describe('useLimitOrderFills', () => {
     rerender()
     expect(recordOpen).toHaveBeenCalledTimes(1)
   })
+  it('随单止盈/止损落到新开仓位上，取代百分比参考价', () => {
+    const { setPositionsBySymbol } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, takeProfit: 130, stopLoss: 88 })],
+      live: { symbol: 'BTCUSDT', price: 100 },
+    })
+    const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
+    const next = updater({ BTCUSDT: EMPTY_POSITIONS })
+    expect({ takeProfit: next.BTCUSDT.long!.takeProfit, stopLoss: next.BTCUSDT.long!.stopLoss }).toEqual({ takeProfit: 130, stopLoss: 88 })
+  })
+
+  it('成交价优于挂单价时复检随单价位：站错一侧的那条不写进持仓', () => {
+    // 买单挂 100、市场 95 更优 → 以 95 成交；止损 98 已在开仓价之上，写了就是「成交即触发」
+    // 摘掉后那条回到按成交价算的参考止损（2% → 93.1），止盈 120 仍成立照带
+    const { setPositionsBySymbol } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, takeProfit: 120, stopLoss: 98 })],
+      live: { symbol: 'BTCUSDT', price: 95 },
+    })
+    const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
+    const next = updater({ BTCUSDT: EMPTY_POSITIONS })
+    expect({ takeProfit: next.BTCUSDT.long!.takeProfit, stopLoss: next.BTCUSDT.long!.stopLoss }).toEqual({ takeProfit: 120, stopLoss: 93.1 })
+  })
+
+  it('成交并入了既有持仓 → 既有止盈/止损线不被随单价位覆盖', () => {
+    const held: Positions = { long: { entry: 100, quantity: 1, direction: 'long', takeProfit: 130, stopLoss: 118 }, short: null }
+    const { setPositionsBySymbol } = setup({
+      orders: [order({ side: 'buy', price: 100, qty: 1, takeProfit: 999, stopLoss: 1 })],
+      live: { symbol: 'BTCUSDT', price: 100 },
+    })
+    const updater = setPositionsBySymbol.mock.calls[0][0] as (prev: PositionsBySymbol) => PositionsBySymbol
+    const next = updater({ BTCUSDT: held })
+    expect({ takeProfit: next.BTCUSDT.long!.takeProfit, stopLoss: next.BTCUSDT.long!.stopLoss }).toEqual({ takeProfit: 130, stopLoss: 118 })
+  })
+
 })
