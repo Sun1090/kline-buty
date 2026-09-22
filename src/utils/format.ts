@@ -1,11 +1,11 @@
 /**
- * 行情数字格式化的三档价格精度与两档成交额缩写。
+ * 行情数字格式化的四档价格精度与两档成交额缩写。
  * 各档位对应固定 UI 场景：精度是刻意的展示策略，调用方按场景选函数，不要在组件内另写阈值。
  */
 
-/** 高精度价格的小数位：≥1000 两位、≥1 四位、否则六位，展示与数值收口共用这一套阈值 */
+/** 高精度价格的小数位：≥1000 两位、≥1 四位、≥1e-4 六位、更小八位，展示与数值收口共用这一套阈值 */
 export function pricePreciseDigits(v: number): number {
-  return v >= 1000 ? 2 : v >= 1 ? 4 : 6
+  return v >= 1000 ? 2 : v >= 1 ? 4 : v >= 0.0001 ? 6 : 8
 }
 
 /** 高精度价格：十字光标信息窗 / 行情信息条 / 画线与仓位的价格标签 */
@@ -29,14 +29,16 @@ export function fmtPriceWithPrecision(v: number, precision?: number): string {
   return precision === undefined ? fmtPricePrecise(v) : v.toFixed(precision)
 }
 
-/** 紧凑价格：≥1000 一位小数、否则两位（盘口 / 深度图，窄列容不下更长小数） */
+/** 紧凑价格：≥1000 一位、≥1 两位、否则按价段给足有效位（盘口 / 深度图 / 成交流 / 挂单价） */
 export function fmtPriceCompact(v: number): string {
-  return v >= 1000 ? v.toFixed(1) : v.toFixed(2)
+  const abs = Math.abs(v)
+  return abs >= 1000 ? v.toFixed(1) : abs >= 1 ? v.toFixed(2) : v.toFixed(pricePreciseDigits(abs))
 }
 
-/** 中精度价格：≥1000 整数、≥1 两位、否则四位（自选列表 / 筹码分布轴标） */
+/** 中精度价格：≥1000 整数、≥1 两位、否则按价段给足有效位（自选列表 / 筹码分布轴标） */
 export function fmtPriceMedium(v: number): string {
-  return v >= 1000 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(4)
+  const abs = Math.abs(v)
+  return abs >= 1000 ? v.toFixed(0) : abs >= 1 ? v.toFixed(2) : v.toFixed(pricePreciseDigits(abs))
 }
 
 /** 成交额缩写 B/M：≥1e9 十亿、≥1e6 百万、否则整数（行情信息条 24h 额） */
@@ -67,11 +69,11 @@ export function fmtPriceLocale(v: number, locale: string): string {
   }
 }
 
-/** G13 坐标轴价格标签缩写：≥1e9 → 1.20B、≥1e6 → 1.20M、≥1e3 → 65.0k、其余保留足够小数 */
+/** G13 坐标轴价格标签缩写：≥1e9 → 1.20B、≥1e6 → 1.20M、≥1e3 → 65.0k、其余按价段给足有效位 */
 export function fmtAxisPrice(v: number): string {
   const abs = Math.abs(v)
   if (abs >= 1e9) return `${(v / 1e9).toFixed(2)}B`
   if (abs >= 1e6) return `${(v / 1e6).toFixed(2)}M`
   if (abs >= 1e3) return `${(v / 1e3).toFixed(1)}k`
-  return v >= 1 ? v.toFixed(2) : v.toFixed(4)
+  return abs >= 1 ? v.toFixed(2) : v.toFixed(pricePreciseDigits(abs))
 }

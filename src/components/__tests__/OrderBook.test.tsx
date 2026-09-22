@@ -143,4 +143,26 @@ describe('OrderBook 移动端快捷下单', () => {
     render(<OrderBook symbol="BTCUSDT" depth={{ bids: [], asks: [] }} />)
     expect(screen.getByTestId('ob-imbalance').textContent).toContain('—')
   })
+
+  it('SHIB 级低价标的：档位价保留有效位，整列不塌成同一个「0.00」', () => {
+    const lowDepth: DepthSnapshot = {
+      bids: [
+        { price: 0.00001234, quantity: 20 },
+        { price: 0.00001233, quantity: 30 },
+      ],
+      asks: [
+        { price: 0.00001236, quantity: 40 },
+        { price: 0.00001237, quantity: 50 },
+      ],
+    }
+    render(<OrderBook symbol="SHIBUSDT" depth={lowDepth} />)
+    const bids = screen.getAllByTestId('ob-bid').map((el) => (el.textContent ?? '').trim())
+    const asks = screen.getAllByTestId('ob-ask').map((el) => (el.textContent ?? '').trim())
+    // 每行含买卖按钮/数量/累计量文本，只要求档位价本身出现且互不相同
+    expect(bids[0]).toContain('0.00001234')
+    expect(bids[1]).toContain('0.00001233')
+    expect(asks[0]).toContain('0.00001236')
+    expect(asks[1]).toContain('0.00001237')
+    expect(screen.queryByText('0.00')).toBeNull()
+  })
 })

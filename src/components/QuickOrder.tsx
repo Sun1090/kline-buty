@@ -7,6 +7,7 @@ import { DEFAULT_LEVERAGE, LEVERAGE_OPTIONS } from '../position/pnl'
 import { useDepth } from '../hooks/useDepth'
 import { useI18n } from '../i18n/useI18n'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { pricePreciseDigits } from '../utils/format'
 
 /** 下单类型：市价（即时成交、计滑点）/ 限价（挂单，触价按当时市场价成交） */
 export type OrderType = 'market' | 'limit'
@@ -404,7 +405,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
           {t('quickOrder.insufficient')}
         </div>
       )}
-      {est && <OrderEstimate est={est} isLimit={isLimit} decimals={priceNum >= 1 ? 2 : 6} rr={rr} />}
+      {est && <OrderEstimate est={est} isLimit={isLimit} decimals={pricePreciseDigits(priceNum)} rr={rr} />}
 
       <div style={{ display: 'flex', gap: 6 }}>
         <button

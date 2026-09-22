@@ -156,6 +156,13 @@ describe('QuickOrder 快速下单', () => {
     expect(screen.getByTestId('qo-fee').textContent).toBe('0.0495')
   })
 
+  it('v0.5.x 低价标的挂单价按价段给位：SHIB 级不会显示成 0.000006', () => {
+    setup({ symbol: 'SHIBUSDT', price: 0.00000598, makerFeeRate: 0.0005 })
+    fireEvent.click(screen.getByTestId('qo-type-limit'))
+    fireEvent.change(screen.getByTestId('qo-qty'), { target: { value: '1' } })
+    expect(screen.getByTestId('qo-limit-price').textContent).toContain('0.00000598')
+  })
+
   it('v0.5.x 市价模式按吃单费率 + 滑点计费，切回市价即恢复', () => {
     setup({ takerFeeRate: 0.001 })
     fireEvent.click(screen.getByTestId('qo-type-limit'))

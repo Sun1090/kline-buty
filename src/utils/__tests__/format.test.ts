@@ -41,14 +41,27 @@ describe('fmtPricePrecise（高精度：十字光标/信息条）', () => {
   it('<1 六位小数', () => {
     expect(fmtPricePrecise(0.123456789)).toBe('0.123457')
   })
+  it('SHIB/1000SATS 级价位补到八位，六位只剩一两位有效数字读不出档位', () => {
+    expect(fmtPricePrecise(0.00001234)).toBe('0.00001234')
+    expect(fmtPricePrecise(0.00000246)).toBe('0.00000246')
+    expect(fmtPriceWithPrecision(0.000123)).toBe('0.000123')
+  })
 })
 
-describe('fmtPriceCompact（紧凑：盘口/深度图）', () => {
+describe('fmtPriceCompact（紧凑：盘口/深度图/成交流/挂单价）', () => {
   it('≥1000 一位小数', () => {
     expect(fmtPriceCompact(65432.4)).toBe('65432.4')
   })
-  it('<1 两位小数', () => {
+  it('≥1 两位小数', () => {
     expect(fmtPriceCompact(3.5)).toBe('3.50')
+  })
+  it('<1 不再固定两位：0.1234 档位的整个盘口不会全是「0.12」', () => {
+    expect(fmtPriceCompact(0.123456)).toBe('0.123456')
+    expect(fmtPriceCompact(0.00001234)).toBe('0.00001234')
+  })
+  it('相邻档位收口后仍能区分（低价盘口的可读性底线）', () => {
+    expect(fmtPriceCompact(0.00001234)).not.toBe(fmtPriceCompact(0.00001235))
+    expect(fmtPriceCompact(0.123456)).not.toBe(fmtPriceCompact(0.123457))
   })
 })
 
@@ -59,8 +72,9 @@ describe('fmtPriceMedium（中精度：自选列表/筹码轴标）', () => {
   it('≥1 两位小数', () => {
     expect(fmtPriceMedium(3.5)).toBe('3.50')
   })
-  it('<1 四位小数', () => {
-    expect(fmtPriceMedium(0.1234)).toBe('0.1234')
+  it('<1 跟随高精度档位，不塌成「0.0000」', () => {
+    expect(fmtPriceMedium(0.1234)).toBe('0.123400')
+    expect(fmtPriceMedium(0.00001234)).toBe('0.00001234')
   })
 })
 
@@ -121,8 +135,9 @@ describe('fmtAxisPrice（G13 坐标轴单位缩写）', () => {
     expect(fmtAxisPrice(650)).toBe('650.00')
     expect(fmtAxisPrice(12.5)).toBe('12.50')
   })
-  it('<1 → 四位小数', () => {
-    expect(fmtAxisPrice(0.123456)).toBe('0.1235')
+  it('<1 跟随高精度档位，坐标轴不会出现「0.0000」', () => {
+    expect(fmtAxisPrice(0.123456)).toBe('0.123456')
+    expect(fmtAxisPrice(0.00001234)).toBe('0.00001234')
   })
   it('负数按绝对值判断量级', () => {
     expect(fmtAxisPrice(-1_234_567_890)).toBe('-1.23B')
