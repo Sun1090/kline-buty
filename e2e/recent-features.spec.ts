@@ -682,3 +682,46 @@ test.describe('H7/H8 设置快照：导出文件必须能原样导回', () => {
       .toEqual(before)
   })
 })
+
+/**
+ * P4 更新提示横幅：部署之后老用户第一次打开就会看见它，而它是全站唯一一条
+ * 「点一下换新 bundle」的出口。单测覆盖了「版本不同就亮横幅」，这里补真浏览器那一圈：
+ * 横幅 → 点刷新 → 整页真的换了新文档 → 横幅不再回来（水位线已追平）。
+ * 关不掉或每次都出现的横幅，等于告诉用户「别更新」。
+ */
+test.describe('P4 更新提示横幅', () => {
+  test('版本落后 → 横幅出现 → 点「立即刷新」后换文档且不再出现', async ({ page }) => {
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+    const meta = await page.evaluate(() => document.querySelector('meta[name="app-version"]')?.getAttribute('content') ?? '')
+    expect(meta).toMatch(/^\d+\.\d+\.\d+$/)
+    await expect(page.getByTestId('update-banner')).toHaveCount(0)
+
+    // 模拟「上次运行在旧版本」的老用户：改写水位线后重载，让启动检测撞见版本差
+    await page.evaluate(() => localStorage.setItem('kline-buty:lastVersion', '0.0.1'))
+    await page.reload()
+    await expect(page.getByTestId('update-banner')).toBeVisible()
+    await expect(page.getByTestId('update-reload')).toBeVisible()
+
+    await page.evaluate(() => {
+      ;(window as unknown as Record<string, unknown>).__beforeReload = 1
+    })
+    await page.getByTestId('update-reload').click()
+    await expect
+      .poll(
+        async () => {
+          try {
+            return await page.evaluate(() =>
+              (window as unknown as Record<string, unknown>).__beforeReload === undefined ? '新文档' : '还是旧文档',
+            )
+          } catch {
+            return '导航中' // 整页重载会销毁执行上下文
+          }
+        },
+        { timeout: 20_000, message: '点「立即刷新」后没有真的换文档' },
+      )
+      .toBe('新文档')
+    await expect(page.getByTestId('update-banner')).toHaveCount(0)
+    expect(await page.evaluate(() => localStorage.getItem('kline-buty:lastVersion'))).toBe(meta)
+  })
+})
