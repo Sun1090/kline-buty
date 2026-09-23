@@ -62,6 +62,20 @@ test.describe('G3 大屏数据压测', () => {
     const cy = box!.y + box!.height / 2
     const cx = box!.x + box!.width * 0.75
 
+    // 初始视角必须被装载窗口**完整容纳**：从左数前四分之三都该取得到 K 线。
+    // 历史缺陷：可见索引按「当前切片」clamp（max(0,局部) 再加 base），视角整段跑到窗口左边之外时
+    // 被说成「正好贴在窗口左缘」→ windowCovers 判成已覆盖 → 窗口永不迁移 → 屏幕左半是空的，
+    // 而角落的可视范围文本还在报数据时间，肉眼和断言都看不出来（实测左 10%/25% 两点取不到数）。
+    for (const f of [0.1, 0.25, 0.5, 0.75]) {
+      const x = box!.x + box!.width * f
+      await page.mouse.move(x - 4, cy, { steps: 2 })
+      await page.mouse.move(x, cy)
+      await expect(
+        page.getByTestId('crosshair-time'),
+        `视角内 x=${Math.round(f * 100)}% 处应取得到 K 线（装载窗口必须容纳视角）`,
+      ).toBeVisible({ timeout: 4_000 })
+    }
+
     // 十字光标取时（hover 后 tooltip 附带原始时间戳）
     const timeAt = async () => {
       // webkit 大数据量（20k）下首次 hover 会被 chart 初始渲染吞掉（crosshair 回调不触发），
@@ -80,11 +94,14 @@ test.describe('G3 大屏数据压测', () => {
     }
     const tBefore = await timeAt()
 
-    // 多段拖动向右（进入历史）——12 段 × 位移，验证大屏下平移平滑不卡死
+    // 多段拖动向右（进入历史）：12 段小位移，验的是大屏下平移管线不卡死、同一点时间倒退。
+    // 位移刻意只有 ~48px：这份数据在图表里就是 3000 根（数据源有上限），视角本就横跨全部根数，
+    // 一次 360px 的甩动会越过首根 K 线甩进左边的空白区（lightweight-charts 允许向左过滚），
+    // 十字光标落不到任何数据上 → 规格红的是手势选错了，不是产品坏了（v0.5.30 之后视角才真正铺满）
     await page.mouse.move(cx, cy)
     await page.mouse.down()
     for (let seg = 1; seg <= 12; seg++) {
-      await page.mouse.move(cx + seg * 30, cy, { steps: 3 })
+      await page.mouse.move(cx + seg * 4, cy, { steps: 3 })
     }
     await page.mouse.up()
     await page.waitForTimeout(200)
