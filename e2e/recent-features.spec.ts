@@ -616,3 +616,69 @@ test.describe('v0.5.x 行情信息条窄屏几何', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
   })
 })
+
+test.describe('H7/H8 设置快照：导出文件必须能原样导回', () => {
+  test.use({ acceptDownloads: true })
+
+  test('导出下载 → 清空设置 → 导入同一份文件 → 重载后逐键字节一致', async ({ page }) => {
+    // 不在这里 addInitScript(localStorage.clear)：导入成功即整页重载，
+    // 而页级 initScript 会在重载前再跑一次，把刚导入的值一起抹掉。
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+
+    // 启动时的版本检测把 kline-buty:lastVersion 写成裸串 "0.5.x"（非 JSON）——
+    // 旧导出实现对其 JSON.parse，点击导出直接抛 SyntaxError 且不产生文件
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('kline-buty:lastVersion')))
+      .toMatch(/^\d+\.\d+\.\d+$/)
+    const readSettings = () =>
+      page.evaluate(() =>
+        Object.fromEntries(
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith('kline-buty:'))
+            .map((k) => [k, localStorage.getItem(k) ?? '']),
+        ),
+      )
+    const before = await readSettings()
+    expect(Object.keys(before).length).toBeGreaterThan(5)
+
+    await openMore(page)
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTestId('settings-export').click(),
+    ])
+    expect(download.suggestedFilename()).toBe('kline-buty-settings.json')
+    const stream = await download.createReadStream()
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(chunk as Buffer)
+    const snapshotText = Buffer.concat(chunks).toString('utf-8')
+    const snap = JSON.parse(snapshotText) as { version: number; settings: Record<string, unknown> }
+    expect(snap.version).toBe(2)
+    // 快照覆盖全部设置键，且裸串值不被二次编码
+    expect(Object.keys(snap.settings).sort()).toEqual(Object.keys(before).sort())
+    expect(snap.settings['kline-buty:lastVersion']).toBe(before['kline-buty:lastVersion'])
+
+    await page.evaluate(() => {
+      for (const k of Object.keys(localStorage)) if (k.startsWith('kline-buty:')) localStorage.removeItem(k)
+    })
+    await page.getByTestId('settings-import-file').setInputFiles({
+      name: 'settings.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(snapshotText),
+    })
+    // 导入成功即整页重载：先等重载后的页面重新起来，再逐键比对（比对的是重启后仍在那儿的值）
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 30_000 })
+    await expect
+      .poll(
+        async () => {
+          try {
+            return await readSettings()
+          } catch {
+            return null // 导航会销毁执行上下文，poll 会重试到落地
+          }
+        },
+        { timeout: 30_000, message: '导入后未逐键原样恢复' },
+      )
+      .toEqual(before)
+  })
+})
