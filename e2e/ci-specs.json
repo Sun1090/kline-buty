@@ -8,6 +8,7 @@
     "e2e/indicator-crosshair.spec.ts",
     "e2e/limit-orders.spec.ts",
     "e2e/marker-render.spec.ts",
+    "e2e/multi-chart-sync.spec.ts",
     "e2e/new-features.spec.ts",
     "e2e/partial-close.spec.ts",
     "e2e/period-alignment.spec.ts",
