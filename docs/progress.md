@@ -5,6 +5,31 @@
 
 ## 当前阶段
 
+**里程碑 v0.5.29 发布完成（2026-09-23）**
+- 版本号：**0.5.29**（package.json / package-lock 根两处 / index.html meta `app-version`）
+- 分支：`release/v0.5.29`；发布 PR：**#162**（rebase 合并 → main **0e4a318**，合并后即删远端分支）
+- 本版收录：#157 就绪门改按 K 线根数、#158 47 工具全表契约、#159 Linux 基线生成 workflow、
+  #160 基线入库 + visual 进 CI、#161 批次记录。**全部是测试与门禁侧**，运行时只新增一个只读
+  DOM 属性（`data-candles`），用户可见行为零变化
+- tag：Release Tag workflow 自动打 **tag v0.5.29** @ 0e4a318（run 35806529941，幂等不覆盖旧 tag）
+- 定档门禁（最终工作区状态 069fabd，即 #161 合并后变基）：`npm run precheck` **All checks passed
+  in 123.2s**；本地全量 chromium E2E **264 passed / 0 failed / 0 flaky，9.7m** —— 对照 v0.5.28
+  定档时的 214 passed / 2 flaky / 1 failed：用例数 +50（新增 48 条工具契约），flaky 与 failed 归零
+- 部署与 live 抽查：
+  - Pages run 35806529949 success；首页 200、meta `app-version=0.5.29`、bundle 换成
+    `assets/index-H42PeZ3p.js`
+  - 真浏览器线上（1280×800）：就绪门属性实测 `data-candles=800`（≥60 即放行），选「垂直线」在
+    容器右缘 x=1274 单击 → 画线 0→1 条（#153 的留白可画仍生效），`pageerror` **0**
+  - Vercel 生产域 `kline-buty.vercel.app` 也已回到 0.5.29（PR 上的 Vercel 检查仍报账号级
+    build-rate-limit，那是预览部署的配额；生产构建已追上，无需处理）
+- 风险 / 回滚：**无迁移**——持久化结构未变（画线仍是 `{ id, type, points:[{time, price}] }`），
+  设置项、快照、挂单/仓位字段都没动，`data-candles` 只是容器上的只读观测属性。
+  回滚 = `git revert` release 提交 0e4a318；视觉基线那 4 张 linux PNG 与 CI 清单条目随之回退
+  （清单 17 → 16）。远端 tag 误打用 `gh api` 删除，不移动已有 tag
+- 下一里程碑：**v0.5.x 继续**。已排队的下一项：④ 的 CI 覆盖策略仍待成定论（把清单从 ci.yml 的
+  硬编码字符串收成一个源，本地/CI 共用）；新发现一条真实浪费（现货品种每 30s 打必然 400 的
+  合约端点，一次会话累积上千条 console error），见任务 #41
+
 **v0.5.28 之后（v0.5.29 候补批次，2026-09-23）**
 - 状态：**测试侧收口批次，未发版**；分支 `docs/v05-29-batch-record`（本文件），代码侧 #157/#158/#159/#160 全部合并，main **e6d8f8b**
 - **#157 → main 6f2d108** `test(e2e)`：**图表就绪门改按 K 线根数把关**，一次挖平整族「画线偶发不生效」。
