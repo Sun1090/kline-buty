@@ -5,6 +5,39 @@
 
 ## 当前阶段
 
+**批次 v0.5.30 之后：图表视角状态三连修 + 多图联动首次可断言（2026-09-23，待 #176 合并后定 v0.5.31）**
+- 分支：`test/v05-quad-range-sync`；PR：**#176**（7 个提交，`94aa985`…`679c3fd`）；同批已合并的前置：
+  - **#174 → main e2127ab** 窗口迁移改按「实际装载」判定，停在最新切周期后视野不再塌成 4~9 根
+  - **#175 → main 47c6ce1** 静态托管构建期声明 `VITE_ENDPOINT_MODE=direct`，不再发一次必然落空的同源 `/api/v3/ping`
+- 本 PR 做的事（一条规格牵出三个真实缺陷）：
+  1. `e2e/multi-chart-sync.spec.ts`（新增，登记进 ci 清单）：四图拖一格 → 其余三格必须跟到同一段时间，
+     且每格都得相对自己「动过」；落点必须直接命中 canvas（「更多」面板是浮层，开着它拖的是面板按钮）
+  2. **修线上回归**：#174 作废了 `setData` 期间的陈旧可见区间通知，但没有替代品——lightweight-charts 只在区间
+     「变化」时发事件，而 `fitContent/setVisibleRange` 常算出与当前值相同的区间，于是一条都不发。
+     数据量低于 `CULL_THRESHOLD`（2000 根；真实首屏 1500 根）时之后再没有事件补上：A11 可视时间范围条
+     **在生产域名完全不渲染**（真浏览器实测 35s 内元素数为 0）、pair/quad 视角广播零上报、`loadMore` 左缘判定拿不到视角。
+     修法：`ChartApi` 新增只读 `visibleRange()`，整窗装载收尾主动读一次当前区间
+  3. 补读第一版把「换片瞬间按旧切片间距算出的脏区间」喂给了窗口迁移决策 → A2 变成 3/3 稳定红
+     （视角被甩到历史中段、「回到最新」常驻）。现在 `onVisibleRange` 收 `trusted` 参数：
+     **只有图表自己的事件**决定窗口迁移与向左分页，补读只发布状态
+  4. 测试基建：`scripts/serve-static.mjs` 在 `dist/knowledge/404.html` 缺失时 `readFileSync` 抛未捕获异常
+     **把整个静态服务进程带下去**，之后每条用例都在 1.1s 内以 `ERR_CONNECTION_REFUSED` 失败——实测一次误红 100+ 条
+  5. `e2e/stress-large-data.spec.ts`：新增「初始视角必须被装载窗口完整容纳」（x=10%/25%/50%/75% 逐点取十字光标）；
+     拖动位移从 12×30px 收到 12×4px（视角现在真的铺满 3000 根，360px 甩动会越过首根进过滚空白区，红的是手势选错）
+  6. webkit 收口：四图联动改按分钟比同一段（≤2 分钟）而不是逐字比文本——CI webkit 稳定报「动了 3/3，同段 3/4」，
+     是布局取整让某一格差出一根；变异复验 `externalRange=null` → 红「跑偏 3/4」，容差吞不掉真断链
+- 验证：
+  - `npx vitest run` → **174 files / 1996 tests 全绿**；`tsc -b --noEmit` + `tsc -p tsconfig.e2e.json` 干净；`npm run lint` **0 error**（30 条既有 warning）
+  - 本地全量 E2E（整个 `e2e/`：CI 清单 + localOnly 实时族，chromium，打在 `vite build && docs:build` 之后的完整 dist）→ **268 passed / 0 failed / 9.9m**
+  - 变异检查（每轮都重新 `vite build` 再跑，静态服务器读盘上的 dist）：去掉补读 → 新增单测红；补读改回 `trusted=true` → 大屏压测「窗口必须容纳视角」红 + A2 红；`externalRange` 恒 null → 四图联动红
+  - CI：Typecheck+Lint / Unit+Coverage / Production build / CodeQL / KB validation 全过；**E2E 三浏览器在 webkit 首红后已按上面第 6 条重推复跑**
+  - 线上事实核对（GitHub Pages 生产域名，真浏览器）：`?perf` 关掉、真实 1500 根首屏下 `chart-visible-range` 元素数为 **0**（这就是第 2 条要修的现场）
+- 已知噪音 / 风险：Vercel Hobby 构建限流是账号级的，与本批无关，按既定口径忽略；
+  A11 修复的验收目前只有「本地重建包 + 生产域名对照」，**合并部署后必须再打一次线上抽查**（看到范围条出现 + 四图联动不超时）
+- 下一项：`e2e/period-crosshair.spec.ts` 是 CI 里的**假绿**——把 `externalCrosshairTime` 恒置 null（多图十字光标完全关掉）它照样通过，
+  因为 perf tick 本来就在改画布像素，指纹「有变化」是空的；需与四图规格同一套口径重写（关面板 + 断落点命中画布 + 换成不受重绘影响的信号）
+- 更新日：2026-09-23
+
 **里程碑 v0.5.30 发布完成（2026-09-23）**
 - 版本号：**0.5.30**（package.json / package-lock 根两处 / index.html meta `app-version`）
 - 分支：`release/v0.5.30`；发布 PR：**#170**（rebase 合并 → main **33209a9**，合并后即删远端分支）
