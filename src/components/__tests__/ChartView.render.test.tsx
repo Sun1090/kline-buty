@@ -24,6 +24,10 @@ const harness = vi.hoisted(() => ({
   fire: null as ((from: number, to: number, trusted?: boolean) => void) | null,
   /** 本图被要求写入的可视区间（ setVisibleRange 的调用记录 ） */
   views: [] as { from: number; to: number }[],
+  /** 本图被要求落的十字光标时刻（setCrosshairTime 的调用记录） */
+  cross: [] as (number | null)[],
+  /** 十字光标回调（真 adapter 由图表驱动，测试用它模拟一次指针上报） */
+  crossCb: null as ((time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void) | null,
 }))
 
 vi.mock('../../chart/adapter', async (importOriginal) => {
@@ -68,9 +72,14 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       startRegionSelect = vi.fn()
       cancelRegionSelect = vi.fn()
       onRegionCapture = vi.fn()
-      subscribeCrosshairMove() {
+      subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void) {
+        harness.crossCb = cb
         return () => {}
       }
+      setCrosshairTime = vi.fn((t: number | null) => {
+        harness.cross.push(t)
+      })
+      clearCrosshair = vi.fn()
       setVisibleRange = vi.fn((r: { from: number; to: number }) => {
         harness.views.push(r)
       })
@@ -261,5 +270,49 @@ describe('多图视角同步的单位（issue #186）', () => {
     const { rerender } = render(<ChartView {...base} period="1h" candles={oneHour} />)
     rerender(<ChartView {...base} period="1h" candles={oneHour} externalRange={{ from: oneMin[0].time, to: oneMin[0].time + 50 * 60 }} />)
     expect(harness.views).toContainEqual({ from: 0, to: 1 })
+  })
+})
+describe('多图十字光标落点与本格数据的一致性（issue #193）', () => {
+  afterEach(() => {
+    harness.cross.length = 0
+    harness.crossCb = null
+  })
+
+  const oneMin = makeCandles(200)
+  const fiveMin = Array.from({ length: 40 }, (_, i) => ({ ...oneMin[i * 5] }))
+  const T = oneMin[10].time
+
+  /** 先空挂一次再给外部指令：adapter 是在挂载 effect 里创建的，同一批 effect 里它排在后面 */
+  const mountWithExternal = (rerender: (ui: React.ReactElement) => void) => {
+    rerender(<ChartView {...base} period="1m" candles={oneMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([T])
+  }
+
+  it('外部指令落过笔之后整窗换了数据，必须按新数据再落一次', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    // 换周期：外部时刻**没变**（广播侧两处都按值去重，源格再报也不会重发），
+    // 但本格序列整窗换成了 5m —— 上一笔是按 1m 吸附的，那个时刻在 5m 序列里根本不存在。
+    // 落点是「外部时刻 + 本格数据」的函数，数据换了就得就地重落。
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([T, T])
+  })
+
+  it('尾沿长一根的增量装载不该重落（那一笔还贴在新数据上）', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    rerender(<ChartView {...base} period="1m" candles={[...oneMin, { ...oneMin[199], time: oneMin[199].time + 60 }]} externalCrosshairTime={T} />)
+    expect(harness.cross).toHaveLength(1)
+  })
+
+  it('指针接管本格之后，换数据不再把陈旧的指令值落回去', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    // 本格被指针驱动（fromExternalWrite=false）：这一格的落点此后由图表按像素自己算，
+    // 换数据时它会重发事件 —— 外部那个值可能早就陈旧了，不该再落
+    harness.crossCb?.(oneMin[120].time, 300, 200, false)
+    harness.cross.length = 0
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([])
   })
 })
