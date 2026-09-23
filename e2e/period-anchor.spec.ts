@@ -26,15 +26,13 @@ function waitPerfReady(page: Page, period: string) {
 }
 
 /**
- * A11 可视范围文本 → 当前视野实际覆盖了多少根 K 线、右缘是否就是最后一根。
+ * A11 可视范围文本 → 视野在合成数据里覆盖到的**下标区间**。
  *
  * 文本由 Intl.DateTimeFormat 按 locale 格式化（时区固定 UTC，与 App 默认一致），所以不去解析
  * 日期，而是用同样的规则把合成数据格式化回来做等值匹配——把「视野被压成 2~5 根」这种
  * 状态错直接钉死（按钮只能证明右缘索引算对，压扁后仍在最新，按钮不红）。
- * 只取跨度不取右缘：右缘要和「读到的这一刻的最后一根」比，而 perf 合成数据每 1.5s 就长一根，
- * 显示器上的右缘天然落后于数组末尾，比不得。
  */
-async function readVisibleSpan(page: Page): Promise<number | null> {
+async function matchVisibleIndices(page: Page): Promise<{ first: number; last: number; len: number } | null> {
   return page.evaluate(() => {
     const text = document.querySelector('[data-testid="chart-visible-range"]')?.textContent ?? ''
     const candles = (window.__klineButyPerf?.candles ?? []) as { time: number }[]
@@ -63,10 +61,29 @@ async function readVisibleSpan(page: Page): Promise<number | null> {
         if (first === null) first = i
         last = i
       }
-      if (first !== null && last !== null) return last - first + 1
+      if (first !== null && last !== null) return { first, last, len: candles.length }
     }
     return null
   })
+}
+
+/** 视野实际覆盖了多少根 K 线（反查不到返回 null） */
+async function readVisibleSpan(page: Page): Promise<number | null> {
+  const m = await matchVisibleIndices(page)
+  return m ? m.last - m.first + 1 : null
+}
+
+/**
+ * 「视角离最新还差几根」。`away === 0` 就是**还贴着最新**，此时「回到最新」本该隐藏。
+ *
+ * 这条量是 A2 的关键一手证据：CI 上红过的那一步原先只报「按钮找不到」，分不清
+ * ① 拖拽没把视角挪开（手势/环境问题）与 ② 视角确实挪开了但 `atLatest` 判错（产品问题）。
+ * 现在拖拽的循环条件直接钉在这个量上，红的时候消息里带着它。
+ * perf 合成数据每 1.5s 长一根，所以 `away` 天然会自己往上走，判「>0」不受影响。
+ */
+async function awayFromLatest(page: Page): Promise<number | null> {
+  const m = await matchVisibleIndices(page)
+  return m ? m.len - 1 - m.last : null
 }
 
 /** 主图拖拽向右 → 视图进入历史（复用 smoke 平移模式，靠持久视图远离最新） */
@@ -88,9 +105,9 @@ async function panIntoHistory(page: Page) {
 test.describe('A2 周期切换右侧锚定', () => {
   // webkit 在重负载 CI runner 下合成数据大窗口切周期锚定收敛可达数十秒（v0.5.13 复现）。
   // 预算必须盖得住本用例自己声明的每步上限之和：初始就绪 30s + 5 次 waitPerfReady 20s
-  // + 45s×2 + 8s×3 + 15s×2 ≈ 266s；原先写 150s，慢机上必然在某个动作上被全局超时打断
-  // （CI 上就红在最后的 back-to-latest 点击）。取 280s 留一点拖拽余量。
-  test.setTimeout(280_000)
+  // + 45s×2 + 拖到视角离开最新 60s + 8s×3 + 15s×2 ≈ 334s；原先写 150s，慢机上必然在某个动作上
+  // 被全局超时打断（CI 上就红在最后的 back-to-latest 点击）。取 360s 留一点拖拽余量。
+  test.setTimeout(360_000)
   test('停在最新切周期不越界；回看切周期不跳最新（双向稳定 + 范围显示）', async ({ page, browserName }) => {
     // firefox：Playwright 合成鼠标事件与 lightweight-charts pressedMouseMove 不兼容（真机正常），
     // 拖拽平移在 firefox CI 无法合成；回看→切周期锚定由 chromium/webkit 覆盖
@@ -134,11 +151,25 @@ test.describe('A2 周期切换右侧锚定', () => {
     await waitPerfReady(page, '1h')
     await expect(back).toHaveCount(0, { timeout: 45000 })
 
-    // 回看历史 → 「回到最新」出现（firefox 拖拽事件时序不同，必要时多拖几次）
-    for (let attempt = 0; attempt < 5 && !(await back.isVisible().catch(() => false)); attempt++) {
-      await panIntoHistory(page)
-    }
-    await expect(back).toBeVisible({ timeout: 8000 })
+    // 回看历史：拖到**视角确实离开最新**为止，而不是「拖满 5 次就算数」。
+    // 原写法是 for(5 次){ if (按钮可见) break; 拖一次 } 然后等按钮 8s —— CI 上红在那 8s，
+    // 而消息只说「元素找不到」，分不清是手势没生效还是 atLatest 判错（issue #202）。
+    // 现在前提被钉成可测量的量：可视右缘与末根的下标差必须 > 0，红的时候带着这个数。
+    let away = await awayFromLatest(page)
+    await expect
+      .poll(
+        async () => {
+          if (away !== null && away > 0) return 'away'
+          await panIntoHistory(page)
+          away = await awayFromLatest(page)
+          if (away === null) return 'A11 可视范围文本反查不到合成数据下标'
+          return `视角仍在最新（away=${away}）`
+        },
+        { timeout: 60_000, intervals: [500], message: '向右拖拽必须让视角离开最新，否则本用例没有可断言的前提' },
+      )
+      .toBe('away')
+    // 前提已经成立（away>0），这一条再红就是 `atLatest` 判定错，不是手势没生效 —— 消息里带着量
+    await expect(back, `视角已离开最新（away=${away}）却没出现「回到最新」⇒ atLatest 判定错`).toBeVisible({ timeout: 8000 })
     await page.waitForTimeout(300) // 惯性停稳后再切周期
 
     // 回看处切 5m → 右侧锚定，仍远离最新（不跳回最新）
