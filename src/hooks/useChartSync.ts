@@ -37,15 +37,23 @@ export function useChartSync(count: number) {
     return init
   })
   const crosshairExternalRef = useRef<Record<number, number | null>>({})
+  /** 各格最近一次**自己上报**的值：把它原样报回来就是回声，不必再写回那一格 */
+  const crosshairReportedRef = useRef<Record<number, number | null>>({})
 
   const broadcastCrosshair = (source: number, time: number | null) => {
-    // 回显检测：本图上报的值等于它当前接收的外部值 → 视为同步写入的回显，不再次广播
-    if (time === crosshairExternalRef.current[source]) return
+    crosshairReportedRef.current[source] = time
+    // 去重只能**按格**判：这一格已经是这个值才不必再写。发起格自己的槽位从来不被自己的广播
+    // 更新，拿它当整条广播的开关，会让「第二格移出」的那条 null 被整条丢弃（其余格永远停在
+    // 上一格的转发值上）—— 单元测试里那条 `expected 222 to be null` 就是这个。
     const next: Record<number, number | null> = {}
     for (let i = 0; i < count; i++) {
       if (i === source) continue
+      if (crosshairExternalRef.current[i] === time) continue
+      // null 是「撤销」，永远要传下去：某一格很久以前报过 null，不代表它现在没什么要清的
+      if (time !== null && crosshairReportedRef.current[i] === time) continue
       next[i] = time
     }
+    if (Object.keys(next).length === 0) return
     crosshairExternalRef.current = { ...crosshairExternalRef.current, ...next }
     setCrosshairTimes((prev) => ({ ...prev, ...next }))
   }
