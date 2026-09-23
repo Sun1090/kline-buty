@@ -25,8 +25,51 @@ function waitPerfReady(page: Page, period: string) {
   return expect.poll(() => perfPeriod(page), { timeout: 20_000 }).toBe(period)
 }
 
-/** 主图拖拽向右 → 视图进入历史（复用 smoke 平移模式，靠持久视图远离最新） */
-async function panIntoHistory(page: Page) {
+/**
+ * A11 可视范围文本 → 当前视野实际覆盖了多少根 K 线、右缘是否就是最后一根。
+ *
+ * 文本由 Intl.DateTimeFormat 按 locale 格式化（时区固定 UTC，与 App 默认一致），所以不去解析
+ * 日期，而是用同样的规则把合成数据格式化回来做等值匹配——把「视野被压成 2~5 根」这种
+ * 状态错直接钉死（按钮只能证明右缘索引算对，压扁后仍在最新，按钮不红）。
+ * 只取跨度不取右缘：右缘要和「读到的这一刻的最后一根」比，而 perf 合成数据每 1.5s 就长一根，
+ * 显示器上的右缘天然落后于数组末尾，比不得。
+ */
+async function readVisibleSpan(page: Page): Promise<number | null> {
+  return page.evaluate(() => {
+    const text = document.querySelector('[data-testid="chart-visible-range"]')?.textContent ?? ''
+    const candles = (window.__klineButyPerf?.candles ?? []) as { time: number }[]
+    if (!text || candles.length === 0) return null
+    const thisYear = new Date().getUTCFullYear()
+    for (const locale of ['en-US', 'zh-CN', 'en-GB']) {
+      const fmt = new Intl.DateTimeFormat(locale, {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'UTC',
+      })
+      let first: number | null = null
+      let last: number | null = null
+      for (let i = 0; i < candles.length; i++) {
+        const d = new Date(candles[i].time * 1000)
+        const s = d.getUTCFullYear() < thisYear
+          ? new Intl.DateTimeFormat(locale, {
+              month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+              hour12: false, timeZone: 'UTC', year: '2-digit',
+            }).format(d)
+          : fmt.format(d)
+        if (!text.includes(s)) continue
+        if (first === null) first = i
+        last = i
+      }
+      if (first !== null && last !== null) return last - first + 1
+    }
+    return null
+  })
+}
+
+/** 主图拖拽向右 → 视图进入历史（复用 smoke 平移模式，靠持久视图远离最新） */async function panIntoHistory(page: Page) {
   const canvas = page.locator('canvas').first()
   const box = await canvas.boundingBox()
   expect(box).not.toBeNull()
@@ -65,11 +108,19 @@ test.describe('A2 周期切换右侧锚定', () => {
     await expect(visibleRange).toBeVisible()
 
     // 停在最新处切 5m → 仍锚定最新（不越界），范围显示随之更新
+    // 切之前记下视野宽度（合成数据约千根量级），用来验证「切周期不会把视野压扁」
+    const beforeSpan = await readVisibleSpan(page)
+    expect(beforeSpan ?? 0).toBeGreaterThan(50)
     // 合成数据大窗口切周期锚定在慢机/高负载下可达数十秒，放宽到 45s 防负载抖动误报（v0.5.13 二次硬化）
     await page.getByTestId('period-5m').click()
     await waitPerfReady(page, '5m')
     await expect(back).toHaveCount(0, { timeout: 45000 }) // 关键：停在最新处切周期不跳出最新
     await expect(visibleRange).toBeVisible()
+    // 关键：锚定后视野宽度量级不变、右缘仍是最新一根。历史缺陷是窗口迁移自锁振荡 +
+    // setData 期间补发的陈旧可见区间把视野压成 2~5 根——那时右缘仍在最新，按钮不红，只有跨度能抓住
+    await expect
+      .poll(async () => (await readVisibleSpan(page)) ?? 0, { timeout: 20_000, message: '切周期后视野不应塌缩' })
+      .toBeGreaterThan(50)
 
     // 最新处切 1h → 仍最新
     await page.getByTestId('period-1h').click()

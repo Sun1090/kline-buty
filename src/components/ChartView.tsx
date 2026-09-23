@@ -7,7 +7,7 @@ import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
-import { anchorRangeForSwitch, cullWindow, localRange, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
+import { anchorRangeForSwitch, cullWindow, localRange, nextCullWindow, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
@@ -282,6 +282,15 @@ export function ChartView({
   const [cull, setCull] = useState<CullWindow | null>(null)
   const cullRef = useRef<CullWindow | null>(null)
   cullRef.current = cull
+  /**
+   * 图表里**当前真正装载着**的那片切片：起始全局下标 + 根数（每次 setCandles 时写入）。
+   * 局部→全局换算只能用它，不能用 cullRef：cull 在渲染期就变了，而图表数据要等到装载 effect 才换，
+   * 这中间的可见区间回调会拿新 base 去解释旧切片，得到被 clamp 的假视角（停在最新却判成回看、
+   * 锚定跨度被压成几分钟）。
+   */
+  const loadedRef = useRef({ base: 0, len: 0 })
+  /** 装载中标记：setData 会同步补发一条仍按旧切片索引计算的可见区间，这期间的所有通知都不可信 */
+  const applyingRef = useRef(false)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
@@ -358,8 +367,10 @@ export function ChartView({
     const sig = `${externalRange.from}:${externalRange.to}`
     if (sig === lastExternalRef.current) return
     lastExternalRef.current = sig
-    const cur = cullRef.current
-    apiRef.current.setVisibleRange(cur ? localRange(cur, externalRange) : externalRange)
+    const base = loadedRef.current.base
+    apiRef.current.setVisibleRange(
+      base ? { from: externalRange.from - base, to: externalRange.to - base } : externalRange,
+    )
   }, [externalRange])
 
   // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
@@ -377,18 +388,20 @@ export function ChartView({
   )
 
   // 大数据量窗口裁剪：超过阈值只装载可见区间 + 余量，滚动到边缘再重载
-  const windowData = useMemo(() => {
-    if (!cull) return replayData
+  const windowSlice = useMemo(() => {
+    if (!cull) return { data: replayData, base: 0 }
     const len = replayData.length
     // 窗口整体在数据之外（如回放起点游标很小时残留的旧窗口）→ 退回全量，避免空切片
-    if (cull.start >= len) return replayData
+    if (cull.start >= len) return { data: replayData, base: 0 }
     const start = Math.max(0, cull.start)
     // 窗口装载时即贴着数据尾沿（覆盖到末尾）：实时新帧/新 K 线自然流入窗口，
     // 走增量 updateCandle 路径，避免每 tick 全量重载
     const atTail = cull.end >= fullLenAtCullRef.current
     const end = atTail ? len : Math.min(cull.end, len)
-    return replayData.slice(start, Math.max(start, end))
+    return { data: replayData.slice(start, Math.max(start, end)), base: start }
   }, [replayData, cull])
+  const windowData = windowSlice.data
+  const windowBase = windowSlice.base
   dataLenRef.current = replayData.length
   allCandlesRef.current = replayData
 
@@ -432,12 +445,16 @@ export function ChartView({
     let lastLoadAt = 0
     const unsubRange = api.subscribeVisibleRange((from, to) => {
       const now = Date.now()
+      // 整窗 setData 期间图表会同步补发一条按**旧切片**索引算出的可见区间：此刻 loadedRef 已是新切片，
+      // 换算得到的是一条被 clamp 的窄假视角，写进视角状态后会被窗口迁移/重载回放，真的把视野压扁。
+      // 装载完成后我们总会显式设定视角（setVisibleRange / fitContent），那条通知才是可信的。
+      if (applyingRef.current) return
       // 局部索引 → 全局索引（叠加裁剪窗口偏移）。
       // A2 修复：lightweight-charts 的 visibleLogicalRange 是浮点逻辑索引且含 rightOffset 越界
       // （to 可 > len-1）。此前直接用浮点索引取 allCandlesRef 得 undefined → tFrom/tTo 恒 null →
       // lastVisibleTimeRef 不更新 → 切周期锚定拿不到旧右缘时间而回落 fitContent 跳回最新，
       // A11 可视范围显示、loadMore 左缘判定、pair/quad 时间轴同步同样受影响。先取整并 clamp 到数据范围。
-      const base = cullRef.current?.start ?? 0
+      const base = loadedRef.current.base
       const len = dataLenRef.current
       const lastIdx = Math.max(0, len - 1)
       const gFrom = Math.min(base + Math.max(0, Math.floor(from)), lastIdx)
@@ -453,17 +470,15 @@ export function ChartView({
         lastVisibleTimeRef.current = { toTime: tTo, spanMs: Math.max((tTo - tFrom) * 1000, 1) }
       }
       setAtLatest(!isAwayFromLatest(gTo, len))
-      // 数据量超阈值 → 越出装载窗口时重载新窗口（窗口内滚动/缩放零重载）
-      if (shouldCull(len)) {
-        const target = cullWindow(len, { from: gFrom, to: gTo })
+      // 数据量超阈值 → 只在视角越出装载区间（或左缘空转一个余量）时迁移窗口；窗口内滚动/缩放零重载
+      {
         const cur = cullRef.current
-        if (!cur || target.start !== cur.start || target.end !== cur.end) {
-          fullLenAtCullRef.current = len
+        const loadedWindow = { start: base, end: base + loadedRef.current.len }
+        const target = nextCullWindow(cur, loadedWindow, { from: gFrom, to: gTo }, len)
+        if (target !== cur) {
+          fullLenAtCullRef.current = target ? len : 0
           setCull(target)
         }
-      } else if (cullRef.current) {
-        fullLenAtCullRef.current = 0
-        setCull(null)
       }
       if (!replayRef.current) {
         if (gFrom <= 2 && hasMoreRef.current && now - lastLoadAt > LOAD_MORE_COOLDOWN_MS) {
@@ -855,8 +870,21 @@ export function ChartView({
       windowData.length >= prev.length &&
       windowData[prev.length - 1]?.time === prev[prev.length - 1].time
 
+    // 整窗装载：先把「图表里到底装着什么」记牢，再让 setData 内部的补发通知一律作废
+    const loadSlice = (data: Candle[], base: number) => {
+      loadedRef.current = { base, len: data.length }
+      applyingRef.current = true
+      try {
+        api.setCandles(data)
+      } finally {
+        applyingRef.current = false
+      }
+    }
+    // 本次真正装载进图表的切片：prevDataRef 必须记录它（而非名义上的 windowData），
+    // 否则锚定路径下「图表里的数据」与「增量的起点基准」是两片不同数据
+    let loaded = windowData
     if (keyChanged || !prev || prev.length === 0 || needReload) {
-      api.setCandles(windowData)
+      loadSlice(windowData, windowBase)
       // 换品种 / 进入回放 / 退出回放 / 首个裁剪窗口 → 适配全量
       if (keyChanged || enteringReplay || exitingReplay || (!cur && shouldCull(fullLen))) {
         // G2 周期切换右侧锚定：仅 period 变化（symbol 不变）且此前有可见区间时，
@@ -864,7 +892,7 @@ export function ChartView({
         // 修复一（A2）：此前 keyRef.current 已被覆盖，symChanged 恒 false，换品种也走锚定。
         // 修复二（A2）：此前对 windowData（旧周期位置索引裁出的新周期切片）做二分，
         // 位置×周期会错位，旧右缘时间常落新窗口之外被 clamp 到错误位置甚至跳回最新；
-        // 改为对全量 replayData 按时间定位，并同步重建 cullRef 保证本次 subscribe 用新 base。
+        // 改为对全量 replayData 按时间定位，并同步重建窗口基准。
         const symChanged = prevKey.slice(0, prevKey.indexOf(':')) !== symbol
         const vt = lastVisibleTimeRef.current
         const periodChanged = keyChanged && !symChanged
@@ -875,10 +903,11 @@ export function ChartView({
             const len = replayData.length
             const useCull = shouldCull(len)
             const target = useCull ? cullWindow(len, anchor) : null
-            api.setCandles(target ? replayData.slice(target.start, target.end) : replayData)
+            const slice = target ? replayData.slice(target.start, target.end) : replayData
+            // 先立基准再装载：随后 setVisibleRange 触发的可见区间回调要用新切片自己的起点换算
+            loadSlice(slice, target ? target.start : 0)
+            loaded = slice
             if (target) {
-              // 同步更新 cullRef：setVisibleRange 触发 subscribe 时 base 用新窗口起点
-              // （否则旧 base 会把锚定区间换算到错误全局位置，引发窗口漂移振荡）
               setCull(target)
               cullRef.current = target
               api.setVisibleRange(localRange(target, anchor))
@@ -892,24 +921,25 @@ export function ChartView({
           api.fitContent()
         }
       } else if (cur) {
-        // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回局部坐标
+        // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回本次切片的局部坐标
         const v = lastVisibleRef.current
         if (v) {
-          api.setVisibleRange(localRange(cur, v))
+          api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase })
           if (replay) api.scrollToRealTime()
         }
       }
     } else if (prefixSame) {
-      // 增量：实时新帧/新 K 线逐根 updateCandle，避免整窗重载
+      // 增量：实时新帧/新 K 线逐根 updateCandle，避免整窗重载（起点基准不变，仅尾沿生长）
       for (let i = prev.length - 1; i < windowData.length; i++) api.updateCandle(windowData[i])
+      loadedRef.current = { base: windowBase, len: windowData.length }
       // 回放播放推进时跟随最新，seek/实时增量不打扰用户视图
       if (replay && windowData.length > prev.length) api.scrollToRealTime()
     } else {
       // 回放 seek 后退等乱序：全量装载并适配
-      api.setCandles(windowData)
+      loadSlice(windowData, windowBase)
       if (cur) {
         const v = lastVisibleRef.current
-        if (v) api.setVisibleRange(localRange(cur, v))
+        if (v) api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase })
         if (replay) api.scrollToRealTime()
       } else if (replay) {
         api.fitContent()
@@ -927,7 +957,7 @@ export function ChartView({
         lines: subData.lines ? applyLineColorOverrides(subData.lines, lineColors) : undefined,
       })
     }
-    prevDataRef.current = windowData
+    prevDataRef.current = loaded
   }, [windowData, mainData, subData, symbol, period, chartType, replay, cull, lineColors, compareLines])
 
   // H12 副图 Y 轴固定范围：切换副图指标时重置为自动；开启/关闭时同步 adapter
