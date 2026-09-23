@@ -267,4 +267,17 @@ describe('MarketList', () => {
     render(<MarketList {...baseProps} />)
     expect(screen.getByTestId('market-tab-rank').getAttribute('aria-pressed')).toBe('true')
   })
+
+  it('刷新：标题栏按钮与错误态重试都走 hook 的 refresh（不是各自一套）', () => {
+    const state = stubHook()
+    render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('market-refresh'))
+    expect(state.refresh).toHaveBeenCalledTimes(1)
+    cleanup()
+
+    const failed = stubHook({ error: true, rows: [] })
+    render(<MarketList {...baseProps} />)
+    fireEvent.click(screen.getByTestId('panel-retry'))
+    expect(failed.refresh).toHaveBeenCalledTimes(1)
+  })
 })

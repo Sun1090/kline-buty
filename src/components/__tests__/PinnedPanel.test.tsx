@@ -80,4 +80,13 @@ describe('PinnedPanel（I4 自选实时行情）', () => {
     fireEvent.click(screen.getByTestId('pinned-sort-price'))
     expect(rows()).toEqual(['pinned-row-BTCUSDT', 'pinned-row-ETHUSDT'])
   })
+
+  it('排序条只在两个以上品种时渲染（单品种没有可比顺序，不该占一行）', () => {
+    const p = { onSelect: vi.fn(), onAdd: vi.fn(), onRemove: vi.fn(), onClose: vi.fn() }
+    render(<PinnedPanel symbols={['BTCUSDT']} {...p} />)
+    expect(screen.queryByTestId('pinned-sort')).toBeNull()
+    cleanup()
+    render(<PinnedPanel symbols={['BTCUSDT', 'ETHUSDT']} {...p} />)
+    expect(screen.getByTestId('pinned-sort')).toBeTruthy()
+  })
 })

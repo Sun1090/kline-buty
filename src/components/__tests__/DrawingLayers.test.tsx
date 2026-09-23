@@ -237,6 +237,28 @@ describe('DrawingLayers（图层管理面板）', () => {
     expect(handlers.onDeleteTemplate).toHaveBeenCalledWith('支撑趋势')
   })
 
+  it('模板导入：按钮打开隐藏 file input，读到内容后按回调结果显示「已导入」', async () => {
+    const onImportTemplates = vi.fn(() => true)
+    setup({ onImportTemplates })
+    const fileInput = screen.getByTestId('drawing-template-import-file') as HTMLInputElement
+    const openPicker = vi.spyOn(fileInput, 'click')
+    fireEvent.click(screen.getByTestId('drawing-template-import'))
+    expect(openPicker).toHaveBeenCalledTimes(1)
+    // 选文件 → FileReader.onload（异步）→ 原文交给 onImportTemplates → 成功提示
+    const file = new File(['{"templates":[]}'], 't.json', { type: 'application/json' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+    await waitFor(() => expect(onImportTemplates).toHaveBeenCalledWith('{"templates":[]}'), { timeout: 2000 })
+    await waitFor(() => expect(screen.queryByText('已导入')).toBeTruthy(), { timeout: 2000 })
+  })
+
+  it('模板导入失败：回调返回 false 时提示格式无效，而不是静默', async () => {
+    setup({ onImportTemplates: vi.fn(() => false) })
+    fireEvent.change(screen.getByTestId('drawing-template-import-file'), {
+      target: { files: [new File(['not json'], 't.json', { type: 'application/json' })] },
+    })
+    await waitFor(() => expect(screen.queryByText('导入失败：文件格式无效')).toBeTruthy(), { timeout: 2000 })
+  })
+
   it('面板有 role=region，列表 role=listbox，行 role=option + aria-selected', () => {
     setup({ drawings: [h1, t1], selectedId: 'h1' })
     const region = screen.getByTestId('drawing-layers')

@@ -36,6 +36,29 @@ describe('OrderBook 移动端快捷下单', () => {
     expect(onMarkPrice).toHaveBeenCalledTimes(0)
   })
 
+  it('无深度数据时显示骨架屏，有数据后骨架屏必须让位', () => {
+    render(
+      <OrderBook
+        symbol="BTCUSDT"
+        depth={{ bids: [], asks: [] }}
+        onQuickOrder={vi.fn()}
+        onMarkPrice={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('orderbook-skeleton')).toBeDefined()
+    cleanup()
+
+    render(
+      <OrderBook
+        symbol="BTCUSDT"
+        depth={depth}
+        onQuickOrder={vi.fn()}
+        onMarkPrice={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('orderbook-skeleton')).toBeNull()
+  })
+
   it('行点击仍可标记主图，hover 仍联动参考价', () => {
     const onQuickOrder = vi.fn()
     const onMarkPrice = vi.fn()

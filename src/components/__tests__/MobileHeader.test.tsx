@@ -262,4 +262,44 @@ describe('MobileHeader（移动端工具栏整合）', () => {
     fireEvent.click(presetBtn)
     expect(onColorPreset).toHaveBeenCalledWith('a-share')
   })
+
+  it('主图弹层：mobile-menu-main 展开→选 EMA 回传，触发按钮 aria-expanded 跟随开关', () => {
+    const h = setup()
+    expect(screen.getByTestId('mobile-menu-main').getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(screen.getByTestId('mobile-menu-main'))
+    expect(screen.getByTestId('mobile-menu-main').getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(screen.getByText('EMA'))
+    expect(h.onMainIndicator).toHaveBeenCalledWith('ema')
+  })
+
+  it('画线弹层三个开关：吸附/隐藏备注/坐标角标各自回传，pressed 跟随自己的 prop', () => {
+    const onToggleDrawingSnap = vi.fn()
+    const onToggleNotesHidden = vi.fn()
+    const onToggleCoordBadge = vi.fn()
+    setup({ onToggleDrawingSnap, onToggleNotesHidden, onToggleCoordBadge, drawingSnap: 'ohlc', notesHidden: true, coordBadge: false })
+    fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
+    expect(screen.getByTestId('mobile-drawing-snap-toggle').getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByTestId('mobile-drawing-note-toggle').getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByTestId('mobile-drawing-coord-badge-toggle').getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(screen.getByTestId('mobile-drawing-snap-toggle'))
+    fireEvent.click(screen.getByTestId('mobile-drawing-note-toggle'))
+    fireEvent.click(screen.getByTestId('mobile-drawing-coord-badge-toggle'))
+    expect(onToggleDrawingSnap).toHaveBeenCalledTimes(1)
+    expect(onToggleNotesHidden).toHaveBeenCalledTimes(1)
+    expect(onToggleCoordBadge).toHaveBeenCalledTimes(1)
+    // 关闭态：吸附 off 时同一个按钮必须是未按下，否则「三态循环」在移动端无从判断
+    cleanup()
+    setup({ drawingSnap: 'off' })
+    fireEvent.click(screen.getByTestId('mobile-menu-drawing'))
+    expect(screen.getByTestId('mobile-drawing-snap-toggle').getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('知识库入口：新标签打开 BASE_URL 下的 /knowledge/，带 rel=noopener', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('mobile-more'))
+    const a = screen.getByTestId('knowledge-link') as HTMLAnchorElement
+    expect(a.getAttribute('href')).toBe('/knowledge/')
+    expect(a.getAttribute('target')).toBe('_blank')
+    expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+  })
 })

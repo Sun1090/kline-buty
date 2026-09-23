@@ -49,6 +49,23 @@ describe('ShortcutsSettings（L1 键位配置）', () => {
     fireEvent.click(screen.getByLabelText('关闭'))
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('M10 冲突提示：撞上默认键位时点名双方，换到空闲键位不报', () => {
+    render(<ShortcutsSettings keys={{}} onChange={vi.fn()} onClose={vi.fn()} />)
+    // 'm' 是 cycle-main 的默认键 → 绑给 cycle-sub 必须报冲突，且点名的是这两个动作
+    fireEvent.click(screen.getByTestId('shortcut-cycle-sub'))
+    fireEvent.keyDown(window, { key: 'm' })
+    const banner = screen.getByTestId('shortcuts-conflict')
+    expect(banner.getAttribute('role')).toBe('alert')
+    expect(banner.textContent).toContain('循环主图指标')
+    expect(banner.textContent).toContain('循环副图指标')
+    cleanup()
+
+    render(<ShortcutsSettings keys={{}} onChange={vi.fn()} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('shortcut-cycle-sub'))
+    fireEvent.keyDown(window, { key: 'q' })
+    expect(screen.queryByTestId('shortcuts-conflict')).toBeNull()
+  })
 })
 
 describe('eventToKey（L1 按键归一化）', () => {
@@ -91,6 +108,21 @@ describe('H9 快捷键速查卡打印', () => {
     expect(html).toContain('⌘K')
     expect(html).toContain('</table>')
     expect(closeSpy).toHaveBeenCalled()
+    vi.restoreAllMocks()
+  })
+
+  it('「打印」按钮：整表来自组件自己的分组，而不是调用方手拼', () => {
+    const writeSpy = vi.fn()
+    const win = { document: { write: writeSpy, close: vi.fn() } }
+    vi.spyOn(window, 'open').mockReturnValue(win as unknown as Window)
+    render(<ShortcutsHelp onConfigure={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('shortcuts-print'))
+    expect(writeSpy).toHaveBeenCalledTimes(1)
+    const html = writeSpy.mock.calls[0][0] as string
+    // 分组标题 + 某个动作的键位标签都要出现在同一次写入里
+    expect(html).toContain('导航')
+    expect(html).toMatch(/← \/ →/)
+    expect(html).toContain('<table')
     vi.restoreAllMocks()
   })
 })
