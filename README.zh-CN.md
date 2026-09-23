@@ -9,8 +9,8 @@
 ## 功能特性
 
 - **实时 K 线图表** — 蜡烛图 / 折线图 / 面积图，14 档周期（1s 至 1M）
-- **49 种画线工具** — 趋势线、通道、斐波那契、R:R、江恩、楔形、文本标注、圆弧、椭圆、多段线、量度、周期线、平行射线、宽度通道、趋势角度、时间区间、价格带、斐波那契时间区间等；支持撤销/重做、模板（保存/套用 + 社区导入导出）、跨品种复制粘贴、分组折叠、OHLC 吸附对齐、单条透明度
-- **26 种指标** — 主图：MA、EMA、BOLL、VWAP、SAR、Ichimoku、Supertrend；副图：VOL、MACD、KDJ、RSI、WR、OBV、ATR、DMI、CCI、PSY、STOCH、ROC、MOM、BBW、MFI、AO、CMF、Donchian、Aroon，参数全量可调 + 预设持久化
+- **47 种画线工具** — 趋势线、通道、斐波那契、R:R、江恩、楔形、文本标注、圆弧、椭圆、多段线、量度、周期线、平行射线、宽度通道、趋势角度、时间区间、价格带、斐波那契时间区间等；支持撤销/重做、模板（保存/套用 + 社区导入导出）、跨品种复制粘贴、分组折叠、OHLC 吸附对齐、单条透明度
+- **29 种指标** — 主图：MA、EMA、BOLL、VWAP、SAR、Ichimoku、Supertrend；副图：VOL、MACD、KDJ、RSI、WR、OBV、ATR、DMI、CCI、PSY、STOCH、ROC、MOM、BBW、MFI、AO、CMF、Donchian、Aroon、TRIX、DPO、Vortex，参数全量可调 + 预设持久化
 - **盘口深度图** — 实时 8 档买卖盘口 + 深度曲线，WebSocket 驱动
 - **多图同屏** — 1/2/4 图布局，时间轴联动
 - **市场回放** — 历史逐根回放，1x–50x 变速
@@ -68,7 +68,7 @@ src/
 │   ├── market.ts    # K 线仓库：有序缓存 + 幂等合并
 │   └── cache.ts     # K 线本地缓存（冷启动加速）
 ├── drawings/        # 画线逻辑：49 种工具、撤销/重做、模板、分组、吸附
-├── indicators/      # 指标引擎（纯函数，26 种指标）
+├── indicators/      # 指标引擎（纯函数，29 种指标）
 ├── alerts/          # 价格提醒引擎（一次性/循环、时间窗口）
 ├── trade/ position/ # 模拟交易：订单、持仓、盈亏
 ├── replay/          # 市场回放引擎
@@ -94,7 +94,7 @@ src/
 
 ## 进度
 
-<img src="https://img.shields.io/badge/%E7%94%BB%E7%BA%BF%E5%B7%A5%E5%85%B7-49-blueviolet" alt="49 种画线工具" /> <img src="https://img.shields.io/badge/指标-26-success" alt="26 种指标" /> <img src="https://img.shields.io/badge/E2E-121-blue" alt="121 个 E2E 测试" /> <img src="https://img.shields.io/badge/单测-1000-yellow" alt="1000 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
+<img src="https://img.shields.io/badge/%E7%94%BB%E7%BA%BF%E5%B7%A5%E5%85%B7-47-blueviolet" alt="47 种画线工具" /> <img src="https://img.shields.io/badge/指标-29-success" alt="29 种指标" /> <img src="https://img.shields.io/badge/E2E-221-blue" alt="221 个 E2E 用例" /> <img src="https://img.shields.io/badge/单测-1983-yellow" alt="1983 个单测" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" />
 
 - ✅ M0 调研立项
 - ✅ M1 数据地基：币安 REST/WS 封装、MarketStore、断线重连
