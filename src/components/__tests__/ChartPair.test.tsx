@@ -71,6 +71,9 @@ vi.mock('../../chart/adapter', () => {
       this.onRange = cb
       return () => {}
     }
+    visibleRange() {
+      return null
+    }
     destroy() {}
   }
   return { LightweightChartAdapter: MockAdapter }

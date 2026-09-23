@@ -71,6 +71,9 @@ vi.mock('../../chart/adapter', () => {
     subscribeVisibleRange() {
       return () => {}
     }
+    visibleRange() {
+      return null
+    }
     destroy() {}
   }
   return { LightweightChartAdapter: MockAdapter }

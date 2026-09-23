@@ -291,6 +291,8 @@ export function ChartView({
   const loadedRef = useRef({ base: 0, len: 0 })
   /** 装载中标记：setData 会同步补发一条仍按旧切片索引计算的可见区间，这期间的所有通知都不可信 */
   const applyingRef = useRef(false)
+  /** 可见区间处理函数（初始化 effect 里定义）：装载收尾要主动补一次读数，故存下来供别的 effect 调用 */
+  const applyRangeRef = useRef<((from: number, to: number) => void) | null>(null)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
@@ -443,7 +445,7 @@ export function ChartView({
     api.onRegionCapture((rect) => regionCaptureRef.current?.(rect))
 
     let lastLoadAt = 0
-    const unsubRange = api.subscribeVisibleRange((from, to) => {
+    const onVisibleRange = (from: number, to: number) => {
       const now = Date.now()
       // 整窗 setData 期间图表会同步补发一条按**旧切片**索引算出的可见区间：此刻 loadedRef 已是新切片，
       // 换算得到的是一条被 clamp 的窄假视角，写进视角状态后会被窗口迁移/重载回放，真的把视野压扁。
@@ -487,11 +489,14 @@ export function ChartView({
         }
       }
       onViewRangeChangeRef.current?.({ from: gFrom, to: gTo })
-    })
+    }
+    applyRangeRef.current = onVisibleRange
+    const unsubRange = api.subscribeVisibleRange(onVisibleRange)
 
     return () => {
       unsubCross()
       unsubRange()
+      applyRangeRef.current = null
       api.destroy()
       apiRef.current = null
       prevDataRef.current = null
@@ -883,7 +888,10 @@ export function ChartView({
     // 本次真正装载进图表的切片：prevDataRef 必须记录它（而非名义上的 windowData），
     // 否则锚定路径下「图表里的数据」与「增量的起点基准」是两片不同数据
     let loaded = windowData
+    // 是否走了整窗装载（只有它会作废 setData 期间的可见区间通知，需要在收尾补一次可信读数）
+    let wholeWindowLoad = false
     if (keyChanged || !prev || prev.length === 0 || needReload) {
+      wholeWindowLoad = true
       loadSlice(windowData, windowBase)
       // 换品种 / 进入回放 / 退出回放 / 首个裁剪窗口 → 适配全量
       if (keyChanged || enteringReplay || exitingReplay || (!cur && shouldCull(fullLen))) {
@@ -936,6 +944,7 @@ export function ChartView({
       if (replay && windowData.length > prev.length) api.scrollToRealTime()
     } else {
       // 回放 seek 后退等乱序：全量装载并适配
+      wholeWindowLoad = true
       loadSlice(windowData, windowBase)
       if (cur) {
         const v = lastVisibleRef.current
@@ -944,6 +953,14 @@ export function ChartView({
       } else if (replay) {
         api.fitContent()
       }
+    }
+
+    // 整窗装载作废了 setData 期间那次陈旧通知，而随后的 fitContent/setVisibleRange 往往算出与图表
+    // 当前值相同的区间 → 变化事件不再触发 → 视角基准、A11 可视时间范围、atLatest 全停在装载前的 null。
+    // 未启用裁剪（数据量低于阈值，即日常量级）时之后再没有任何事件会补上，必须主动读一次当前区间。
+    if (wholeWindowLoad) {
+      const r = api.visibleRange()
+      if (r) applyRangeRef.current?.(r.from, r.to)
     }
 
     api.setChartType(chartType)
