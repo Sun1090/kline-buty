@@ -81,6 +81,9 @@ vi.mock('../chart/adapter', async (importOriginal) => {
       subscribeVisibleRange() {
         return () => {}
       }
+      visibleRange() {
+        return null
+      }
       destroy() {}
     },
   }

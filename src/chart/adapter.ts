@@ -267,6 +267,11 @@ export interface ChartApi {
   subscribeVisibleRange(cb: (from: number, to: number) => void): () => void
   /** 外部设置可见区间（多图时间轴同步用） */
   setVisibleRange(range: { from: number; to: number }): void
+  /**
+   * 读取当前可见逻辑区间（局部索引，可能为浮点且含 rightOffset 越界）；未布局时 null。
+   * 整窗 setData 之后变化事件可能不再触发，装载收尾要用它补一次可信读数。
+   */
+  visibleRange(): { from: number; to: number } | null
   destroy(): void
 }
 
@@ -3775,6 +3780,11 @@ export class LightweightChartAdapter implements ChartApi {
   setVisibleRange(range: { from: number; to: number }) {
     this.chart.timeScale().setVisibleLogicalRange(range)
     this.draw()
+  }
+
+  visibleRange(): { from: number; to: number } | null {
+    const r = this.chart.timeScale().getVisibleLogicalRange()
+    return r ? { from: r.from, to: r.to } : null
   }
 
   destroy() {

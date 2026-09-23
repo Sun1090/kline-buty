@@ -16,6 +16,10 @@ function makeCandles(n: number): Candle[] {
   }))
 }
 
+// 装载后图表是否还「补发一次当前可见区间」由这里控制：mock 的 subscribeVisibleRange 从不触发回调，
+// 正好复现「整窗 setData 之后不再有变化事件」的真实形态（lightweight-charts 只在区间真的变了才发）
+const harness = vi.hoisted(() => ({ range: null as { from: number; to: number } | null }))
+
 vi.mock('../../chart/adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../chart/adapter')>()
   return {
@@ -64,6 +68,9 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       subscribeVisibleRange() {
         return () => {}
       }
+      visibleRange() {
+        return harness.range
+      }
       destroy() {}
     },
   }
@@ -110,6 +117,19 @@ describe('ChartView 渲染路径（O7）', () => {
     render(<ChartView {...base} candles={makeCandles(200)} />)
     expect(screen.getByTestId('screenshot-scale-toggle')).toBeDefined()
     expect(screen.getByText(/\d+x$/)).toBeDefined()
+  })
+
+  it('整窗装载后不再有可见区间变化事件时，A11 可视范围仍必须出现', () => {
+    // 回归：装载期间作废的那次通知，此后 lightweight-charts 不会再补发（区间没「变」）。
+    // 数据量低于裁剪阈值（200 根，即日常量级）时之后再没有别的事件，A11 条就永远不渲染
+    harness.range = { from: 0, to: 199 }
+    try {
+      render(<ChartView {...base} candles={makeCandles(200)} />)
+      const strip = screen.getByTestId('chart-visible-range')
+      expect(strip.textContent).toContain('—')
+    } finally {
+      harness.range = null
+    }
   })
 
   it('丢帧率 >10% 时显示角标（N14）', () => {
