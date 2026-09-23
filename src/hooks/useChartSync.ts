@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+/** 可视时间区间（K 线秒）。按时间而不是逻辑索引广播：各图周期可以不同 */
 export interface Range2 {
   from: number
   to: number

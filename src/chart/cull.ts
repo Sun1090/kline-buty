@@ -99,6 +99,23 @@ export function localRange(cull: CullWindow, range: CullRange): CullRange {
 }
 
 /**
+ * 升序 K 线里「最后一个 `time ≤ at`」的下标（二分）。全部更晚时返回 0，空数组返回 0。
+ * 秒 → 索引的换算入口：`setVisibleRange` 吃的是索引，而跨图表广播、流水定位拿到的都是时间，
+ * 各格周期不同 ⇒ 同一个索引对应完全不同的时间跨度，必须先换算再落位（issue #186）。
+ */
+export function floorIndexByTime(candles: { time: number }[], at: number): number {
+  if (candles.length === 0) return 0
+  let lo = 0
+  let hi = candles.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (candles[mid].time <= at) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+/**
  * G2 周期切换锚定：把旧周期的可见区间换算到新周期数据，保持右缘时间与时间跨度。
  * 输入为新周期数据（升序，已按周期对齐）与旧视图（右缘时间戳秒级 + 可见时间跨度毫秒）。
  * 输出为新数据索引区间（局部），右缘锚定到 `≤ toTime` 的最后一根，根数 = 跨度/新周期毫秒。
@@ -110,15 +127,7 @@ export function anchorRangeForSwitch(
   periodMs: number,
 ): CullRange | null {
   if (newCandles.length === 0) return null
-  // 二分找新周期里右缘时间对应的索引（最后一个 time ≤ toTime）
-  let lo = 0
-  let hi = newCandles.length - 1
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1
-    if (newCandles[mid].time <= toTimeSec) lo = mid
-    else hi = mid - 1
-  }
-  const right = lo
+  const right = floorIndexByTime(newCandles, toTimeSec)
   const spanRoots = Math.max(1, Math.round(spanMs / periodMs))
   // 目标时间早于全部数据（回看跨周期后新数据未覆盖到该时点）→ 从最左展示 spanRoots 根，
   // 避免 right clamp 到 0 后 span 丢失退化成单根（也不应跳到最新之外）
