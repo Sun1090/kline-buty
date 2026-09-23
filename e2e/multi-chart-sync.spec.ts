@@ -15,13 +15,19 @@ import { expect, test, type Page } from '@playwright/test'
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
 const PERF_COUNT = 1_500
 
+/** A11 文本 → 视角起止分钟数（同一天的相对分钟，只用来比距离，不去解析绝对日期） */
+function edgeMinutes(text: string): [number, number] | null {
+  const hits = [...text.matchAll(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/g)].map(
+    (m) => (Number(m[1]) * 31 + Number(m[2])) * 1440 + Number(m[3]) * 60 + Number(m[4]),
+  )
+  return hits.length >= 2 ? [hits[0], hits[hits.length - 1]] : null
+}
+
 /** A11 文本 → 跨度分钟数（只用来判「这是一次真平移」，不去解析绝对时间） */
 async function spanMinutes(page: Page, symbol: string): Promise<number> {
   const t = (await cellRangeTexts(page))[symbol] ?? ''
-  const hits = [...t.matchAll(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/g)].map(
-    (m) => (Number(m[1]) * 31 + Number(m[2])) * 1440 + Number(m[3]) * 60 + Number(m[4]),
-  )
-  return hits.length >= 2 ? hits[hits.length - 1] - hits[0] : -1
+  const e = edgeMinutes(t)
+  return e ? e[1] - e[0] : -1
 }
 
 /** 每格的 A11 可视时间范围文本（格内查，避免拿到别的格/别的图表） */
@@ -140,16 +146,23 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     expect(draggedSpan).toBeGreaterThan(beforeSpan * 0.6)
     expect(draggedSpan).toBeLessThan(beforeSpan * 1.6)
 
-    // 其余三格跟上：不仅四格文本逐字相等，而且每格都得相对于自己「动过」——
-    // 只比相等会被假绿钻空子（四格一动不动也是相等）
+    // 其余三格跟上：① 每格都得相对自己「动过」——只比相等会被假绿钻空子（四格一动不动也相等）；
+    // ② 四格的视角起止落在同一段，按**分钟**比而不是逐字比文本：webkit 的像素取整会让某一格
+    //    差出一根（CI 实测「动了 3/3，同段 3/4」），而联动真断掉时差的是几百根
+    //    （变异：externalRange 恒 null / onViewRangeChange 空实现 → 「同段 1/4」）
     await expect
       .poll(async () => {
         const now = await cellRangeTexts(page)
         const anchor = now[CELLS[0]]
         if (!anchor || anchor === before[CELLS[0]]) return `源格未平移：${JSON.stringify(now)}`
         const moved = CELLS.slice(1).filter((sym) => now[sym] !== before[sym]).length
-        const same = CELLS.filter((sym) => now[sym] === anchor).length
-        return moved === CELLS.length - 1 && same === CELLS.length ? 'synced' : `动了 ${moved}/3，同段 ${same}/4`
+        const a = edgeMinutes(anchor)
+        if (!a) return `源格文本解析失败：${anchor}`
+        const off = CELLS.filter((sym) => {
+          const e = edgeMinutes(now[sym])
+          return !e || Math.abs(e[0] - a[0]) > 2 || Math.abs(e[1] - a[1]) > 2
+        }).length
+        return moved === CELLS.length - 1 && off === 0 ? 'synced' : `动了 ${moved}/3，跑偏 ${off}/4`
       }, { timeout: 20_000, message: '四格可视时间范围应被广播到同一段' })
       .toBe('synced')
 
