@@ -99,6 +99,7 @@ import { useI18n } from './i18n/useI18n'
 import type { Lang, MessageKey } from './i18n/messages'
 import { buildCsv, csvFileName } from './utils/csv'
 import { checkVersionUpdate, readMetaVersion } from './utils/versionCheck'
+import { applySettingsSnapshot, buildSettingsSnapshot } from './utils/settingsSnapshot'
 import { storageAdvisory } from './utils/storageMonitor'
 import { fmtPricePrecise, fmtPriceWithPrecision } from './utils/format'
 import { shortcutFor, isTypingTarget, cycleValue, type ShortcutKeyMap } from './shortcuts'
@@ -1015,40 +1016,14 @@ export function App() {
     if (!json) return
     void exportTextFile('paper-account.json', json, 'application/json;charset=utf-8', false)
   }
-  // H7/H8 设置快照导出：收集全部 kline-buty:* 持久化键 → JSON 文件（主题/自选/画线/账户等一次迁移）
+  // H7/H8 设置快照导出/导入：逐键搬运全部 kline-buty:* 持久化设置（编码约定见 utils/settingsSnapshot）
   const exportSettingsJson = () => {
-    const settings: Record<string, unknown> = {}
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (!key || !key.startsWith('kline-buty:')) continue
-      const raw = localStorage.getItem(key)
-      if (raw !== null) settings[key] = JSON.parse(raw)
-    }
-    const json = JSON.stringify({ version: 1, settings, savedAt: Date.now() }, null, 2)
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'kline-buty-settings.json'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    void exportTextFile('kline-buty-settings.json', buildSettingsSnapshot(window.localStorage), 'application/json;charset=utf-8', false)
   }
-  // H7/H8 设置快照导入：校验 shape 后逐键恢复并重载（失败返回 false）
   const importSettingsJson = (text: string): boolean => {
-    try {
-      const parsed = JSON.parse(text) as { version?: number; settings?: Record<string, unknown> }
-      if (parsed.version !== 1 || !parsed.settings || typeof parsed.settings !== 'object') return false
-      for (const [key, value] of Object.entries(parsed.settings)) {
-        if (!key.startsWith('kline-buty:')) continue
-        localStorage.setItem(key, JSON.stringify(value))
-      }
-      window.location.reload()
-      return true
-    } catch {
-      return false
-    }
+    const ok = applySettingsSnapshot(text, window.localStorage)
+    if (ok) window.location.reload()
+    return ok
   }
 
   // 键盘快捷键（纯逻辑见 src/shortcuts.ts）：[ ] 周期、Space 回放、Delete 删画线、Esc 取消、
