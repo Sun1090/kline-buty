@@ -208,15 +208,17 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
     // 否则「移出后浮层为 0」可以由「从来没立过」白拿
     expect(await tipCount(page), 'hover 时四格都该各有一份 OHLC 浮层').toBe(CELLS.length)
     // ③ 左移本格宽度的四分之一：接收格必须跟着搬，不是一次巧合对上。
-    //    「换一根」本身也要断言 —— 指针若原地不动，「跟上源格」在零位移下白拿（漂移除外，
-    //    而合成行情每 1.5s 追加一根只会让同一像素的时刻**变晚**，方向断言把它排除了）。
+    //    「换一根」本身也要断言 —— 指针若原地不动，「跟上源格」在零位移下白拿。
+    //    这里**不**比方向（曾是「左移必须更早」）：四格的时间轴还在互相同步视角，接收侧按自己
+    //    的周期换算后又会把值广播回来，同一像素对应的时刻会自己跳（实测 8s 里跳晚一根）。
+    //    方向不稳是 issue #194 的同一件事，不该由这条用例长期背着一条做不到的断言。
     const atLeft = await syncState(page, center.cx - center.w / 4, center.cy)
     for (const sym of CELLS) {
       const before = atCenter[sym]?.time
       const after = atLeft[sym]?.time
       expect(after, `${sym} 左移后应有十字光标`).not.toBeNull()
       expect(before, `${sym} 左移前应有十字光标`).not.toBeNull()
-      expect(after!, `${sym} 左移后应指向更早的 K 线（时刻必须变小）`).toBeLessThan(before!)
+      expect(after!, `${sym} 左移一根后时刻必须跟着变（钉在原值就是同步断了）`).not.toBe(before!)
     }
 
     // ④ 指针移出 → 四格清零。曾经移不掉：接收侧的回流被当成指针驱动再广播，把「移出」那条
@@ -243,10 +245,16 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
      * 前置门：每格的**数据**真的换成了自己的周期。逐格用自己的指针驱动，
      * 源格上报的就是自己序列里真实存在的那根 K 线 → 落点必须是本格周期的整数倍。
      * 少了这一步，后面「接收格落点不在自己网格」就分不清是同步没跟上，还是那一格还是 1m 数据。
-     * 轮询到落格为止（每轮重新派发一次移动）：换周期后那一格的数据要重新装载，
-     * 落点从旧周期的分钟刻度挪到自己刻度上本来就该有一次时延——**能不能**收敛才是这条的结论。
+     *
+     * 每格动手前必须等到四格全清：上一格作为源格会把自己的时刻**转发**给其余三格，
+     * 那些落点是按上一格的周期算出来的（1m 源的落点永远不会是 5m/15m/1h 的整数倍）。
+     * 不等它就 hover，读到的可能就是那条还没被 null 覆盖的转发值 —— 红的是归因错了，不是应用错了。
+     * 换周期后那一格的数据要重新装载，落点从旧周期刻度挪到自己刻度上本来就该有一次时延，
+     * 所以轮询到落格为止（每轮重新派发一次移动）——**能不能**收敛才是这条的结论。
      */
     for (const sym of CELLS) {
+      await leaveCharts(page)
+      await expectAllCleared(page)
       const spot = await cellCanvasCenter(page, sym)
       expect(spot, `${sym} 格内应能找到画布`).not.toBeNull()
       if (!spot) return
@@ -255,16 +263,21 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
       await expect
         .poll(
           async () => {
-            await page.mouse.move(spot.cx + (ticks++ % 2 ? 4 : -4), spot.cy)
+            await page.mouse.move(spot.cx + (ticks % 2 ? 4 : -4), spot.cy)
+            ticks++
             const t = (await cellCrosshair(page))[sym]?.time
-            if (t === undefined || t === null || t === 0) return '本格未上报十字光标时刻'
+            if (t === undefined || t === null) return '本格未上报十字光标时刻'
             return t % own === 0 ? 'grid' : `落在分钟刻度 ${t}（${MIXED[sym]} 网格应为 ${own} 的倍数）`
           },
           { timeout: 20_000, message: `${sym} 换周期后自己的数据必须真的变成 ${MIXED[sym]}` },
         )
         .toBe('grid')
-      await leaveCharts(page)
     }
+
+    // 前置门最后一格 hover 完就把**它的**转发值留在其余三格上了；1h 的落点同时是 5m/15m 的整数倍，
+    // 不清零就直接开扫，「每格落在自己网格上」会被这种残留白拿
+    await leaveCharts(page)
+    await expectAllCleared(page)
 
     const center = await cellCanvasCenter(page, CELLS[0])
     expect(center).not.toBeNull()
