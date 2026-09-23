@@ -54,6 +54,35 @@ export function windowCovers(cull: CullWindow, range: CullRange): boolean {
   return range.from >= cull.start && range.to <= cull.end
 }
 
+/**
+ * 下一次该装载哪个窗口：`null` 表示不裁剪；返回入参 `cur` 本身（同一引用）表示保持不动。
+ *
+ * - `cur`：React 侧已生效的窗口（用来判断「要不要再迁移动一次状态」）。
+ * - `loaded`：图表里**当前真正装载着**的区间 `{start, end}`（end 不含）。判覆盖必须用它——
+ *   贴尾沿时装载区间的右端会跟着实时数据一起生长，比 `cur.end` 宽，按 `cur.end` 判会每根新 K 线
+ *   都误判「越界」而迁移窗口、进而整窗重载。
+ *
+ * 迁移条件只有两条：视角越出装载区间，或装载区间的左缘空转超过一个余量（尾部跟随时需按批回收左侧，
+ * 否则窗口随数据无限膨胀）。
+ * 关键：窗口内滚动/缩放一律不迁移。若每次可见区间变化都重算 `[from-margin, to+margin]`，
+ * `start` 会随视角逐根漂移 → 整窗重载 → 图表按逻辑索引保视图 → 视角又漂移，形成自锁振荡；
+ * 振荡期间 `start` 与图表实际装载的切片错位，换算出的全局索引被 clamp 成 2~5 根的窄区间，
+ * 「回到最新」误红、周期切换锚定的时间跨度被压成几分钟（A2 的稳定性缺陷即源于此）。
+ */
+export function nextCullWindow(
+  cur: CullWindow | null,
+  loaded: CullWindow,
+  view: CullRange,
+  len: number,
+  margin = CULL_MARGIN,
+): CullWindow | null {
+  if (!shouldCull(len)) return null
+  const target = cullWindow(len, view, margin)
+  if (!cur) return target
+  if (windowCovers(loaded, view)) return target.start - loaded.start >= margin ? target : cur
+  return target
+}
+
 /** 全局索引 → 局部索引（相对于窗口起点） */
 export function toLocal(cull: CullWindow, index: number): number {
   return index - cull.start

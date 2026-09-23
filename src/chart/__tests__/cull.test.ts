@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   cullWindow,
   shouldCull,
+  type CullRange,
+  type CullWindow,
   windowCovers,
   toLocal,
   toGlobal,
   localRange,
   anchorRangeForSwitch,
+  nextCullWindow,
   CULL_MARGIN,
 } from '../cull'
 
@@ -82,6 +85,95 @@ describe('shouldCull / windowCovers / 坐标映射', () => {
 
   it('margin 常量大于最长指标回看（Ichimoku 52 / SAR 前置）', () => {
     expect(CULL_MARGIN).toBeGreaterThanOrEqual(100)
+  })
+})
+
+describe('nextCullWindow 窗口迁移判定（A2 视野塌缩根因护栏）', () => {
+  /** 多数用例里「图表装载的」就是 cur；tail 生长用例显式传入更宽的装载区间 */
+  const next = (cur: CullWindow | null, view: CullRange, len: number, loaded = cur) =>
+    nextCullWindow(cur, loaded ?? { start: 0, end: len }, view, len)
+
+  it('数据量未超阈值 → 不裁剪', () => {
+    expect(next(null, { from: 0, to: 500 }, 800)).toBeNull()
+    expect(next({ start: 0, end: 900 }, { from: 0, to: 500 }, 800)).toBeNull()
+  })
+
+  it('首个窗口按视角建立', () => {
+    expect(next(null, { from: 9_000, to: 10_000 }, 20_000)).toEqual({ start: 8_500, end: 10_500 })
+  })
+
+  it('窗口内滚动/缩放 → 原窗口引用不动（零重载）', () => {
+    const cur = { start: 8_500, end: 10_500 }
+    // 视角右移 1 根，仍贴着窗口内沿
+    expect(next(cur, { from: 9_001, to: 10_001 }, 20_000)).toBe(cur)
+    // 用户放大到 3 根窄视角（旧实现在这里重算出 {8_999,10_002} → start 漂移 → 整窗重载）
+    expect(next(cur, { from: 9_400, to: 9_402 }, 20_000)).toBe(cur)
+  })
+
+  it('视角越出装载区间（左/右两侧）→ 迁移到新窗口', () => {
+    const cur = { start: 8_500, end: 10_500 }
+    expect(next(cur, { from: 8_000, to: 8_400 }, 20_000)).toEqual({ start: 7_500, end: 8_900 })
+    expect(next(cur, { from: 10_600, to: 11_000 }, 20_000)).toEqual({ start: 10_100, end: 11_500 })
+  })
+
+  it('贴尾沿实时生长：装载区间跟着数据变宽，视角顶到新末根也不算越界（旧实现每根新 K 线都迁移）', () => {
+    const cur = { start: 2_998, end: 3_000 }
+    const grown = { start: 2_998, end: 3_500 } // 窗口状态未变，但切片已随数据长到 3_500
+    expect(next(cur, { from: 3_498, to: 3_499 }, 3_500, grown)).toBe(cur)
+    // 真越出装载区间才迁移
+    expect(next(cur, { from: 3_498, to: 3_499 }, 3_500, cur)).toEqual({ start: 2_998, end: 3_500 })
+  })
+
+  it('左缘空转超过一个余量 → 迁移回收左侧（窗口不会随数据无限膨胀）', () => {
+    const cur = { start: 1_548, end: 3_000 }
+    // 视角缩到尾部窄段：仍被 cur 覆盖，但 cur.start 已比需要的靠左 1000+ 根
+    expect(next(cur, { from: 2_900, to: 2_999 }, 3_000)).toEqual({ start: 2_400, end: 3_000 })
+  })
+
+  it('任何迁移都必须完整容纳当前视角（否则恢复视角会出现负局部索引，视野被压扁）', () => {
+    const len = 20_000
+    for (const view of [
+      { from: 0, to: 1 },
+      { from: 0, to: 12_000 },
+      { from: 19_998, to: 19_999 },
+      { from: 19_000, to: 19_999 },
+      { from: 5_000, to: 5_001 },
+      { from: 9_500, to: 9_600 },
+    ]) {
+      for (const cur of [null, { start: 0, end: 500 }, { start: 9_000, end: 10_000 }] as const) {
+        const r = next(cur, view, len)
+        if (!r) continue
+        expect(r.start).toBeLessThanOrEqual(view.from)
+        expect(r.end).toBeGreaterThanOrEqual(view.to)
+      }
+    }
+  })
+
+  it('反复喂同一视角必须收敛为不动点（旧实现会 start 逐根漂移、视野在 2~5 根自锁振荡）', () => {
+    let cur = next(null, { from: 10_000, to: 10_900 }, 20_000)!
+    for (let i = 0; i < 50; i++) {
+      const r = next(cur, { from: 10_000, to: 10_900 }, 20_000)
+      expect(r).toBe(cur)
+      cur = r!
+    }
+  })
+
+  it('实时追尾 300 根：窗口最多迁移 1 次，且始终容纳视角', () => {
+    // 视角每步右移 1 根、数据每步长 1 根（图表装载区间随之变宽）
+    let tail = next(null, { from: 19_100, to: 19_999 }, 20_001)!
+    let moves = 0
+    for (let i = 0; i < 300; i++) {
+      const view = { from: 19_101 + i, to: 20_000 + i }
+      const len = 20_001 + i
+      const loaded = { start: tail.start, end: len } // 贴尾沿：切片右端跟着数据生长
+      const r = next(tail, view, len, loaded)!
+      expect(r.start).toBeLessThanOrEqual(view.from)
+      // 贴尾沿时窗口 end 是「记录时的数据长度」，实际切片随数据继续生长到 len
+      expect(Math.max(r.end, len)).toBeGreaterThanOrEqual(view.to)
+      if (r !== tail) moves++
+      tail = r
+    }
+    expect(moves).toBeLessThanOrEqual(1)
   })
 })
 
