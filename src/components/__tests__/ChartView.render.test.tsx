@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { render, fireEvent, screen, cleanup } from '@testing-library/react'
+import { render, fireEvent, screen, cleanup, act } from '@testing-library/react'
 import type { Candle } from '../../chart/types'
 import { DEFAULT_INDICATOR_PARAMS } from '../../indicators/params'
 
@@ -18,7 +18,13 @@ function makeCandles(n: number): Candle[] {
 
 // 装载后图表是否还「补发一次当前可见区间」由这里控制：mock 的 subscribeVisibleRange 从不触发回调，
 // 正好复现「整窗 setData 之后不再有变化事件」的真实形态（lightweight-charts 只在区间真的变了才发）
-const harness = vi.hoisted(() => ({ range: null as { from: number; to: number } | null }))
+const harness = vi.hoisted(() => ({
+  range: null as { from: number; to: number } | null,
+  /** 图表侧的可见区间变化入口（ChartView 挂载时注册进来，测试用它模拟一次拖动落地） */
+  fire: null as ((from: number, to: number, trusted?: boolean) => void) | null,
+  /** 本图被要求写入的可视区间（ setVisibleRange 的调用记录 ） */
+  views: [] as { from: number; to: number }[],
+}))
 
 vi.mock('../../chart/adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../chart/adapter')>()
@@ -65,7 +71,11 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       subscribeCrosshairMove() {
         return () => {}
       }
-      subscribeVisibleRange() {
+      setVisibleRange = vi.fn((r: { from: number; to: number }) => {
+        harness.views.push(r)
+      })
+      subscribeVisibleRange(cb: (from: number, to: number, trusted?: boolean) => void) {
+        harness.fire = cb
         return () => {}
       }
       visibleRange() {
@@ -216,5 +226,40 @@ describe('ChartView 右键菜单价位口径', () => {
     openMenu()
     fireEvent.click(screen.getByTestId('ctx-copy-price'))
     expect(writeText).toHaveBeenCalledWith('50766.61')
+  })
+})
+
+describe('多图视角同步的单位（issue #186）', () => {
+  afterEach(() => {
+    harness.views.length = 0
+    harness.fire = null
+  })
+
+  it('本格视角落地时上报的是秒，不是逻辑索引', () => {
+    const candles = makeCandles(800)
+    const onViewRangeChange = vi.fn()
+    render(<ChartView {...base} period="1m" candles={candles} onViewRangeChange={onViewRangeChange} />)
+    expect(harness.fire, 'ChartView 应订阅可见区间变化').not.toBeNull()
+    act(() => harness.fire!(10, 50, true))
+    expect(onViewRangeChange).toHaveBeenCalledWith({ from: candles[10].time, to: candles[50].time })
+  })
+
+  it('外部指令给的是秒：按本格自己的周期换算成索引再落位', () => {
+    const oneMin = makeCandles(800)
+    const range = { from: oneMin[10].time, to: oneMin[50].time }
+    // 本格是 5m 数据：这一小时只能落在索引 2..10。旧实现把秒当索引硬套，视角直接飞出数据之外
+    const fiveMin = Array.from({ length: 150 }, (_, i) => ({ ...oneMin[i * 5] }))
+    const { rerender } = render(<ChartView {...base} period="5m" candles={fiveMin} />)
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} externalRange={range} />)
+    expect(harness.views).toContainEqual({ from: 2, to: 10 })
+  })
+
+  it('窗口比本格周期还窄时撑开到至少两根，不落退化视角', () => {
+    const oneMin = makeCandles(800)
+    // 本格是 1h：50 分钟的窗口两端都吸附到同一根（索引 0），按索引硬算会落 {0,0}
+    const oneHour = Array.from({ length: 13 }, (_, i) => ({ ...oneMin[i * 60] }))
+    const { rerender } = render(<ChartView {...base} period="1h" candles={oneHour} />)
+    rerender(<ChartView {...base} period="1h" candles={oneHour} externalRange={{ from: oneMin[0].time, to: oneMin[0].time + 50 * 60 }} />)
+    expect(harness.views).toContainEqual({ from: 0, to: 1 })
   })
 })

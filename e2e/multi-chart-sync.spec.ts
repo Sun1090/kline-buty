@@ -9,11 +9,17 @@ import { expect, test, type Page } from '@playwright/test'
  * 换算最容易错位的地方。
  *
  * 断言杠杆是 A11 的可视时间范围文本：四格设成同一周期后，同步成立时三格文本与被拖
- * 那格逐字相等（各格合成数据等长、同周期 → 同一段全局索引即同一段时间）。
+ * 那格逐字相等（各格合成数据等长、同周期 → 同一段时间）。
+ *
+ * 第二条用例把四格拉开成 1m/5m/15m/1h：广播必须按**时间**换算（issue #186）。按索引广播时
+ * 兄弟格的窗口会被硬套到 1m 格上，实测把它的可视跨度压到一两分钟——所以那条用例先问
+ * 「换完周期每一格还看得见一段吗」，再问「拖一把之后四格是否仍在同一段时间」。
  */
 
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
 const PERF_COUNT = 1_500
+/** 每格周期折算分钟：混周期下允许各格停在自己网格上，取整误差不能超过一根 */
+const PERIOD_MINUTES: Record<string, number> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60 }
 
 /** A11 文本 → 视角起止分钟数（同一天的相对分钟，只用来比距离，不去解析绝对日期） */
 function edgeMinutes(text: string): [number, number] | null {
@@ -147,9 +153,9 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     expect(draggedSpan).toBeLessThan(beforeSpan * 1.6)
 
     // 其余三格跟上：① 每格都得相对自己「动过」——只比相等会被假绿钻空子（四格一动不动也相等）；
-    // ② 四格的视角起止落在同一段，按**分钟**比而不是逐字比文本：webkit 的像素取整会让某一格
-    //    差出一根（CI 实测「动了 3/3，同段 3/4」），而联动真断掉时差的是几百根
-    //    （变异：externalRange 恒 null / onViewRangeChange 空实现 → 「同段 1/4」）
+    // ② 四格的视角起止落在同一段，按**分钟**比而不是逐字比文本。容差放一根周期起步：接收格现在要把
+    //    时间吸附到自己数据的第几根（floor）+ 根数四舍五入 + webkit 的像素取整，实测每缘会差到三四根；
+    //    而联动真断掉时差的是几百根（变异：externalRange 恒 null / onViewRangeChange 空实现 → 「同段 1/4」）
     await expect
       .poll(async () => {
         const now = await cellRangeTexts(page)
@@ -160,10 +166,72 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
         if (!a) return `源格文本解析失败：${anchor}`
         const off = CELLS.filter((sym) => {
           const e = edgeMinutes(now[sym])
-          return !e || Math.abs(e[0] - a[0]) > 2 || Math.abs(e[1] - a[1]) > 2
+          return !e || Math.abs(e[0] - a[0]) > 5 || Math.abs(e[1] - a[1]) > 5
         }).length
         return moved === CELLS.length - 1 && off === 0 ? 'synced' : `动了 ${moved}/3，跑偏 ${off}/4`
       }, { timeout: 20_000, message: '四格可视时间范围应被广播到同一段' })
+      .toBe('synced')
+
+    expect(errors).toHaveLength(0)
+  })
+
+  test('混周期 1m/5m/15m/1h：视角广播按时间换算，1m 那格不被挤成两三根', async ({ page, browserName }) => {
+    test.skip(browserName === 'firefox', 'firefox 下合成鼠标拖拽平移不可用（Playwright+轻量级图表限制）')
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+
+    await page.addInitScript(() => localStorage.clear())
+    await page.goto(`/?perf=${PERF_COUNT}`)
+    await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
+    await page.getByTestId('header-more').click()
+    const layout = page.getByTestId('layout-toggle')
+    await layout.click()
+    await layout.click()
+    await expect(page.locator('[data-testid^="quad-period-"]')).toHaveCount(4, { timeout: 20_000 })
+
+    const MIXED: Record<string, string> = { BTCUSDT: '1m', ETHUSDT: '5m', SOLUSDT: '15m', BNBUSDT: '1h' }
+    for (const sym of CELLS) await page.getByTestId(`quad-period-${sym}`).selectOption(MIXED[sym])
+    await closeMorePanel(page)
+    await expect
+      .poll(async () => Object.values(await cellRangeTexts(page)).filter((t) => t.length > 0).length, { timeout: 20_000 })
+      .toBe(CELLS.length)
+
+    // 换周期本身就不许把任何一格挤扁：issue #186 的实测症状是 1m 那格 600px 里只剩两三根
+    // （可视跨度约 1 分钟），因为兄弟格广播过来的是**逻辑索引**窗口。
+    // 按收敛断言而不是抓瞬时快照：每次换周期都会引发一次广播 + 视角重排，稳定下来要一两秒。
+    await expect
+      .poll(
+        async () => {
+          const now = await cellRangeTexts(page)
+          const thin = CELLS.map((sym) => [sym, edgeMinutes(now[sym])] as const)
+            .filter(([, e]) => !e || e[1] - e[0] < 10)
+            .map(([sym, e]) => `${sym}(${MIXED[sym]})跨度=${e ? e[1] - e[0] : '解析失败'}`)
+          return thin.length === 0 ? 'ok' : `被挤扁：${thin.join(' ')}`
+        },
+        { timeout: 20_000, message: '混周期下每格都该看得见一段时间，而不是被索引窗口压扁' },
+      )
+      .toBe('ok')
+
+    // 拖一把之后仍要收敛回同一段：源格确实平移，且比视角细的格子跟到同一分钟附近
+    // （粗于视角一半的格子表示不了这么窄的段，只能停在自己柱子边界上，故不参与比对）
+    const before = await cellRangeTexts(page)
+    await panCell(page, CELLS[0], 260)
+
+    await expect
+      .poll(async () => {
+        const now = await cellRangeTexts(page)
+        const a = edgeMinutes(now[CELLS[0]])
+        if (!a) return `源格文本解析失败：${now[CELLS[0]]}`
+        if (now[CELLS[0]] === before[CELLS[0]]) return `源格未平移：${now[CELLS[0]]}`
+        const span = a[1] - a[0]
+        const tracked = CELLS.slice(1).filter((sym) => PERIOD_MINUTES[MIXED[sym]] * 2 <= span)
+        const off = tracked.filter((sym) => {
+          const e = edgeMinutes(now[sym])
+          const slack = PERIOD_MINUTES[MIXED[sym]] + 2
+          return !e || Math.abs(e[0] - a[0]) > slack || Math.abs(e[1] - a[1]) > slack
+        })
+        return off.length === 0 ? 'synced' : `跑偏 ${off.map((s) => `${s}=${now[s]}`).join(' ')}`
+      }, { timeout: 20_000, message: '混周期下比视角细的格子应停在同一段时间（各自周期取整）' })
       .toBe('synced')
 
     expect(errors).toHaveLength(0)

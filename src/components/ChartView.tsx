@@ -7,7 +7,7 @@ import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
-import { anchorRangeForSwitch, cullWindow, localRange, nextCullWindow, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
+import { anchorRangeForSwitch, cullWindow, floorIndexByTime, localRange, nextCullWindow, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
@@ -112,9 +112,9 @@ interface ChartViewProps {
   onLoadDemo?: () => void
   /** N14 实时帧丢帧统计（压测/诊断时显示高丢帧角标） */
   frameStats?: { rate: number; dropped: number; total: number } | null
-  /** 可见区间变化上报（多图时间轴同步用） */
+  /** 可见区间变化上报（多图时间轴同步用）：起止为 K 线秒，不是索引 */
   onViewRangeChange?: (range: { from: number; to: number }) => void
-  /** 外部可见区间指令（多图同步时写入） */
+  /** 外部可见区间指令（多图同步 / 流水定位写入）：起止为 K 线秒，本图按自己的数据换算成索引 */
   externalRange?: { from: number; to: number } | null
   /** G8 十字光标时间变化上报（多图同步用，null=移出） */
   onCrosshairChange?: (time: number | null) => void
@@ -365,17 +365,27 @@ export function ChartView({
     setRegionSelecting(false)
   }
 
-  // 外部可见区间指令（多图同步）：全局坐标 → 当前窗口局部坐标，与本地值不同才写入防回环
+  // 外部可见区间指令（多图同步 / 流水定位）：给的是**秒**，图表吃的是索引。
+  // 各格周期不同，同一个索引对应的时间跨度能差几十倍，所以先按本格数据换算再落位
+  // （全局索引 → 局部索引要减裁剪窗口起点 base）。
   const lastExternalRef = useRef('')
   useEffect(() => {
     if (!externalRange || !apiRef.current) return
     const sig = `${externalRange.from}:${externalRange.to}`
     if (sig === lastExternalRef.current) return
     lastExternalRef.current = sig
+    const all = allCandlesRef.current
+    if (all.length === 0) return
     const base = loadedRef.current.base
-    apiRef.current.setVisibleRange(
-      base ? { from: externalRange.from - base, to: externalRange.to - base } : externalRange,
-    )
+    // 本格一根 K 线多少秒：直接量数据的间距，比读 period 更贴此刻装载的那份
+    const ownSec = all.length > 1 ? Math.max(1, all[1].time - all[0].time) : 1
+    const want = Math.max(1, Math.round(Math.max(0, externalRange.to - externalRange.from) / ownSec))
+    const fromIdx = floorIndexByTime(all, externalRange.from)
+    // 粗周期上「同一小时里的两个时刻」会吸附到同一根 K 线：不撑开就落成一根宽度的退化视角，
+    // 而它还会被再广播回去，把对面那格一路压扁（实测 1m 格最后只剩 1 分钟可视）
+    const toIdx = Math.min(all.length - 1, Math.max(floorIndexByTime(all, externalRange.to), fromIdx + want))
+    const left = toIdx <= fromIdx ? Math.max(0, toIdx - 1) : fromIdx
+    apiRef.current.setVisibleRange({ from: left - base, to: toIdx - base })
   }, [externalRange])
 
   // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
@@ -500,7 +510,8 @@ export function ChartView({
           }
         }
       }
-      onViewRangeChangeRef.current?.({ from: gFrom, to: gTo })
+      // 广播按**时间**而不是索引：接收格周期可能完全不同，索引对它们意味着另一段时间跨度
+      if (tFrom != null && tTo != null) onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
     }
     applyRangeRef.current = onVisibleRange
     const unsubRange = api.subscribeVisibleRange(onVisibleRange)
