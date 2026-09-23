@@ -610,7 +610,8 @@ export function App() {
   const [depthReload, setDepthReload] = useState(0)
   // ?perf 压测模式不开 WS：把合成价交给 hook 铺档位（保持「压测不联网」契约）
   const depth = useDepth(symbol, depthReload, candles[candles.length - 1]?.close ?? stats.price)
-  const sentiment = useSentiment(symbol)
+  // 只在情绪面板打开时轮询：四个端点全是合约专属数据，面板关着时这些数据没有任何消费者
+  const sentiment = useSentiment(symbol, sentimentOpen)
   const drawings = drawingsBySymbol[symbol] ?? []
 
   // v0.5.x 限价挂单（Maker）：挂单列表 + 多品种价源 + 触价撮合，成交/撤销走站内横幅

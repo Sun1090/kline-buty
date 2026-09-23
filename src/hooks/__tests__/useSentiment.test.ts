@@ -75,4 +75,76 @@ describe('useSentiment', () => {
     // 至少触发过两次拉取（BTC + ETH）
     expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThanOrEqual(8)
   })
+
+  /** 四个情绪端点各自的应答码（其余路径如 detectMode 的 ping 一律 404） */
+  const SENTIMENT_PATHS = [
+    '/futures/data/globalLongShortAccountRatio',
+    '/futures/data/topLongShortPositionRatio',
+    '/futures/data/takerlongshortRatio',
+    '/futures/data/openInterestHist',
+  ]
+  function mockStatuses(byPath: Record<string, number>) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        const hit = SENTIMENT_PATHS.find((p) => String(input).includes(p))
+        const status = hit ? (byPath[hit] ?? 200) : 404
+        return { ok: status < 400, status, json: async () => (status < 400 ? ratio : {}) }
+      }),
+    )
+  }
+  const allStatus = (status: number) =>
+    Object.fromEntries(SENTIMENT_PATHS.map((p) => [p, status])) as Record<string, number>
+  const countSentimentCalls = () =>
+    vi.mocked(fetch).mock.calls.filter(([u]) => SENTIMENT_PATHS.some((p) => String(u).includes(p))).length
+
+  it('面板关着（enabled=false）→ 一个情绪请求都不发，空到空也保持空态', async () => {
+    mockStatuses({})
+    const { result, rerender } = renderHook(({ open }: { open: boolean }) => useSentiment('BTCUSDT', open), {
+      initialProps: { open: false },
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000)
+    })
+    expect(countSentimentCalls()).toBe(0)
+    expect(result.current).toEqual({ globalRatio: [], topTraderRatio: [], takerRatio: [], oiHistory: [] })
+
+    // 打开面板的那一瞬间才开始拉
+    rerender({ open: true })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(countSentimentCalls()).toBeGreaterThanOrEqual(4)
+  })
+
+  it('四个端点全部 400（该品种没有合约口径）→ 拉一轮就停，后续 60s 不再打', async () => {
+    mockStatuses(allStatus(400))
+    const { result } = renderHook(() => useSentiment('SHIBUSDT', true))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current).toEqual({ globalRatio: [], topTraderRatio: [], takerRatio: [], oiHistory: [] })
+    const afterFirstRound = countSentimentCalls()
+    expect(afterFirstRound).toBe(4)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000 * 3)
+    })
+    expect(countSentimentCalls()).toBe(afterFirstRound)
+  })
+
+  it('只有单个端点 400 → 其余源继续按 60s 轮询（latch 不能误伤）', async () => {
+    mockStatuses({ ...allStatus(200), '/futures/data/openInterestHist': 400 })
+    const { result } = renderHook(() => useSentiment('BTCUSDT', true))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current.globalRatio).toHaveLength(1)
+    expect(result.current.oiHistory).toHaveLength(0)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
+    expect(countSentimentCalls()).toBe(8)
+  })
 })
