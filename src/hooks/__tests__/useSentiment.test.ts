@@ -98,7 +98,7 @@ describe('useSentiment', () => {
   const countSentimentCalls = () =>
     vi.mocked(fetch).mock.calls.filter(([u]) => SENTIMENT_PATHS.some((p) => String(u).includes(p))).length
 
-  it('面板关着（enabled=false）→ 一个情绪请求都不发，空到空也保持空态', async () => {
+  it('面板关着零请求；打开才拉；关掉即停表（默认 sentimentOpen=false）', async () => {
     mockStatuses({})
     const { result, rerender } = renderHook(({ open }: { open: boolean }) => useSentiment('BTCUSDT', open), {
       initialProps: { open: false },
@@ -109,12 +109,23 @@ describe('useSentiment', () => {
     expect(countSentimentCalls()).toBe(0)
     expect(result.current).toEqual({ globalRatio: [], topTraderRatio: [], takerRatio: [], oiHistory: [] })
 
-    // 打开面板的那一瞬间才开始拉
+    // 打开面板的那一瞬间才开始拉，并随 60s 计时续拉
     rerender({ open: true })
     await act(async () => {
       await Promise.resolve()
     })
-    expect(countSentimentCalls()).toBeGreaterThanOrEqual(4)
+    expect(countSentimentCalls()).toBe(4)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
+    expect(countSentimentCalls()).toBe(8)
+
+    // 合上面板必须把 60s 计时器一起停掉：留着它就是「关着也在打没人看的请求」
+    rerender({ open: false })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(180_000)
+    })
+    expect(countSentimentCalls()).toBe(8)
   })
 
   it('四个端点全部 400（该品种没有合约口径）→ 拉一轮就停，后续 60s 不再打', async () => {
