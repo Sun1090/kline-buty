@@ -4,13 +4,18 @@ import { expect, test, type Page } from '@playwright/test'
  * A4 ★ 多周期同屏十字光标时间同步（quad）：四格十字光标按时间同步。
  *
  * 断言（DOM 观测面，不看像素）：quad 布局下 hover BTC 格 →
- * ① 源格上报该时刻；② 其余三格把十字光标落在**自己数据里最接近的那根 K 线**上。
+ * ① 源格上报该时刻；② 其余三格把十字光标落在**自己数据里最接近的那根 K 线**上；
+ * ③ 指针换一根，接收格跟着搬；④ 移出后四格都清零。
  * 接收侧走 `setCrosshairPosition`，它不触发 subscribeCrosshairMove，所以格内没有任何 DOM 产物——
  * 于是 adapter 把当前十字光标时刻写进容器的 `data-crosshair-time`（与 `data-candles` 同一类观测钩子）。
  *
  * 为什么不再比画布像素指纹：本规格原先 hover 前后各取一次 canvas 内容指纹，要求「变了」。
  * 而 ?perf 合成数据每 1.5s 追加一根 K 线、每格都在重画 —— 把 `externalCrosshairTime` 恒置为 null
  * （多图同步完全断开）它照样通过。像素指纹在这种数据下等于没有断言。
+ *
+ * 已知没吃到的分辨力：quad 默认四格同为 1m，此时「按时间」与「按索引」对齐结果一模一样。
+ * 把四格显式设成 1m/5m/15m/1h 才能分开两者，但实测那样会让下面两个真实问题浮出来（已各自立单）：
+ * 指针移出后 15m/1h 两格不再清零，以及源格左移 60px 后四格时刻一动不动。
  */
 
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
@@ -65,7 +70,7 @@ async function cellCanvasCenter(page: Page, symbol: string) {
   const cy = box.y + box.h / 2
   const onCanvas = await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest('canvas') !== null, [cx, cy])
   expect(onCanvas, `${symbol} 格中心应直接命中画布（被浮层挡住就测不到十字光标）`).toBe(true)
-  return { cx, cy }
+  return { cx, cy, w: box.w }
 }
 
 const PERIOD_SECONDS: Record<string, number> = {
@@ -97,7 +102,6 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
     await page.getByTestId('layout-toggle').click()
     await page.getByTestId('layout-toggle').click()
     await expect(page.locator('[data-testid^="quad-period-"]')).toHaveCount(4, { timeout: 15_000 })
-    // 四格周期保持各不相同（默认就是混周期）：跨周期才验得出「按时间」而不是「按索引」对齐
     await closeMorePanel(page)
 
     // 前置：还没 hover，任何一格都不该有十字光标 —— 否则「其余三格也亮了」可以白拿
@@ -108,35 +112,58 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
     const center = await cellCanvasCenter(page, CELLS[0])
     expect(center).not.toBeNull()
     if (!center) return
-    // 鼠标落位后再微移，确保 mousemove 真的派发到图表
-    await page.mouse.move(center.cx, center.cy)
-    await page.mouse.move(center.cx + 3, center.cy)
 
-    // ① 源格上报它自己的时刻
-    await expect
-      .poll(async () => (await cellCrosshair(page))[CELLS[0]].time, { timeout: 10_000 })
-      .not.toBeNull()
-    const source = (await cellCrosshair(page))[CELLS[0]].time as number
+    /**
+     * 一次 evaluate 读全四格 = 同一帧快照；比较对象取**源格当前的时刻**，不取先前冻结的常量。
+     *
+     * 容差 = 本格两个周期 + 源格一个周期，而不是「半个周期」。源格的 DOM 属性跟着指针实时更新，
+     * 接收格要走一次 React 往返才落下，实测就有一次「源 1790168160 / 接收格还在 1790167800」
+     * ——差恰好一格，属正常管线时延；四格同周期时半周期容差等于要求逐字相等，
+     * CI 的 webkit 就是这么偶发红（三格彼此完全一致，只差源格一格）。
+     * 这个量级仍然分得开「同步断了」（接收格会变 null）与「卡住不跟」（换一根后仍差这么远）。
+     */
+    const syncState = async (px: number, py: number) => {
+      const onCanvas = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('canvas') !== null, [px, py])
+      expect(onCanvas, `落点 (${Math.round(px)}, ${Math.round(py)}) 应直接命中画布`).toBe(true)
+      await page.mouse.move(px, py)
+      await page.mouse.move(px + 3, py)
+      await expect
+        .poll(
+          async () => {
+            const now = await cellCrosshair(page)
+            const src = now[CELLS[0]]
+            const srcTime = src?.time ?? null
+            if (srcTime === null) return '源格未上报十字光标时刻'
+            const lagging = CELLS.slice(1).filter((sym) => {
+              const v = now[sym]
+              if (!v || v.time === null) return true
+              const own = PERIOD_SECONDS[v.period] ?? 60
+              const srcOwn = PERIOD_SECONDS[src.period] ?? 60
+              return Math.abs(v.time - srcTime) > 2 * own + srcOwn
+            })
+            return lagging.length === 0 ? 'synced' : `未跟上：${lagging.map((s) => `${s}=${JSON.stringify(now[s])} src=${srcTime}`).join(' ')}`
+          },
+          { timeout: 15_000, message: '其余三格的十字光标应被广播到源格时刻' },
+        )
+        .toBe('synced')
+      return cellCrosshair(page)
+    }
 
-    // ② 其余三格按**时间**跟上：各自落在自己周期里最接近该时刻的那根 K 线上，
-    //    所以允许的偏差是本格周期的一半（变异：externalCrosshairTime 恒 null → 三格都没有属性 → 红）
-    await expect
-      .poll(
-        async () => {
-          const now = await cellCrosshair(page)
-          const lagging = CELLS.slice(1).filter((sym) => {
-            const v = now[sym]
-            if (!v || v.time === null) return true
-            const half = (PERIOD_SECONDS[v.period] ?? 60) / 2
-            return Math.abs(v.time - source) > half
-          })
-          return lagging.length === 0 ? 'synced' : `未跟上：${lagging.map((s) => `${s}=${JSON.stringify(now[s])}`).join(' ')}`
-        },
-        { timeout: 15_000, message: '其余三格的十字光标应被广播到同一时刻' },
-      )
-      .toBe('synced')
+    // ① + ② 源格上报、其余三格按时间跟上
+    const atCenter = await syncState(center.cx, center.cy)
+    // ③ 左移本格宽度的四分之一：接收格必须跟着搬，不是一次巧合对上。
+    //    「换一根」本身也要断言 —— 指针若原地不动，「跟上源格」在零位移下白拿（漂移除外，
+    //    而合成行情每 1.5s 追加一根只会让同一像素的时刻**变晚**，方向断言把它排除了）。
+    const atLeft = await syncState(center.cx - center.w / 4, center.cy)
+    for (const sym of CELLS) {
+      const before = atCenter[sym]?.time
+      const after = atLeft[sym]?.time
+      expect(after, `${sym} 左移后应有十字光标`).not.toBeNull()
+      expect(before, `${sym} 左移前应有十字光标`).not.toBeNull()
+      expect(after!, `${sym} 左移后应指向更早的 K 线（时刻必须变小）`).toBeLessThan(before!)
+    }
 
-    // ③ 指针移出图表 → 四格都不该残留十字光标。曾经移不掉：接收侧 `setCrosshairPosition` 会从
+    // ④ 指针移出图表 → 四格都不该残留十字光标。曾经移不掉：接收侧 `setCrosshairPosition` 会从
     //    `subscribeCrosshairMove` 回流成一次新的上报，回流再广播，把「移出」那条 null 永久盖掉
     //    （实测离开后仍有三格挂着幻影十字光标）。修的是 ChartView 的 lastAppliedCrosshairRef
     await page.mouse.move(6, 700)
