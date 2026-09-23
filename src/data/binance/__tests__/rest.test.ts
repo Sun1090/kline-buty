@@ -436,9 +436,10 @@ describe('400（该品种不在该市场）不换域名兜底', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(fetchFundingRate('SHIBUSDT')).rejects.toThrow('http 400')
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
-    expect(urls.some((u) => u.includes('dapi.binance.com'))).toBe(false)
-    // ping + 一次 fapi，仅此两次：换域名会把 COIN-M 工具的费率当成现货品种的展示出来
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    // 逐条比对完整 URL，而不是「有没有包含某个域名」：换域名兜底会把 COIN-M 工具的费率
+    // 当成现货品种展示出来，这里要钉死的是「总共就这两个请求、第二个仍是 fapi 原请求」
+    expect(urls).toHaveLength(2)
+    expect(urls[1]).toBe('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=SHIBUSDT')
   })
 
   it('fetchOpenInterest：fapi 网络阻断仍回退 dapi（400 才不换域名）', async () => {
@@ -450,6 +451,6 @@ describe('400（该品种不在该市场）不换域名兜底', () => {
     vi.stubGlobal('fetch', fetchMock)
     expect(await fetchOpenInterest('BTCUSDT')).toBe(42)
     const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
-    expect(urls.some((u) => u.includes('dapi.binance.com/dapi/v1/openInterest'))).toBe(true)
+    expect(urls[2]).toBe('https://dapi.binance.com/dapi/v1/openInterest?symbol=BTCUSD_PERP')
   })
 })
