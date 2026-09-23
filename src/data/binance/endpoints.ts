@@ -44,21 +44,33 @@ export function writeCustomBases(bases: CustomDataBases, storage: Pick<Storage, 
  *
  * 检测方式：请求 /api/v3/ping，返回 JSON → 代理可用；否则（SPA fallback 返回
  * HTML 或 404）→ 直连。结果缓存，仅检测一次。
+ *
+ * 但探测本身要排队：所有首个数据请求都得等它落定，而静态托管下它注定落空
+ * （Pages 上还顺带在用户控制台留一条 404，看着像故障）。所以静态托管在**构建期**
+ * 用 `VITE_ENDPOINT_MODE=direct` 直接声明——由 `.github/workflows/pages.yml` 设置。
+ * 自建部署与 vite dev 不设这个变量，继续走探测；不设时行为与从前一致（只是慢一拍），
+ * 因此它只是优化，不是正确性依赖。
  */
 let cached: Promise<EndpointMode> | null = null
 
+/** 探一次同源代理；探不到就是直连 */
+async function probeMode(): Promise<EndpointMode> {
+  try {
+    const res = await fetch('/api/v3/ping')
+    const ct = res.headers.get('content-type') ?? ''
+    if (res.ok && ct.includes('json')) return 'proxy'
+  } catch {
+    /* 网络失败 → 直连兜底 */
+  }
+  return 'direct'
+}
+
 export function detectMode(): Promise<EndpointMode> {
   if (!cached) {
-    cached = (async (): Promise<EndpointMode> => {
-      try {
-        const res = await fetch('/api/v3/ping')
-        const ct = res.headers.get('content-type') ?? ''
-        if (res.ok && ct.includes('json')) return 'proxy'
-      } catch {
-        /* 网络失败 → 直连兜底 */
-      }
-      return 'direct'
-    })()
+    cached =
+      import.meta.env.VITE_ENDPOINT_MODE === 'direct'
+        ? Promise.resolve<EndpointMode>('direct')
+        : probeMode()
   }
   return cached
 }

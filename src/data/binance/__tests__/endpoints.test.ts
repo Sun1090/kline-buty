@@ -3,6 +3,7 @@ import { buildApiUrl, buildDepthWsUrls, buildWsUrl, detectMode, readCustomBases,
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   __resetModeForTests()
 })
 
@@ -54,6 +55,21 @@ describe('detectMode', () => {
   it('网络错误 → direct 兜底', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')))
     expect(await detectMode()).toBe('direct')
+  })
+  it('构建期声明静态托管（VITE_ENDPOINT_MODE=direct）→ 不发探测请求', async () => {
+    // Pages 上没有同源代理，这次探测必然落空却排在所有首个数据请求前面（还顺带在
+    // 用户控制台留一条 404）。声明后直接判 direct。
+    vi.stubEnv('VITE_ENDPOINT_MODE', 'direct')
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, headers: { get: () => 'application/json' } })
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await detectMode()).toBe('direct')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+  it('未声明时仍然探测（自建部署 / vite dev 的同源代理靠它）', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, headers: { get: () => 'application/json' } })
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await detectMode()).toBe('proxy')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
   it('检测结果缓存，只请求一次', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
