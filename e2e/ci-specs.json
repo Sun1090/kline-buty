@@ -2,6 +2,7 @@
   "_comment": "CI E2E 清单的唯一来源（由 .github/workflows/ci.yml 的 `npm run e2e:ci` 读取）。新增 e2e/*.spec.ts 必须在这里登记为 ci 或 localOnly，否则 scripts/__tests__/ci-specs.test.ts 变红——此前规格会静默地不被 CI 跑到。",
   "ci": [
     "e2e/alerts-features.spec.ts",
+    "e2e/docs.spec.ts",
     "e2e/drawing-contract.spec.ts",
     "e2e/drawing-semantics.spec.ts",
     "e2e/indicator-crosshair.spec.ts",
@@ -21,7 +22,6 @@
   ],
   "localOnly": {
     "e2e/chart-ready.spec.ts": "本例要的就是「真实 klines 请求迟到」，依赖币安实时 REST；CI 运行器出网不可靠",
-    "e2e/docs.spec.ts": "知识库文档站（VitePress）双语检查，不依赖币安网络；暂未进 CI 清单，等一次专门的提速/稳定性验证",
     "e2e/feature-gaps.spec.ts": "实时数据冒烟族：行情榜单/搜索/指标收藏等待真实行情流，运行器上拿不到数据",
     "e2e/feature-gaps-more.spec.ts": "同上：图层管理交互依赖实时蜡烛渲染",
     "e2e/feature-gaps-more2.spec.ts": "实时数据冒烟族：H9 指标末尾值信息条要真实蜡烛与指标值才渲染，M1 键盘漫游同样走线上行情页",
