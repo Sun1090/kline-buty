@@ -413,7 +413,6 @@ export function MarketList({ symbol, onSelectSymbol, open, onToggle, overlay }: 
         </div>
       )}
       <div
-        data-testid="market-list-body"
         style={{
           flex: 1,
           minHeight: 0,

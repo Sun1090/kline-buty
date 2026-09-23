@@ -1245,7 +1245,6 @@ export function ChartView({
       </button>
       {/* I2 一键分享：Web Share API 带文件，不支持时降级下载 */}
       <button
-        data-testid="screenshot-share"
         onClick={() => {
           const dataUrl = apiRef.current?.takeScreenshot(undefined, screenshotScale)
           if (!dataUrl) return

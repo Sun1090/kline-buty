@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup, waitFor } from '@testing-library/react'
 import { DesktopHeader } from '../DesktopHeader'
+import { TYPE_OPTIONS } from '../headerOptions'
 import type { Period } from '../../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from '../ChartView'
 import type { DrawingTool } from '../../drawings/logic'
@@ -364,5 +365,62 @@ describe('DesktopHeader（桌面顶栏）', () => {
     fireEvent.click(screen.getByTestId('layout-preset-save'))
     expect(onSaveLayoutPreset).toHaveBeenCalledWith('三图')
     expect(nameInput.value).toBe('') // 保存后清空
+  })
+
+  it('图表类型：每个选项都回传自己的值（不是恒回传当前值）', () => {
+    const onChartType = vi.fn()
+    setup({ onChartType, chartType: 'candlestick' as ChartType })
+    fireEvent.click(screen.getByTestId('header-more'))
+    // 逐字取自 headerOptions 的清单：新增图表类型不必回头补这条用例
+    expect(screen.getAllByTestId(/^chart-type-/)).toHaveLength(TYPE_OPTIONS.length)
+    for (const o of TYPE_OPTIONS) {
+      fireEvent.click(screen.getByTestId(`chart-type-${o.value}`))
+      expect(onChartType).toHaveBeenLastCalledWith(o.value)
+    }
+    expect(onChartType).toHaveBeenCalledTimes(TYPE_OPTIONS.length)
+  })
+
+  it('布局预设删除：✕ 只带走自己那一条预设名', () => {
+    const onDeleteLayoutPreset = vi.fn()
+    const onApplyLayoutPreset = vi.fn()
+    setup({ layoutPresets: ['三图', '双图'], onDeleteLayoutPreset, onApplyLayoutPreset })
+    fireEvent.click(screen.getByTestId('header-more'))
+    // 预设行的 testId 挂在包裹 span 上，套用按钮是它的第一个子按钮
+    const row = screen.getByTestId('layout-preset-双图')
+    fireEvent.click(row.querySelector('button') as HTMLElement)
+    expect(onApplyLayoutPreset).toHaveBeenCalledWith('双图')
+    fireEvent.click(screen.getByTestId('layout-preset-del-三图'))
+    expect(onDeleteLayoutPreset).toHaveBeenCalledWith('三图')
+    expect(onDeleteLayoutPreset).toHaveBeenCalledTimes(1)
+  })
+
+  it('外链：知识库走 BASE_URL 且全部新标签打开 + rel=noopener', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('header-more'))
+    for (const id of ['knowledge-link', 'feedback-link']) {
+      const a = screen.getByTestId(id) as HTMLAnchorElement
+      expect(a.getAttribute('target')).toBe('_blank')
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+    }
+    expect((screen.getByTestId('knowledge-link') as HTMLAnchorElement).getAttribute('href')).toBe('/knowledge/')
+  })
+
+  it('设置快照「导入」按钮：打开的就是那个隐藏 file input', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('header-more'))
+    const input = screen.getByTestId('settings-import-file') as HTMLInputElement
+    const openPicker = vi.spyOn(input, 'click')
+    fireEvent.click(screen.getByTestId('settings-import'))
+    expect(openPicker).toHaveBeenCalledTimes(1)
+  })
+
+  it('? 按钮：切换快捷键帮助，按下态跟随 shortcutsActive', () => {
+    const onToggleShortcuts = vi.fn()
+    setup({ onToggleShortcuts, shortcutsActive: true })
+    fireEvent.click(screen.getByTestId('header-more'))
+    const btn = screen.getByTestId('shortcuts-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(btn)
+    expect(onToggleShortcuts).toHaveBeenCalledTimes(1)
   })
 })

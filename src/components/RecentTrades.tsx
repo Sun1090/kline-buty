@@ -77,7 +77,7 @@ export function RecentTrades({ symbol, onMarkPrice }: RecentTradesProps) {
         )}
       </div>
       {/* v0.5.x Tape 筛选：方向 + 大单阈值（倍数循环） */}
-      <div data-testid="tape-filter" style={{ display: 'flex', gap: 4, marginBottom: 2, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 2, alignItems: 'center' }}>
         {SIDES.map((side) => (
           <button
             key={side}

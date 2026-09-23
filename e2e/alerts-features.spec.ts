@@ -135,4 +135,23 @@ test.describe('E 阶段提醒增强', () => {
     ])
     expect(download.suggestedFilename()).toMatch(/alerts\.json$/)
   })
+
+  test('E1 站内横幅：种一条已满足的提醒，重载后 toast 弹出且可手动关闭', async ({ page }) => {
+    // 合成价约 5 万：above/40000 在第一个价格 tick 就已触达 → 引擎 dispatch price-alert-triggered
+    await page.evaluate(() =>
+      localStorage.setItem(
+        'kline-buty:alerts',
+        JSON.stringify([{ id: 'seed-e1', symbol: 'BTCUSDT', direction: 'above', price: 40000, triggered: false, repeat: false }]),
+      ),
+    )
+    // toast 只在触发后停留 4 秒：先等它出现再断言，不能先等价格文本再看它还在不在
+    await page.reload()
+    await page.waitForSelector('[data-testid="alert-toast"]', { timeout: 20_000 })
+    const toast = page.getByTestId('alert-toast')
+    await expect(toast).toContainText('BTC/USDT')
+    await expect(toast).toContainText(/≥ 40000/)
+    await expect(toast).toContainText('→')
+    await page.getByTestId('alert-toast-dismiss').click()
+    await expect(page.getByTestId('alert-toast')).toHaveCount(0)
+  })
 })

@@ -426,7 +426,6 @@ export function DrawingLayers({
 
       {/* I13 画线全局透明度：所有画线统一透明度滑杆（与单条透明度相乘） */}
       <div
-        data-testid="drawing-global-opacity-row"
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px', marginBottom: 6 }}
       >
         <span style={{ fontSize: 11, color: 'var(--text-faint)', width: 52, flexShrink: 0 }}>{t('layers.globalOpacity')}</span>
@@ -528,7 +527,6 @@ export function DrawingLayers({
               <div key={group || '__ungrouped'}>
                 {/* C4 组头：折叠 + 组名 + 计数 + 组级显隐/锁定 */}
                 <div
-                  data-testid="drawing-group-header"
                   data-group={group}
                   style={{
                     display: 'flex',
@@ -723,7 +721,6 @@ export function DrawingLayers({
         const value = sel.opacity ?? 1
         return (
           <div
-            data-testid="drawing-opacity-row"
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px', borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6 }}
           >
             <span style={{ fontSize: 11, color: 'var(--text-faint)', width: 52, flexShrink: 0 }}>{t('layers.opacity')}</span>
@@ -878,7 +875,7 @@ export function DrawingLayers({
             {t('layers.templateEmpty')}
           </div>
         ) : (
-          <div data-testid="drawing-template-list" style={{ maxHeight: 'min(24vh, 180px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+          <div style={{ maxHeight: 'min(24vh, 180px)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {templates.map((tmpl) => (
               <div
                 key={tmpl.name}

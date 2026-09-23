@@ -210,6 +210,26 @@ describe('PositionPanel', () => {
     expect(screen.queryByTestId('position-liq-warn-long')).toBeNull()
   })
 
+  it('保证金率徽标：无现价整块不出现；有现价按百分比取整，逼近强平才转红', () => {
+    render(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={null} onChange={vi.fn()} />)
+    expect(screen.queryByTestId('position-margin-rate-long')).toBeNull()
+    cleanup()
+
+    const safe: Position = { entry: 100, quantity: 2, direction: 'long', leverage: 10 }
+    render(<PositionPanel positions={{ long: safe, short: null }} currentPrice={110} onChange={vi.fn()} />)
+    const ok = screen.getByTestId('position-margin-rate-long')
+    expect(ok.textContent).toMatch(/^\d+%$/)
+    expect(ok.style.color).toBe('var(--text-faint)')
+    cleanup()
+
+    // 100x 多单 entry=100，现价 99 → 保证金已吃光（0%），必须标红
+    const risky: Position = { entry: 100, quantity: 2, direction: 'long', leverage: 100 }
+    render(<PositionPanel positions={{ long: risky, short: null }} currentPrice={99} onChange={vi.fn()} />)
+    const bad = screen.getByTestId('position-margin-rate-long')
+    expect(bad.textContent).toBe('0%')
+    expect(bad.style.color).toBe('var(--down)')
+  })
+
   it('v0.5 账户总览：显示可用余额与当前品种浮动盈亏', () => {
     const onChange = vi.fn()
     render(<PositionPanel positions={{ long: longPosition, short: null }} currentPrice={110} balance={9500} onChange={onChange} />)
@@ -468,8 +488,17 @@ describe('PositionPanel', () => {
       expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
     })
 
-    it('比例芯片直接按量回调（25% → 2 × 25% = 0.5）', () => {
+    it('取消：只收起编辑器，不减仓', () => {
       const onReduce = vi.fn()
+      render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
+      fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
+      fireEvent.change(screen.getByTestId('position-reduce-qty-long'), { target: { value: '1.5' } })
+      fireEvent.click(screen.getByTestId('position-reduce-cancel-long'))
+      expect(onReduce).not.toHaveBeenCalled()
+      expect(screen.queryByTestId('position-reduce-editor-long')).toBeNull()
+    })
+
+    it('比例芯片直接按量回调（25% → 2 × 25% = 0.5）', () => {      const onReduce = vi.fn()
       render(<PositionPanel positions={held} currentPrice={110} onChange={vi.fn()} onReduce={onReduce} />)
       fireEvent.click(screen.getByTestId('position-reduce-toggle-long'))
       fireEvent.click(screen.getByTestId('position-reduce-ratio-long-25'))

@@ -443,4 +443,72 @@ describe('AlertPanel E 阶段（提醒增强）', () => {
     fireEvent.click(screen.getByTestId('alert-filter-dir-all'))
     expect(screen.getAllByTestId('alert-row')).toHaveLength(2)
   })
+
+  it('E14 语音播报：aria-pressed 跟随 props，点击回传取反后的值', () => {
+    const off = makeApi()
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={off} />)
+    const btn = screen.getByTestId('alert-voice-toggle')
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(btn)
+    expect(off.setVoiceEnabled).toHaveBeenCalledWith(true)
+    cleanup()
+
+    const on = makeApi({ voiceEnabled: true })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={on} />)
+    expect(screen.getByTestId('alert-voice-toggle').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByTestId('alert-voice-toggle'))
+    expect(on.setVoiceEnabled).toHaveBeenCalledWith(false)
+  })
+
+  it('E12 音效类型：下拉只在音效开启时存在，选择后回传 kind', () => {
+    const on = makeApi({ soundKind: 'beep' })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={on} />)
+    fireEvent.change(screen.getByTestId('alert-sound-kind'), { target: { value: 'chime' } })
+    expect(on.setSoundKind).toHaveBeenCalledWith('chime')
+    cleanup()
+
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={makeApi({ soundEnabled: false })} />)
+    expect(screen.queryByTestId('alert-sound-kind')).toBeNull()
+  })
+
+  it('E7 批量：全选只取当前筛选的可见项，清空后不带残留', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 64000, triggered: false },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.click(screen.getByTestId('alert-batch-toggle'))
+    fireEvent.click(screen.getByTestId('alert-filter-dir-below'))
+    fireEvent.click(screen.getByTestId('alert-batch-select-all'))
+    // 被筛掉的 a1 不该被全选带走，否则「全选 + 停用」会静默改掉看不见的提醒
+    expect((screen.getByTestId('alert-select-a2') as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByTestId('alert-select-a1')).toBeNull()
+    fireEvent.click(screen.getByTestId('alert-batch-disable'))
+    expect(api.setAlertsDisabled).toHaveBeenCalledWith(['a2'], true)
+  })
+
+  it('E7 批量：全选勾上每一行，清空把勾选退掉，启用按当前勾选回传', () => {
+    const api = makeApi({
+      alerts: [
+        { id: 'a1', symbol: 'BTCUSDT', direction: 'above', price: 65000, triggered: false },
+        { id: 'a2', symbol: 'BTCUSDT', direction: 'below', price: 64000, triggered: false },
+      ],
+    })
+    render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={api} />)
+    fireEvent.click(screen.getByTestId('alert-batch-toggle'))
+    fireEvent.click(screen.getByTestId('alert-batch-select-all'))
+    expect((screen.getByTestId('alert-select-a1') as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByTestId('alert-select-a2') as HTMLInputElement).checked).toBe(true)
+    fireEvent.click(screen.getByTestId('alert-batch-clear'))
+    expect((screen.getByTestId('alert-select-a1') as HTMLInputElement).checked).toBe(false)
+    // 清空后启用：不该把刚才清掉的 id 又偷偷带走
+    fireEvent.click(screen.getByTestId('alert-batch-enable'))
+    expect(api.setAlertsDisabled).toHaveBeenCalledWith([], false)
+    fireEvent.click(screen.getByTestId('alert-batch-select-all'))
+    fireEvent.click(screen.getByTestId('alert-batch-enable'))
+    expect(api.setAlertsDisabled).toHaveBeenLastCalledWith(['a1', 'a2'], false)
+    expect(api.setAlertsDisabled).toHaveBeenCalledTimes(2)
+  })
 })

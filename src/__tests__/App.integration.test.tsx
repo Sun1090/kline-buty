@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup, waitFor, act } from '@testing-library/react'
+import { WARN_THRESHOLD_KB } from '../utils/storageMonitor'
 
 function makeCandles(n: number) {
   return Array.from({ length: n }, (_, i) => ({
@@ -91,6 +92,50 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     expect(screen.getByTestId('update-banner')).toBeDefined()
     fireEvent.click(screen.getByTestId('update-dismiss'))
     expect(screen.queryByTestId('update-banner')).toBeNull()
+  })
+
+  it('N11 容量横幅：占用越过警告阈值才出现，文案带用量，✕ 只收横幅', () => {
+    render(<App />)
+    // 阈值以下（App 自己的持久化写入只有几 KB）不该打扰用户
+    expect(screen.queryByTestId('storage-banner')).toBeNull()
+    cleanup()
+
+    localStorage.setItem('bulk', 'x'.repeat(WARN_THRESHOLD_KB * 1024 + 1))
+    render(<App />)
+    const banner = screen.getByTestId('storage-banner')
+    expect(banner.getAttribute('role')).toBe('status')
+    expect(banner.textContent).toMatch(/\d+(\.\d+)?\s?(KB|MB)/)
+    fireEvent.click(screen.getByTestId('storage-dismiss'))
+    expect(screen.queryByTestId('storage-banner')).toBeNull()
+  })
+
+  it('F14 侧栏拖拽调宽：手柄 pointer 跟踪改宽度并持久化，两端夹在 240~720', () => {
+    render(<App />)
+    // 手柄只在侧栏（有面板打开）时存在
+    fireEvent.click(screen.getByTestId('header-more'))
+    fireEvent.click(screen.getByRole('button', { name: '深度' }))
+    const handle = screen.getByTestId('side-panel-resize')
+    expect(handle.getAttribute('role')).toBe('separator')
+
+    const width = () => Number(localStorage.getItem('kline-buty:sidePanelWidth'))
+    // 起点 380：手柄左移 40px → 侧栏宽 420
+    fireEvent.pointerDown(handle, { clientX: 500 })
+    fireEvent.pointerMove(window, { clientX: 460 })
+    fireEvent.pointerUp(window)
+    expect(width()).toBe(420)
+    // 再右移 1000px：不能拖成负宽，夹在下限 240
+    fireEvent.pointerDown(handle, { clientX: 100 })
+    fireEvent.pointerMove(window, { clientX: 1100 })
+    fireEvent.pointerUp(window)
+    expect(width()).toBe(240)
+    // 左移过头：夹在上限 720
+    fireEvent.pointerDown(handle, { clientX: 900 })
+    fireEvent.pointerMove(window, { clientX: -900 })
+    fireEvent.pointerUp(window)
+    expect(width()).toBe(720)
+    // 拖完松开后，窗口的后续移动不再改宽度（监听器必须被摘掉）
+    fireEvent.pointerMove(window, { clientX: 0 })
+    expect(width()).toBe(720)
   })
 
   it('M12 语言切换快捷键：⇧⌘L 循环切换语言（lang 持久化更新）', () => {
@@ -363,22 +408,24 @@ describe('App 集成测试（O7 覆盖率补测：新增功能路径）', () => 
     fireEvent.keyDown(window, { key: 'Escape' })
   })
 
-  it('WS 面板打开渲染空态：盘口/深度/情绪（jsdom 无连接，覆盖面板渲染路径）', () => {
+  it('WS 面板打开渲染空态：盘口/深度/情绪（jsdom 无连接，覆盖面板渲染路径）', async () => {
     render(<App />)
     // 注意：More 面板内「面板排序」区也显示 盘口/深度 等文案，须用 button role + exact 命中开关按钮
     fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByRole('button', { name: '盘口' }))
     expect(screen.getByTestId('order-book')).toBeDefined()
 
-    // 深度/情绪为 lazy 组件：断言 Suspense fallback（加载中…）即证明面板路径已进入；
-    // lazy chunk 实际渲染由其组件级单测 + E2E 覆盖，避免全量并行负载下动态导入超时抖动
+    // lazy 面板不能断 Suspense 的「加载中…」：同一 worker 里只要别的用例先打开过这个面板，
+    // chunk 已经热了，挂载直接出真组件、根本不经过 fallback（用例顺序一改就红）。
+    // 改成等它落定后断言面板自己独有的钩子/文案。
     fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByRole('button', { name: '深度' }))
-    expect(screen.getAllByText('加载中…').length).toBeGreaterThan(0)
+    // jsdom 量不到容器宽度 → DepthChart 停在「等数据」分支
+    expect(await screen.findByText('加载盘口深度…')).toBeDefined()
 
     fireEvent.click(screen.getByTestId('header-more'))
     fireEvent.click(screen.getByRole('button', { name: '情绪' }))
-    expect(screen.getAllByText('加载中…').length).toBeGreaterThan(0)
+    expect(await screen.findByTestId('sentiment-panel')).toBeDefined()
   })
 
   it('模拟交易→流水：开仓→平仓产生流水 → 清空按钮出现 → 点击清空', async () => {

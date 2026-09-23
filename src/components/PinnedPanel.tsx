@@ -67,7 +67,7 @@ export function PinnedPanel({ symbols, activeSymbol, onSelect, onAdd, onRemove, 
           ✕
         </button>
       </div>
-      <div data-testid="pinned-add" style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
         <input
           data-testid="pinned-add-input"
           value={newSym}
@@ -137,7 +137,7 @@ export function PinnedPanel({ symbols, activeSymbol, onSelect, onAdd, onRemove, 
       {symbols.length === 0 ? (
         <div style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('pinned.empty')}</div>
       ) : (
-        <div data-testid="pinned-list" style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto', overscrollBehavior: 'contain' }}>
           {sortedSymbols.map((sym) => {
             const snap = snapshots[sym]
             const up = (snap?.changePct ?? 0) >= 0

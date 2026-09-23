@@ -228,7 +228,6 @@ export function TradeHistoryPanel({
       {/* D6 交易统计：胜率 / 累计盈亏 / 盈亏比（有平仓记录时显示） */}
       {stats.closed > 0 && (
         <div
-          data-testid="trade-history-stats"
           style={{ display: 'flex', gap: 12, padding: '4px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap' }}
         >
           <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>
@@ -290,7 +289,7 @@ export function TradeHistoryPanel({
             {showBySymbol ? '▾ ' : '▸ '}{t('trade.bySymbol')}
           </button>
           {showBySymbol && (
-            <div data-testid="trade-by-symbol" style={{ marginTop: 4, fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ marginTop: 4, fontSize: 11, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {symbolBreakdown(trades).map((b) => (
                 <div
                   key={b.symbol}
@@ -319,7 +318,6 @@ export function TradeHistoryPanel({
       )}
       {/* D14 收益目标：输入目标 → 进度条 + 达成提示 */}
       <div
-        data-testid="trade-history-target"
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap' }}
       >
         <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{t('trade.target')}</span>
@@ -354,7 +352,6 @@ export function TradeHistoryPanel({
       </div>
       {/* D5/D8 交易设置：吃单费率 + 市价滑点（百分比输入，持久化） */}
       <div
-        data-testid="trade-history-settings"
         style={{ display: 'flex', gap: 10, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, alignItems: 'center' }}
       >
         <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{t('trade.settings')}</span>
@@ -398,7 +395,6 @@ export function TradeHistoryPanel({
       </div>
       {/* D13/D15 账户工具：JSON 导入/导出 + 账户快照（保存/载入/删除） */}
       <div
-        data-testid="trade-history-account"
         style={{ display: 'flex', gap: 6, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}
       >
         <button
@@ -449,7 +445,6 @@ export function TradeHistoryPanel({
       </div>
       {snapshots.length > 0 && (
         <div
-          data-testid="trade-snapshot-list"
           style={{ display: 'flex', gap: 6, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}
         >
           {snapshots.map((name) => (

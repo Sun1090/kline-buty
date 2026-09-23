@@ -369,7 +369,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
       </div>
 
       {/* E1 推送渠道 + E14 JSON 导入/导出 */}
-      <div data-testid="alert-tools" style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
         <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('alert.channel')}</span>
         <select
           data-testid="alert-channel"
@@ -541,7 +541,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         )}
       </label>
       {/* K2 提醒分组：可选命名分组 */}
-      <div data-testid="alert-group-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.group')}</span>
         <input
           data-testid="alert-group-input"
@@ -552,7 +552,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         />
       </div>
       {/* E15 备注字段 */}
-      <div data-testid="alert-note-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.note')}</span>
         <input
           data-testid="alert-note-input"
@@ -563,7 +563,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         />
       </div>
       {/* E6 到期时间：datetime-local，空=永久有效 */}
-      <div data-testid="alert-expiry-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.expiresAt')}</span>
         <input
           data-testid="alert-expiry-input"
@@ -575,7 +575,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         />
       </div>
       {/* E10 价格精度：空=自动，可选小数位 */}
-      <div data-testid="alert-precision-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.precision')}</span>
         <select
           data-testid="alert-precision"
@@ -593,7 +593,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         </select>
       </div>
       {/* E4 提醒模板：保存当前条件 / 一键套用 / 删除 */}
-      <div data-testid="alert-template-row" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
         <span>{t('alert.template')}</span>
         <input
           data-testid="alert-template-name"
@@ -655,7 +655,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         ))}
       </div>
       {/* v0.5.x 列表筛选：方向 + 状态 */}
-      <div data-testid="alert-filter" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.filter')}</span>
         <button
           data-testid="alert-filter-dir-all"
@@ -719,7 +719,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         ))}
       </div>
       {/* D9 时间窗口：HH:MM–HH:MM（本地时区），留空=全天 */}
-      <div data-testid="alert-time-window" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.timeWindow')}</span>
         <input
           data-testid="alert-time-from"
@@ -746,7 +746,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
       )}
 
       {/* E7 批量操作：勾选多行后统一删除/停用/启用 */}
-      <div data-testid="alert-batch" style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
         <button
           data-testid="alert-batch-toggle"
           onClick={() => {
