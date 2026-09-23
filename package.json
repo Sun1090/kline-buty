@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build && npm run docs:build",
     "dev": "vite",
     "e2e": "playwright test",
+    "e2e:ci": "node scripts/run-ci-e2e.mjs",
     "lint": "eslint .",
     "perf": "vitest run --config vitest.perf.config.ts",
     "preview": "vite preview",
