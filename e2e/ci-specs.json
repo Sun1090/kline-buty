@@ -14,6 +14,7 @@
     "e2e/period-alignment.spec.ts",
     "e2e/period-anchor.spec.ts",
     "e2e/period-crosshair.spec.ts",
+    "e2e/period-resnap.spec.ts",
     "e2e/recent-features.spec.ts",
     "e2e/snapshot-gallery.spec.ts",
     "e2e/stress-large-data.spec.ts",
