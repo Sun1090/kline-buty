@@ -10,6 +10,7 @@
     "e2e/marker-render.spec.ts",
     "e2e/multi-chart-sync.spec.ts",
     "e2e/new-features.spec.ts",
+    "e2e/price-autoscale-reset.spec.ts",
     "e2e/partial-close.spec.ts",
     "e2e/period-alignment.spec.ts",
     "e2e/period-anchor.spec.ts",
