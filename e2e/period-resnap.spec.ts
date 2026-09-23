@@ -14,12 +14,13 @@ import { expect, test, type Page } from '@playwright/test'
  * 源格再报同一个时刻也不会重发，所以**只有本格自己**知道自己该按新数据重算。
  * 让指针挪一根就把这一点掩盖掉了。
  *
- * 断言形式取「不变量」而不是「前后对比」：每格报出的时刻必须是它自己周期的整数倍。
- * 陈旧值恰恰表现为「分钟刻度留在 5m/15m/1h 格上」，一眼可辨。
- *
- * 这里**不**再断言「落点离源格不超过一根周期」：换一格周期会把整组可视窗口挪走（issue #199，
- * 实测源格指针不动、时刻跳 2～3 小时），接收格只能落在**自己装载到的那段**里离源格最近的 K 线上，
- * 窗口本来就不重合时这条做不到 —— 那是 #199/#194 要收的账，不该由这条规格长期背着一条做不到的断言。
+ * 断言形式取「不变量」而不是「前后对比」：每格报出的时刻必须是它自己周期的整数倍，
+ * 并且**离源格不超过一根本格的 K 线**（实测最大 0.40 根，阈值给满 1 根）。
+ * 后一条是 #204 之后重新加回来的，但要把话说清楚：A/B 实测它在 #204 **之前**的产品代码上同样成立
+ * （?perf=1500 整窗装载，落点总能找到源格时刻相邻的一根），所以它**不是** #199 的门 ——
+ * #199 的门是 e2e/quad-switch-no-drag.spec.ts（比的是可视窗口本身）。这条抓的是另一种形态：
+ * 某一格被 clamp 到数组的另一段上、刻度仍然对齐自己网格，这种「对得上但根本不是同一时间」
+ * 光靠「是不是整数倍」看不见。当初撤它是因为误以为 #199 会让它做不到，实际不会。
  */
 
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
@@ -98,11 +99,12 @@ async function cellCanvasCenter(page: Page, symbol: string) {
   return { cx, cy, w: box.w }
 }
 
-/** 一次采样：把「哪一格报出的时刻不在自己周期网格上」写成判词 */
+/** 一次采样：把「哪一格报出的时刻不在自己周期网格上 / 离源格太远」写成判词 */
 async function offGridVerdict(page: Page) {
   const now = await cellCrosshair(page)
   const bad: string[] = []
   let reporting = 0
+  const src = now[CELLS[0]]
   for (const sym of CELLS) {
     const t = now[sym]?.time
     if (t === null || t === undefined) continue
@@ -110,6 +112,14 @@ async function offGridVerdict(page: Page) {
     const own = PERIOD_SECONDS[now[sym].period]
     if (own === undefined) continue
     if (t % own !== 0) bad.push(`${sym}=${t}（${now[sym].period} 网格应为 ${own} 的倍数）`)
+    // 离源格的距离按**本格自己的根**量：吸附是「源格时刻 + 本格序列」的函数，结果必然落在
+    // 源格时刻相邻的一根上。实测最大 0.40 根，阈值给满 1 根；失效形态（某一格被 clamp 到数组
+    // 的另一段、或干脆抄源格原值）是几十根起步。
+    // 牙齿复验：把外部指令的落笔整体挪开一天 ⇒ 红在这一条上（不是红在整数倍那条）。
+    if (src?.time != null && src.time !== t) {
+      const bars = Math.abs(t - src.time) / own
+      if (bars > 1) bad.push(`${sym}=${t} 离源格 ${src.time} 有 ${bars.toFixed(1)} 根（应 ≤1 根）`)
+    }
   }
   if (reporting < CELLS.length) return `只有 ${reporting}/4 格在报十字光标`
   return bad.length === 0 ? 'on-grid' : bad.join(' ')
