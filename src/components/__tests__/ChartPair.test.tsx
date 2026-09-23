@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { render, act, cleanup } from '@testing-library/react'
+import { render, act, cleanup, fireEvent, screen } from '@testing-library/react'
 
 function makeCandles(n: number) {
   return Array.from({ length: n }, (_, i) => ({
@@ -99,22 +99,41 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('ChartPair 时间轴联动', () => {
+  /**
+   * 联动只由**用户手势**驱动（issue #199）：一格报出视角变化，得先是它自己被指针/滚轮/键盘动过。
+   * 所以每个「模拟用户拖动」都要先把这一格的手势记上，否则测的是「不广播」而不是「广播对了」。
+   */
+  const roots = () => screen.getAllByTestId('chart-root')
+  const grabByUser = (i: number) => fireEvent.pointerDown(roots()[i])
+
   it('A 拖动 → B 跟随（setVisibleRange）', () => {
     render(<ChartPair {...props} />)
     const [a, b] = instances
     expect(a).toBeDefined()
     expect(b).toBeDefined()
 
+    grabByUser(0)
     act(() => a.onRange!(10, 50))
     expect(b.setVisibleRange).toHaveBeenCalledWith({ from: 10, to: 50 })
+  })
+
+  it('没被用户碰过的一格不广播：换周期/装载时的程序化落位不许挪走兄弟格', () => {
+    render(<ChartPair {...props} />)
+    const [a, b] = instances
+    // 同一个 onRange 回调，差别只在有没有手势：换周期那一格随后也会报视角，但那不是用户改的
+    act(() => a.onRange!(10, 50))
+    expect(b.setVisibleRange).not.toHaveBeenCalled()
   })
 
   it('防回环：B 回显同区间 → A 不重复写入', () => {
     render(<ChartPair {...props} />)
     const [a, b] = instances
 
+    grabByUser(0)
     act(() => a.onRange!(10, 50))
     const callsAfterA = a.setVisibleRange.mock.calls.length
+    // B 这里是被用户独立驱动的（不是执行 A 的指令），回显同区间才轮到去重那一档
+    grabByUser(1)
     act(() => b.onRange!(10, 50))
     expect(a.setVisibleRange.mock.calls.length).toBe(callsAfterA)
   })
@@ -122,6 +141,7 @@ describe('ChartPair 时间轴联动', () => {
   it('B 独立拖动 → A 跟随', () => {
     render(<ChartPair {...props} />)
     const [a, b] = instances
+    grabByUser(1)
     act(() => b.onRange!(20, 80))
     expect(a.setVisibleRange).toHaveBeenCalledWith({ from: 20, to: 80 })
   })

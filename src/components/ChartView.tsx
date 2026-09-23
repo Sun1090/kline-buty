@@ -7,7 +7,7 @@ import { PERIODS, PERIOD_MS, type Candle, type Period } from '../chart/types'
 import { LightweightChartAdapter, type ChartApi, type ChartType, type MainIndicatorData, type PositionLines } from '../chart/adapter'
 import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
-import { anchorRangeForSwitch, cullWindow, floorIndexByTime, localRange, nextCullWindow, shouldCull, windowCovers, type CullWindow } from '../chart/cull'
+import { anchorRangeForSwitch, cullWindow, floorIndexByTime, localRange, nextCullWindow, shouldCull, windowCovers, type CullRange, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
@@ -273,6 +273,8 @@ export function ChartView({
     }
   }
   const containerRef = useRef<HTMLDivElement>(null)
+  /** 本格的外层（图表容器 + 浮层按钮 + A11 条）：手势归属按这一层判，见 viewOwnedByUserRef */
+  const rootRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<ChartApi | null>(null)
   const prevDataRef = useRef<Candle[] | null>(null)
   /** 当前品种全量 K 线快照镜像（A11 时间戳换算：subscribe 回调只挂一次，读 ref 取最新） */
@@ -293,6 +295,27 @@ export function ChartView({
   const applyingRef = useRef(false)
   /** 可见区间处理函数（初始化 effect 里定义）：装载收尾要主动补一次读数，故存下来供别的 effect 调用 */
   const applyRangeRef = useRef<((from: number, to: number, trusted?: boolean) => void) | null>(null)
+  /**
+   * 本格**自己**发起的落位（换周期锚定、装载后恢复视角、执行兄弟格的广播指令）不算「用户动了这一格」。
+   * 换一格周期是单格操作，而这一刻按**索引**算出的临时视角一旦被广播出去，就会被别的格 clamp 到
+   * 自己的数据左缘 —— 整组被甩走数小时，指针明明没动（issue #199）。状态照发（A11、atLatest），只掐广播。
+   *
+   * 判据不能是「在调用前后罩一个同步开关」：`setVisibleLogicalRange` 的补发回调是**逐帧异步**到的
+   * （插桩实测：锚定之后那条 REPORT 已经落在 try/finally 之外），所以改记「这一格的视角现在归谁」——
+   * 程序化落位把它交给机器，指针/滚轮/触摸/键盘回到这一格时才交还给用户。
+   */
+  const viewOwnedByUserRef = useRef(false)
+  /**
+   * 换周期时用户想看的那**一段时间**（右缘时刻 + 时间跨度），带 key 防串到别的品种/周期。
+   * 数据比 key 晚一拍：第一拍 `period` 已经是新周期、图表里装着的却还是旧周期那一片，
+   * 落完视角第二拍才真正把数据换过来 —— 而图表按逻辑索引保视图，索引不变就等于把跨度乘上
+   * 新旧周期之比（实测 15m→1h 后 15 分钟的窗口变成 1 小时）。意图要留到间距真的等于目标周期为止。
+   *
+   * `atTail` 单独记一份，不能只靠 `toTime` 反推：`toTime` 是「当时那根 K 线的开盘时刻」，
+   * 停在最新处从 1h 换到 1m 时，把它 floor 到新序列上会落在**一根之前**（新序列的尾沿更细），
+   * 于是「停在最新切周期」被算成离开了最新、「回到最新」按钮凭空出现（A2 的契约）。
+   */
+  const switchIntentRef = useRef<{ key: string; toTime: number; spanMs: number; atTail: boolean } | null>(null)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
@@ -378,6 +401,34 @@ export function ChartView({
   // 各格周期不同，同一个索引对应的时间跨度能差几十倍，所以先按本格数据换算再落位
   // （全局索引 → 局部索引要减裁剪窗口起点 base）。
   const lastExternalRef = useRef('')
+  /**
+   * 把视角交给机器：这一次落位（以及它随后异步补发的那些事件）都不算「用户改了本格」。
+   * 用户的手势会把视角要回去，见 effect 里的 `viewOwnedByUserRef.current = true`。
+   */
+  const withSilentView = (run: () => void) => {
+    viewOwnedByUserRef.current = false
+    run()
+  }
+  // 手势把视角要回给用户：指针/滚轮/触摸/键盘落在这一格（含格内「回到最新」这类按钮）之后，
+  // 本格的视角落地才算「用户改的」，才可以广播给兄弟格。
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const claim = () => {
+      viewOwnedByUserRef.current = true
+    }
+    const opts = { capture: true, passive: true } as const
+    root.addEventListener('pointerdown', claim, opts)
+    root.addEventListener('wheel', claim, opts)
+    root.addEventListener('touchstart', claim, opts)
+    root.addEventListener('keydown', claim, opts)
+    return () => {
+      root.removeEventListener('pointerdown', claim, opts)
+      root.removeEventListener('wheel', claim, opts)
+      root.removeEventListener('touchstart', claim, opts)
+      root.removeEventListener('keydown', claim, opts)
+    }
+  }, [])
   useEffect(() => {
     if (!externalRange || !apiRef.current) return
     const sig = `${externalRange.from}:${externalRange.to}`
@@ -394,7 +445,9 @@ export function ChartView({
     // 而它还会被再广播回去，把对面那格一路压扁（实测 1m 格最后只剩 1 分钟可视）
     const toIdx = Math.min(all.length - 1, Math.max(floorIndexByTime(all, externalRange.to), fromIdx + want))
     const left = toIdx <= fromIdx ? Math.max(0, toIdx - 1) : fromIdx
-    apiRef.current.setVisibleRange({ from: left - base, to: toIdx - base })
+    // 执行别人的指令不是「用户动了本格」：吸附后的落点往往和请求差几根（各格网格不同），
+    // 再广播回去就成了一条越收越窄的乒乓链（实测混周期四格会被压到只剩 1～2 根可视）
+    withSilentView(() => apiRef.current?.setVisibleRange({ from: left - base, to: toIdx - base }))
   }, [externalRange])
 
   // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
@@ -531,8 +584,14 @@ export function ChartView({
           }
         }
       }
-      // 广播按**时间**而不是索引：接收格周期可能完全不同，索引对它们意味着另一段时间跨度
-      if (tFrom != null && tTo != null) onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
+      // 广播按**时间**而不是索引：接收格周期可能完全不同，索引对它们意味着另一段时间跨度。
+      // 只有「用户对本格的改动」才传出去：不可信的补读是拿旧切片间距算的索引，程序化落位则是本格
+      // 自己换数据的中间态，两者传出去都会把兄弟格 clamp 到自己的数据左缘（issue #199）。
+      // 用户既然已经接管了视角，换周期那份时间意图也就到此作废。
+      if (trusted && viewOwnedByUserRef.current) {
+        switchIntentRef.current = null
+        if (tFrom != null && tTo != null) onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
+      }
     }
     applyRangeRef.current = onVisibleRange
     const unsubRange = api.subscribeVisibleRange(onVisibleRange)
@@ -940,6 +999,28 @@ export function ChartView({
     let loaded = windowData
     // 是否走了整窗装载（只有它会作废 setData 期间的可见区间通知，需要在收尾补一次可信读数）
     let wholeWindowLoad = false
+    /**
+     * 换周期的落位：把时间意图（右缘时刻 + 时间跨度）换算到 `full` 这片数据上，输出**全局**索引区间；
+     * 没有意图、意图属于别的 key、或数据不足两根时返回 null。
+     *
+     * 一根多少毫秒必须**量这片数据**，不能读 `PERIOD_MS[period]`：第一拍 `period` 已经是新周期、
+     * 传进来的却还是旧周期那一片，按新周期的根数落位会把视角压成 `旧间距 ÷ 新间距`（实测 15m→1h
+     * 的 15 分钟窗口锚成 2 根），而第二拍整窗换成真数据后图表按逻辑索引保视图，那个索引区间
+     * 又涨回 4 倍长的时间 —— 两拍都错，只有按这片数据自己的间距算才对（issue #199）。
+     */
+    const anchorFromIntent = (full: Candle[]): CullRange | null => {
+      const intent = switchIntentRef.current
+      if (!intent || intent.key !== key || full.length < 2) return null
+      const gapMs = Math.max(1, full[1].time - full[0].time) * 1000
+      // 停在最新处换周期 → 右缘要贴住**这片数据自己的尾沿**，而不是把旧的开盘时刻 floor 过来：
+      // 换到更细的周期时后者会落在尾沿之前一根，A2 的「停在最新切周期仍算最新」当场就破。
+      const toTime = intent.atTail ? full[full.length - 1].time : intent.toTime
+      const g = anchorRangeForSwitch(full, toTime, intent.spanMs, gapMs)
+      if (!g) return null
+      // 意图已经落在间距等于目标周期的数据上 → 作废，之后的装载不该再被它牵走
+      if (gapMs === PERIOD_MS[period]) switchIntentRef.current = null
+      return g
+    }
     if (keyChanged || !prev || prev.length === 0 || needReload) {
       wholeWindowLoad = true
       loadSlice(windowData, windowBase)
@@ -955,8 +1036,16 @@ export function ChartView({
         const vt = lastVisibleTimeRef.current
         const periodChanged = keyChanged && !symChanged
         if (periodChanged && !enteringReplay && !exitingReplay && vt && replayData.length > 0) {
+          // 先立意图：数据晚一拍才到，第二拍整窗换新数据时要靠它把视角按**时间**重落一遍
+          const lv = lastVisibleRef.current
+          switchIntentRef.current = {
+            key,
+            toTime: vt.toTime,
+            spanMs: vt.spanMs,
+            atTail: !!lv && !isAwayFromLatest(lv.to, dataLenRef.current),
+          }
           // 在「全量新数据」上按旧右缘时间戳 + 时间跨度计算锚定区间（全局索引，已保证 ≥2 根）
-          const anchor = anchorRangeForSwitch(replayData, vt.toTime, vt.spanMs, PERIOD_MS[period])
+          const anchor = anchorFromIntent(replayData)
           if (anchor) {
             const len = replayData.length
             const useCull = shouldCull(len)
@@ -968,40 +1057,52 @@ export function ChartView({
             if (target) {
               setCull(target)
               cullRef.current = target
-              api.setVisibleRange(localRange(target, anchor))
+              withSilentView(() => api.setVisibleRange(localRange(target, anchor)))
             } else {
-              api.setVisibleRange(anchor)
+              withSilentView(() => api.setVisibleRange(anchor))
             }
           } else {
-            api.fitContent()
+            switchIntentRef.current = null
+            withSilentView(() => api.fitContent())
           }
         } else {
-          api.fitContent()
+          switchIntentRef.current = null
+          withSilentView(() => api.fitContent())
         }
       } else if (cur) {
-        // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回本次切片的局部坐标
-        const v = lastVisibleRef.current
+        // 窗口重载（滚动越界 / seek 落到新窗口）：保持原全局视角，映射回本次切片的局部坐标。
+        // 换周期的第二拍也可能走这里（那时 needReload 恰好为真）：而「原全局视角」是旧序列上的
+        // 索引，必须优先按时间意图重算，否则同样的索引在新周期上就是几倍长的时间。
+        const v = anchorFromIntent(replayData) ?? lastVisibleRef.current
         if (v) {
-          api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase })
-          if (replay) api.scrollToRealTime()
+          withSilentView(() => {
+            api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase })
+            if (replay) api.scrollToRealTime()
+          })
         }
       }
     } else if (prefixSame) {
       // 增量：实时新帧/新 K 线逐根 updateCandle，避免整窗重载（起点基准不变，仅尾沿生长）
       for (let i = prev.length - 1; i < windowData.length; i++) api.updateCandle(windowData[i])
       loadedRef.current = { base: windowBase, len: windowData.length }
-      // 回放播放推进时跟随最新，seek/实时增量不打扰用户视图
-      if (replay && windowData.length > prev.length) api.scrollToRealTime()
+      // 回放播放推进时跟随最新，seek/实时增量不打扰用户视图。跟着播放头走是本格自己的推进，
+      // 不是用户改动，传出去会把兄弟格一路拖到自己序列的尾沿上
+      if (replay && windowData.length > prev.length) withSilentView(() => api.scrollToRealTime())
     } else {
-      // 回放 seek 后退等乱序：全量装载并适配
+      // 回放 seek 后退等乱序：全量装载并适配。**换周期的第二拍也走这条**（数据比 key 晚一拍到位）：
+      // 整窗 setData 后图表按逻辑索引保视图，第一拍落在旧序列上的那个索引区间到了新周期里就是
+      // 几倍长的时间（实测 15m→1h 的 15 分钟窗口变成 1 小时），必须按时间意图重落一次（issue #199）。
       wholeWindowLoad = true
       loadSlice(windowData, windowBase)
-      if (cur) {
+      const intentView = anchorFromIntent(replayData)
+      if (intentView) {
+        withSilentView(() => api.setVisibleRange({ from: intentView.from - windowBase, to: intentView.to - windowBase }))
+      } else if (cur) {
         const v = lastVisibleRef.current
-        if (v) api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase })
-        if (replay) api.scrollToRealTime()
+        if (v) withSilentView(() => api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase }))
+        if (replay) withSilentView(() => api.scrollToRealTime())
       } else if (replay) {
-        api.fitContent()
+        withSilentView(() => api.fitContent())
       }
     }
 
@@ -1171,6 +1272,8 @@ export function ChartView({
 
   return (
     <div
+      ref={rootRef}
+      data-testid="chart-root"
       style={{ position: 'relative', width: '100%', height: '100%' }}
       onContextMenu={(e) => {
         // E5：桌面右键 / 移动端长按（pointer: coarse 触发原生 contextmenu）统一弹自定义菜单；
@@ -1535,10 +1638,14 @@ export function ChartView({
         {symbol.replace('USDT', '/USDT')} ·{' '}
         {t((PERIODS.find((pp) => pp.value === period)?.labelKey ?? 'period.1m') as MessageKey)}
       </div>
-      {/* A11 图表可视时间范围（随缩放/平移更新；UTC 按配置） */}
+      {/* A11 图表可视时间范围（随缩放/平移更新；UTC 按配置）。
+          data-visible-from/to 是同一对值的**原始秒**：文本按 locale 格式化，跨月/跨年做差不可靠，
+          多图联动的验收要看的是「这一格的窗口有没有被人挪走」，那就不能被格式化文本绊住。 */}
       {visibleRange.from != null && visibleRange.to != null && (
         <div
           data-testid="chart-visible-range"
+          data-visible-from={visibleRange.from}
+          data-visible-to={visibleRange.to}
           style={{
             position: 'absolute',
             left: 10,

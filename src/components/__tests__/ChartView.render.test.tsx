@@ -31,6 +31,12 @@ const harness = vi.hoisted(() => ({
   /** 整窗装载（setCandles）与逐根增量（updateCandle）的调用记录 */
   sets: [] as { len: number; first: number | null }[],
   updates: [] as number[],
+  /**
+   * 置为 true 时，`setVisibleRange` 像真图表那样**同步补发**一次可见区间事件。
+   * 不开这个开关，「程序化落位不该广播」永远测不到 —— mock 默认不补发，
+   * 于是断言在改动前后都成立（假绿）。
+   */
+  echo: false,
 }))
 
 vi.mock('../../chart/adapter', async (importOriginal) => {
@@ -89,6 +95,7 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       clearCrosshair = vi.fn()
       setVisibleRange = vi.fn((r: { from: number; to: number }) => {
         harness.views.push(r)
+        if (harness.echo) harness.fire?.(r.from, r.to, true)
       })
       subscribeVisibleRange(cb: (from: number, to: number, trusted?: boolean) => void) {
         harness.fire = cb
@@ -258,6 +265,8 @@ describe('多图视角同步的单位（issue #186）', () => {
     const onViewRangeChange = vi.fn()
     render(<ChartView {...base} period="1m" candles={candles} onViewRangeChange={onViewRangeChange} />)
     expect(harness.fire, 'ChartView 应订阅可见区间变化').not.toBeNull()
+    // 视角得先由用户接管（issue #199：程序化落位不广播），否则这条就是在测「不广播」
+    fireEvent.pointerDown(screen.getByTestId('chart-root'))
     act(() => harness.fire!(10, 50, true))
     expect(onViewRangeChange).toHaveBeenCalledWith({ from: candles[10].time, to: candles[50].time })
   })
@@ -279,6 +288,102 @@ describe('多图视角同步的单位（issue #186）', () => {
     const { rerender } = render(<ChartView {...base} period="1h" candles={oneHour} />)
     rerender(<ChartView {...base} period="1h" candles={oneHour} externalRange={{ from: oneMin[0].time, to: oneMin[0].time + 50 * 60 }} />)
     expect(harness.views).toContainEqual({ from: 0, to: 1 })
+  })
+
+  it('程序化落位（执行兄弟格指令）不再广播回去', () => {
+    const oneMin = makeCandles(800)
+    const onViewRangeChange = vi.fn()
+    harness.echo = true
+    try {
+      const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />)
+      // 用户在自己这一格里平移：这一次必须广播
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => harness.fire!(200, 240, true))
+      expect(onViewRangeChange).toHaveBeenCalledTimes(1)
+      // 兄弟格的指令落地：mock 按真图表的形态同步补发了落位事件，这一次不能再传出去
+      // （各格网格不同，吸附值和请求差几根，传回去就是一条越收越窄的乒乓链）
+      onViewRangeChange.mockClear()
+      rerender(
+        <ChartView
+          {...base}
+          period="1m"
+          candles={oneMin}
+          externalRange={{ from: oneMin[100].time, to: oneMin[160].time }}
+          onViewRangeChange={onViewRangeChange}
+        />,
+      )
+      expect(harness.views[harness.views.length - 1]).toEqual({ from: 100, to: 160 })
+      expect(onViewRangeChange).not.toHaveBeenCalled()
+    } finally {
+      harness.echo = false
+      harness.views.length = 0
+    }
+  })
+})
+
+describe('换周期落的视角必须还是同一段时间（issue #199）', () => {
+  afterEach(() => {
+    harness.echo = false
+    harness.views.length = 0
+    harness.fire = null
+  })
+
+  it('数据晚一拍时，两拍都按这片数据自己的间距锚定', () => {
+    const oneMin = makeCandles(300)
+    const fiveMin = Array.from({ length: 60 }, (_, i) => ({ ...oneMin[0], time: oneMin[299].time - (59 - i) * 300 }))
+    const report = vi.fn()
+    harness.echo = true
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={report} />)
+    // 用户把视角定在 [240,270]：30 分钟，右缘 = oneMin[270]
+    fireEvent.pointerDown(screen.getByTestId('chart-root'))
+    act(() => harness.fire!(240, 270, true))
+    expect(report).toHaveBeenCalledTimes(1)
+    report.mockClear()
+    harness.views.length = 0
+
+    // 第一拍：period 已经是 5m，可传进来的还是 1m 那一片。
+    // 根数必须按这片数据的 60 秒间距算（30 分钟 = 30 根）；按 PERIOD_MS['5m'] 算只有 6 根，
+    // 视角当场被压成 1/5（这就是四格里那一格「换了周期图没怎么变、别人却被甩走」的起点）。
+    rerender(<ChartView {...base} period="5m" candles={oneMin} onViewRangeChange={report} />)
+    expect(harness.views[harness.views.length - 1]).toEqual({ from: 241, to: 270 })
+    // 换周期是本格的内部重排，不是用户对本格的改动：一次都不该广播
+    expect(report).not.toHaveBeenCalled()
+
+    // 第二拍：5m 的数据到位，整窗装载后图表按**逻辑索引**保视图 —— 不重落就把同一个索引区间
+    // 解释成 5m 的 30 根 = 2.5 小时。右缘时间和时间跨度都要留住，才叫「还是那一段时间」。
+    harness.views.length = 0
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} onViewRangeChange={report} />)
+    expect(harness.views[harness.views.length - 1]).toEqual({ from: 48, to: 53 })
+    expect(report).not.toHaveBeenCalled()
+  })
+
+  it('停在最新处从粗换到细：右缘要贴住新序列的尾沿，不许凭空算成回看', () => {
+    // A2 的契约：停在最新一根上换周期，换完仍算「在最新」（「回到最新」按钮必须保持隐藏）。
+    // 只按「旧那根的开盘时刻」在新序列里 floor 会落到尾沿之前：1h 的最后一根是 19:00，
+    // 而 5m 的最后一根已经走到 19:55 —— 差出 11 根，atLatest 判成回看，按钮凭空出现。
+    const T0 = 1786797540
+    const bar = { open: 100, high: 101, low: 99, close: 100, volume: 10, isClosed: true }
+    const coarse = Array.from({ length: 60 }, (_, i) => ({ ...bar, time: T0 + i * 3600 }))
+    const fine = Array.from({ length: 720 }, (_, i) => ({ ...bar, time: T0 + i * 300 }))
+    const report = vi.fn()
+    harness.echo = true
+    const { rerender } = render(<ChartView {...base} period="1h" candles={coarse} onViewRangeChange={report} />)
+    fireEvent.pointerDown(screen.getByTestId('chart-root'))
+    // 视角右缘就贴在最后一根上（50..59，9 根 1h）
+    act(() => harness.fire!(50, 59, true))
+    expect(report).toHaveBeenCalledTimes(1) // 这一次是指针驱动的平移，该广播
+    report.mockClear()
+    harness.views.length = 0
+    rerender(<ChartView {...base} period="5m" candles={coarse} onViewRangeChange={report} />)
+    expect(harness.views[harness.views.length - 1]).toEqual({ from: 51, to: 59 })
+    harness.views.length = 0
+    rerender(<ChartView {...base} period="5m" candles={fine} onViewRangeChange={report} />)
+    const v = harness.views[harness.views.length - 1]
+    expect(v.to, '换到更细的周期后右缘必须仍贴在新序列的最后一根上').toBe(fine.length - 1)
+    // 跨度按时间算：9 根 1h = 108 根 5m
+    expect(v.from).toBe(fine.length - 108)
+    expect(report).not.toHaveBeenCalled()
+    harness.echo = false
   })
 })
 describe('多图十字光标落点与本格数据的一致性（issue #193）', () => {
