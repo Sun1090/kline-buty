@@ -292,7 +292,7 @@ export function ChartView({
   /** 装载中标记：setData 会同步补发一条仍按旧切片索引计算的可见区间，这期间的所有通知都不可信 */
   const applyingRef = useRef(false)
   /** 可见区间处理函数（初始化 effect 里定义）：装载收尾要主动补一次读数，故存下来供别的 effect 调用 */
-  const applyRangeRef = useRef<((from: number, to: number) => void) | null>(null)
+  const applyRangeRef = useRef<((from: number, to: number, trusted?: boolean) => void) | null>(null)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
@@ -445,7 +445,14 @@ export function ChartView({
     api.onRegionCapture((rect) => regionCaptureRef.current?.(rect))
 
     let lastLoadAt = 0
-    const onVisibleRange = (from: number, to: number) => {
+    /**
+     * 可见区间落地的唯一入口。
+     * @param trusted 事件是否来自图表本身。装载收尾的补读传 false：那一刻图表可能仍按**上一片切片**的
+     *  间距报区间（右缘能越出本切片），拿它去决定裁剪窗口迁移会造出「窗口比视角还窄」的自锁状态
+     *  ——实测停在最新处切周期后视角被甩到历史中段，「回到最新」常驻。补读只发布状态（A11 时间范围、
+     *  atLatest、多图广播），不动窗口、不触发分页。
+     */
+    const onVisibleRange = (from: number, to: number, trusted = true) => {
       const now = Date.now()
       // 整窗 setData 期间图表会同步补发一条按**旧切片**索引算出的可见区间：此刻 loadedRef 已是新切片，
       // 换算得到的是一条被 clamp 的窄假视角，写进视角状态后会被窗口迁移/重载回放，真的把视野压扁。
@@ -473,7 +480,7 @@ export function ChartView({
       }
       setAtLatest(!isAwayFromLatest(gTo, len))
       // 数据量超阈值 → 只在视角越出装载区间（或左缘空转一个余量）时迁移窗口；窗口内滚动/缩放零重载
-      {
+      if (trusted) {
         const cur = cullRef.current
         const loadedWindow = { start: base, end: base + loadedRef.current.len }
         const target = nextCullWindow(cur, loadedWindow, { from: gFrom, to: gTo }, len)
@@ -481,11 +488,11 @@ export function ChartView({
           fullLenAtCullRef.current = target ? len : 0
           setCull(target)
         }
-      }
-      if (!replayRef.current) {
-        if (gFrom <= 2 && hasMoreRef.current && now - lastLoadAt > LOAD_MORE_COOLDOWN_MS) {
-          lastLoadAt = now
-          onLoadMoreRef.current()
+        if (!replayRef.current) {
+          if (gFrom <= 2 && hasMoreRef.current && now - lastLoadAt > LOAD_MORE_COOLDOWN_MS) {
+            lastLoadAt = now
+            onLoadMoreRef.current()
+          }
         }
       }
       onViewRangeChangeRef.current?.({ from: gFrom, to: gTo })
@@ -956,11 +963,12 @@ export function ChartView({
     }
 
     // 整窗装载作废了 setData 期间那次陈旧通知，而随后的 fitContent/setVisibleRange 往往算出与图表
-    // 当前值相同的区间 → 变化事件不再触发 → 视角基准、A11 可视时间范围、atLatest 全停在装载前的 null。
-    // 未启用裁剪（数据量低于阈值，即日常量级）时之后再没有任何事件会补上，必须主动读一次当前区间。
+    // 当前值相同的区间 → 变化事件不再触发 → 视角基准、A11 可视时间范围、atLatest 全停在装载前的 null
+    // （未启用裁剪时尤其明显：之后再没有任何事件会补上）。这里只补**状态发布**：那一刻图表报的区间
+    // 可能仍按上一片切片的间距算，拿它决定裁剪窗口会把视角甩出最新（见 onVisibleRange 的 trusted）
     if (wholeWindowLoad) {
       const r = api.visibleRange()
-      if (r) applyRangeRef.current?.(r.from, r.to)
+      if (r) applyRangeRef.current?.(r.from, r.to, false)
     }
 
     api.setChartType(chartType)
