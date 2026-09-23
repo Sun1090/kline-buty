@@ -320,6 +320,10 @@ export function ChartView({
   onCrosshairChangeRef.current = onCrosshairChange
   /** G8 防回环：记录本图最近一次上报的十字光标时间，外部同步回来相同时跳过写入 */
   const lastReportedCrosshairRef = useRef<number | null>(null)
+  /** 本图当前是否被外部指令亮着。接收格的 OHLC 浮层只能由「外部指令还有效」来判定存在与否：
+   *  `setCrosshairPosition()` 的回流是异步到的，可能在「移出」的清除**之后**才落地，
+   *  那时按值判等认不出它是过期写入，浮层就会永久停在旧 K 线上（issue #185） */
+  const externalCrosshairActiveRef = useRef(false)
   const onDrawingCommitRef = useRef(onDrawingCommit)
   onDrawingCommitRef.current = onDrawingCommit
   const onDrawingSelectRef = useRef(onDrawingSelect)
@@ -388,6 +392,10 @@ export function ChartView({
   // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
   useEffect(() => {
     if (externalCrosshairTime === undefined || !apiRef.current) return
+    // 「亮着 / 灭了」要**先于**防回环记下来：清除那一次即使与上次上报值相同（例如本图自己
+    // 也因为指针移出而报了 null），也必须作废外部写入并收掉 OHLC 浮层
+    externalCrosshairActiveRef.current = externalCrosshairTime !== null
+    if (externalCrosshairTime === null) setTooltip(null)
     if (externalCrosshairTime === lastReportedCrosshairRef.current) return
     lastReportedCrosshairRef.current = externalCrosshairTime
     apiRef.current.setCrosshairTime(externalCrosshairTime)
@@ -425,6 +433,9 @@ export function ChartView({
     apiRef.current = api
 
     const unsubCross = api.subscribeCrosshairMove((time, x, y, fromExternalWrite) => {
+      // 迟到的自家回流：外部指令已经撤销（源格移出），这次事件既不该上报，
+      // 也不该把 OHLC 浮层再立起来 —— 浮层于是永久停在旧 K 线上（issue #185 的实测症状）
+      if (fromExternalWrite && time !== null && !externalCrosshairActiveRef.current) return
       // G8 十字光标同步：把时间上报给父级（pair/quad 联动），null 表示移出；
       // 记录本次上报值供防回环（外部同步回来相同时跳过写入）
       lastReportedCrosshairRef.current = time

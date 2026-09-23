@@ -166,17 +166,28 @@ async function leaveCharts(page: Page) {
   await page.mouse.move(spot.x + 2, spot.y)
 }
 
-/** 指针移出图表 → 四格的十字光标都不该残留 */
+/**
+ * 全页 OHLC 浮层（`crosshair-time`）份数。接收格的浮层只有这一个可观测面：
+ * 它没有指针，浮层是外部指令的回流立起来的 —— 于是「移出后没清掉」和「压根没立过」
+ * 在十字光标属性上长得一样，必须两头都断言。
+ */
+function tipCount(page: Page): Promise<number> {
+  return page.evaluate(() => document.querySelectorAll('[data-testid="crosshair-time"]').length)
+}
+
+/** 指针移出图表 → 四格的十字光标与 OHLC 浮层都不该残留 */
 async function expectAllCleared(page: Page) {
   await expect
     .poll(
       async () => {
         const now = await cellCrosshair(page)
-        return CELLS.filter((s) => now[s]?.time !== null).join(',')
+        const stuck = CELLS.filter((s) => now[s]?.time !== null).join(',')
+        const tips = await tipCount(page)
+        return stuck === '' && tips === 0 ? 'cleared' : `残留十字光标 ${stuck || '-'}，残留浮层 ${tips} 个`
       },
-      { timeout: 8_000, message: '指针移出后不应残留十字光标' },
+      { timeout: 8_000, message: '指针移出后不应残留十字光标与 OHLC 浮层' },
     )
-    .toBe('')
+    .toBe('cleared')
 }
 
 test.describe('A4 多周期十字光标时间同步（quad）', () => {
@@ -193,6 +204,9 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
 
     // ① +  源格上报、其余三格按时间跟上
     const atCenter = await syncState(page, center.cx, center.cy)
+    // 接收格没有指针，它的 OHLC 浮层只能由外部指令的回流立起来 —— 先确认四份都立了，
+    // 否则「移出后浮层为 0」可以由「从来没立过」白拿
+    expect(await tipCount(page), 'hover 时四格都该各有一份 OHLC 浮层').toBe(CELLS.length)
     // ③ 左移本格宽度的四分之一：接收格必须跟着搬，不是一次巧合对上。
     //    「换一根」本身也要断言 —— 指针若原地不动，「跟上源格」在零位移下白拿（漂移除外，
     //    而合成行情每 1.5s 追加一根只会让同一像素的时刻**变晚**，方向断言把它排除了）。
@@ -301,6 +315,7 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
     }
 
     const atCenter = await sweepAligned(center.cy, center.cx - 20, center.cx + 20)
+    expect(await tipCount(page), '混周期下四格都该各有一份 OHLC 浮层').toBe(CELLS.length)
     for (const sym of CELLS.slice(1)) {
       const own = PERIOD_SECONDS[MIXED[sym]]
       expect(atCenter[sym]?.time, `${sym} 应有十字光标`).not.toBeNull()
