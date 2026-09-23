@@ -382,6 +382,11 @@ export class LightweightChartAdapter implements ChartApi {
   private priceLine: IPriceLine | null = null
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
+  /**
+   * 当前十字光标时刻（秒）。同时写进容器的 `data-crosshair-time`：
+   * 多图同步的接收侧只有画布绘制（`setCrosshairPosition` 不触发 subscribeCrosshairMove），
+   * 规格否则只能比像素指纹，而 perf 合成数据每 1.5s 就重画一次——指纹「变了」是空的断言。
+   */
   private crosshairTime: number | null = null
   /** C3 吸附对齐模式（默认 ohlc，兼容旧 behavior） */
   private snapMode: SnapMode = 'ohlc'
@@ -3445,12 +3450,12 @@ export class LightweightChartAdapter implements ChartApi {
       : this.lastCandles.length - 1
     const nextIdx = Math.max(0, Math.min(this.lastCandles.length - 1, (idx < 0 ? this.lastCandles.length - 1 : idx) + dir))
     const candle = this.lastCandles[nextIdx]
-    this.crosshairTime = candle.time
+    this.markCrosshairTime(candle.time)
     this.chart.setCrosshairPosition(candle.close, candle.time as UTCTimestamp, this.mainSeries)
   }
 
   clearCrosshair() {
-    this.crosshairTime = null
+    this.markCrosshairTime(null)
     this.chart.clearCrosshairPosition()
   }
 
@@ -3473,8 +3478,15 @@ export class LightweightChartAdapter implements ChartApi {
     let idx = lo
     if (idx > 0 && Math.abs(this.lastCandles[idx - 1].time - time) < Math.abs(this.lastCandles[idx].time - time)) idx--
     const candle = this.lastCandles[idx]
-    this.crosshairTime = candle.time
+    this.markCrosshairTime(candle.time)
     this.chart.setCrosshairPosition(candle.close, candle.time as UTCTimestamp, this.mainSeries)
+  }
+
+  /** 十字光标时刻的唯一写入点：内部状态 + 容器上的 `data-crosshair-time`（规格可断言的观测面） */
+  private markCrosshairTime(time: number | null) {
+    this.crosshairTime = time
+    if (time === null) delete this.container.dataset.crosshairTime
+    else this.container.dataset.crosshairTime = String(time)
   }
 
   setCandles(candles: Candle[]) {
@@ -3752,7 +3764,7 @@ export class LightweightChartAdapter implements ChartApi {
   ): () => void {
     const handler = (param: Parameters<Parameters<IChartApi['subscribeCrosshairMove']>[0]>[0]) => {
       const time = param.time === undefined ? null : Number(param.time)
-      this.crosshairTime = time
+      this.markCrosshairTime(time)
       cb(
         time,
         param.point ? param.point.x : null,
