@@ -5,6 +5,55 @@
 
 ## 当前阶段
 
+**里程碑 v0.5.30 发布完成（2026-09-23）**
+- 版本号：**0.5.30**（package.json / package-lock 根两处 / index.html meta `app-version`）
+- 分支：`release/v0.5.30`；发布 PR：**#170**（rebase 合并 → main **33209a9**，合并后即删远端分支）
+- tag：**v0.5.30** @ 33209a9（Release Tag workflow run 35820799418 success；幂等，不覆盖旧 tag）
+- 本版收录（批次主题：**三个「其实从来没在工作」的东西被抓出来**，每处补一条能在 CI 里红的检查）：
+  - **#164 → main 1436eda** 现货品种不再显示另一市场的费率/标记价，也不再灌必然 400 的请求
+  - **#165 → main 9ccb2b8** 「导出设置」从必抛 SyntaxError 的死按钮改成原始字符串逐字往返（快照 `version: 2`）
+  - **#166 → main 1e4ab38** QuickOrder 市价分支第一次走上 E2E
+  - **#167 → main e4404ad** 情绪面板关着就不轮询；四端点**同时** 400 才 latch
+  - **#168 → main 0e77aa0** CI 的 E2E 清单收进 `e2e/ci-specs.json`，漏登记由 `scripts/__tests__/ci-specs.test.ts` 变红
+  - **#169 → main 33ed83b** P4 更新横幅「点刷新 → 换文档 → 不再出现」闭环进 E2E
+- 定档门禁（最终工作区 16ef24e，即 release 提交本身）：
+  - `npm run precheck` → **All checks passed in 101.6s**
+  - `npm test` → **1983 passed / 174 files**（v0.5.29 定档时 1960 条）
+  - CI E2E 等价性：`node scripts/run-ci-e2e.mjs --list` → **396 tests in 17 files**（本批 +2 条用例 × 3 浏览器；清单搬家本身没改变跑什么）
+  - 本地全量 chromium E2E（同一条 CI 清单，打定档构建）→ **131 passed / 1 flaky / 6.1m**。
+    唯一 flaky 是 `period-anchor` A2 的 `back-to-latest` 计数：停在最新处切周期后按钮应缺席，
+    实测 45s 内 93 次采样都拿到 1（重试即过）——**不是瞬时竞态而是稳定状态错**，值得单独查；
+    与本批改动无关（不涉及时钟/周期/滚动），记为待收敛项而不是已修
+  - 本地实时数据规格（CI 不跑的 13 条里的代表：`smoke` + `docs` + `market-tape`）→ **27 passed / 1.1m**：
+    本批改了行情 hook 与信息条数据来源，只有这几条会碰真实币安
+- 部署与线上抽查（GitHub Pages run 35820799404 success；真浏览器 1280×800 打线上）：
+  - `meta app-version=0.5.30`、bundle 已换；最新价 86934.86、`data-candles=800`、徽标「合约」
+  - **线上点「导出设置」真的出文件**：`kline-buty-settings.json`，`version=2`、55 个键、
+    `lastVersion` 原样为 `"0.5.30"`（不带 JSON 引号）而 `symbol` 保留引号 —— #165 的验收从「本地构建」升到「生产域名」
+  - 情绪面板关着等 11s：`/futures/data/*` **0 次请求**（#167；改前是每分钟 4 次）
+  - 现货专属品种 `SHIBUSDT`：徽标「现货」、无资金费率行、最新价 `0.00000618` 全精度；
+    premiumIndex/openInterest **各只 1 次 400 后就不再打**（正是 #164 设计的「探测一次然后 latch」），`pageerror` 0
+  - 文档站 `/knowledge/` HTTP 200，标题 `Trading Knowledge Base`
+  - 一条**已知噪音**记录在案：首页有一次 `https://<site>/api/v3/ping` 404 —— 这是 `detectMode()` 探测
+    「同源反代 vs 直连」的探针，Pages 上必然 404 并回退直连（功能正常）。可优化为「构建期已知静态托管就跳过探测」，
+    但必须保留 Vercel 反代场景的判定，属独立小改动
+- 风险 / 回滚：
+  - **唯一持久化格式变化**是设置快照文件编码 v1 → v2。存量用户不可能有 v1 导出文件（导出必崩），无需迁移；
+    v2 导入器仍读 v1 文件。localStorage 的键与值格式一字未动
+  - 行为面：`useSentiment(symbol, enabled=true)` 新增可选参数；现货专属品种信息条改为「没有费率 = 现货」，
+    这是纠错不是降级
+  - 回滚 = `git revert` release 提交 33209a9；若把 CI 清单退回 `ci.yml` 内联，账本第 5 条会红（有意：不许出现第二份清单）。
+    远端 tag 误打用 `gh api` 删除，不移动已有 tag
+- 下一里程碑：**v0.5.x 继续**。本轮明确排队项：
+  1. PR **#171**（`docs.spec.ts` 提进 CI 清单）——用那次 CI 运行本身当提速/稳定性证据
+  2. PR **#172**（README 三个门面数字校正：47 工具 / 29 指标 / 1983 单测 / 221 E2E 用例）
+  3. `period-anchor` A2 的 `back-to-latest` 稳定态误判（本批全量里唯一一条 flake）
+  4. 49 个 `data-testid` 零测试引用的逐条判定：`screenshot-share` 已抽查正常（回退下载），
+     `market-refresh` / `mobile-text-*` 因探针定位写错**未判定**，`trade-history-*`、`storage-banner` 待查
+  5. 静态托管下跳过 `/api/v3/ping` 探测（保留反代判定）
+  6. 移动端要不要有设置快照入口（`MobileHeader` 收了 handler 但不渲染，注释写明「桌面端使用」）——需要产品决策
+- 更新日：2026-09-23
+
 **里程碑 v0.5.29 发布完成（2026-09-23）**
 - 版本号：**0.5.29**（package.json / package-lock 根两处 / index.html meta `app-version`）
 - 分支：`release/v0.5.29`；发布 PR：**#162**（rebase 合并 → main **0e4a318**，合并后即删远端分支）
