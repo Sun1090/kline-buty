@@ -69,7 +69,8 @@ async function readVisibleSpan(page: Page): Promise<number | null> {
   })
 }
 
-/** 主图拖拽向右 → 视图进入历史（复用 smoke 平移模式，靠持久视图远离最新） */async function panIntoHistory(page: Page) {
+/** 主图拖拽向右 → 视图进入历史（复用 smoke 平移模式，靠持久视图远离最新） */
+async function panIntoHistory(page: Page) {
   const canvas = page.locator('canvas').first()
   const box = await canvas.boundingBox()
   expect(box).not.toBeNull()
@@ -108,9 +109,15 @@ test.describe('A2 周期切换右侧锚定', () => {
     await expect(visibleRange).toBeVisible()
 
     // 停在最新处切 5m → 仍锚定最新（不越界），范围显示随之更新
-    // 切之前记下视野宽度（合成数据约千根量级），用来验证「切周期不会把视野压扁」
-    const beforeSpan = await readVisibleSpan(page)
-    expect(beforeSpan ?? 0).toBeGreaterThan(50)
+    // 切之前记下视野宽度（合成数据约千根量级），用来验证「切周期不会把视野压扁」。
+    // 这里也 poll：初始装载要等一轮重排，慢机上首帧可能还是窄视野——单次读取会把「等装载完」
+    // 误报成「视野塌缩」，而基线读空还会让下面那条断言失去比较前提
+    await expect
+      .poll(async () => (await readVisibleSpan(page)) ?? 0, {
+        timeout: 20_000,
+        message: '切周期前应已装载千根量级视野',
+      })
+      .toBeGreaterThan(50)
     // 合成数据大窗口切周期锚定在慢机/高负载下可达数十秒，放宽到 45s 防负载抖动误报（v0.5.13 二次硬化）
     await page.getByTestId('period-5m').click()
     await waitPerfReady(page, '5m')
