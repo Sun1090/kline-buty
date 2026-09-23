@@ -29,6 +29,8 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE_PATH: /kline-buty/
+          # 静态托管没有同源代理，构建期直接声明，省掉运行时那次必然落空的 /api/v3/ping 探测
+          VITE_ENDPOINT_MODE: direct
           DOCS_BASE_PATH: /kline-buty/knowledge/
           DOCS_SITE_URL: https://sun1090.github.io
       # SPA fallback：GitHub Pages 用 404.html 兜底
