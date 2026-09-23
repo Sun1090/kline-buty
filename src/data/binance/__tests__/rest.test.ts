@@ -426,3 +426,30 @@ describe('fetchRecentTrades', () => {
     expect(urls[1]).toContain('symbol=BTC%2FUSDT')
   })
 })
+
+describe('400（该品种不在该市场）不换域名兜底', () => {
+  it('fetchFundingRate：fapi 回 400 → 直接抛出，不打 COIN-M 的 dapi', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } }) // ping 回静态页 → direct 模式
+      .mockResolvedValueOnce({ ok: false, status: 400 })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(fetchFundingRate('SHIBUSDT')).rejects.toThrow('http 400')
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls.some((u) => u.includes('dapi.binance.com'))).toBe(false)
+    // ping + 一次 fapi，仅此两次：换域名会把 COIN-M 工具的费率当成现货品种的展示出来
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('fetchOpenInterest：fapi 网络阻断仍回退 dapi（400 才不换域名）', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, headers: { get: () => 'text/html' } })
+      .mockRejectedValueOnce(new Error('fapi blocked'))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ openInterest: '42' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await fetchOpenInterest('BTCUSDT')).toBe(42)
+    const urls = vi.mocked(fetch).mock.calls.map((c) => c[0] as string)
+    expect(urls.some((u) => u.includes('dapi.binance.com/dapi/v1/openInterest'))).toBe(true)
+  })
+})
