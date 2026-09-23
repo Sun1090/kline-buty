@@ -583,6 +583,8 @@ export class LightweightChartAdapter implements ChartApi {
     container.addEventListener('touchmove', this.onTouchMove, { passive: true })
     container.addEventListener('touchend', this.onTouchEnd, { passive: true })
     container.addEventListener('touchcancel', this.onTouchEnd, { passive: true })
+    // 起始态就发布：否则「复位回自适应」这半在复位之前根本没有可对比的观测值
+    this.publishPriceAutoscale()
   }
 
   setDrawings(drawings: Drawing[]) {
@@ -3085,6 +3087,7 @@ export class LightweightChartAdapter implements ChartApi {
     // 切到手动区间，避免被 autoScale 覆盖
     scale.setAutoScale(false)
     scale.setVisibleRange({ from: next.from, to: next.to })
+    this.publishPriceAutoscale()
     this.pinch = { dist, range: { from: next.from, to: next.to } }
     // 缩放步进触觉反馈（Android，跨 1.15/0.85 步进才震）
     if (navigator.vibrate && this.pinchStepVibrated !== factor) {
@@ -3172,6 +3175,7 @@ export class LightweightChartAdapter implements ChartApi {
       this.lastTapAt = 0
       this.chart.priceScale('right').setAutoScale(true)
       this.chart.timeScale().resetTimeScale()
+      this.publishPriceAutoscale()
       // 复位触觉反馈（Android）
       vibrateIfSupported(navigator.vibrate?.bind(navigator), TOUCH_RESET_VIBRATE_MS)
     } else {
@@ -3752,6 +3756,17 @@ export class LightweightChartAdapter implements ChartApi {
     }
     // H2 阈值区间：存副图背景带数据（draw() 时在 overlay 上按副图价格坐标渲染）
     this.subZones = data.zones ?? []
+  }
+
+  /**
+   * 把主图价格轴的「是否自适应」发布到 DOM（`data-price-autoscale="on|off"`）。
+   * 读的是图表自己的状态（`priceScale('right').options().autoScale`），不是我们刚传进去的那个值 ——
+   * 钩子要说的是「轴现在到底听谁的」。双击复位有两半：时间轴那半有 A11 可视范围条可看，
+   * 价格轴这半此前没有任何可观测面，而捏合缩放留下的手动区间恰恰只有它能清掉（issue #56）。
+   * 副图那条走的是 `priceScale('sub', 1)`，与这根轴无关，故不发布。
+   */
+  private publishPriceAutoscale() {
+    this.container.dataset.priceAutoscale = this.chart.priceScale('right').options().autoScale ? 'on' : 'off'
   }
 
   /** H12 副图 Y 轴自动/固定：range 锁定可见范围，null 恢复自动缩放 */
