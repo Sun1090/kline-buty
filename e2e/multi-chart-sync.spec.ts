@@ -168,7 +168,15 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
           const e = edgeMinutes(now[sym])
           return !e || Math.abs(e[0] - a[0]) > 5 || Math.abs(e[1] - a[1]) > 5
         }).length
-        return moved === CELLS.length - 1 && off === 0 ? 'synced' : `动了 ${moved}/3，跑偏 ${off}/4`
+        // 判词带上「每格相对锚点的两缘位移 + 自己的跨度」，红的时候直接分得出两种病：
+        //   Δ0..0 跨53 三格 + 一格 Δ6..4 跨51 ⇒ 只有某个接收格落地偏窄 = 回声往返（issue #194 实测形态）
+        //   四缘齐刷刷同向偏 ⇒ 锚点自己被人挪走 = 广播侧的问题，该去查发起格
+        // 只写「跑偏 N/4」时这两种是同一句话，而它们该修的地方完全不同。
+        const detail = CELLS.map((sym) => {
+          const e = edgeMinutes(now[sym])
+          return e ? `${sym.slice(0, 3)} Δ${e[0] - a[0]}..${e[1] - a[1]} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
+        }).join(' | ')
+        return moved === CELLS.length - 1 && off === 0 ? 'synced' : `动了 ${moved}/3，跑偏 ${off}/4 ⇒ ${detail}`
       }, { timeout: 20_000, message: '四格可视时间范围应被广播到同一段' })
       .toBe('synced')
 
