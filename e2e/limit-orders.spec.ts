@@ -382,3 +382,70 @@ test.describe('v0.5 模拟盘限价挂单', () => {
   })
 
 })
+
+/**
+ * QuickOrder 的市价分支：全部交易类规格此前都从图表右键的「挂限价单」进入，
+ * 市价这条主路径（面板内切类型 → 即时成交 → 计 Taker 费 → 落到持仓/流水 → 全部平仓）
+ * 一条断言都没有。这里补齐，并按成交回报的实际口径断言，而不是只看按钮可点。
+ */
+test.describe('QuickOrder 市价单', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear())
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
+  })
+
+  test('市价买入 → 即时成交进流水与持仓 → 全部平仓清空', async ({ page }) => {
+    const price = await lastPrice(page)
+    // 右键入口打开面板（默认限价），再切市价：市价不需要填价
+    const chart = page.locator('.chart-container').first()
+    const box = await chart.boundingBox()
+    expect(box).not.toBeNull()
+    await chart!.click({ button: 'right', position: { x: box!.width * 0.5, y: box!.height * 0.5 } })
+    await page.getByTestId('ctx-limit-buy').click()
+    const order = page.getByTestId('quick-order')
+    await expect(order).toBeVisible()
+    await order.getByTestId('qo-type-market').click()
+    await expect(order.getByTestId('qo-type-market')).toHaveAttribute('aria-pressed', 'true')
+    await order.getByTestId('qo-qty').fill('0.01')
+    await expect(order.getByTestId('qo-confirm')).toBeEnabled()
+    await order.getByTestId('qo-confirm').click()
+    await expect(order).toHaveCount(0)
+
+    const trades = (await stored(page, 'kline-buty:paperTrades')) as {
+      side: string
+      qty: number
+      price: number
+      fee: number
+    }[]
+    expect(trades).toHaveLength(1)
+    expect(trades[0].side).toBe('buy')
+    expect(trades[0].qty).toBeCloseTo(0.01)
+    // 市价单按当时市场价即时成交：成交价必须落在合成行情的量级上，而不是 0 或上一笔限价
+    expect(trades[0].price).toBeGreaterThan(price * 0.5)
+    expect(trades[0].price).toBeLessThan(price * 2)
+    expect(trades[0].fee).toBeGreaterThan(0)
+
+    const positions = (await stored(page, 'kline-buty:positionsBySymbol')) as Record<
+      string,
+      { long: { entry: number; quantity: number; direction: string } | null }
+    >
+    expect(positions.BTCUSDT.long!.quantity).toBeCloseTo(0.01)
+    expect(positions.BTCUSDT.long!.direction).toBe('long')
+    expect(positions.BTCUSDT.long!.entry).toBeCloseTo(trades[0].price)
+
+    // UI 侧同一笔持仓可见并可一键清空（停靠面板默认就是开着的，菜单项是开关，重复点会关掉）
+    if ((await page.getByTestId('position-account-summary').count()) === 0) {
+      await openMore(page)
+      await page.getByTestId('desktop-more-panel').getByText('仓位', { exact: true }).click()
+    }
+    await expect(page.getByRole('region', { name: '模拟仓位' })).toBeVisible()
+    await expect(page.getByTestId('position-row-long')).toBeVisible()
+    await page.getByTestId('position-close-all').click()
+    await expect(page.getByTestId('position-row-long')).toHaveCount(0)
+    await expect.poll(async () => {
+      const p = (await stored(page, 'kline-buty:positionsBySymbol')) as Record<string, { long: unknown } | null>
+      return p.BTCUSDT?.long ?? null
+    }).toBeNull()
+  })
+})
