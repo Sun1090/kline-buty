@@ -211,4 +211,26 @@ describe('StatsBar F15 显示项配置', () => {
     render(<StatsBar stats={s} />)
     expect(screen.queryByTestId('funding-countdown')).toBeNull()
   })
+
+  it('v0.5.x 周期收盘倒计时：缺 lastCandleTime 或关掉 countdown 项都不渲染，出现时按 mm:ss 递减', () => {
+    const s = { ...EMPTY, price: 100 }
+    // 1m 周期，最新 K 线开在 30 秒前 → 剩余约 0:30
+    const lastCandleTime = Math.floor(Date.now() / 1000) - 30
+    render(<StatsBar stats={s} period="1m" lastCandleTime={lastCandleTime} />)
+    const text = (screen.getByTestId('period-countdown').textContent ?? '')
+    expect(text).toMatch(/^\d+:\d{2}$/)
+    const [mm, ss] = text.split(':').map(Number)
+    const remaining = mm * 60 + ss
+    expect(remaining).toBeGreaterThanOrEqual(25)
+    expect(remaining).toBeLessThanOrEqual(30)
+    cleanup()
+
+    // 只有周期没有 K 线时间：宁可整条不出现，也不能显示 NaN:NaN
+    render(<StatsBar stats={s} period="1m" />)
+    expect(screen.queryByTestId('period-countdown')).toBeNull()
+    cleanup()
+
+    render(<StatsBar stats={s} period="1m" lastCandleTime={lastCandleTime} config={{ countdown: false }} />)
+    expect(screen.queryByTestId('period-countdown')).toBeNull()
+  })
 })

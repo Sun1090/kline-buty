@@ -411,6 +411,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
             text?: string
             fontSize?: number
             color?: string
+            textAlign?: string
           }[]
           return arr[0] ?? null
         } catch {
@@ -464,6 +465,39 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(updated!.color).toBe('#ef4444')
     // 红色文字 + 蓝色选中边框仍可见
     await expect.poll(() => overlayBluePx(), { timeout: 5000 }).toBeGreaterThan(0)
+    expect(errors).toHaveLength(0)
+
+    // 字号 − 与数值回显、对齐三态互斥；确认后都要落库，重开编辑器要还原回按下态
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '改字' }).tap()
+    await expect(page.getByTestId('mobile-text-font-value')).toHaveText('16')
+    await page.getByTestId('mobile-text-font-dec').tap()
+    await expect(page.getByTestId('mobile-text-font-value')).toHaveText('14')
+    await expect(page.getByTestId('mobile-text-align-center')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('mobile-text-align-right').tap()
+    await expect(page.getByTestId('mobile-text-align-right')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByTestId('mobile-text-align-center')).toHaveAttribute('aria-pressed', 'false')
+    await page.getByTestId('mobile-text-confirm').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await page.waitForTimeout(400)
+    const aligned = await readFirst()
+    expect(aligned).not.toBeNull()
+    expect(aligned!.fontSize).toBe(14)
+    expect(aligned!.textAlign).toBe('right')
+
+    // 取消：字号/文字都改了再点「取消」，落库的那一份必须原样不动
+    await page.getByTestId('mobile-menu-drawing').tap()
+    await page.getByRole('button', { name: '改字' }).tap()
+    await expect(page.getByTestId('mobile-text-align-right')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('mobile-text-input').fill('不该留下')
+    await page.getByTestId('mobile-text-font-inc').tap()
+    await page.getByTestId('mobile-text-cancel').tap()
+    await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
+    await page.waitForTimeout(400)
+    const kept = await readFirst()
+    expect(kept).not.toBeNull()
+    expect(kept!.text).toBe('触屏标注')
+    expect(kept!.fontSize).toBe(14)
     expect(errors).toHaveLength(0)
 
     // 删除
