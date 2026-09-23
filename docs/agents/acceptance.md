@@ -22,8 +22,11 @@ npm run audit:i18n # 文案变更
 只判像素会被「首根 WS tick 先到、历史 K 线还在路上」骗过——那时图上只有一两根柱子，画线手势换不出锚点时间被正当
 丢弃，用例表现为「删除按钮等不到」的偶发红。不要另写像素判据，也不要把根数阈值调到 0。
 
-CI 的 E2E 清单只收 `?perf` 合成数据规格（运行器到币安的出口不可控）；依赖实时行情的 `smoke*`、`chart-ready`
-等留本地执行，改动它们时 CI 不会给信号，必须本地跑。
+CI 跑哪些规格由 **`e2e/ci-specs.json`** 决定（唯一清单，`npm run e2e:ci` 读取；`ci.yml` 不再抄写文件名）。
+清单只收 `?perf` 合成数据规格（运行器到币安的出口不可控）；依赖实时行情的 `smoke*`、`feature-gaps*`、
+`market-tape`、`chart-ready` 等登记在 `localOnly` 里并逐条写明原因——改它们时 CI 不会给信号，必须本地跑。
+**新增 `e2e/*.spec.ts` 必须当场登记**到 `ci` 或 `localOnly`，否则 `scripts/__tests__/ci-specs.test.ts`
+在单测阶段就红（过去规格漏登记后会静默不跑，limit-orders / tpsl-guard 一族就这样漏了好几个版本）。
 
 ## 手动浏览验收
 
