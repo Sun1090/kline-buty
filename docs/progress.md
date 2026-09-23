@@ -28,6 +28,9 @@
   没有任何路径把接收格的 `tooltip` 置回 null；补 `setTooltip(null)` 只从 3 格降到 2 格，还有第二条写入路径待查）
 - 门禁现状（main@5a68b55）：`npm test` → **2022 passed / 175 files**；`node scripts/run-ci-e2e.mjs --list` → **411 tests in 19 files**；
   #187 CI 三浏览器 E2E 全绿。Vercel 那条仍是账号级构建限流，按既定口径不作判定依据
+- 合并 #187 后的线上抽查（Pages 部署成功后真浏览器打 https://sun1090.github.io/kline-buty/）：
+  `meta app-version=0.5.31`、`data-candles=800`、页面内 `[data-testid]` 元素 **245** 个、A11 范围条 `09/23 13:29 — 09/23 15:22`、
+  `pageerror` **0** —— 证明那 32 个钩子确实只服务于「标了却没用例」，删掉不影响运行时
 - 版本判断：本批含两条用户可见的图表行为修复，**待 #189 与 #188 合并后定 v0.5.32**（不逐条发版）；
   两 PR 都改 `ChartView.tsx` 相邻区域，后合并者需改基重做（禁 force-push，走「新分支 + 关旧 PR」）
 - 本地已知噪声：`period-anchor` A2 在本机负载下约 1/3 红，A/B 过 main 构建同样 2/3 红 ⇒ 与本批分支无关的既有 flake
