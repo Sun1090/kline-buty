@@ -324,6 +324,14 @@ export function ChartView({
    *  `setCrosshairPosition()` 的回流是异步到的，可能在「移出」的清除**之后**才落地，
    *  那时按值判等认不出它是过期写入，浮层就会永久停在旧 K 线上（issue #185） */
   const externalCrosshairActiveRef = useRef(false)
+  /**
+   * 最后一次**由外部指令**写下、且还没被本格指针接管的那根十字光标时刻。
+   * 落点是「外部时刻 + 本格当前那份数据」的函数，而广播链路上有两处按值去重
+   * （`useChartSync` 与本图的 `lastReportedCrosshairRef`），源格再报同一个时刻也不会重发 ——
+   * 于是整窗换了数据（切周期/换品种）之后没有任何人来重算，光标就永久停在旧序列的落点上
+   * （issue #193：实测钉住 20s 不自愈，只有指针再挪一根才对）。换完数据要就地按它重落一次。
+   */
+  const externalPendingCrosshairRef = useRef<number | null>(null)
   const onDrawingCommitRef = useRef(onDrawingCommit)
   onDrawingCommitRef.current = onDrawingCommit
   const onDrawingSelectRef = useRef(onDrawingSelect)
@@ -395,6 +403,7 @@ export function ChartView({
     // 「亮着 / 灭了」要**先于**防回环记下来：清除那一次即使与上次上报值相同（例如本图自己
     // 也因为指针移出而报了 null），也必须作废外部写入并收掉 OHLC 浮层
     externalCrosshairActiveRef.current = externalCrosshairTime !== null
+    externalPendingCrosshairRef.current = externalCrosshairTime ?? null
     if (externalCrosshairTime === null) setTooltip(null)
     if (externalCrosshairTime === lastReportedCrosshairRef.current) return
     lastReportedCrosshairRef.current = externalCrosshairTime
@@ -439,6 +448,9 @@ export function ChartView({
       // G8 十字光标同步：把时间上报给父级（pair/quad 联动），null 表示移出；
       // 记录本次上报值供防回环（外部同步回来相同时跳过写入）
       lastReportedCrosshairRef.current = time
+      // 指针接管本格：这一格的落点此后由图表按像素自己算，换数据时会跟着重发事件，
+      // 不需要（也不该）再按上一次的外部指令补落——那一格的外部值可能早就陈旧了
+      if (time !== null && !fromExternalWrite) externalPendingCrosshairRef.current = null
       // 本图自己收到外部指令后回流的那一次不上报：跨周期时它带来的是吸附落点，
       // 与请求值不等，一旦被当成指针驱动再广播，四格会互相覆盖掉真正的指针位置
       // （实测：混周期下指针移动不再改任何一格的时刻）。time 为 null 的「移出」永远上报。
@@ -901,11 +913,17 @@ export function ChartView({
       enteringReplay ||
       exitingReplay ||
       (shouldCull(fullLen) && (!cur || !view || !windowCovers(cur, view)))
+    // 「同一片前缀、只是尾沿长了一根」必须比**两根**：只比末根时，换周期会伪装成增量 ——
+    // 合成/对齐过的序列里，15m 与 1h（或 1m 与 5m）的末根常落在同一个对齐边界上，
+    // 于是整窗装载被跳过，图表里装着的还是旧周期的那一片，`updateCandle` 只把最后一根盖上去。
+    // 实测（quad 换周期）：那一格随后按旧序列吸附的十字光标永久留在观测面上（issue #193 的真身），
+    // 而界面上只是「换了周期图没怎么变」，看不出来。
     const prefixSame =
       !!prev &&
-      prev.length > 0 &&
+      prev.length > 1 &&
       windowData.length >= prev.length &&
-      windowData[prev.length - 1]?.time === prev[prev.length - 1].time
+      windowData[prev.length - 1]?.time === prev[prev.length - 1].time &&
+      windowData[prev.length - 2]?.time === prev[prev.length - 2].time
 
     // 整窗装载：先把「图表里到底装着什么」记牢，再让 setData 内部的补发通知一律作废
     const loadSlice = (data: Candle[], base: number) => {
@@ -994,6 +1012,10 @@ export function ChartView({
     if (wholeWindowLoad) {
       const r = api.visibleRange()
       if (r) applyRangeRef.current?.(r.from, r.to, false)
+      // 数据整窗换过了：外部指令那次落笔是按**旧序列**吸附的，新序列里未必有那根 K 线，
+      // 而广播链路的按值去重决定了没有任何人会再报一遍同一个时刻 —— 就地重落一次
+      // （issue #193）。指针驱动的格子不走这里：它换数据时图表自己会重发十字光标事件。
+      if (externalPendingCrosshairRef.current !== null) api.setCrosshairTime(externalPendingCrosshairRef.current)
     }
 
     api.setChartType(chartType)

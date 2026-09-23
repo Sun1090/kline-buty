@@ -24,6 +24,13 @@ const harness = vi.hoisted(() => ({
   fire: null as ((from: number, to: number, trusted?: boolean) => void) | null,
   /** 本图被要求写入的可视区间（ setVisibleRange 的调用记录 ） */
   views: [] as { from: number; to: number }[],
+  /** 本图被要求落的十字光标时刻（setCrosshairTime 的调用记录） */
+  cross: [] as (number | null)[],
+  /** 十字光标回调（真 adapter 由图表驱动，测试用它模拟一次指针上报） */
+  crossCb: null as ((time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void) | null,
+  /** 整窗装载（setCandles）与逐根增量（updateCandle）的调用记录 */
+  sets: [] as { len: number; first: number | null }[],
+  updates: [] as number[],
 }))
 
 vi.mock('../../chart/adapter', async (importOriginal) => {
@@ -31,8 +38,12 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
   return {
     ...actual,
     LightweightChartAdapter: class {
-      setCandles = vi.fn()
-      updateCandle = vi.fn()
+      setCandles = vi.fn((d: Candle[]) => {
+        harness.sets.push({ len: d.length, first: d[0]?.time ?? null })
+      })
+      updateCandle = vi.fn((c: Candle) => {
+        harness.updates.push(c.time)
+      })
       setChartType = vi.fn()
       setMainIndicator = vi.fn()
       setSubIndicator = vi.fn()
@@ -68,9 +79,14 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
       startRegionSelect = vi.fn()
       cancelRegionSelect = vi.fn()
       onRegionCapture = vi.fn()
-      subscribeCrosshairMove() {
+      subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void) {
+        harness.crossCb = cb
         return () => {}
       }
+      setCrosshairTime = vi.fn((t: number | null) => {
+        harness.cross.push(t)
+      })
+      clearCrosshair = vi.fn()
       setVisibleRange = vi.fn((r: { from: number; to: number }) => {
         harness.views.push(r)
       })
@@ -89,6 +105,8 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
 import { ChartView } from '../ChartView'
 
 afterEach(cleanup)
+
+const oneMinBase = makeCandles(1)
 
 const base = {
   symbol: 'BTCUSDT',
@@ -261,5 +279,88 @@ describe('多图视角同步的单位（issue #186）', () => {
     const { rerender } = render(<ChartView {...base} period="1h" candles={oneHour} />)
     rerender(<ChartView {...base} period="1h" candles={oneHour} externalRange={{ from: oneMin[0].time, to: oneMin[0].time + 50 * 60 }} />)
     expect(harness.views).toContainEqual({ from: 0, to: 1 })
+  })
+})
+describe('多图十字光标落点与本格数据的一致性（issue #193）', () => {
+  afterEach(() => {
+    harness.cross.length = 0
+    harness.crossCb = null
+  })
+
+  const oneMin = makeCandles(200)
+  const fiveMin = Array.from({ length: 40 }, (_, i) => ({ ...oneMin[i * 5] }))
+  const T = oneMin[10].time
+
+  /** 先空挂一次再给外部指令：adapter 是在挂载 effect 里创建的，同一批 effect 里它排在后面 */
+  const mountWithExternal = (rerender: (ui: React.ReactElement) => void) => {
+    rerender(<ChartView {...base} period="1m" candles={oneMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([T])
+  }
+
+  it('外部指令落过笔之后整窗换了数据，必须按新数据再落一次', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    // 换周期：外部时刻**没变**（广播侧两处都按值去重，源格再报也不会重发），
+    // 但本格序列整窗换成了 5m —— 上一笔是按 1m 吸附的，那个时刻在 5m 序列里根本不存在。
+    // 落点是「外部时刻 + 本格数据」的函数，数据换了就得就地重落。
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([T, T])
+  })
+
+  it('尾沿长一根的增量装载不该重落（那一笔还贴在新数据上）', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    rerender(<ChartView {...base} period="1m" candles={[...oneMin, { ...oneMin[199], time: oneMin[199].time + 60 }]} externalCrosshairTime={T} />)
+    expect(harness.cross).toHaveLength(1)
+  })
+
+  it('指针接管本格之后，换数据不再把陈旧的指令值落回去', () => {
+    const { rerender } = render(<ChartView {...base} period="1m" candles={oneMin} />)
+    mountWithExternal(rerender)
+    // 本格被指针驱动（fromExternalWrite=false）：这一格的落点此后由图表按像素自己算，
+    // 换数据时它会重发事件 —— 外部那个值可能早就陈旧了，不该再落
+    harness.crossCb?.(oneMin[120].time, 300, 200, false)
+    harness.cross.length = 0
+    rerender(<ChartView {...base} period="5m" candles={fiveMin} externalCrosshairTime={T} />)
+    expect(harness.cross).toEqual([])
+  })
+})
+
+describe('装载路径按序列形状判定（issue #193 的真身）', () => {
+  afterEach(() => {
+    harness.sets.length = 0
+    harness.updates.length = 0
+  })
+
+  /**
+   * 15m 与 1h 两片**等长**数据，末根时刻恰好重合（对齐过的序列常这样：15m 的最后一根
+   * 正落在整点上）。此时「只比末根」会把换周期认成「同一批数据尾沿长了一根」，
+   * 于是走增量路径：图表里装着的还是 15m 那一片，只有最后一根被 1h 的盖掉。
+   * 界面上看是「换了周期图没怎么变」，十字光标则永远按旧序列吸附（旧值还继续被广播）。
+   */
+  it('末根时刻重合的换周期必须整窗换新数据，不能只盖最后一根', () => {
+    const end = 1786797540 + 29 * 900
+    const fifteen = Array.from({ length: 30 }, (_, i) => ({
+      ...oneMinBase[0],
+      time: end - (29 - i) * 900,
+    }))
+    const hour = Array.from({ length: 30 }, (_, i) => ({
+      ...oneMinBase[0],
+      time: end - (29 - i) * 3600,
+    }))
+    expect(fifteen[29].time).toBe(hour[29].time)
+    expect(fifteen[28].time).not.toBe(hour[28].time)
+
+    // 第一拍：周期先变，本格数据还是 15m 那一片（真机上 1h 要再等一次异步装载）
+    const { rerender } = render(<ChartView {...base} period="15m" candles={fifteen} />)
+    rerender(<ChartView {...base} period="1h" candles={fifteen} />)
+    harness.sets.length = 0
+    harness.updates.length = 0
+
+    // 第二拍：1h 数据到位。此刻 keyRef 已经是 SOLUSDT:1h，「换周期」这条判据已经用掉了 ——
+    // 只剩「这片数据是不是只长了尾沿」在决定走不走整窗装载。
+    rerender(<ChartView {...base} period="1h" candles={hour} />)
+    // 装载的必须**是新的那一片**（首根时刻换了周期），而不是旧 15m 序列盖一根尾巴
+    expect(harness.sets).toEqual([{ len: 30, first: hour[0].time }])
   })
 })
