@@ -59,7 +59,7 @@ createServer((req, res) => {
     res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' })
     // 只跑过 vite build（没跑 docs:build）时这份文件不存在。读失败是未捕获异常，会把整个
     // 服务器进程带下去：之后每条用例都在 1.1s 内以 ERR_CONNECTION_REFUSED 失败，看着像应用崩了
-    res.end(existsSync(nf) ? readFileSync(nf) : Buffer.from('Not found', 'utf8'))
+    res.end(existsSync(nf) ? readFileSync(nf) : 'Not found')
     return
   }
   // SPA 回退：应用路由（如 /?symbol=BTCUSDT 或未知路径）→ 根 index.html
