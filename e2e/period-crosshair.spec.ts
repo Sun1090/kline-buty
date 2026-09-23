@@ -136,6 +136,17 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
       )
       .toBe('synced')
 
+    // ③ 指针移出图表 → 四格都不该残留十字光标。曾经移不掉：接收侧 `setCrosshairPosition` 会从
+    //    `subscribeCrosshairMove` 回流成一次新的上报，回流再广播，把「移出」那条 null 永久盖掉
+    //    （实测离开后仍有三格挂着幻影十字光标）。修的是 ChartView 的 lastAppliedCrosshairRef
+    await page.mouse.move(6, 700)
+    await expect
+      .poll(
+        async () => Object.values(await cellCrosshair(page)).filter((v) => v.time !== null).length,
+        { timeout: 8_000, message: '指针移出后不应残留十字光标' },
+      )
+      .toBe(0)
+
     expect(errors).toHaveLength(0)
   })
 })
