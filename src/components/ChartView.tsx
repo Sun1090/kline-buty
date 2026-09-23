@@ -320,6 +320,9 @@ export function ChartView({
   onCrosshairChangeRef.current = onCrosshairChange
   /** G8 防回环：记录本图最近一次上报的十字光标时间，外部同步回来相同时跳过写入 */
   const lastReportedCrosshairRef = useRef<number | null>(null)
+  /** 本图最近一次「被外部指令写入」的十字光标时间：这类写入会从 subscribeCrosshairMove 回流，
+   *  回流再上报会把广播风暴起来，把某一格「移出」的那条 null 永久盖掉（其余格留幻影十字光标） */
+  const lastAppliedCrosshairRef = useRef<number | null>(null)
   const onDrawingCommitRef = useRef(onDrawingCommit)
   onDrawingCommitRef.current = onDrawingCommit
   const onDrawingSelectRef = useRef(onDrawingSelect)
@@ -380,6 +383,7 @@ export function ChartView({
     if (externalCrosshairTime === undefined || !apiRef.current) return
     if (externalCrosshairTime === lastReportedCrosshairRef.current) return
     lastReportedCrosshairRef.current = externalCrosshairTime
+    lastAppliedCrosshairRef.current = externalCrosshairTime
     apiRef.current.setCrosshairTime(externalCrosshairTime)
   }, [externalCrosshairTime])
 
@@ -418,7 +422,8 @@ export function ChartView({
       // G8 十字光标同步：把时间上报给父级（pair/quad 联动），null 表示移出；
       // 记录本次上报值供防回环（外部同步回来相同时跳过写入）
       lastReportedCrosshairRef.current = time
-      onCrosshairChangeRef.current?.(time)
+      // 外部写入的回流不再上报（见 lastAppliedCrosshairRef）：time 为 null 的「移出」永远上报
+      if (time === null || time !== lastAppliedCrosshairRef.current) onCrosshairChangeRef.current?.(time)
       if (time === null || x === null || y === null) {
         setTooltip(null)
         return
