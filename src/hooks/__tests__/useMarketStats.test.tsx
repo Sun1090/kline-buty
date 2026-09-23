@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { renderHook, cleanup } from '@testing-library/react'
+import { BinanceHttpError } from '../../data/binance/errors'
 import { useMarketStats } from '../useMarketStats'
 
 const { fetchTicker24h, fetchFundingRate, fetchOpenInterest } = vi.hoisted(() => ({
@@ -91,5 +92,41 @@ describe('useMarketStats（行情信息条 30s 轮询，各源独立容错）', 
     rerender({ symbol: 'ETHUSDT' })
     await vi.waitFor(() => expect(fetchTicker24h).toHaveBeenCalledWith('ETHUSDT'))
     await vi.waitFor(() => expect(result.current.price).toBe(2900))
+  })
+
+  it('合约端点回 400（现货-only 品种）→ 后续轮询不再打这两个端点', async () => {
+    vi.useFakeTimers()
+    fetchTicker24h.mockResolvedValue(ticker)
+    fetchFundingRate.mockRejectedValue(new BinanceHttpError('binance http 400', 400))
+    fetchOpenInterest.mockRejectedValue(new BinanceHttpError('binance http 400', 400))
+
+    const { result } = renderHook(() => useMarketStats('SHIBUSDT'))
+    await vi.waitFor(() => expect(result.current.price).toBe(63000))
+    expect(fetchFundingRate).toHaveBeenCalledTimes(1)
+    expect(fetchOpenInterest).toHaveBeenCalledTimes(1)
+    expect(result.current.fundingRate).toBeNull()
+    expect(result.current.openInterest).toBeNull()
+    // 信息条照常展示现货侧字段：现货/合约徽标依赖这些字段是否为 null，跳过端点不改变判定
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(fetchFundingRate).toHaveBeenCalledTimes(1)
+    expect(fetchOpenInterest).toHaveBeenCalledTimes(1)
+    expect(fetchTicker24h).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
+  })
+
+  it('网络错误 / 5xx 不算「品种不存在」→ 下一个 30s 仍然重试', async () => {
+    vi.useFakeTimers()
+    fetchTicker24h.mockResolvedValue(ticker)
+    fetchFundingRate.mockRejectedValue(new Error('binance http 503'))
+    fetchOpenInterest.mockRejectedValue(new Error('binance http 503'))
+
+    renderHook(() => useMarketStats('BTCUSDT'))
+    await vi.waitFor(() => expect(fetchFundingRate).toHaveBeenCalledTimes(1))
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(fetchFundingRate).toHaveBeenCalledTimes(2)
+    expect(fetchOpenInterest).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
   })
 })

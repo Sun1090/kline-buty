@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchTicker24h, fetchFundingRate, fetchOpenInterest } from '../data/binance/rest'
+import { isSymbolNotFound } from '../data/binance/errors'
 import { isPerfMode } from '../data/synthetic'
 
 export interface MarketStats {
@@ -38,15 +39,21 @@ export function useMarketStats(symbol: string): MarketStats {
   useEffect(() => {
     if (isPerfMode()) return // ?perf 压测：数据源全合成，禁止真实 REST（stats 保持空）
     let alive = true
+    // 现货-only 品种在合约市场不存在：premiumIndex / openInterest 会在 fapi 与 dapi 双双 400，
+    // 每 30s 重试只是把控制台灌满必然失败的请求。判定为「该品种没有合约数据」后本轮起跳过这两个端点；
+    // 网络错误与 5xx 不算数，仍按 30s 重试。
+    let noPerpData = false
 
     const refresh = async () => {
       // 独立拉取，各源失败不影响整体
       const [ticker, funding, oi] = await Promise.allSettled([
         fetchTicker24h(symbol),
-        fetchFundingRate(symbol),
-        fetchOpenInterest(symbol),
+        noPerpData ? Promise.resolve(null) : fetchFundingRate(symbol),
+        noPerpData ? Promise.resolve(null) : fetchOpenInterest(symbol),
       ])
       if (!alive) return
+      if (funding.status === 'rejected' && isSymbolNotFound(funding.reason)) noPerpData = true
+      if (oi.status === 'rejected' && isSymbolNotFound(oi.reason)) noPerpData = true
       const next = { ...EMPTY }
       if (ticker.status === 'fulfilled') {
         next.price = ticker.value.price
@@ -55,12 +62,12 @@ export function useMarketStats(symbol: string): MarketStats {
         next.low = ticker.value.low
         next.quoteVolume = ticker.value.quoteVolume
       }
-      if (funding.status === 'fulfilled') {
+      if (funding.status === 'fulfilled' && funding.value) {
         next.fundingRate = funding.value.lastFundingRate
         next.markPrice = funding.value.markPrice
         next.nextFundingTime = funding.value.nextFundingTime
       }
-      if (oi.status === 'fulfilled') {
+      if (oi.status === 'fulfilled' && oi.value !== null) {
         next.openInterest = oi.value
       }
       setStats(next)
