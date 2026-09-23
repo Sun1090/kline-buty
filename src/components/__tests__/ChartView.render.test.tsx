@@ -356,6 +356,35 @@ describe('换周期落的视角必须还是同一段时间（issue #199）', () 
     expect(harness.views[harness.views.length - 1]).toEqual({ from: 48, to: 53 })
     expect(report).not.toHaveBeenCalled()
   })
+
+  it('停在最新处从粗换到细：右缘要贴住新序列的尾沿，不许凭空算成回看', () => {
+    // A2 的契约：停在最新一根上换周期，换完仍算「在最新」（「回到最新」按钮必须保持隐藏）。
+    // 只按「旧那根的开盘时刻」在新序列里 floor 会落到尾沿之前：1h 的最后一根是 19:00，
+    // 而 5m 的最后一根已经走到 19:55 —— 差出 11 根，atLatest 判成回看，按钮凭空出现。
+    const T0 = 1786797540
+    const bar = { open: 100, high: 101, low: 99, close: 100, volume: 10, isClosed: true }
+    const coarse = Array.from({ length: 60 }, (_, i) => ({ ...bar, time: T0 + i * 3600 }))
+    const fine = Array.from({ length: 720 }, (_, i) => ({ ...bar, time: T0 + i * 300 }))
+    const report = vi.fn()
+    harness.echo = true
+    const { rerender } = render(<ChartView {...base} period="1h" candles={coarse} onViewRangeChange={report} />)
+    fireEvent.pointerDown(screen.getByTestId('chart-root'))
+    // 视角右缘就贴在最后一根上（50..59，9 根 1h）
+    act(() => harness.fire!(50, 59, true))
+    expect(report).toHaveBeenCalledTimes(1) // 这一次是指针驱动的平移，该广播
+    report.mockClear()
+    harness.views.length = 0
+    rerender(<ChartView {...base} period="5m" candles={coarse} onViewRangeChange={report} />)
+    expect(harness.views[harness.views.length - 1]).toEqual({ from: 51, to: 59 })
+    harness.views.length = 0
+    rerender(<ChartView {...base} period="5m" candles={fine} onViewRangeChange={report} />)
+    const v = harness.views[harness.views.length - 1]
+    expect(v.to, '换到更细的周期后右缘必须仍贴在新序列的最后一根上').toBe(fine.length - 1)
+    // 跨度按时间算：9 根 1h = 108 根 5m
+    expect(v.from).toBe(fine.length - 108)
+    expect(report).not.toHaveBeenCalled()
+    harness.echo = false
+  })
 })
 describe('多图十字光标落点与本格数据的一致性（issue #193）', () => {
   afterEach(() => {

@@ -310,8 +310,12 @@ export function ChartView({
    * 数据比 key 晚一拍：第一拍 `period` 已经是新周期、图表里装着的却还是旧周期那一片，
    * 落完视角第二拍才真正把数据换过来 —— 而图表按逻辑索引保视图，索引不变就等于把跨度乘上
    * 新旧周期之比（实测 15m→1h 后 15 分钟的窗口变成 1 小时）。意图要留到间距真的等于目标周期为止。
+   *
+   * `atTail` 单独记一份，不能只靠 `toTime` 反推：`toTime` 是「当时那根 K 线的开盘时刻」，
+   * 停在最新处从 1h 换到 1m 时，把它 floor 到新序列上会落在**一根之前**（新序列的尾沿更细），
+   * 于是「停在最新切周期」被算成离开了最新、「回到最新」按钮凭空出现（A2 的契约）。
    */
-  const switchIntentRef = useRef<{ key: string; toTime: number; spanMs: number } | null>(null)
+  const switchIntentRef = useRef<{ key: string; toTime: number; spanMs: number; atTail: boolean } | null>(null)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
@@ -1008,7 +1012,10 @@ export function ChartView({
       const intent = switchIntentRef.current
       if (!intent || intent.key !== key || full.length < 2) return null
       const gapMs = Math.max(1, full[1].time - full[0].time) * 1000
-      const g = anchorRangeForSwitch(full, intent.toTime, intent.spanMs, gapMs)
+      // 停在最新处换周期 → 右缘要贴住**这片数据自己的尾沿**，而不是把旧的开盘时刻 floor 过来：
+      // 换到更细的周期时后者会落在尾沿之前一根，A2 的「停在最新切周期仍算最新」当场就破。
+      const toTime = intent.atTail ? full[full.length - 1].time : intent.toTime
+      const g = anchorRangeForSwitch(full, toTime, intent.spanMs, gapMs)
       if (!g) return null
       // 意图已经落在间距等于目标周期的数据上 → 作废，之后的装载不该再被它牵走
       if (gapMs === PERIOD_MS[period]) switchIntentRef.current = null
@@ -1030,7 +1037,13 @@ export function ChartView({
         const periodChanged = keyChanged && !symChanged
         if (periodChanged && !enteringReplay && !exitingReplay && vt && replayData.length > 0) {
           // 先立意图：数据晚一拍才到，第二拍整窗换新数据时要靠它把视角按**时间**重落一遍
-          switchIntentRef.current = { key, toTime: vt.toTime, spanMs: vt.spanMs }
+          const lv = lastVisibleRef.current
+          switchIntentRef.current = {
+            key,
+            toTime: vt.toTime,
+            spanMs: vt.spanMs,
+            atTail: !!lv && !isAwayFromLatest(lv.to, dataLenRef.current),
+          }
           // 在「全量新数据」上按旧右缘时间戳 + 时间跨度计算锚定区间（全局索引，已保证 ≥2 根）
           const anchor = anchorFromIntent(replayData)
           if (anchor) {
