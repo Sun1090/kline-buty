@@ -225,7 +225,7 @@ export function QuickOrder({ symbol, side, price, bid, ask, balance, takerFeeRat
       </div>
 
       {/* v0.5.x 下单类型：市价即时成交 / 限价挂单（价格触达后按挂单价成交） */}
-      <div data-testid="qo-type" style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
         {(['market', 'limit'] as const).map((tp) => (
           <button
             key={tp}

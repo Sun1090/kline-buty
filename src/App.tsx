@@ -1997,7 +1997,6 @@ export function App() {
       </div>
       {sidePanelOpen && (
         <div
-          data-testid="side-panels"
           style={{
             position: 'fixed',
             top: 'var(--header-h)',
@@ -2182,7 +2181,6 @@ export function App() {
             </button>
           </div>
           <div
-            data-testid="mobile-text-options"
             style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
           >
             <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{t('drawing.fontSize')}</span>
