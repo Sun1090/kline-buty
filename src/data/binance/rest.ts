@@ -1,6 +1,7 @@
 import type { Candle, Period } from '../../chart/types'
 import type { RawKline } from './types'
 import { parseTrades, type TradePrint } from '../trades'
+import { BinanceHttpError } from './errors'
 import { DAPI_BASE, buildApiUrl, detectMode, readCustomBases, toCoinMPair, toCoinMSymbol } from './endpoints'
 
 /** 币安 K 线 → 领域类型（openTime 毫秒 → 秒） */
@@ -47,9 +48,13 @@ async function binanceGet(path: string, fallback?: string, signal?: AbortSignal)
     signal?.addEventListener('abort', onAbort)
     try {
       const res = await fetch(url, { signal: ctrl.signal })
-      if (!res.ok) throw new Error(`binance http ${res.status}`)
+      if (!res.ok) throw new BinanceHttpError(`binance http ${res.status}`, res.status)
       return res
     } catch (e) {
+      // 400 = 该品种在这个市场不存在（-1121 Invalid symbol）。此时绝不换域名重试：
+      // COIN-M 的 SHIBUSD_PERP 与现货的 SHIBUSDT 是两个工具，把它的费率/标记价端回来
+      // 会当成当前品种展示出来。只有网络层失败与被阻断（无响应、超时、5xx）才值得走兜底。
+      if (e instanceof BinanceHttpError && e.status === 400) throw e
       lastErr = e
     } finally {
       clearTimeout(timer)
