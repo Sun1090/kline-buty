@@ -913,11 +913,17 @@ export function ChartView({
       enteringReplay ||
       exitingReplay ||
       (shouldCull(fullLen) && (!cur || !view || !windowCovers(cur, view)))
+    // 「同一片前缀、只是尾沿长了一根」必须比**两根**：只比末根时，换周期会伪装成增量 ——
+    // 合成/对齐过的序列里，15m 与 1h（或 1m 与 5m）的末根常落在同一个对齐边界上，
+    // 于是整窗装载被跳过，图表里装着的还是旧周期的那一片，`updateCandle` 只把最后一根盖上去。
+    // 实测（quad 换周期）：那一格随后按旧序列吸附的十字光标永久留在观测面上（issue #193 的真身），
+    // 而界面上只是「换了周期图没怎么变」，看不出来。
     const prefixSame =
       !!prev &&
-      prev.length > 0 &&
+      prev.length > 1 &&
       windowData.length >= prev.length &&
-      windowData[prev.length - 1]?.time === prev[prev.length - 1].time
+      windowData[prev.length - 1]?.time === prev[prev.length - 1].time &&
+      windowData[prev.length - 2]?.time === prev[prev.length - 2].time
 
     // 整窗装载：先把「图表里到底装着什么」记牢，再让 setData 内部的补发通知一律作废
     const loadSlice = (data: Candle[], base: number) => {

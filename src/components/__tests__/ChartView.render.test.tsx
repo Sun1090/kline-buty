@@ -28,6 +28,9 @@ const harness = vi.hoisted(() => ({
   cross: [] as (number | null)[],
   /** 十字光标回调（真 adapter 由图表驱动，测试用它模拟一次指针上报） */
   crossCb: null as ((time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void) | null,
+  /** 整窗装载（setCandles）与逐根增量（updateCandle）的调用记录 */
+  sets: [] as { len: number; first: number | null }[],
+  updates: [] as number[],
 }))
 
 vi.mock('../../chart/adapter', async (importOriginal) => {
@@ -35,8 +38,12 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
   return {
     ...actual,
     LightweightChartAdapter: class {
-      setCandles = vi.fn()
-      updateCandle = vi.fn()
+      setCandles = vi.fn((d: Candle[]) => {
+        harness.sets.push({ len: d.length, first: d[0]?.time ?? null })
+      })
+      updateCandle = vi.fn((c: Candle) => {
+        harness.updates.push(c.time)
+      })
       setChartType = vi.fn()
       setMainIndicator = vi.fn()
       setSubIndicator = vi.fn()
@@ -98,6 +105,8 @@ vi.mock('../../chart/adapter', async (importOriginal) => {
 import { ChartView } from '../ChartView'
 
 afterEach(cleanup)
+
+const oneMinBase = makeCandles(1)
 
 const base = {
   symbol: 'BTCUSDT',
@@ -314,5 +323,44 @@ describe('多图十字光标落点与本格数据的一致性（issue #193）', 
     harness.cross.length = 0
     rerender(<ChartView {...base} period="5m" candles={fiveMin} externalCrosshairTime={T} />)
     expect(harness.cross).toEqual([])
+  })
+})
+
+describe('装载路径按序列形状判定（issue #193 的真身）', () => {
+  afterEach(() => {
+    harness.sets.length = 0
+    harness.updates.length = 0
+  })
+
+  /**
+   * 15m 与 1h 两片**等长**数据，末根时刻恰好重合（对齐过的序列常这样：15m 的最后一根
+   * 正落在整点上）。此时「只比末根」会把换周期认成「同一批数据尾沿长了一根」，
+   * 于是走增量路径：图表里装着的还是 15m 那一片，只有最后一根被 1h 的盖掉。
+   * 界面上看是「换了周期图没怎么变」，十字光标则永远按旧序列吸附（旧值还继续被广播）。
+   */
+  it('末根时刻重合的换周期必须整窗换新数据，不能只盖最后一根', () => {
+    const end = 1786797540 + 29 * 900
+    const fifteen = Array.from({ length: 30 }, (_, i) => ({
+      ...oneMinBase[0],
+      time: end - (29 - i) * 900,
+    }))
+    const hour = Array.from({ length: 30 }, (_, i) => ({
+      ...oneMinBase[0],
+      time: end - (29 - i) * 3600,
+    }))
+    expect(fifteen[29].time).toBe(hour[29].time)
+    expect(fifteen[28].time).not.toBe(hour[28].time)
+
+    // 第一拍：周期先变，本格数据还是 15m 那一片（真机上 1h 要再等一次异步装载）
+    const { rerender } = render(<ChartView {...base} period="15m" candles={fifteen} />)
+    rerender(<ChartView {...base} period="1h" candles={fifteen} />)
+    harness.sets.length = 0
+    harness.updates.length = 0
+
+    // 第二拍：1h 数据到位。此刻 keyRef 已经是 SOLUSDT:1h，「换周期」这条判据已经用掉了 ——
+    // 只剩「这片数据是不是只长了尾沿」在决定走不走整窗装载。
+    rerender(<ChartView {...base} period="1h" candles={hour} />)
+    // 装载的必须**是新的那一片**（首根时刻换了周期），而不是旧 15m 序列盖一根尾巴
+    expect(harness.sets).toEqual([{ len: 30, first: hour[0].time }])
   })
 })
