@@ -3,60 +3,88 @@ import { expect, test, type Page } from '@playwright/test'
 /**
  * A4 ★ 多周期同屏十字光标时间同步（quad）：四格十字光标按时间同步。
  *
- * 断言（颜色无关的 canvas 快照差异法）：quad 布局下 hover BTC 格 →
- * ① BTC 自格十字光标层出现绘制（快照变化）；② 其余三格（ETH/SOL/BNB）
- * 十字光标层出现同步绘制。时间经 adapter 按时间戳在本地数据上定位，跨周期对齐。
- * 依赖 ?perf 合成确定性数据，不依赖网络。
+ * 断言（DOM 观测面，不看像素）：quad 布局下 hover BTC 格 →
+ * ① 源格上报该时刻；② 其余三格把十字光标落在**自己数据里最接近的那根 K 线**上。
+ * 接收侧走 `setCrosshairPosition`，它不触发 subscribeCrosshairMove，所以格内没有任何 DOM 产物——
+ * 于是 adapter 把当前十字光标时刻写进容器的 `data-crosshair-time`（与 `data-candles` 同一类观测钩子）。
+ *
+ * 为什么不再比画布像素指纹：本规格原先 hover 前后各取一次 canvas 内容指纹，要求「变了」。
+ * 而 ?perf 合成数据每 1.5s 追加一根 K 线、每格都在重画 —— 把 `externalCrosshairTime` 恒置为 null
+ * （多图同步完全断开）它照样通过。像素指纹在这种数据下等于没有断言。
  */
 
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
 
+/** 每格的十字光标时刻（秒；未激活为 null）与其周期 */
+function cellCrosshair(page: Page): Promise<Record<string, { time: number | null; period: string }>> {
+  return page.evaluate((syms) => {
+    const out: Record<string, { time: number | null; period: string }> = {}
+    for (const sym of syms) {
+      const sel = document.querySelector(`[data-testid="quad-period-${sym}"]`) as HTMLSelectElement | null
+      let node: HTMLElement | null = sel ? (sel.parentElement as HTMLElement | null) : null
+      let el: Element | null = null
+      while (node && !el) {
+        el = node.querySelector('.chart-container')
+        if (!el) node = node.parentElement
+      }
+      const raw = el?.getAttribute('data-crosshair-time') ?? null
+      out[sym] = { time: raw ? Number(raw) : null, period: sel?.value ?? '1m' }
+    }
+    return out
+  }, CELLS)
+}
+
 /**
- * 单元格图表的粗粒度快照签名：扫描格内所有 canvas，统计非空像素数；
- * 目标 = 绘制内容最多的 canvas（蜡烛图本体，十字光标画在其上），
- * 返回其内容指纹，只比较「是否有新绘制」（颜色无关）。
+ * 关掉「更多」面板：它是浮在图表上的下拉层，面板自己的按钮就压在格中心那块像素上
+ * （elementFromPoint 实测命中 watermark-toggle）。开着它 hover 等于在 hover 面板。
  */
-function cellSnapshot(page: Page, symbol: string) {
-  return page.evaluate((sym) => {
-    const sel = document.querySelector(`[data-testid="quad-period-${sym}"]`) as HTMLElement | null
-    const cell = sel?.parentElement
-    if (!cell) return { canvasFound: false, pixels: 0, fingerprint: 0, center: null }
-    let best: HTMLCanvasElement | null = null
-    let bestPainted = 0
-    let bestFingerprint = 0
-    for (const c of cell.querySelectorAll('canvas')) {
+async function closeMorePanel(page: Page) {
+  const more = page.getByTestId('header-more')
+  if ((await more.getAttribute('aria-expanded')) === 'true') {
+    await page.keyboard.press('Escape')
+    await expect(more).toHaveAttribute('aria-expanded', 'false', { timeout: 5_000 })
+  }
+}
+
+/** 格内面积最大的画布即主图面板；顺带确认落点没有被浮层挡住 */
+async function cellCanvasCenter(page: Page, symbol: string) {
+  const box = await page.evaluate((sym) => {
+    const sel = document.querySelector(`[data-testid="quad-period-${sym}"]`)
+    let node: HTMLElement | null = sel ? (sel.parentElement as HTMLElement | null) : null
+    while (node && !node.querySelector('canvas')) node = node.parentElement
+    let best: DOMRect | null = null
+    for (const c of node?.querySelectorAll('canvas') ?? []) {
       const r = c.getBoundingClientRect()
-      if (r.width < 20 || r.height < 20) continue
-      const ctx = c.getContext('2d')
-      if (!ctx) continue
-      const d = ctx.getImageData(0, 0, c.width, c.height).data
-      let painted = 0
-      let fingerprint = 0
-      for (let i = 0; i < d.length; i += 16) {
-        const rr = d[i]
-        const g = d[i + 1]
-        const b = d[i + 2]
-        if (rr > 40 || g > 40 || b > 40) painted++
-        fingerprint = (fingerprint + rr * 31 + g * 7 + b * 13) % 1_000_000_007
-      }
-      if (painted > bestPainted) {
-        bestPainted = painted
-        bestFingerprint = fingerprint
-        best = c as HTMLCanvasElement
-      }
+      if (!best || r.width * r.height > best.width * best.height) best = r
     }
-    if (!best) return { canvasFound: false, pixels: 0, fingerprint: 0, center: null }
-    const rect = best.getBoundingClientRect()
-    return {
-      canvasFound: true,
-      pixels: bestPainted,
-      fingerprint: bestFingerprint,
-      center: { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 },
-    }
+    return best ? { x: best.x, y: best.y, w: best.width, h: best.height } : null
   }, symbol)
+  expect(box, `${symbol} 格内应能找到主图画布`).not.toBeNull()
+  if (!box) return null
+  const cx = box.x + box.w / 2
+  const cy = box.y + box.h / 2
+  const onCanvas = await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest('canvas') !== null, [cx, cy])
+  expect(onCanvas, `${symbol} 格中心应直接命中画布（被浮层挡住就测不到十字光标）`).toBe(true)
+  return { cx, cy }
+}
+
+const PERIOD_SECONDS: Record<string, number> = {
+  '1s': 1,
+  '1m': 60,
+  '3m': 180,
+  '5m': 300,
+  '15m': 900,
+  '30m': 1800,
+  '1h': 3600,
+  '2h': 7200,
+  '4h': 14400,
+  '12h': 43200,
+  '1d': 86400,
 }
 
 test.describe('A4 多周期十字光标时间同步（quad）', () => {
+  test.setTimeout(120_000)
+
   test('hover 一格十字光标 → 其余格按时间同步出现绘制', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -65,36 +93,48 @@ test.describe('A4 多周期十字光标时间同步（quad）', () => {
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
 
     // 「更多」菜单里切布局：single → pair → quad
-    const more = page.getByTestId('header-more')
-    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click()
+    await page.getByTestId('header-more').click()
     await page.getByTestId('layout-toggle').click()
     await page.getByTestId('layout-toggle').click()
     await expect(page.locator('[data-testid^="quad-period-"]')).toHaveCount(4, { timeout: 15_000 })
+    // 四格周期保持各不相同（默认就是混周期）：跨周期才验得出「按时间」而不是「按索引」对齐
+    await closeMorePanel(page)
 
-    // 基线快照（各格均需有 canvas）
-    const base = new Map<string, Awaited<ReturnType<typeof cellSnapshot>>>()
-    for (const sym of CELLS) base.set(sym, await cellSnapshot(page, sym))
-    for (const sym of CELLS) expect(base.get(sym)!.canvasFound, `${sym} 格应有十字光标层 canvas`).toBe(true)
+    // 前置：还没 hover，任何一格都不该有十字光标 —— 否则「其余三格也亮了」可以白拿
+    await expect
+      .poll(async () => Object.values(await cellCrosshair(page)).filter((v) => v.time !== null).length, { timeout: 10_000 })
+      .toBe(0)
 
-    // hover BTC 格中心（鼠标落位后再微移，确保 mousemove 派发到图表）
-    const center = (await cellSnapshot(page, 'BTCUSDT')).center
+    const center = await cellCanvasCenter(page, CELLS[0])
     expect(center).not.toBeNull()
     if (!center) return
-    await page.mouse.move(center.x, center.y)
-    await page.mouse.move(center.x + 2, center.y)
-    await page.waitForTimeout(600)
+    // 鼠标落位后再微移，确保 mousemove 真的派发到图表
+    await page.mouse.move(center.cx, center.cy)
+    await page.mouse.move(center.cx + 3, center.cy)
 
-    // ① BTC 自格出现十字光标绘制（快照指纹变化）
+    // ① 源格上报它自己的时刻
     await expect
-      .poll(async () => (await cellSnapshot(page, 'BTCUSDT')).fingerprint, { timeout: 8000 })
-      .not.toBe(base.get('BTCUSDT')!.fingerprint)
+      .poll(async () => (await cellCrosshair(page))[CELLS[0]].time, { timeout: 10_000 })
+      .not.toBeNull()
+    const source = (await cellCrosshair(page))[CELLS[0]].time as number
 
-    // ② 其余三格被同步：十字光标层快照指纹均变化
-    for (const sym of CELLS.slice(1)) {
-      await expect
-        .poll(async () => (await cellSnapshot(page, sym)).fingerprint, { timeout: 8000 })
-        .not.toBe(base.get(sym)!.fingerprint)
-    }
+    // ② 其余三格按**时间**跟上：各自落在自己周期里最接近该时刻的那根 K 线上，
+    //    所以允许的偏差是本格周期的一半（变异：externalCrosshairTime 恒 null → 三格都没有属性 → 红）
+    await expect
+      .poll(
+        async () => {
+          const now = await cellCrosshair(page)
+          const lagging = CELLS.slice(1).filter((sym) => {
+            const v = now[sym]
+            if (!v || v.time === null) return true
+            const half = (PERIOD_SECONDS[v.period] ?? 60) / 2
+            return Math.abs(v.time - source) > half
+          })
+          return lagging.length === 0 ? 'synced' : `未跟上：${lagging.map((s) => `${s}=${JSON.stringify(now[s])}`).join(' ')}`
+        },
+        { timeout: 15_000, message: '其余三格的十字光标应被广播到同一时刻' },
+      )
+      .toBe('synced')
 
     expect(errors).toHaveLength(0)
   })
