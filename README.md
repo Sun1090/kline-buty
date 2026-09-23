@@ -9,8 +9,8 @@
 ## Features
 
 - **Real-time K-line charts** — Candlestick, line, area with 14 timeframes (1s to 1M)
-- **49 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more, with undo/redo, templates (save/apply + community import/export), copy/paste, grouping, snap-to-OHLC alignment, per-line opacity
-- **26 indicators** — Main: MA, EMA, BOLL, VWAP, SAR, Ichimoku, Supertrend · Sub: VOL, MACD, KDJ, RSI, WR, OBV, ATR, DMI, CCI, PSY, STOCH, ROC, MOM, BBW, MFI, AO, CMF, Donchian, Aroon — all with customizable parameters and presets
+- **47 drawing tools** — Trend lines, channels, Fibonacci, R:R, Gann, wedge, text annotations, and more, with undo/redo, templates (save/apply + community import/export), copy/paste, grouping, snap-to-OHLC alignment, per-line opacity
+- **29 indicators** — Main: MA, EMA, BOLL, VWAP, SAR, Ichimoku, Supertrend · Sub: VOL, MACD, KDJ, RSI, WR, OBV, ATR, DMI, CCI, PSY, STOCH, ROC, MOM, BBW, MFI, AO, CMF, Donchian, Aroon, TRIX, DPO, Vortex — all with customizable parameters and presets
 - **Order book & depth chart** — Real-time order book (8 bids/asks) and depth curve via WebSocket
 - **Multi-chart layout** — 1/2/4 panel layouts with synchronized time axes
 - **Market replay** — Historical tick-by-tick replay with speed control (1x–50x)
@@ -68,7 +68,7 @@ src/
 │   ├── market.ts    # K-line store: ordered cache, idempotent merge
 │   └── cache.ts     # Local K-line cache (cold-start speedup)
 ├── drawings/        # Drawing logic: 49 tools, undo/redo, templates, grouping, snap
-├── indicators/      # Indicator engine (pure functions, 26 indicators)
+├── indicators/      # Indicator engine (pure functions, 29 indicators)
 ├── alerts/          # Price alert engine (one-shot/repeat, time window)
 ├── trade/ position/ # Simulated trading: orders, positions, P&L
 ├── replay/          # Market replay engine
@@ -94,7 +94,7 @@ src/
 
 ## Progress
 
-<img src="https://img.shields.io/badge/drawing_tools-49-blueviolet" alt="49 drawing tools" /> <img src="https://img.shields.io/badge/indicators-26-success" alt="26 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1561-yellow" alt="1561 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
+<img src="https://img.shields.io/badge/drawing_tools-47-blueviolet" alt="47 drawing tools" /> <img src="https://img.shields.io/badge/indicators-29-success" alt="29 indicators" /> <img src="https://img.shields.io/badge/unit_tests-1983-yellow" alt="1983 unit tests" /> <img src="https://img.shields.io/badge/stages-D%20E%20F%20G%20H%20I-success" alt="v0.4 stages D-I" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/ci.yml?branch=main" alt="CI" /> <img src="https://img.shields.io/github/actions/workflow/status/sun1090/kline-buty/pages.yml?branch=main" alt="GitHub Pages" />
 
 > 部署状态与健康检查（H15）：见 [docs/05-部署.md → 七、部署状态与健康检查](docs/05-部署.md)。
 
