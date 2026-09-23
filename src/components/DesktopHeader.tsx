@@ -243,7 +243,6 @@ export function DesktopHeader(props: DesktopHeaderProps) {
   return (
     <div ref={rootRef} style={{ position: 'relative', zIndex: 130 }}>
       <header
-        data-testid="desktop-header"
         ref={props.headerRef}
         style={{
           display: 'flex',
@@ -343,7 +342,6 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               </button>
             </div>
             <div
-              data-testid="text-options"
               style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}
             >
               <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{t('drawing.fontSize')}</span>
@@ -759,7 +757,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             </PanelButton>
           </div>
           <SectionTitle>{t('layout.presets')}</SectionTitle>
-          <div data-testid="layout-presets" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             <input
               data-testid="layout-preset-name"
               value={presetName}
@@ -806,7 +804,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             ))}
           </div>
           <SectionTitle>{t('panel.orderTitle')}</SectionTitle>
-          <div data-testid="panel-order" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             <PanelButton
               onClick={props.onCycleRenderCandleCap ?? (() => {})}
               title={t('perf.candleCapTitle')}
@@ -840,7 +838,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             ))}
           </div>
           <SectionTitle>{t('settings.snapshot')}</SectionTitle>
-          <div data-testid="settings-snapshot" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             <PanelButton onClick={props.onExportSettings ?? (() => {})} title={t('settings.snapshotExportTitle')} testId="settings-export">
               {t('settings.snapshotExport')}
             </PanelButton>
@@ -863,7 +861,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               }}
             />
           </div>
-          <div data-testid="export-range" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{t('csv.exportRange')}</span>
             {[0, 100, 500, 1000].map((n) => (
               <button
