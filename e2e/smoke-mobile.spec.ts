@@ -1,9 +1,25 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { findDrawingAnchor, findDrawnLineCenter, hitDrawnPixelUntil, openDrawing, waitCandlesRendered } from './helpers/smoke'
 /**
  * 移动端触屏视口（390×844）端到端覆盖（自 smoke 拆出）：无横向溢出、捏合缩放、双击复位、触屏拖线。
  * CDP 触摸派发仅 Chromium，跨浏览器触摸覆盖由 CI 的 chromium 项目承担。
  */
+
+/**
+ * 读 A11 可视时间范围条，返回当前视角跨了多少分钟。
+ * 条形文案是「MM/DD HH:MM — MM/DD HH:MM」（无年份），这里只作差不换算绝对时刻；
+ * 跨年时序号回绕，补一年即可（视图最多几个小时，不会真的跨年多次）。
+ */
+async function visibleSpanMinutes(page: Page): Promise<number> {
+  const text = (await page.getByTestId('chart-visible-range').textContent()) ?? ''
+  const m = text.match(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})\s+—\s+(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/)
+  if (!m) throw new Error(`可视时间范围条解析不出跨度：${JSON.stringify(text)}`)
+  const ord = (mm: string, dd: string, hh: string, mi: string) =>
+    (Number(mm) * 100 + Number(dd)) * 1440 + Number(hh) * 60 + Number(mi)
+  let span = ord(m[5], m[6], m[7], m[8]) - ord(m[1], m[2], m[3], m[4])
+  if (span < 0) span += 366 * 1440
+  return span
+}
 
 test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
@@ -88,90 +104,100 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
-  test('移动端：双击复位（捏合缩放 → 快速两次拖动不误复位 → 双击恢复自适应）', async ({ page, browserName }) => {
+  test('移动端：双击复位（捏合缩放 → 快速两次拖动不误复位 → 双击每次都回到同一视角）', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
-    await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    // ?perf 合成行情：这条用例靠同一像素量具重复采样，打真实行情时新 K 线会让价格轴自动缩放，
+    // 基线自己在动（实测 6 次红 1 次：与阈值的差只有 3px）
+    await page.goto('/?perf=600')
+    await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 30_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
     if (!box) return
 
-    // 画一条水平线（价格轴上部，固定价格）
-    await page.getByTestId('mobile-menu-drawing').tap()
-    await page.getByRole('button', { name: '水平线', exact: true }).tap()
-    await page.waitForTimeout(200)
-    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.42)
-    // 切回鼠标（只读）→ 触屏手势（捏合/平移/双击）由图表接管
-    await page.getByTestId('mobile-menu-drawing').tap()
-    await page.getByRole('button', { name: '鼠标', exact: true }).tap()
-    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const orig = await findDrawnLineCenter(page)
+    // 断言口径：直接读「视角本身」（A11 可视时间范围条的时间跨度），不追像素。
+    // 原先的用例是画一条固定价水平线、比它 y 坐标在几个时刻的位移，而价格轴会自动拟合当前可见 K 线
+    // —— 基线自己在动：真实行情 6 次红 1 次（差 3px），?perf 合成行情因为 tick 更凶，
+    // 首屏视角与复位后默认视角本就差 ~40px（resetTimeScale 回到的是默认 bar spacing，不是首屏那个窗口）。
+    // 跨度这个量对「新 K 线到达」不敏感，捏合/复位对它的效果是数量级的，所以既确定又更贴近被测契约。
+    const span0 = await visibleSpanMinutes(page)
+    expect(span0).toBeGreaterThan(20) // 断言前提：默认视角够宽，捏合的位移才有分辨力
 
     const cdp = await page.context().newCDPSession(page)
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
     const cx = box.x + box.width * 0.5
     const cy = box.y + box.height * 0.5
 
-    // 捏合放大（价格区间收窄 → 固定价画线明显位移）
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [
-        { x: cx - 40, y: cy },
-        { x: cx + 40, y: cy },
-      ] })
-    // 温和捏合（总放大 ≈ 100/40 = 2.5 倍，画线保持可见且位移足够大，
-    // 使复位断言 resetGap < zoomGap/2 对实时行情漂移有充足余量）
-    for (let i = 1; i <= 6; i++) {
-      const spread = 40 + i * 10
+    // 捏合放大（总放大 ≈ 100/40 = 2.5 倍 → 可见跨度收窄到约 1/2.5）
+    const pinch = async () => {
       await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
+        type: 'touchStart',
         touchPoints: [
-          { x: cx - spread, y: cy },
-          { x: cx + spread, y: cy },
+          { x: cx - 40, y: cy },
+          { x: cx + 40, y: cy },
         ] })
-      await page.waitForTimeout(50)
-    }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await page.waitForTimeout(500)
-    const zoomed = await findDrawnLineCenter(page)
-    expect(zoomed).not.toBeNull()
-    expect(Math.abs(zoomed!.y - orig!.y)).toBeGreaterThan(10)
-
-    // 两次快速单指拖动（平移）：不得误触发双击复位（线保持捏合后位置）
-    for (let k = 0; k < 2; k++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 6; i++) {
+        const spread = 40 + i * 10
         await cdp.send('Input.dispatchTouchEvent', {
           type: 'touchMove',
-          touchPoints: [{ x: cx - i * 14, y: cy }] })
-        await page.waitForTimeout(20)
+          touchPoints: [
+            { x: cx - spread, y: cy },
+            { x: cx + spread, y: cy },
+          ] })
+        await page.waitForTimeout(50)
       }
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-      await page.waitForTimeout(30)
+      await page.waitForTimeout(500)
+      return visibleSpanMinutes(page)
     }
-    await page.waitForTimeout(400)
-    const afterPan = await findDrawnLineCenter(page)
-    expect(afterPan).not.toBeNull()
-    expect(Math.abs(afterPan!.y - orig!.y)).toBeGreaterThan(10)
+    // 双击 = 两次 300ms 内轻点 → priceScale 回自适应 + timeScale 复位
+    const doubleTap = async () => {
+      for (let k = 0; k < 2; k++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+        await page.waitForTimeout(60)
+      }
+      await page.waitForTimeout(600)
+      return visibleSpanMinutes(page)
+    }
+    // 两次快速单指拖动（只平移视野，不该被误判成双击）
+    const panTwice = async () => {
+      for (let k = 0; k < 2; k++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
+        for (let i = 1; i <= 5; i++) {
+          await cdp.send('Input.dispatchTouchEvent', {
+            type: 'touchMove',
+            touchPoints: [{ x: cx - i * 14, y: cy }] })
+          await page.waitForTimeout(20)
+        }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+        await page.waitForTimeout(30)
+      }
+      await page.waitForTimeout(400)
+      return visibleSpanMinutes(page)
+    }
 
-    // 双击（两次 300ms 内轻点）→ 复位：价格轴回自适应 → 线回到原始位置
-    for (let k = 0; k < 2; k++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] })
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-      await page.waitForTimeout(60)
-    }
-    await page.waitForTimeout(600)
+    const zoomed = await pinch()
+    expect(zoomed).toBeLessThan(span0 * 0.7) // 捏合把视野收窄了一个量级
+
+    const afterPan = await panTwice()
+    // 快速两次拖动只是挪位置：跨度必须还停在捏合后的窄视野里，不能被当成双击复位
+    expect(afterPan).toBeLessThan(span0 * 0.7)
+    expect(Math.abs(afterPan - zoomed)).toBeLessThanOrEqual(2)
+
+    const reset1 = await doubleTap()
+    expect(Math.abs(reset1 - span0)).toBeLessThanOrEqual(2) // 复位回到默认跨度
+
+    // 再来一遍：复位是幂等的，每次都回到同一个跨度（第一次若只是「没生效」，这里就会散开）
+    const zoomed2 = await pinch()
+    expect(zoomed2).toBeLessThan(span0 * 0.7)
+    const reset2 = await doubleTap()
+    expect(Math.abs(reset2 - span0)).toBeLessThanOrEqual(2)
+
     await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    const reset = await findDrawnLineCenter(page)
-    expect(reset).not.toBeNull()
-    // 复位后价格轴回自适应：线明显回到原始位置附近（须比捏合后位移收窄一半以上）
-    const resetGap = Math.abs(reset!.y - orig!.y)
-    const zoomGap = Math.abs(zoomed!.y - orig!.y)
-    expect(resetGap).toBeLessThan(zoomGap / 2)
     expect(errors).toHaveLength(0)
   })
 
