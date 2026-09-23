@@ -261,8 +261,14 @@ export interface ChartApi {
   setTimezoneMode(mode: 'utc' | 'local'): void
   /** 画线锚点吸附模式（off/time/ohlc，C3） */
   setSnapMode(mode: SnapMode): void
-  /** 十字光标移动回调（离开图表区域时 time 为 null） */
-  subscribeCrosshairMove(cb: (time: number | null, x: number | null, y: number | null) => void): () => void
+  /**
+   * 十字光标移动回调（离开图表区域时 time 为 null）。
+   * `fromExternalWrite`：这次事件是 `setCrosshairTime()` 自己触发的回流，不是指针驱动 ——
+   * 跨周期时回流带来的是**吸附后的落点**而非请求值，上游只有靠这个标志才认得出回声。
+   */
+  subscribeCrosshairMove(
+    cb: (time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void,
+  ): () => void
   /** 可见区间变化回调（逻辑索引 from/to），用于向左滚动分页 */
   subscribeVisibleRange(cb: (from: number, to: number) => void): () => void
   /** 外部设置可见区间（多图时间轴同步用） */
@@ -388,9 +394,9 @@ export class LightweightChartAdapter implements ChartApi {
   private lastClose: number | null = null
   private lastCandles: Candle[] = []
   /**
-   * 当前十字光标时刻（秒）。同时写进容器的 `data-crosshair-time`：
-   * 多图同步的接收侧只有画布绘制（`setCrosshairPosition` 不触发 subscribeCrosshairMove），
-   * 规格否则只能比像素指纹，而 perf 合成数据每 1.5s 就重画一次——指纹「变了」是空的断言。
+   * 当前十字光标时刻（秒），同时写进容器的 `data-crosshair-time`。
+   * 多图同步的接收侧只往画布里画十字光标，DOM 上不留任何痕迹；没有这个属性的话规格只能比
+   * 画布像素指纹 —— 而 perf 合成数据每 1.5s 就重画一次，「指纹变了」等于没有断言。
    */
   private crosshairTime: number | null = null
   /** C3 吸附对齐模式（默认 ohlc，兼容旧 behavior） */
@@ -3483,6 +3489,8 @@ export class LightweightChartAdapter implements ChartApi {
     let idx = lo
     if (idx > 0 && Math.abs(this.lastCandles[idx - 1].time - time) < Math.abs(this.lastCandles[idx].time - time)) idx--
     const candle = this.lastCandles[idx]
+    // 落点是吸附后的那根，不是请求值：`setCrosshairPosition()` 会带着它异步回流一次
+    // subscribeCrosshairMove，上游靠「指针在不在这格里」认出那是自己发起的（见该方法）
     this.markCrosshairTime(candle.time)
     this.chart.setCrosshairPosition(candle.close, candle.time as UTCTimestamp, this.mainSeries)
   }
@@ -3765,15 +3773,22 @@ export class LightweightChartAdapter implements ChartApi {
   }
 
   subscribeCrosshairMove(
-    cb: (time: number | null, x: number | null, y: number | null) => void,
+    cb: (time: number | null, x: number | null, y: number | null, fromExternalWrite?: boolean) => void,
   ): () => void {
     const handler = (param: Parameters<Parameters<IChartApi['subscribeCrosshairMove']>[0]>[0]) => {
       const time = param.time === undefined ? null : Number(param.time)
-      this.markCrosshairTime(time)
+      // 只有「指针就在这一格里」才算真实上报（触屏同理，触屏十字光标不吃 hover）。
+      // 其余任何非空事件都只可能来自本格的 `setCrosshairPosition()` 回流 —— 跨周期时它带的是
+      // 吸附落点，与请求值不等，一旦被当成指针驱动再广播，四格就互相覆盖掉真正的指针位置（issue #183）。
+      const echoed = time !== null && !this.container.matches(':hover') && !this.touchCrosshair
+      // 回声也不许再写一次观测钩子：`setCrosshairTime()` 落笔时已经 mark 过，回流是异步到的，
+      // 期间可能已经收到「移出」的 null 清除 —— 让它盖回去就等于清完又复活一个幻影十字光标
+      if (!echoed) this.markCrosshairTime(time)
       cb(
         time,
         param.point ? param.point.x : null,
         param.point ? param.point.y : null,
+        echoed,
       )
     }
     this.chart.subscribeCrosshairMove(handler)
