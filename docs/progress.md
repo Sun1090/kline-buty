@@ -1,11 +1,44 @@
 # 开发进度（progress）
 
-> 自主开发会话恢复入口：先看「当前阶段」→ 按「恢复入口」继续。提交均在本地，大阶段全绿后统一 push。
+> 自主开发会话恢复入口：先看「当前阶段」→ 按「恢复入口」继续。每条主题分支推一次、开一个 PR，合并后即删远端分支。
 > 规范：已有实现必须审计并补足测试后才可标记完成；禁止跳过失败测试；禁止只改清单。
 
 ## 当前阶段
 
-**批次 v0.5.30 之后：图表视角状态三连修 + 多图联动首次可断言（2026-09-23，待 #176 合并后定 v0.5.31）**
+**里程碑 v0.5.31 发布完成（2026-09-23）**
+- 版本号：**0.5.31**（package.json / package-lock 根两处 / index.html meta `app-version`）
+- 分支：`release/v0.5.31`；发布 PR：**#178**（rebase 合并 → main **5b738be**，合并后即删本地与远端分支）
+- tag：**v0.5.31** @ 5b738be（Release Tag workflow run 35858495581 success；幂等，不覆盖旧 tag）
+- 本版收录（批次主题：**「其实从来没在工作」的第三连——这次是图表视角状态与多图联动**）：
+  - **#174 → main e2127ab** 裁剪窗口迁移改按实际装载判定，停在最新处切周期不再塌成 4~9 根
+  - **#175 → main 47c6ce1** 静态托管构建期声明 `VITE_ENDPOINT_MODE=direct`，不再发必然落空的同源 `/api/v3/ping`
+  - **#176 → main b556969** A11 可视时间范围条在日常数据量下**永不渲染**的线上回归（#174 作废了装载期的陈旧通知，
+    而 lightweight-charts 只在区间真的「变化」时才发事件）→ `ChartApi.visibleRange()` 补读一次；
+    补读带来的二阶错（脏区间喂给窗口迁移）用 `onVisibleRange(from, to, trusted)` 分离：**只有图表自己的事件**能决定窗口迁移与分页
+  - **#177 → main 48f6022** 多图十字光标回流不再二次广播——`setCrosshairPosition()` 会再触发一次
+    `subscribeCrosshairMove`，四格移出后残留 3 个幻影光标；改单源，移出即清零
+  - 同批把两条「CI 绿着但什么都没保证」的规格改成能红的：`e2e/multi-chart-sync.spec.ts`（新增，四格必须都相对自己动过）、
+    `e2e/period-crosshair.spec.ts`（重写：关掉同步也照过的假绿）、`e2e/stress-large-data.spec.ts`（装载窗口必须容纳视角）
+- 定档门禁（最终工作区即 release 提交 5b738be）：
+  - `npm test` → **1996 passed / 174 files**；`npm run precheck` → All checks passed（86.2s）
+  - `node scripts/run-ci-e2e.mjs --list` → **408 tests in 19 files**
+  - CI（#178 与 main@5b738be 各跑一遍）→ Typecheck+Lint / Unit+Coverage / Production build / CodeQL / KB validation /
+    **E2E 三浏览器（19m37s）全绿**；Vercel 那条是账号级构建限流，按既定口径不作判定依据
+- 部署与线上抽查（GitHub Pages run 35858495572 success；真浏览器 1280×800 打生产域名）：
+  - `meta app-version=0.5.31`、`data-candles=800`
+  - **A11 可视时间范围条在线上真的出现了**：`09/23 10:21 — 09/23 12:14`
+    （#176 的验收此前只有本地重建包 + 生产域名对照「元素数为 0」，这次升到生产域名「元素出现且是真实时间段」）
+  - **四图十字光标**：hover 源格时四格 `data-crosshair-time` 全部等于 `1790165640`；指针移出后四格全部为 `null`
+    —— 这正是 #177 的现场，而该钩子在 v0.5.30 的生产包里还不存在，当时无法验收
+  - `/api/v3/ping` 请求数 **0**（#175 的线上确认：Pages 上那次必然 404 的探测已不再发出）、`pageerror` **0**
+- 风险 / 回滚：本版含 `ChartView` 视角事件与多图广播的行为改动，回滚方式为 revert release 提交并重打 tag；
+  无数据迁移、无设置快照变更（`version` 仍为 2）
+- 下一项（已开工，待合并）：**PR #179 `test/audit-data-testid`**——零引用 `data-testid` 清点：
+  74 个生产钩子从没被任何测试引用，24 个补真实断言、32 个删掉，并新增
+  `scripts/__tests__/testid-usage.test.ts` 把「加了钩子没用例」变成 CI 变红条件
+- 更新日：2026-09-23
+
+**批次 v0.5.30 之后：图表视角状态三连修 + 多图联动首次可断言（2026-09-23，已定档为 v0.5.31）**
 - 分支：`test/v05-quad-range-sync`；PR：**#176**（7 个提交，`94aa985`…`679c3fd`）；同批已合并的前置：
   - **#174 → main e2127ab** 窗口迁移改按「实际装载」判定，停在最新切周期后视野不再塌成 4~9 根
   - **#175 → main 47c6ce1** 静态托管构建期声明 `VITE_ENDPOINT_MODE=direct`，不再发一次必然落空的同源 `/api/v3/ping`
@@ -33,9 +66,11 @@
   - CI：Typecheck+Lint / Unit+Coverage / Production build / CodeQL / KB validation 全过；**E2E 三浏览器在 webkit 首红后已按上面第 6 条重推复跑**
   - 线上事实核对（GitHub Pages 生产域名，真浏览器）：`?perf` 关掉、真实 1500 根首屏下 `chart-visible-range` 元素数为 **0**（这就是第 2 条要修的现场）
 - 已知噪音 / 风险：Vercel Hobby 构建限流是账号级的，与本批无关，按既定口径忽略；
-  A11 修复的验收目前只有「本地重建包 + 生产域名对照」，**合并部署后必须再打一次线上抽查**（看到范围条出现 + 四图联动不超时）
-- 下一项：`e2e/period-crosshair.spec.ts` 是 CI 里的**假绿**——把 `externalCrosshairTime` 恒置 null（多图十字光标完全关掉）它照样通过，
-  因为 perf tick 本来就在改画布像素，指纹「有变化」是空的；需与四图规格同一套口径重写（关面板 + 断落点命中画布 + 换成不受重绘影响的信号）
+  （A11 修复的线上验收已在 v0.5.31 部署后补做，见上面的发布记录：范围条出现 + 四图联动手势不超时）
+- 下一项（当时）：`e2e/period-crosshair.spec.ts` 是 CI 里的**假绿**——把 `externalCrosshairTime` 恒置 null
+  （多图十字光标完全关掉）它照样通过，因为 perf tick 本来就在改画布像素，指纹「有变化」是空的；
+  需与四图规格同一套口径重写（关面板 + 断落点命中画布 + 换成不受重绘影响的信号）
+  → **已做**：#177 重写该规格（改断 `data-crosshair-time` 的同步与移出清零），并顺带修掉它暴露的回流缺陷
 - 更新日：2026-09-23
 
 **里程碑 v0.5.30 发布完成（2026-09-23）**
