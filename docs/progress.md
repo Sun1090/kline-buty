@@ -8,13 +8,13 @@
 **批次 v0.5.33 已发布：「换一格周期」这条链一次收口（2026-09-24）**
 - main 现状：**v0.5.33 已发布**（tag `v0.5.33` @ 00055f9，Pages 部署完成后线上抽查通过）。
   本版批次 = **#198 → a4b653f**、**#200 → 63755fb**、**#203 → a754f4d**、**#204 → 839d28c**、
-  **#205 → 5a1b5ea**、**#206 → 3d4c0f2**、**#207 → b1b941d**，release 提交 **PR #208 → 00055f9**
-- 待合并：**#230**（`market-tape` 的 `localOnly` 理由写的机制在仓库里不存在 —— `aggTrade` 全仓零命中，
-  真实原因是 `src/hooks/useRecentTrades.ts:18` 的 `isPerfMode()` 早退；清单未动，仍是 ci 32 / localOnly 7。
-  首轮 E2E 红在 `[webkit] smoke-drawings` 趋势线拖拽，与本次改动无关，按既定规矩 `rerun --failed` 中）、
-  **#232**（A4c 的证据面：firefox 裁定写成计数对照 + 判词补上接收格逐拍轨迹）。
+  **#205 → 5a1b5ea**、**#206 → 3d4c0f2**、**#207 → b1b941d**，release 提交 **PR #208 → 00055f9**。
+  迁移收尾批已全部进入 main，当前 main 为 **`9b0ddcd`**（#236 启动族去掉多余 clear/reload；#237 水平射线按当前像素重扫）。
+- 已合并：**#230**（更正 `market-tape` 的 `localOnly` 理由：仓库没有 `aggTrade`，真实原因是
+  `src/hooks/useRecentTrades.ts:18` 的 `isPerfMode()` 早退）与 **#232**（补全 A4c 的 Firefox 计数对照和接收格逐拍轨迹）。
+  当前在飞：**#241**（覆盖率门抬到 83/76/75/85；GitHub CI 全通过，Vercel 因构建频率限制失败，待限流窗口恢复后重试）。
   本轮迁移批已全部落地：**#212 / #215 / #216 / #218 / #219 / #221 / #223 / #224 / #225 / #226 / #227 /
-  #228 / #229 / #231**（main 现 @ `26911f6`），#213 与 #214 关闭并由 #215、#218 重落。
+  #228 / #229 / #231**，#213 与 #214 关闭并由 #215、#218 重落。
 - **CI 上的三浏览器偶发，现在有名单了（2026-09-24，口径=最近 10 次 CI 的 E2E 作业日志）**。
   dot reporter 不打每个用例名，但汇总块打 `Running N tests` / `X failed` / `Y flaky` / `Z skipped` 和
   flaky/failed 名单；取法 `gh api --allow-escape-sequences repos/<owner>/<repo>/actions/jobs/<id>/logs`
