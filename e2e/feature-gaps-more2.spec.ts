@@ -4,6 +4,9 @@ import { test, expect, type Page } from '@playwright/test'
  * O8 E2E 场景扩充（第三批）：H9 指标末尾值一览 + M1 周期栏键盘漫游。
  * - H9 主图/副图信息条：随指标切换更新，末尾值即时显示
  * - M1 键盘可达性：Tab 聚焦周期 → 方向键漫游 → Enter 切换（aria-pressed 跟随）
+ *
+ * 数据源：`?perf=600` 合成蜡烛。原先挂 localOnly 的理由是「要真实蜡烛与指标值才渲染」——不成立，
+ * 合成 OHLC 一样喂得出 MA/VOL 面板；改 URL 后 chromium + webkit 全绿，已进 CI 账本。
  */
 
 /** 等待蜡烛真正渲染（与 smoke.spec 同款：扫描全部 canvas 涨跌色 + 冷启动刷新重试） */
@@ -60,7 +63,7 @@ async function tabToPeriodButton(page: Page): Promise<string> {
 }
 
 test('H9 指标末尾值一览：主图信息条渲染 MA 名称 + 实时价格值', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const info = page.getByTestId('chart-indicator-last')
@@ -74,7 +77,7 @@ test('H9 指标末尾值一览：主图信息条渲染 MA 名称 + 实时价格�
 })
 
 test('H9 副图切换：参数面板切副图指标 → 信息条同步更新且保持数值行', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const info = page.getByTestId('chart-indicator-last')
@@ -99,7 +102,7 @@ test('H9 副图切换：参数面板切副图指标 → 信息条同步更新且
 })
 
 test('M1 键盘漫游：Tab 聚焦周期 → 方向键漫游 → Enter 切换（aria-pressed 跟随）', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   const firstId = await tabToPeriodButton(page)
   // 初始聚焦即当前活跃周期

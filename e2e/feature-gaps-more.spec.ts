@@ -3,6 +3,10 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * O8 E2E 场景扩充（第二批）：图层管理交互 + 组级批量 + 跟随最新价。
  * - I13 全局透明度 / C15 跟随最新价 / I15 重命名+搜索 / C4 组折叠与组级显隐锁
+ *
+ * 数据源：`?perf=600` 合成蜡烛。这一族原先挂在 localOnly，理由写的是「图层管理交互依赖实时蜡烛渲染」——
+ * 不成立：它要的是「有一片能画的蜡烛」，合成契约完全给得出。改 URL 之后本文件 6 例 chromium + webkit 各全绿，
+ * 已进 CI 账本。（顺带一个坑：`page.addInitScript` 每次导航都跑，seed localStorage 后再 reload 的例会被它擦干净。）
  */
 
 /** 等待蜡烛真正渲染（与 smoke.spec 同款：扫描全部 canvas 涨跌色 + 冷启动刷新重试） */
@@ -75,7 +79,7 @@ const storedDrawingsCount = (page: Page) =>
   })
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
 })

@@ -4,6 +4,9 @@ import { test, expect, type Page } from '@playwright/test'
  * O8 E2E 场景扩充（第五批）：叠加指标恢复 + 桌面周期点击持久化。
  * - 叠加指标 select 恢复 none → 信息条副图行消失（回到纯主图）
  * - 桌面周期：点击切换活跃周期 → 刷新后持久化保留
+ *
+ * 数据源：`?perf=600` 合成蜡烛。原先挂 localOnly 的理由是「需要真实 K 线在刷新后仍可用」——不成立，
+ * `?perf` 在刷新后照样把这片合成序列喂进来（持久化那条正是靠 reload 验的）；已进 CI 账本。
  */
 
 async function waitCandlesRendered(page: Page) {
@@ -46,7 +49,7 @@ async function openPath(page: Page, testId: string) {
 }
 
 test('叠加指标 select 恢复 none → 信息条副图行消失（回到纯主图）', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const info = page.getByTestId('chart-indicator-last')
@@ -69,7 +72,7 @@ test('叠加指标 select 恢复 none → 信息条副图行消失（回到纯�
 })
 
 test('桌面周期：点击切换活跃周期 → 刷新后持久化保留', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   const bar = page.getByTestId('period-bar')
   await bar.waitFor({ timeout: 15_000 })
@@ -97,7 +100,7 @@ test('桌面周期：点击切换活跃周期 → 刷新后持久化保留', asy
 
 test('移动端周期：点击切换活跃周期 → 刷新后持久化保留', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   const bar = page.getByTestId('period-bar')
   await bar.waitFor({ timeout: 15_000 })
@@ -122,7 +125,7 @@ test('移动端周期：点击切换活跃周期 → 刷新后持久化保留', 
 })
 
 test('M 快捷键循环主图指标 → 信息条内容同步更新', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const info = page.getByTestId('chart-indicator-last')
