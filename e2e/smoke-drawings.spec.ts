@@ -2701,11 +2701,16 @@ test.describe('画线工具', () => {
         }
       })
 
-    // 切回鼠标（只读）→ 点击中线附近可选中（命中检测走 K 线回归线段）
+    // 切回鼠标（只读）→ 必须点在**真的画出来的像素**上才能选中。
+    // 这里原来点的是 findDrawnLineCenter —— 全体画线像素的质心。实测「质心到最近墨迹」的距离：
+    // chromium 0.6–0.8px（4/4 次），webkit 3.5/8.5/8.8/9.6px（4 次里有 3 次越过命中阈值
+    // HIT_THRESHOLD_PX=8，点下去什么也没选中）。CI run 36004500928 的 [webkit] 硬红就在这里：
+    // 初始 + 两次重试共 3 次都等不到点击后的「删除」。webkit 的墨迹分布为什么让质心跑偏没有查明，
+    // 但不影响修法 —— 扫真实像素 + 按结果重试，落点本来就在墨迹上，不依赖质心与三条线的几何关系。
     await pickDrawingTool(page, '鼠标')
-    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const center = (await findDrawnLineCenter(page))!
-    await page.mouse.click(center.x, center.y)
+    const selected = async () => (await page.getByRole('button', { name: '删除' }).count()) > 0
+    const hit = await hitDrawnPixelUntil(page, selected)
+    expect(hit, '扫了三轮真实画线像素、逐个命中测试，仍没能选中这条回归通道').not.toBeNull()
     await expect(page.getByRole('button', { name: '删除' })).toBeVisible({ timeout: 5000 })
 
     // 拖拽最右侧（尾）锚点：窗口锚点必须可编辑；回归通道按时间排序，另一端保持不变
