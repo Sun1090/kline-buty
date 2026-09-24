@@ -225,10 +225,14 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     // （一次都没变 = 这一步什么都没发生，那「别人没动」就不算证据）
     expect(samples, '观测窗一次都没采到').toBeGreaterThan(3)
     expect(solMoved, `${SWITCHED} 换周期后一格里可视区间始终没变过：本例的前提（真的换了周期、重落了视角）没有成立`).toBeGreaterThan(0)
-    // 截断必须是显式的红：CAP 到点而格子仍在变化 = 这一格的装载从没稳过，
+    // 截断必须是显式的红：CAP 到点而观测没收尾 = 这一格的装载从没稳过，
     // 「其余三格没动」这个结论根本没机会被检验（不是它绿了，是窗没看完）。
-    const solReport = `${samples} 拍、${Date.now() - startedAt}ms，末次连续稳定 ${solStable} 拍、区间缺失 ${solMissing} 拍`
-    expect(capped, `${SWITCHED} 始终没落位（${solReport}），观测窗被迫截断`).toBe(false)
+    // 判词只报「没收尾」+ 两个判据各自的实测值，不猜原因：到点可能是连续一致拍数不够，
+    // 也可能是早稳了但没到墙钟下限 —— 两种的修法完全不同，写成「始终没落位」会带偏方向。
+    const solReport =
+      `${samples} 拍、${Date.now() - startedAt}ms，末次起连续 ${solStable} 拍与上一拍一致（需 ≥${SETTLE_STABLE}）` +
+      `、区间缺失 ${solMissing} 拍`
+    expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
       `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位`,
