@@ -697,13 +697,14 @@ test.describe('移动端（390×844 触屏视口）', () => {
     expect(errors).toHaveLength(0)
   })
 
+  // 本文件各用例的启动只留一条 goto：context 每条用例新建，再补一次 evaluate(localStorage.clear())
+  // + reload 是多余的，而那次 reload 正是 CI 上 webkit 的崩点（理由与「两种启动逐键相同」的实测
+  // 记在 alerts-features.spec.ts 的 beforeEach）
   test('移动端：触屏拖拽创建价格区间框 → 落库两点按价格排序 → 选中蓝色矩形边框 → 删除', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1448,8 +1449,6 @@ test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移',
 // ===== 仓位面板：开仓 → 止盈止损线 → 平仓 =====
 test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', async ({ page }) => {
   await page.goto('/?perf=600')
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
   // 开仓价靠输入框聚焦时自动填现价 → 必须先等到实时价到位，否则按钮一直禁用
   await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
@@ -1477,8 +1476,6 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
 // ===== 价格提醒：创建提醒 → 列表显示 → 删除 =====
 test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page }) => {
   await page.goto('/?perf=600')
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
   // 展开「更多」面板，点「提醒」
   await page.getByTestId('header-more').click()
