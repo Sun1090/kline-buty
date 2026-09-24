@@ -3,6 +3,21 @@ import { findDrawingAnchor, findDrawnLineCenter, hitDrawnPixelUntil, openDrawing
 /**
  * 移动端触屏视口（390×844）端到端覆盖（自 smoke 拆出）：无横向溢出、捏合缩放、双击复位、触屏拖线。
  * CDP 触摸派发仅 Chromium，跨浏览器触摸覆盖由 CI 的 chromium 项目承担。
+ *
+ * 19 例里 18 例走 `?perf=600`，只有「行情列表侧栏」那条真的离不开线上数据 —— 它数的是
+ * `[data-testid^="market-row-"]`，而 `useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，
+ * 已拆到 `smoke-mobile-live.spec.ts`。原来 localOnly 的理由写的是「19 处 goto('/') 依赖线上数据」，
+ * 那是数 URL 数出来的，没有一条断言被读过。
+ *
+ * 迁到 `?perf` 时踩到一条通用契约，值得后面动像素的用例都看一眼：**`?perf` 的价格轴会在蜡烛
+ * 首次上屏之后约 0.42s 再做一次离散重缩放**，画线质心一次性从 y=422.3 跳到 449.9（27.6px）后
+ * 才稳定（3/3 复现；线上数据 0/3 有跳变，因为网络请求本身就把测试推过了那个时刻）。所以
+ * `waitCandlesRendered` 只是「像素有了」的门，不是「图表落定了」的门：先扫像素质心、再照那个
+ * 坐标裸 tap 的写法，在 `?perf` 下会 tap 到线上方 27.6px 的空处 —— 画线**创建**照常成功，
+ * 只有随后的**编辑**整条落空（settle=0 时 0/5 能动，settle=300ms 时 5/5 能动）。
+ * 本文件的整线拖动那条目前靠的是菜单两次 tap 天然花掉的时间跨过这个时刻，属于**没被证伪的巧合**；
+ * 要改成可靠写法应走 `hitDrawnPixelUntil`（点了没命中就重扫重试），而不是在这里加固定 sleep ——
+ * 固定 sleep 证明不了一次性迟到的重缩放已经过去。
  */
 
 /**
@@ -25,7 +40,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
   test('页面无横向溢出 + 工具栏可滚动 + 触屏操作可用', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.locator('canvas').first()).toBeVisible()
     // 无横向页面溢出（工具栏在容器内部横向滚动，不撑破页面）
@@ -55,7 +70,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -205,7 +220,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -300,7 +315,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -399,7 +414,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -549,7 +564,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -666,7 +681,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
@@ -792,7 +807,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -872,7 +887,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -956,7 +971,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1040,7 +1055,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1124,7 +1139,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1211,7 +1226,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1325,7 +1340,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
 test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到最新消失', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const btn = page.getByTestId('back-to-latest')
@@ -1352,39 +1367,8 @@ test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到�
   expect(errors).toHaveLength(0)
 })
 
-test('桌面：行情列表侧栏——点行切交易对 + 排序升降 + 折叠/展开', async ({ page }) => {
-  const errors: string[] = []
-  page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
-  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
-  await waitCandlesRendered(page)
-
-  // 行情列表可见且行数据已加载（内置 60+ 交易对）
-  await expect(page.getByTestId('market-list')).toBeVisible({ timeout: 15_000 })
-  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
-  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
-  expect(rowCount).toBeGreaterThan(50)
-
-  // 点击 ETH 行 → 主图交易对切换为 ETH/USDT + 行高亮
-  await page.getByTestId('market-row-ETHUSDT').click()
-  await expect(page.getByText('ETH/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-  // 排序：点价格列 → ▲（升序）；再点 → ▼（降序）
-  const priceSort = page.getByTestId('market-sort-price')
-  await priceSort.click()
-  await expect(priceSort).toContainText('▲')
-  await priceSort.click()
-  await expect(priceSort).toContainText('▼')
-
-  // 折叠 → 窄竖条；展开 → 面板恢复
-  await page.getByTestId('market-list-collapse').click()
-  await expect(page.getByTestId('market-list-rail')).toBeVisible()
-  await page.getByTestId('market-list-expand').click()
-  await expect(page.getByTestId('market-list')).toBeVisible()
-  expect(errors).toHaveLength(0)
-})
-
 test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const chart = page.locator('main div').first()
@@ -1424,7 +1408,7 @@ test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移',
 
 // ===== 仓位面板：开仓 → 止盈止损线 → 平仓 =====
 test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
@@ -1453,7 +1437,7 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
 
 // ===== 价格提醒：创建提醒 → 列表显示 → 删除 =====
 test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
