@@ -3,6 +3,21 @@ import { findDrawingAnchor, findDrawnLineCenter, hitDrawnPixelUntil, openDrawing
 /**
  * 移动端触屏视口（390×844）端到端覆盖（自 smoke 拆出）：无横向溢出、捏合缩放、双击复位、触屏拖线。
  * CDP 触摸派发仅 Chromium，跨浏览器触摸覆盖由 CI 的 chromium 项目承担。
+ *
+ * 19 例里 18 例走 `?perf=600`，只有「行情列表侧栏」那条真的离不开线上数据 —— 它数的是
+ * `[data-testid^="market-row-"]`，而 `useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，
+ * 已拆到 `smoke-mobile-live.spec.ts`。原来 localOnly 的理由写的是「19 处 goto('/') 依赖线上数据」，
+ * 那是数 URL 数出来的，没有一条断言被读过。
+ *
+ * 迁到 `?perf` 时踩到一条通用契约，值得后面动像素的用例都看一眼：**`?perf` 的价格轴会在蜡烛
+ * 首次上屏之后约 0.42s 再做一次离散重缩放**，画线质心一次性从 y=422.3 跳到 449.9（27.6px）后
+ * 才稳定（3/3 复现；线上数据 0/3 有跳变，因为网络请求本身就把测试推过了那个时刻）。所以
+ * `waitCandlesRendered` 只是「像素有了」的门，不是「图表落定了」的门：先扫像素质心、再照那个
+ * 坐标裸 tap 的写法，在 `?perf` 下会 tap 到线上方 27.6px 的空处 —— 画线**创建**照常成功，
+ * 只有随后的**编辑**整条落空（settle=0 时 0/5 能动，settle=300ms 时 5/5 能动）。
+ * 本文件的整线拖动那条原本只是靠菜单两次 tap 天然花掉的时间跨过这个时刻 —— **这个巧合已被证伪**
+ * （chromium 串行两遍红了一次：10s 等满、谓词始终 false）。改后的写法是「tap+拖动」按结果重试、
+ * 每轮重扫当前像素，而不是加一个固定 sleep —— 一次性迟到的重缩放，睡多久都证明不了它已经过去。
  */
 
 /**
@@ -25,7 +40,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
   test('页面无横向溢出 + 工具栏可滚动 + 触屏操作可用', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.locator('canvas').first()).toBeVisible()
     // 无横向页面溢出（工具栏在容器内部横向滚动，不撑破页面）
@@ -55,7 +70,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -205,7 +220,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -255,44 +270,64 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '鼠标', exact: true }).tap()
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const center = (await findDrawnLineCenter(page))!
-    await page.touchscreen.tap(center.x, center.y)
-    await page.waitForTimeout(300)
 
-    // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
-    for (let i = 1; i <= 7; i++) {
-      await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: center.x, y: center.y + i * 10 }] })
-      await page.waitForTimeout(25)
+    /**
+     * 「tap 选中 + 整线拖动」重试，且**每轮重扫像素**。
+     * ?perf 的价格轴会在蜡烛首次上屏后约 0.42s 再做一次离散重缩放：实测整条线从 y=422.3
+     * 一次跳到 y=449.9（27.6px），跳完就不再动。照着跳之前扫到的坐标 tap 会落在空白上，
+     * 选中压根没建立，于是随后整次编辑整条落空（四个增量全 0）。
+     * 这里刻意不用「加一个固定 sleep 跨过那个时刻」：一次性迟到的重缩放，睡多久都证明不了
+     * 它已经过去；而「看得到地真的挪动了才收工」是按结果收敛的，迟到几次都吃得住。
+     * 多拖一次不影响本例判据 —— 断的是两个锚点动得一致，不是移动量。
+     */
+    // used 记进判词：CI 上红了要能一眼看出是「三轮都没选中」还是「第一轮没选中、没再试」
+    type Deltas = { used: number; sameId: boolean; dT0: number; dT1: number; dP0: number; dP1: number }
+    let delta: Deltas | null = null
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const center = await findDrawnLineCenter(page)
+      expect(center, `第 ${attempt} 轮：画线质心扫不到`).not.toBeNull()
+      if (!center) break
+      await page.touchscreen.tap(center.x, center.y)
+      await page.waitForTimeout(300)
+
+      // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
+      cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+      for (let i = 1; i <= 7; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: center.x, y: center.y + i * 10 }] })
+        await page.waitForTimeout(25)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+      await page.waitForTimeout(400)
+
+      const after = await readFirst()
+      if (!after || after.points.length !== 2) continue
+      const d: Deltas = {
+        used: attempt,
+        sameId: after.id === before!.id,
+        dT0: after.points[0].time - before!.points[0].time,
+        dT1: after.points[1].time - before!.points[1].time,
+        dP0: after.points[0].price - before!.points[0].price,
+        dP1: after.points[1].price - before!.points[1].price,
+      }
+      delta = d
+      if (Math.abs(d.dT0) > 0.5 || Math.abs(d.dP0) > 0.01) break
     }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    await page.waitForTimeout(400)
-
-    // 同一 id，各锚点时间/价格增量一致（整线平移）且确实发生了移动
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 2) return false
-          const dT0 = after.points[0].time - before!.points[0].time
-          const dT1 = after.points[1].time - before!.points[1].time
-          const dP0 = after.points[0].price - before!.points[0].price
-          const dP1 = after.points[1].price - before!.points[1].price
-          return (
-            after.id === before!.id &&
-            dT0 === dT1 &&
-            dP0 === dP1 &&
-            (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
-          )
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true)
+    // 判词把四个增量带出来：原来的 expect.poll 返回 bool，红了只有
+    // 「Expected true / Received false」，证不出塌掉的是「一致」还是「真的动了」那一半。
+    expect(
+      [
+        delta?.sameId === true,
+        delta ? delta.dT0 === delta.dT1 : false,
+        delta ? delta.dP0 === delta.dP1 : false,
+        delta ? Math.abs(delta.dT0) > 0.5 || Math.abs(delta.dP0) > 0.01 : false,
+      ],
+      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（used = 第几轮真的选中；null = 三轮 tap+拖动一次都没选中）`,
+    ).toEqual([true, true, true, true])
     expect(errors).toHaveLength(0)
   })
 
@@ -300,7 +335,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -399,7 +434,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -549,7 +584,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -666,7 +701,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
@@ -792,7 +827,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -872,7 +907,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -956,7 +991,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
     test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1040,7 +1075,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1124,7 +1159,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1163,18 +1198,37 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.waitForTimeout(400)
 
     // 长按文本本体（overlay 实际渲染位置，250ms 不动 → 快捷编辑）→ 编辑器打开且内容回填
-    const center = await findDrawnLineCenter(page)
-    expect(center).not.toBeNull()
-    if (!center) return
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: center.x, y: center.y }] })
-    await page.waitForTimeout(300)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    // 与整线拖动那条同一个病根：扫一次像素质心就照着它按下，而 ?perf 的价格轴会在蜡烛首次
+    // 上屏后约 0.42s 再做一次离散重缩放（见文件头），按在过期坐标上就什么也不会打开。
+    // 实测同一判据线上 8/8、?perf 7/8 —— 差异不来自「perf 更慢」，就是同一处过期坐标。
+    // 所以按结果重试：编辑器没出现就重扫当前像素再按一次，而不是把预算加大。
+    const editorOpened = async () => {
+      try {
+        await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 1_500 })
+        return true
+      } catch {
+        return false
+      }
+    }
+    let pressAttempt = 0
+    let opened = false
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      pressAttempt = attempt
+      const center = await findDrawnLineCenter(page)
+      expect(center, `第 ${attempt} 轮：文本标注的像素质心扫不到`).not.toBeNull()
+      if (!center) break
+      cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: center.x, y: center.y }] })
+      await page.waitForTimeout(300)
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+      opened = await editorOpened()
+      if (opened) break
+    }
+    expect(opened, `长按三轮都没打开移动端编辑器（最后一轮用的是第 ${pressAttempt} 次扫到的坐标）`).toBe(true)
     await expect(page.getByTestId('mobile-text-input')).toHaveValue('长按编辑')
 
     // 改字 → 确认 → 落库
@@ -1211,7 +1265,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1325,7 +1379,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
 test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到最新消失', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const btn = page.getByTestId('back-to-latest')
@@ -1352,39 +1406,8 @@ test('桌面：回看历史 → 「回到最新」按钮出现 → 点击回到�
   expect(errors).toHaveLength(0)
 })
 
-test('桌面：行情列表侧栏——点行切交易对 + 排序升降 + 折叠/展开', async ({ page }) => {
-  const errors: string[] = []
-  page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
-  await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
-  await waitCandlesRendered(page)
-
-  // 行情列表可见且行数据已加载（内置 60+ 交易对）
-  await expect(page.getByTestId('market-list')).toBeVisible({ timeout: 15_000 })
-  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
-  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
-  expect(rowCount).toBeGreaterThan(50)
-
-  // 点击 ETH 行 → 主图交易对切换为 ETH/USDT + 行高亮
-  await page.getByTestId('market-row-ETHUSDT').click()
-  await expect(page.getByText('ETH/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-  // 排序：点价格列 → ▲（升序）；再点 → ▼（降序）
-  const priceSort = page.getByTestId('market-sort-price')
-  await priceSort.click()
-  await expect(priceSort).toContainText('▲')
-  await priceSort.click()
-  await expect(priceSort).toContainText('▼')
-
-  // 折叠 → 窄竖条；展开 → 面板恢复
-  await page.getByTestId('market-list-collapse').click()
-  await expect(page.getByTestId('market-list-rail')).toBeVisible()
-  await page.getByTestId('market-list-expand').click()
-  await expect(page.getByTestId('market-list')).toBeVisible()
-  expect(errors).toHaveLength(0)
-})
-
 test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const chart = page.locator('main div').first()
@@ -1424,7 +1447,7 @@ test('画线模式：触屏轻扫不触发图表平移，提交后恢复平移',
 
 // ===== 仓位面板：开仓 → 止盈止损线 → 平仓 =====
 test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
@@ -1453,7 +1476,7 @@ test('仓位面板：输入开仓 → 止盈止损线落图 → 平仓清除', a
 
 // ===== 价格提醒：创建提醒 → 列表显示 → 删除 =====
 test('价格提醒：创建提醒 → 列表显示 → 删除', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('canvas', { timeout: 30_000 })
