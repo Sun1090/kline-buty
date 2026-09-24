@@ -5,6 +5,7 @@
     "e2e/docs.spec.ts",
     "e2e/drawing-contract.spec.ts",
     "e2e/drawing-semantics.spec.ts",
+    "e2e/feature-gaps.spec.ts",
     "e2e/indicator-crosshair.spec.ts",
     "e2e/limit-orders.spec.ts",
     "e2e/marker-render.spec.ts",
@@ -26,7 +27,7 @@
   ],
   "localOnly": {
     "e2e/chart-ready.spec.ts": "本例要的就是「真实 klines 请求迟到」，依赖币安实时 REST；CI 运行器出网不可靠",
-    "e2e/feature-gaps.spec.ts": "实时数据冒烟族：行情榜单/搜索/指标收藏等待真实行情流，运行器上拿不到数据",
+    "e2e/feature-gaps-live.spec.ts": "G4 榜单族两条：数的是全市场 ticker 行（market-row-*），?perf 只合成图表蜡烛不改榜单，必须真打行情端点",
     "e2e/feature-gaps-more.spec.ts": "同上：图层管理交互依赖实时蜡烛渲染",
     "e2e/feature-gaps-more2.spec.ts": "实时数据冒烟族：H9 指标末尾值信息条要真实蜡烛与指标值才渲染，M1 键盘漫游同样走线上行情页",
     "e2e/feature-gaps-more3.spec.ts": "实时数据冒烟族：H12 副图 Y 轴开关与移动端 H9 信息条都依赖真实行情流喂出的 RSI/VOL 面板",
