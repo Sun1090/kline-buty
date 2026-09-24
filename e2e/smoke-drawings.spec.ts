@@ -2369,14 +2369,21 @@ test.describe('画线工具', () => {
     const selected = () => page.getByRole('button', { name: '删除' }).count().then((n) => n > 0)
     await page.mouse.click(blank.x, blank.y)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
-    const onRay = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.6 })
-    expect(onRay, '射线右段应存在可命中的像素').not.toBeNull()
-
-    // 再取消选中，点锚点后方确认不会重新选中：射线所在行的最左像素即射线起点，它左侧 40px 没有线
-    await page.mouse.click(blank.x, blank.y)
-    await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
-    const row = await findDrawnPixels(page, { yMin: onRay!.y - 8, yMax: onRay!.y + 8 }, { max: 1 })
-    expect(row, '射线所在行应有像素').toHaveLength(1)
+    // 「右段可命中」和「射线所在行」得来自同一次定位：?perf 的价格轴在首帧之后还会重缩放一次
+    // （实测 +1078ms 一次跳 15px），而行带子只有 ±8px —— 拿旧 y 画带子会整个扫空，CI run
+    // 36009346405 的 [webkit] 正是这条红（原判词「射线所在行应有像素」expected length 1 /
+    // received 0）。所以每轮先重新命中一次取「此刻」的像素，紧接着按它定位行，扫空就换一轮重来，
+    // 不加 sleep：一次有界等待证明不了那次重缩放已经过去，按结果重扫才可以。
+    let row: { x: number; y: number }[] = []
+    for (let attempt = 0; attempt < 3 && !row.length; attempt++) {
+      const onRay = await hitDrawnPixelUntil(page, selected, { xMin: box!.x + box!.width * 0.6 })
+      expect(onRay, '射线右段应存在可命中的像素').not.toBeNull()
+      // 命中那次点击把画线选中了：定位行之前先取消，否则后面「点锚点后方」是从选中态开始的
+      await page.mouse.click(blank.x, blank.y)
+      await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
+      row = await findDrawnPixels(page, { yMin: onRay!.y - 8, yMax: onRay!.y + 8 }, { max: 1 })
+    }
+    expect(row, '重扫三轮仍定位不到射线所在行：命中与扫行之间价格轴又动了').toHaveLength(1)
     const behind = { x: Math.max(box!.x + 6, row[0].x - 40), y: row[0].y }
     await page.mouse.click(behind.x, behind.y)
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
