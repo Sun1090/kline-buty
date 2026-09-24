@@ -75,12 +75,16 @@ export default defineConfig({
       // O7 覆盖率基线：adapter 渲染层依赖 canvas（jsdom 无法创建 2d 上下文），由 E2E 覆盖；不计入单测覆盖率
       exclude: ['**/adapter.ts', '**/__tests__/**', '**/e2e/**', '**/perf.test.ts', '**/node_modules/**', '**/dist/**', '**/shell-app.ts', '**/shell-compat.ts'],
       reporter: ['text', 'json-summary'],
-      // O7 门禁：低于阈值 coverage 命令即失败（防回退；当前基线 ~80%，后续继续提升到 85%）
+      // O7 门禁：低于阈值 coverage 命令即失败（防回退）。
+      // 2026-09-25 实测基线（main，175 files / 2035 tests，v8 provider）：
+      //   lines 88.49% · statements 85.76% · branches 80.29% · functions 78.68%
+      // 阈值一律留在实测值下方 2.7–4.3 个点：够咬住「把有测试的代码删掉/整块不测地新增」，
+      // 又不至于因为一个尚未覆盖的新文件就红 CI —— 红到无法合并的门禁最后只会被调低。
       thresholds: {
-        statements: 80,
-        branches: 70,
-        functions: 70,
-        lines: 80,
+        statements: 83,
+        branches: 76,
+        functions: 75,
+        lines: 85,
       },
     },
   },
