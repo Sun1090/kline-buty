@@ -15,9 +15,9 @@ import { findDrawingAnchor, findDrawnLineCenter, hitDrawnPixelUntil, openDrawing
  * `waitCandlesRendered` 只是「像素有了」的门，不是「图表落定了」的门：先扫像素质心、再照那个
  * 坐标裸 tap 的写法，在 `?perf` 下会 tap 到线上方 27.6px 的空处 —— 画线**创建**照常成功，
  * 只有随后的**编辑**整条落空（settle=0 时 0/5 能动，settle=300ms 时 5/5 能动）。
- * 本文件的整线拖动那条目前靠的是菜单两次 tap 天然花掉的时间跨过这个时刻，属于**没被证伪的巧合**；
- * 要改成可靠写法应走 `hitDrawnPixelUntil`（点了没命中就重扫重试），而不是在这里加固定 sleep ——
- * 固定 sleep 证明不了一次性迟到的重缩放已经过去。
+ * 本文件的整线拖动那条原本只是靠菜单两次 tap 天然花掉的时间跨过这个时刻 —— **这个巧合已被证伪**
+ * （chromium 串行两遍红了一次：10s 等满、谓词始终 false）。改后的写法是「tap+拖动」按结果重试、
+ * 每轮重扫当前像素，而不是加一个固定 sleep —— 一次性迟到的重缩放，睡多久都证明不了它已经过去。
  */
 
 /**
@@ -270,44 +270,62 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.getByTestId('mobile-menu-drawing').tap()
     await page.getByRole('button', { name: '鼠标', exact: true }).tap()
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const center = (await findDrawnLineCenter(page))!
-    await page.touchscreen.tap(center.x, center.y)
-    await page.waitForTimeout(300)
 
-    // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
-    for (let i = 1; i <= 7; i++) {
-      await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: center.x, y: center.y + i * 10 }] })
-      await page.waitForTimeout(25)
+    /**
+     * 「tap 选中 + 整线拖动」重试，且**每轮重扫像素**。
+     * ?perf 的价格轴会在蜡烛首次上屏后约 0.42s 再做一次离散重缩放：实测整条线从 y=422.3
+     * 一次跳到 y=449.9（27.6px），跳完就不再动。照着跳之前扫到的坐标 tap 会落在空白上，
+     * 选中压根没建立，于是随后整次编辑整条落空（四个增量全 0）。
+     * 这里刻意不用「加一个固定 sleep 跨过那个时刻」：一次性迟到的重缩放，睡多久都证明不了
+     * 它已经过去；而「看得到地真的挪动了才收工」是按结果收敛的，迟到几次都吃得住。
+     * 多拖一次不影响本例判据 —— 断的是两个锚点动得一致，不是移动量。
+     */
+    type Deltas = { sameId: boolean; dT0: number; dT1: number; dP0: number; dP1: number }
+    let delta: Deltas | null = null
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const center = await findDrawnLineCenter(page)
+      expect(center, `第 ${attempt} 轮：画线质心扫不到`).not.toBeNull()
+      if (!center) break
+      await page.touchscreen.tap(center.x, center.y)
+      await page.waitForTimeout(300)
+
+      // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
+      cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+      for (let i = 1; i <= 7; i++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: center.x, y: center.y + i * 10 }] })
+        await page.waitForTimeout(25)
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+      await page.waitForTimeout(400)
+
+      const after = await readFirst()
+      if (!after || after.points.length !== 2) continue
+      const d: Deltas = {
+        sameId: after.id === before!.id,
+        dT0: after.points[0].time - before!.points[0].time,
+        dT1: after.points[1].time - before!.points[1].time,
+        dP0: after.points[0].price - before!.points[0].price,
+        dP1: after.points[1].price - before!.points[1].price,
+      }
+      delta = d
+      if (Math.abs(d.dT0) > 0.5 || Math.abs(d.dP0) > 0.01) break
     }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    await page.waitForTimeout(400)
-
-    // 同一 id，各锚点时间/价格增量一致（整线平移）且确实发生了移动
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 2) return false
-          const dT0 = after.points[0].time - before!.points[0].time
-          const dT1 = after.points[1].time - before!.points[1].time
-          const dP0 = after.points[0].price - before!.points[0].price
-          const dP1 = after.points[1].price - before!.points[1].price
-          return (
-            after.id === before!.id &&
-            dT0 === dT1 &&
-            dP0 === dP1 &&
-            (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
-          )
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true)
+    // 判词把四个增量带出来：原来的 expect.poll 返回 bool，红了只有
+    // 「Expected true / Received false」，证不出塌掉的是「一致」还是「真的动了」那一半。
+    expect(
+      [
+        delta?.sameId === true,
+        delta ? delta.dT0 === delta.dT1 : false,
+        delta ? delta.dP0 === delta.dP1 : false,
+        delta ? Math.abs(delta.dT0) > 0.5 || Math.abs(delta.dP0) > 0.01 : false,
+      ],
+      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（null = 三轮 tap+拖动一次都没选中）`,
+    ).toEqual([true, true, true, true])
     expect(errors).toHaveLength(0)
   })
 
