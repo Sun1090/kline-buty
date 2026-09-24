@@ -3,13 +3,19 @@ import { dragContainerPointer, dragSelectedAnchorUntil, findDrawnLineCenter, fin
 /**
  * 画线工具端到端覆盖（自 smoke.spec.ts 拆出）：绘制 → 落库 → 像素校验 → 删除。
  * 锚点寻找与像素带比对来自 e2e/helpers/smoke.ts。
+ *
+ * 数据源：`?perf=600` 合成蜡烛（39 处 goto 全换）。它原先挂 localOnly 的理由是
+ * 「40 例走真实行情页，逐条像素校验」—— 但同族的 drawing-contract / drawing-semantics 早就在 CI 里
+ * 用 `?perf=600` 跑同样的鼠标绘制 + 像素比对，合成数据对此完全够用。
+ * 本机实测 chromium 40/40、webkit 26/26（另 14 条按文件里既有的 browserName 条件跳过，非本次引入）。
+ * firefox 本机起不来（browserType.launch 失败），三浏览器以本条 PR 的 CI 为准。
  */
 
 test.describe('画线工具', () => {
   test.use({ acceptDownloads: true })
 
   test('画线：绘制水平线 → 选中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '水平线')
@@ -43,7 +49,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：垂直线 → 选中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '垂直线')
@@ -79,7 +85,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：平行通道 → 选中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '平行通道')
@@ -100,7 +106,7 @@ test.describe('画线工具', () => {
   test('画线：水平通道 + XABCD 形态 + 艾略特波浪 → 绘制 → 删除', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -266,7 +272,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：文本标注 → 输入文字 → 确定 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '文本')
@@ -288,7 +294,7 @@ test.describe('画线工具', () => {
 
   test('画线：文本标注多行/字号/颜色 → 落库 → 重新编辑恢复 → 像素校验 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '文本')
@@ -373,7 +379,7 @@ test.describe('画线工具', () => {
 
   test('画线：文本标注快捷编辑 → 桌面双击文本本体直接打开编辑器（内容回填）→ 改字落库 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '文本')
@@ -438,7 +444,7 @@ test.describe('画线工具', () => {
 
   test('画线：周期线 → A→B 定义周期 → 落库两点 → 像素校验选中蓝色周期竖线（≥3 根等比线）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '周期线')
@@ -533,7 +539,7 @@ test.describe('画线工具', () => {
 
   test('画线：斐波那契时间区间 → A→B 定义基期 → 落库两点 → 像素校验选中蓝色分界线（≥3 列）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '斐波那契时间区间')
@@ -628,7 +634,7 @@ test.describe('画线工具', () => {
 
   test('画线：趋势角度 → 拖 A→B → 落库两点按时间排序 → 像素校验选中蓝色线段 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '趋势角度')
@@ -721,7 +727,7 @@ test.describe('画线工具', () => {
   test('画线：时间区间 → 拖 A→B → 落库两点按时间排序 → 像素校验选中蓝色竖带双边框 → 删除', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '时间区间', true)
@@ -850,7 +856,7 @@ test.describe('画线工具', () => {
   test('画线：价格带 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色水平带双边框 → 删除', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'webkit 栅格化像素列分组/颜色阈值差异——画线功能由 chromium 像素级覆盖与单测保障')
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '价格带')
@@ -1042,7 +1048,7 @@ test.describe('画线工具', () => {
 
   test('画线：价格区间框 → 拖 A→B → 落库两点按价格排序 → 像素校验选中蓝色矩形边框 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '价格区间框')
@@ -1148,7 +1154,7 @@ test.describe('画线工具', () => {
 
   test('画线：持仓计划 → 三次点击定义入场/止损/止盈 → 落库三点 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '持仓计划')
@@ -1213,7 +1219,7 @@ test.describe('画线工具', () => {
 
   test('画线：预测线 → 拖 A→B → 落库两点保持原始顺序 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '预测线')
@@ -1277,7 +1283,7 @@ test.describe('画线工具', () => {
 
   test('画线：日期范围 → 拖 A→B → 落库两点按时间排序 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '日期范围')
@@ -1341,7 +1347,7 @@ test.describe('画线工具', () => {
 
   test('画线：斐波那契通道 → A→B 定义摆幅 → 落库两点保序 → 像素校验选中蓝色平行线（≥4 条）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '斐波那契通道')
@@ -1435,7 +1441,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：矩形 + 射线 → 绘制 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1464,7 +1470,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：椭圆 + 圆 → 绘制 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1493,7 +1499,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：三角形（3 锚点）+ 圆弧 → 绘制 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1522,7 +1528,7 @@ test.describe('画线工具', () => {
 
   test('画线：楔形 → 三点点击（A/B/C 收敛）→ 落库 3 锚点保序 → 像素校验选中蓝色楔形边 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '楔形')
@@ -1621,7 +1627,7 @@ test.describe('画线工具', () => {
 
   test('画线：宽度通道 → 三点点击（A/B 方向 + C 定宽）→ 落库 3 锚点 → 像素校验蓝色平行线 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '宽度通道')
@@ -1718,7 +1724,7 @@ test.describe('画线工具', () => {
 
   test('画线：斐波那契扩展（3 锚点）+ 扇形 + 价格标签 + 箭头 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -1836,7 +1842,7 @@ test.describe('画线工具', () => {
 
   test('画线：江恩角度线 → 拖 A→B → 9 条角度线（1×8…8×1，双向）→ 反向命中选中 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
@@ -1940,7 +1946,7 @@ test.describe('画线工具', () => {
 
   test('画线：江恩箱 → 拖 A→B → 矩形 + 10 条角度线（1×1/1×2/2×1）→ 区域点击选中 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
@@ -2013,7 +2019,7 @@ test.describe('画线工具', () => {
 
   test('画线：安德鲁叉（3 锚点）→ 三点点击 → 中轨/上下轨射线 → 选中 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 切周期强制全量 fitContent：避免冷启动只渲染 1 根蜡烛时画线锚点塌缩
@@ -2093,7 +2099,7 @@ test.describe('画线工具', () => {
 
   test('画线：趋势线 → 鼠标拖拽整线移动 → 锚点增量一致 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2161,7 +2167,7 @@ test.describe('画线工具', () => {
 
   test('画线：趋势线 → 拖拽尾锚点 → 仅该锚点移动 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2218,7 +2224,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：射线 → 拖拽锚点 → 方向点保留 + 顺序不变 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2275,7 +2281,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：垂直射线 → 向下延伸命中 + 锚点上方不命中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2326,7 +2332,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：水平射线 → 向右延伸命中 + 锚点后方不命中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2384,7 +2390,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：延长线 → 两端延伸命中 + 远离直线不命中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2442,7 +2448,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：十字线 → 横纵线命中 + 远离不命中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2510,7 +2516,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：多段线（多次点击 + 双击收尾）→ 选中 → 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2572,7 +2578,7 @@ test.describe('画线工具', () => {
   })
 
   test('画线：量度（拖 A→B → Δ价格/Δ%标签）→ 删除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2608,7 +2614,7 @@ test.describe('画线工具', () => {
 
   test('画线：速度线（拖 A→B → 4 段渲染 + 落库保方向）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2647,7 +2653,7 @@ test.describe('画线工具', () => {
 
   test('画线：回归通道（拖 A→B → 中线+上下轨渲染 + 落库）→ 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     const chart = page.locator('main div').first()
@@ -2733,7 +2739,7 @@ test.describe('画线工具', () => {
 
   test('画线：图层管理 → 水平线+趋势线两行 → 隐藏（像素减少+落库）→ 锁定不可选中 → 解锁选中 → 行内删除 → 全清空', async ({ page }) => {
     test.setTimeout(120_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
 
@@ -2911,7 +2917,7 @@ test.describe('画线工具', () => {
 
   test('画线：备注便签 → 点击创建 → 编辑器输入落库 → 刷新后保留 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await pickDrawingTool(page, '备注')
