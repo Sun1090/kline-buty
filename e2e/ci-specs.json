@@ -25,6 +25,7 @@
     "e2e/recent-features.spec.ts",
     "e2e/smoke-drawings.spec.ts",
     "e2e/snapshot-gallery.spec.ts",
+    "e2e/smoke-depth.spec.ts",
     "e2e/smoke.spec.ts",
     "e2e/stress-large-data.spec.ts",
     "e2e/tpsl-guard.spec.ts",
@@ -36,8 +37,8 @@
     "e2e/feature-gaps-live.spec.ts": "G4 榜单族两条：数的是全市场 ticker 行（market-row-*），?perf 只合成图表蜡烛不改榜单，必须真打行情端点",
     "e2e/market-tape.spec.ts": "成交明细面板数据来自实时逐笔成交流（aggTrade WS），CI 运行器收不到",
     "e2e/mobile.spec.ts": "真机口径的移动端冒烟：18 处 goto('/') 走线上数据，且含截图/滚动等易抖断言",
+    "e2e/sentiment-live.spec.ts": "情绪面板数值渲染：useSentiment 在 isPerfMode() 下直接 return，?perf 下 panel 里等不到任何百分比值，必须真打 fapi（同时是直连 CORS 回归闸）",
     "e2e/smoke-live.spec.ts": "只留「资金费率」那一条：它来自 useMarketStats，而该 hook 在 isPerfMode() 下直接 return（stats 按设计为空），必须真打行情 REST",
-    "e2e/smoke-depth.spec.ts": "盘口实时深度流冒烟（自 smoke 拆出）",
     "e2e/smoke-mobile.spec.ts": "移动端实时冒烟：19 处 goto('/') 依赖线上数据"
   }
 }

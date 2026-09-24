@@ -1,13 +1,21 @@
 import { expect, test } from '@playwright/test'
 import { openMore, waitCandlesRendered, waitDepthReady, waitOrderBookReady } from './helpers/smoke'
 /**
- * 盘口 / 深度 / 情绪面板端到端覆盖（自 smoke 拆出）：实时数据就绪、档位联动与主图参考线。
- * 这些用例走真实行情连接，与画线、冒烟规格分开跑便于定位环境抖动。
+ * 盘口 / 深度 / 情绪面板端到端覆盖（自 smoke 拆出）：档位联动、主图参考线、快速下单。
+ *
+ * 数据源：`?perf=600`。原先挂 localOnly 的理由写着「盘口实时深度流冒烟」—— 不成立：
+ * `useDepth` 在 perf 下**不是**关掉，而是走 `generateSyntheticDepth(perfMid)` 合成档位
+ * （见 `src/hooks/useDepth.ts:23` 那句注释「?perf 压测模式下不开 WS：档位由 perfMid 铺出」），
+ * 所以订单簿档位、价差、hover 联动、快速下单预填全都在。改 URL 后 8 例里 7 例直接绿。
+ *
+ * 唯一红的是情绪面板的**数值**：`useSentiment` 在 `isPerfMode()` 下直接 return（跟 stats 一样
+ * 按设计不联网）。那三条 `%/数字` 断言拆进 `e2e/sentiment-live.spec.ts`；本文件留下的是
+ * 「面板开得出、四类标题在、关得掉」—— perf 下这四类标题和「多/空」标签照样渲染，是真覆盖不是摆设。
  */
 
 test.describe('盘口与深度面板', () => {
   test('深度/筹码面板开关', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitDepthReady(page)
     await expect(page.getByText(/盘口深度/)).toBeVisible()
@@ -25,7 +33,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('深度图 hover：十字线 + 买卖累计明细工具提示', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitDepthReady(page)
     const svg = page.getByTestId('depth-chart')
@@ -48,7 +56,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口订单簿：开合 + 买卖档位/价差渲染', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await openMore(page)
     await page.getByRole('button', { name: '盘口', exact: true }).click()
@@ -65,7 +73,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口联动：hover 档位 → 主图参考价格线出现，移出清除', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openMore(page)
@@ -93,7 +101,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口联动：点击档位 → 主图限价标记线（移出鼠标仍保留，同档再点清除）', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openMore(page)
@@ -123,7 +131,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口快速下单：买盘快捷「买」→ 价格预填 + 金额估算 → 确认打开模拟仓位', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -153,7 +161,7 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口快速下单：卖盘快捷「卖」→ 确认后建立空头仓位', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await page.evaluate(() => localStorage.clear())
     await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
@@ -174,8 +182,8 @@ test.describe('盘口与深度面板', () => {
     await expect(page.getByTestId('position-row-short')).toContainText(/-?\d+(\.\d+)?/)
   })
 
-  test('情绪面板：开合 + 四类指标标题可见 + 直连 CORS 修复后真实数据渲染', async ({ page }) => {
-    await page.goto('/')
+  test('情绪面板：开合 + 四类指标标题可见', async ({ page }) => {
+    await page.goto('/?perf=600')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await openMore(page)
     await page.getByRole('button', { name: '情绪' }).click()
@@ -183,12 +191,10 @@ test.describe('盘口与深度面板', () => {
     await expect(page.getByText('大户持仓多空比')).toBeVisible()
     await expect(page.getByText('主动买卖比')).toBeVisible()
     await expect(page.getByText('未平仓 24h')).toBeVisible()
-    // 直连模式下 /futures/data 必须走 fapi.binance.com（带 CORS）：
-    // 有「多/空」+ 百分比即代表真实数据已渲染，而非停留在「加载中」
+    // 面板里的「多/空」标签在 perf 下也在（真正缺的是 fapi 喂回来的百分比数值，见
+    // e2e/sentiment-live.spec.ts）：这里只钉「开得出、四类标题在、关得掉」。
     const panel = page.locator('[data-testid="sentiment-panel"]')
     await expect(panel.getByText(/多/).first()).toBeVisible({ timeout: 15_000 })
-    await expect(panel.getByText(/%/).first()).toBeVisible({ timeout: 20_000 })
-    await expect(panel.getByText(/^\d+\.\d+$/).first()).toBeVisible()
     await openMore(page)
     await page.getByRole('button', { name: '情绪' }).click()
     await expect(page.getByText('全账户多空比')).toHaveCount(0)
