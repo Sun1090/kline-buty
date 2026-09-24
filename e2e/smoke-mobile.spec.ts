@@ -1198,18 +1198,37 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.waitForTimeout(400)
 
     // 长按文本本体（overlay 实际渲染位置，250ms 不动 → 快捷编辑）→ 编辑器打开且内容回填
-    const center = await findDrawnLineCenter(page)
-    expect(center).not.toBeNull()
-    if (!center) return
-    cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: center.x, y: center.y }] })
-    await page.waitForTimeout(300)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
-    await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+    // 与整线拖动那条同一个病根：扫一次像素质心就照着它按下，而 ?perf 的价格轴会在蜡烛首次
+    // 上屏后约 0.42s 再做一次离散重缩放（见文件头），按在过期坐标上就什么也不会打开。
+    // 实测同一判据线上 8/8、?perf 7/8 —— 差异不来自「perf 更慢」，就是同一处过期坐标。
+    // 所以按结果重试：编辑器没出现就重扫当前像素再按一次，而不是把预算加大。
+    const editorOpened = async () => {
+      try {
+        await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 1_500 })
+        return true
+      } catch {
+        return false
+      }
+    }
+    let pressAttempt = 0
+    let opened = false
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      pressAttempt = attempt
+      const center = await findDrawnLineCenter(page)
+      expect(center, `第 ${attempt} 轮：文本标注的像素质心扫不到`).not.toBeNull()
+      if (!center) break
+      cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: center.x, y: center.y }] })
+      await page.waitForTimeout(300)
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+      opened = await editorOpened()
+      if (opened) break
+    }
+    expect(opened, `长按三轮都没打开移动端编辑器（最后一轮用的是第 ${pressAttempt} 次扫到的坐标）`).toBe(true)
     await expect(page.getByTestId('mobile-text-input')).toHaveValue('长按编辑')
 
     // 改字 → 确认 → 落库
