@@ -9,8 +9,11 @@
 - main 现状：**v0.5.33 已发布**（tag `v0.5.33` @ 00055f9，Pages 部署完成后线上抽查通过）。
   本版批次 = **#198 → a4b653f**、**#200 → 63755fb**、**#203 → a754f4d**、**#204 → 839d28c**、
   **#205 → 5a1b5ea**、**#206 → 3d4c0f2**、**#207 → b1b941d**，release 提交 **PR #208 → 00055f9**
-- 待合并：**#216**（smoke 拆 live）、**#217**（smoke-depth 拆 sentiment-live）、**#218**（smoke-drawings 重落），
-  三条各自基在 main 上、只共用 `e2e/ci-specs.json` 且 hunk 不重叠，先合谁都行
+- 待合并：**#220**（mobile 文本浮层 5s→20s 预算）被 **#222** 挡住 —— 红的不是它自己，而是
+  `quad-switch-no-drag` 在 CI 的 webkit 上连红 3 次；在它定性前不放行。**#223**（A4c 判词分开报
+  「平移距离」与「跨度变化」）E2E 在跑，其余检查全绿。
+  本轮迁移批 **#212 / #215 / #216 / #218 / #219 / #221 已全部合并**（main@`1ddce66`），
+  #213 与 #214 关闭并由 #215、#218 重落。
 - 已合并：**#204**（收口 issue **#199**）quad 里换一格周期会把其余三格的可视窗口甩走。
     合并 → main **839d28c**，issue #199 随之关闭。**口径裁定：既不选 A 也不选 B**
     —— 换周期那一刻本格报出的视角本来就是「自己换数据的中间态」，不该外传；联动改由**手势归属**驱动
@@ -133,10 +136,13 @@
   `live-price` 在 perf 下照样跳动（8 次采样 8 个不同值）、「自选收藏」不依赖 `market-row-*`、
   情绪面板的四类标题与「多/空」标签在 perf 下照样渲染（只有数值不是）。
   三条拆分各留一个 live 尾巴（`smoke.spec.ts` 拆出 `smoke-live`、`smoke-depth` 拆出 `sentiment-live`），
-  所以 #216/#217/#218 全合完之后 `localOnly` 仍是 7 个文件、CI 到 **690 tests / 30 files**：
+  所以全部合完之后 `localOnly` 仍是 7 个文件，而 CI 落到的 **690 tests / 30 files** 现在是在 main 上
+  跑 `node scripts/run-ci-e2e.mjs --list` 量出来的，不再是预告值：
   `chart-ready`（要的就是真实 klines 请求迟到）、`feature-gaps-live`（全市场 ticker 行）、
   `market-tape`（aggTrade WS）、`smoke-live`（资金费率）、`sentiment-live`（fapi 数值）、
-  以及 `mobile` 与 `smoke-mobile` —— 后两条**尚未逐条判定**，是下一步，且它们的理由
+  以及 `mobile` 与 `smoke-mobile` —— 后两条**尚未逐条判定**（已量到换 perf 后 38 例 35 绿，
+  2 条红是预期内的 `market-row-*`，第 3 条 `smoke-mobile:204` 线上过、perf 红且成因未钉死，
+  所以这一族故意未迁），且它们的理由
   （「18/19 处 goto('/') 走线上数据」）只是数了一下 goto 的个数，跟这轮被证伪的那 7 条同一种形状。
   方法论沿用这个仓库为此付过的两次账：PR **#182**（把假绿改写成能红）、PR **#187**
   （清掉 32 个死钩子并把账本本身变成 CI 的红条件）—— 账本只保证登记过，不保证还跑得动。
