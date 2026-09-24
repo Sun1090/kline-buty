@@ -127,9 +127,10 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('仓位：开仓 → 浮动盈亏显示 → 平仓', async ({ page }) => {
+    // 启动只需一条导航（本文件同此写法）：context 每条用例新建，goto 之后存储本就干净；
+    // 原先追加的 evaluate(localStorage.clear()) + reload 是 CI 上 webkit 的崩点，
+    // 理由与实测（两种启动逐键相同）记在 alerts-features.spec.ts 的 beforeEach 上。
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     await openMore(page)
@@ -238,8 +239,6 @@ test.describe('K 线应用冒烟', () => {
 
   test('键盘快捷键：⌘K 搜索 / 布局 1·2·3 / M 循环指标 / ? 帮助浮层 / F 全屏', async ({ page }) => {
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 主图/副图按钮已折叠进「更多」面板：提前展开，后续 M/N 循环与布局断言均可见
     await openMore(page)
@@ -333,8 +332,6 @@ test.describe('K 线应用冒烟', () => {
 
   test('自选收藏：星标添加 → 置顶自选区 → 取消', async ({ page }) => {
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 打开交易对选择器（按钮文案 = 当前品种）
     await page.locator('button', { hasText: 'BTC/USDT' }).click()
@@ -559,8 +556,6 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
 
   test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     // 默认中文 → 点「中文」切英文（语言按钮在「更多」折叠内）
     await openMore(page)
@@ -602,8 +597,6 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     // Español → 切回中文
     await page.getByRole('button', { name: 'ES', exact: true }).click()
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
   })
 })
 

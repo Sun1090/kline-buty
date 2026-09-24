@@ -131,9 +131,9 @@ test.describe('盘口与深度面板', () => {
   })
 
   test('盘口快速下单：买盘快捷「买」→ 价格预填 + 金额估算 → 确认打开模拟仓位', async ({ page }) => {
+    // 启动只要一条导航：context 每条用例新建，goto 之后存储已是干净的。
+    // 原先多的那次 clear + reload 与 alerts-features.spec.ts 里记的是同一族 webkit 崩点。
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await waitOrderBookReady(page)
@@ -162,8 +162,6 @@ test.describe('盘口与深度面板', () => {
 
   test('盘口快速下单：卖盘快捷「卖」→ 确认后建立空头仓位', async ({ page }) => {
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await waitOrderBookReady(page)

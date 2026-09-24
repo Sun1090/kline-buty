@@ -30,10 +30,13 @@ async function addAlert(page: Page, price: string) {
 test.describe('E 阶段提醒增强', () => {
   test.use({ acceptDownloads: true })
   test.beforeEach(async ({ page }) => {
-    // 首次加载 → 清空存储 → 重载进入干净会话；测试内 reload 保留持久化（不重复清空）
+    // 一条导航就够：每条用例的 context 是新建的，首次 goto 之前 localStorage 本来就是空的。
+    // 原先的启动走两遍（goto → evaluate(localStorage.clear()) → reload），实测两种启动落到的存储
+    // 逐键相同（55 键、值无差异），第二遍纯属多余；更要紧的是那次 reload 是 CI 上 webkit 的崩点：
+    // E4（run 36004500928）、E1（run 36004956326）报 `page.reload: WebKit encountered an internal
+    // error`，E6（run 36014344212）是 reload 迟迟不落地、把 60s 用例预算整笔吃掉。
+    // 用例内自己为验证持久化而做的那次 reload 保留不动。
     await page.goto('/?perf=600')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
   })
 
