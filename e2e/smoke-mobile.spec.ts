@@ -280,7 +280,8 @@ test.describe('移动端（390×844 触屏视口）', () => {
      * 它已经过去；而「看得到地真的挪动了才收工」是按结果收敛的，迟到几次都吃得住。
      * 多拖一次不影响本例判据 —— 断的是两个锚点动得一致，不是移动量。
      */
-    type Deltas = { sameId: boolean; dT0: number; dT1: number; dP0: number; dP1: number }
+    // used 记进判词：CI 上红了要能一眼看出是「三轮都没选中」还是「第一轮没选中、没再试」
+    type Deltas = { used: number; sameId: boolean; dT0: number; dT1: number; dP0: number; dP1: number }
     let delta: Deltas | null = null
     for (let attempt = 1; attempt <= 3; attempt++) {
       const center = await findDrawnLineCenter(page)
@@ -306,6 +307,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
       const after = await readFirst()
       if (!after || after.points.length !== 2) continue
       const d: Deltas = {
+        used: attempt,
         sameId: after.id === before!.id,
         dT0: after.points[0].time - before!.points[0].time,
         dT1: after.points[1].time - before!.points[1].time,
@@ -324,7 +326,7 @@ test.describe('移动端（390×844 触屏视口）', () => {
         delta ? delta.dP0 === delta.dP1 : false,
         delta ? Math.abs(delta.dT0) > 0.5 || Math.abs(delta.dP0) > 0.01 : false,
       ],
-      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（null = 三轮 tap+拖动一次都没选中）`,
+      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（used = 第几轮真的选中；null = 三轮 tap+拖动一次都没选中）`,
     ).toEqual([true, true, true, true])
     expect(errors).toHaveLength(0)
   })
