@@ -1689,6 +1689,9 @@ export function ChartView({
         return (
           <div
             data-testid="chart-indicator-last"
+            // 这一栏是按**哪一根**取的值：有光标时是光标那根（与 crosshair-time 同值），
+            // 没有光标时空着，表示走的是「回落显示最新根」那条分支。
+            data-value-time={crosshairTime ?? ''}
             style={{
               position: 'absolute',
               left: 10,

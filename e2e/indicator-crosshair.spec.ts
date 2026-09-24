@@ -38,20 +38,56 @@ test.describe('B1 十字光标副图指标取值', () => {
     expect(box).not.toBeNull()
     if (!box) return
 
-    // 悬停图表左侧（较早的 K 线区）→ 信息条切换为该时刻指标值（历史 bar 稳定不受实时 tick 影响）
-    await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.35)
-    await page.waitForTimeout(600)
-    const leftText = await info.textContent()
-    expect(leftText).toMatch(/RSI/)
-    // 悬停图表右侧近最新区 → 信息条切换为最新时刻的值（与历史 bar 值必然不同）
-    await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.35)
-    await page.waitForTimeout(600)
-    const rightText = await info.textContent()
-    expect(rightText).not.toBe(leftText)
+    /**
+     * 移到 frac 处，并确认「信息条读的就是光标吸附的那一根」：`crosshair-time` 报光标时刻，
+     * `chart-indicator-last[data-value-time]` 报信息条**实际按哪一根取的值**，两者相等才是
+     * 本条标题里「跟随光标时刻」的意思。
+     *
+     * 换掉的是「比较两次 hover 的文本」那套判据，它两个方向都会错：
+     *  - 假红（CI 上 firefox 那两次）：光标事件没落上时，两读都是回落值，判词只说「文本相同」，
+     *    看不出是「没落上」还是「两根取值恰好一样」；而原来第二次 hover 落在 0.9 —— 末根右边
+     *    那段留白没有 K 线可吸附（本机实测那里根本不出现十字光标），那一读大概率就是回落值，
+     *    两个回落值相撞只是时序问题。
+     *  - 假绿（变异复验逼出来的）：把信息条改成**完全不读光标时刻**，文本照样会随实时 tick 漂，
+     *    于是「两次不同」成立 —— 连加了「先等回落值停下来」的基线也还是绿的。
+     * 文本会变是 tick 的函数，不是光标的函数；`data-value-time` 才是。
+     */
+    const hoverAndExpectBar = async (frac: number, label: string) => {
+      await page.mouse.move(box.x + box.width * frac, box.y + box.height * 0.35)
+      const cross = page.getByTestId('crosshair-time')
+      await expect(
+        cross,
+        `${label}（图表横向 ${Math.round(frac * 100)}% 处）没有出现十字光标`,
+      ).toBeVisible({ timeout: 5_000 })
+      const barTime = (await cross.getAttribute('data-time')) ?? ''
+      expect(barTime, `${label}：crosshair-time 没有报出 data-time`).not.toBe('')
+      await expect
+        .poll(() => info.getAttribute('data-value-time'), {
+          timeout: 5_000,
+          message: `${label}：信息条的取值时刻没跟上光标（光标=${barTime}）`,
+        })
+        .toBe(barTime)
+      return barTime
+    }
 
-    // 移出图表 → 光标无值回落至最新（实时 tick 推进末根，只断言回落仍渲染 RSI 行）
+    // 悬停图表左侧（较早的 K 线区）→ 信息条切换为该时刻的指标值
+    const leftBar = await hoverAndExpectBar(0.2, '第一次 hover')
+    expect(((await info.textContent()) ?? '')).toMatch(/RSI/)
+    // 再悬停到偏右的另一根上（**不能用 0.9**：末根右边那段是 rightOffset 留白，
+    // 那里没有 K 线可吸附，十字光标本就不出现 —— 本机实测 0.9 处 `crosshair-time` 根本不存在，
+    // 而 CI 上 firefox 那两次红正是这种「两读都是回落值」的形状）。
+    const rightBar = await hoverAndExpectBar(0.6, '第二次 hover')
+    expect(rightBar, `两次 hover 落在同一根 K 线（${leftBar}）上，取值当然相同`).not.toBe(leftBar)
+
+    // 移出图表 → 光标无值，信息条**换回回落分支**（这正是上面那个属性的另一半契约）：
+    // 取值时刻清空、内容仍渲染 RSI 行。实时 tick 会推进末根，所以文本只断言「还在渲染」。
     await page.mouse.move(box.x - 40, box.y + box.height * 0.35)
-    await page.waitForTimeout(600)
+    await expect
+      .poll(() => info.getAttribute('data-value-time'), {
+        timeout: 8_000,
+        message: '移出图表后信息条没有换回回落分支（data-value-time 应清空）',
+      })
+      .toBe('')
     await expect.poll(() => info.textContent(), { timeout: 8000 }).toMatch(/RSI/)
 
     expect(errors).toHaveLength(0)
