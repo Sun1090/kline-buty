@@ -1,7 +1,8 @@
 import type { Candle } from '../chart/types'
 import type { ValuePoint } from './sma'
 
-/** RSI（Wilder 平滑）：RSI = 100 − 100 / (1 + avgGain / avgLoss)，全涨 → 100。 */
+/** RSI（Wilder 平滑）：RSI = 100 − 100 / (1 + avgGain / avgLoss)，全涨 → 100。
+ * 种子 = **前 period 次变动**（i = 1…period，一根都不能少）的算术均值，之后才走递推。 */
 export function calcRSI(candles: Candle[], period = 14): ValuePoint[] {
   const out: ValuePoint[] = []
   let avgGain = 0
@@ -16,8 +17,8 @@ export function calcRSI(candles: Candle[], period = 14): ValuePoint[] {
       continue
     }
     if (i === period) {
-      avgGain /= period
-      avgLoss /= period
+      avgGain = (avgGain + gain) / period
+      avgLoss = (avgLoss + loss) / period
     } else {
       avgGain = (avgGain * (period - 1) + gain) / period
       avgLoss = (avgLoss * (period - 1) + loss) / period

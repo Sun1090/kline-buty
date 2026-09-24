@@ -40,14 +40,24 @@ describe('calcRSI', () => {
     expect(out).toHaveLength(1)
   })
 
-  it('Wilder 平滑：首点用 SMA = 累加和/period', () => {
-    // period=3: i=1,2 累加；i=3 首产出
+  it('Wilder 种子 = 前 period 次变动的算术均值（第 period 次那一根要在里面）', () => {
+    // close 10→13→12→15，period=3 ⇒ 三次变动 +3, −1, +3
+    // avgGain = (3+0+3)/3 = 2；avgLoss = (0+1+0)/3 = 1/3；RS = 6 ⇒ RSI = 100 − 100/7 = 85.714
+    // 旧写法把「只累加到第 period−1 根的和」直接除以 period，得 avgGain=1、avgLoss=1/3 ⇒ RSI=75
     const candles = [c(1, 10), c(2, 13), c(3, 12), c(4, 15)]
     const out = calcRSI(candles, 3)
-    // i=1: gain=3,loss=0; i=2: gain=0,loss=1 → 累加 avgGain=3, avgLoss=1
-    // i=3: avgGain/=3 → 1, avgLoss/=3 → 0.333
-    // RSI = 100 - 100/(1 + 1/0.333) = 100 - 100/4 = 75
-    expect(out[0].value).toBeCloseTo(75, 1)
+    expect(out).toHaveLength(1)
+    expect(out[0].value).toBeCloseTo(85.714, 2)
+  })
+
+  it('种子之后走 Wilder 递推：第二点按 (前值×(n−1)+本根)/n 算', () => {
+    // 再接一根 14（变动 −1）：avgGain=(2×2+0)/3=4/3，avgLoss=((1/3)×2+1)/3=5/9
+    // RS = (4/3)/(5/9) = 2.4 ⇒ RSI = 100 − 100/3.4 = 70.588
+    const candles = [c(1, 10), c(2, 13), c(3, 12), c(4, 15), c(5, 14)]
+    const out = calcRSI(candles, 3)
+    expect(out).toHaveLength(2)
+    expect(out[0].value).toBeCloseTo(85.714, 2)
+    expect(out[1].value).toBeCloseTo(70.588, 2)
   })
 
   it('空数组 / 单根 → 空结果', () => {
