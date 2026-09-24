@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
+/**
+ * 移动端 390×844 冒烟族。**19 例全部走 `?perf=600`**，只有「行情全屏浮层点行换交易对」那一半
+ * 真吃线上数据（`useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，?perf 里榜单是空的），
+ * 已拆到 `mobile-live.spec.ts`。原先 localOnly 的理由是「18 处 goto('/') 走线上数据，且含截图/
+ * 滚动等易抖断言」—— 那是数 URL 数出来的；实测换 perf 后 19 例只红 2 条，一条是上面的榜单，
+ * 另一条是基线取早了（见 `两次快速拖动不误判双击复位` 那条的注释）。
+ *
+ * 迁这一族时会反复踩到同一条 `?perf` 契约：**价格轴会在蜡烛首次上屏后约 0.42s 再做一次离散
+ * 重缩放**（实测整条画线一次跳 27.6px，跳完才稳；线上数据看不到，因为网络请求本身就把测试
+ * 推过了那个时刻）。所以 `waitCandlesRendered` 只是「像素有了」的门，不是「图表落定了」的门 ——
+ * 凡「扫像素 → 照坐标做手势」或「取像素当基线」的，都要按结果重试或等轴静止，
+ * 详见 `smoke-mobile.spec.ts` 文件头（含变异实测数字）。
+ */
+
 // 注意：不用 isMobile（会锁定文档滚动，无法验证「拖动图表不滚动页面」）；hasTouch 已提供触摸事件
 test.use({
   viewport: { width: 390, height: 844 },
@@ -1033,36 +1047,25 @@ test('移动端：回看历史 → 「回到最新」按钮出现 → 点击回�
   expect(errs).toHaveLength(0)
 })
 
-test('移动端：更多 → 行情全屏浮层 → 点行切交易对并自动关闭 → ✕ 关闭', async ({ page }) => {
+test('移动端：更多 → 行情全屏浮层打开 → ✕ 关闭', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
   await page.goto('/?perf=600')
   await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('canvas').first()).toBeVisible({ timeout: 15_000 })
 
-  // 更多面板 → 「行情」
-  await page.getByTestId('mobile-more').tap()
-  await page.waitForTimeout(600)
-  await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
-
-  // 全屏浮层出现，行数据已加载
-  await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 15_000 })
-  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
-  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
-  expect(rowCount).toBeGreaterThan(50)
-
-  // 点 SOL 行 → 主图切为 SOL/USDT + 浮层自动关闭
-  await page.getByTestId('market-row-SOLUSDT').tap()
-  await expect(page.getByText('SOL/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
-
-  // 再开 → ✕ 手动关闭
+  // 更多面板 → 「行情」→ 全屏浮层出现
+  // 这条刻意**不读任何一行 ticker**：`useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，
+  // 所以浮层在 ?perf 里是「开得到、里面是空的」。开合本身（含 ✕ 的落点）与行数据无关，
+  // 值得留在 CI；「点行换交易对 + 自动关闭」那一半必须吃线上榜单，拆到 `mobile-live.spec.ts`。
   await page.getByTestId('mobile-more').tap()
   await page.waitForTimeout(600)
   await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
   await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 10_000 })
+
+  // ✕ 手动关闭
   await page.getByTestId('market-list-collapse').tap()
-  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
+  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0, { timeout: 10_000 })
   expect(errors).toHaveLength(0)
 })
 
