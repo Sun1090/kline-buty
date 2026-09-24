@@ -41,7 +41,6 @@ async function openPath(page: Page, testId: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.clear())
   await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
