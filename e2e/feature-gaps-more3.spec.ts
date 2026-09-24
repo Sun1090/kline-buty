@@ -4,6 +4,9 @@ import { test, expect, type Page } from '@playwright/test'
  * O8 E2E 场景扩充（第四批）：H12 副图 Y 轴固定范围切换 + 移动端 H9 信息条。
  * - H12：有界副图（RSI）显示固定范围开关，无界（VOL）不显示；开关 aria-pressed 往返切换
  * - 移动端 H9：触屏视口下信息条照常渲染 MA 值
+ *
+ * 数据源：`?perf=600` 合成蜡烛。原先挂 localOnly 的理由是「依赖真实行情流喂出的 RSI/VOL 面板」——不成立，
+ * 合成序列同样算得出 RSI/VOL；改 URL 后 chromium + webkit 全绿，已进 CI 账本。
  */
 
 async function waitCandlesRendered(page: Page) {
@@ -46,7 +49,7 @@ async function openPath(page: Page, testId: string) {
 }
 
 test('H12 副图 Y 轴固定范围：VOL 无开关 → 切 RSI 出现 → 往返切换 aria-pressed', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   // 默认副图 volume（无界）→ 无固定范围开关
@@ -66,7 +69,7 @@ test('H12 副图 Y 轴固定范围：VOL 无开关 → 切 RSI 出现 → 往返
 
 test('移动端 H9：触屏视口下指标信息条照常渲染 MA 值', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const info = page.getByTestId('chart-indicator-last')
