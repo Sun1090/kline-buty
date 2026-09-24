@@ -104,6 +104,14 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
   // `Could not find profile folder`，与用例无关，连 docs.spec 也一样失败），CI 是唯一取证面。
   // 绿 = 这条 skip 是多余的，A4c 白得一个浏览器；红 = 真实口径大概是「四格联动的拖拽不可靠」
   // 而不是「拖不动」，把实测结果记回来再恢复 skip。两种结果都算收获。
+  //
+  // **裁定：绿，skip 已永久去掉（2026-09-24，PR #229）。** 定案的不是「跑绿了」，而是两次同清单
+  // 运行的计数对照 —— #227（skip 还在）`Running 744 / 56 skipped / 687 passed / 1 flaky`，
+  // #229（去掉 skip）`Running 744 / 55 skipped / 687 passed / 2 flaky`：总数与通过数一字不动，
+  // skipped 正好少 1，就是 firefox 这一例从「跳过」搬进「执行」。它也不在 flaky 名单里
+  // （那两条都是 `[webkit]` 的 smoke-depth / smoke-drawings），所以是 attempt 1 直接过的。
+  // 之所以要这样对照：本条的前提是**观测量**（四格都出现「回到最新」才继续），拖不动会红在前提
+  // 那一步、不会静默放行 —— 真正需要排除的是「firefox 压根没跑这一例」，而那只看得动计数。
   test('三格 5m 视角定在历史中段，把第四格换成 1h：它们的起止一秒都不该变', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
