@@ -2131,35 +2131,33 @@ test.describe('画线工具', () => {
     expect(before).not.toBeNull()
     expect(before!.points).toHaveLength(2)
 
-    // 切回鼠标（只读）→ 定位画线实际中心 → 按住拖拽整线
+    // 切回鼠标（只读）→ 按住**真的画出来的像素**起手拖整线。
+    // 原来起手点是 findDrawnLineCenter 的质心，而它扫的是「所有画线墨迹」（含选中态那圈蓝色），
+    // 实测这个质心离真实墨迹最远可到 7.4–7.9px（webkit，趋势线 3 次里的两次；chromium 0.4–2.4px），
+    // 命中阈值 HIT_THRESHOLD_PX 正好是 8px —— 落在阈值外就是拖了个空：图表平移、两个锚点一动不动。
+    // 至于偏这么多的那部分墨迹具体是谁（锚点圆点／价格标签／抗锯齿），没有单独拆开查；
+    // 这条要改的也不是它，而是「别再拿质心当抓手」。交给 hitDrawnPixelUntil：扫真实像素、
+    // 逐个按落库判据试拖，不中就换下一个候选，三轮重扫。
     await pickDrawingTool(page, '鼠标')
-    await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
-    const center = (await findDrawnLineCenter(page))!
-    await page.mouse.move(center.x, center.y)
-    await page.mouse.down()
-    await page.mouse.move(center.x + box!.width * 0.18, center.y + box!.height * 0.12, { steps: 5 })
-    await page.mouse.up()
-
-    // 提交后：同一 id，各锚点时间/价格增量一致（整线平移）且确实发生了移动
-    await expect
-      .poll(
-        async () => {
-          const after = await readFirst()
-          if (!after || after.points.length !== 2) return false
-          const dT0 = after.points[0].time - before!.points[0].time
-          const dT1 = after.points[1].time - before!.points[1].time
-          const dP0 = after.points[0].price - before!.points[0].price
-          const dP1 = after.points[1].price - before!.points[1].price
-          return (
-            after.id === before!.id &&
-            dT0 === dT1 &&
-            dP0 === dP1 &&
-            (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
-          )
-        },
-        { timeout: 10_000 },
+    const movedWholeLine = async () => {
+      const after = await readFirst()
+      if (!after || after.points.length !== 2) return false
+      const dT0 = after.points[0].time - before!.points[0].time
+      const dT1 = after.points[1].time - before!.points[1].time
+      const dP0 = after.points[0].price - before!.points[0].price
+      const dP1 = after.points[1].price - before!.points[1].price
+      return (
+        after.id === before!.id && dT0 === dT1 && dP0 === dP1 && (Math.abs(dT0) > 0.5 || Math.abs(dP0) > 0.01)
       )
-      .toBe(true)
+    }
+    const grabbed = await hitDrawnPixelUntil(page, movedWholeLine, {}, async (p) => {
+      await page.mouse.move(p.x, p.y)
+      await page.mouse.down()
+      await page.mouse.move(p.x + box!.width * 0.18, p.y + box!.height * 0.12, { steps: 5 })
+      await page.mouse.up()
+    })
+    // 判据本身就是落库结果：同一 id、两个锚点增量一致（整线平移）、且确实动了
+    expect(grabbed, '扫了三轮真实画线像素、逐个按落库判据试拖，仍没能把这条趋势线整体拖动').not.toBeNull()
 
     await page.getByRole('button', { name: '删除' }).click()
     await expect(page.getByRole('button', { name: '删除' })).toHaveCount(0)
