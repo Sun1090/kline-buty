@@ -96,9 +96,15 @@ async function panIntoHistory(page: Page, at: { cx: number; cy: number }) {
 test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', () => {
   test.setTimeout(150_000)
 
-  test('三格 5m 视角定在历史中段，把第四格换成 1h：它们的起止一秒都不该变', async ({ page, browserName }) => {
-    // 本用例靠拖拽定视角，firefox 下 Playwright 合成鼠标事件与 pressedMouseMove 不兼容（真机正常）
-    test.skip(browserName === 'firefox', 'firefox 下合成拖拽平移不可用（Playwright + 轻量级图表）')
+  // 这里**故意去掉了**原先的 `test.skip(browserName === 'firefox', 'firefox 下合成拖拽平移不可用')`，
+  // 为的是在 CI 上量一次它到底还成不成立。那条措辞已被 #227 否掉一半：以「视角确实被拖走了」
+  // 为前提的合成拖拽（smoke-mobile 的「回看历史 → 回到最新」「触屏轻扫后恢复平移」）在 CI 的
+  // firefox 上是绿的，仓库里另有 5 个进 CI 的文件零 skip 地跑 `mouse.down()` 拖拽 ——
+  // 所以「firefox 拖不动」不能当既成事实用。本机 firefox 起不来（juggler 报
+  // `Could not find profile folder`，与用例无关，连 docs.spec 也一样失败），CI 是唯一取证面。
+  // 绿 = 这条 skip 是多余的，A4c 白得一个浏览器；红 = 真实口径大概是「四格联动的拖拽不可靠」
+  // 而不是「拖不动」，把实测结果记回来再恢复 skip。两种结果都算收获。
+  test('三格 5m 视角定在历史中段，把第四格换成 1h：它们的起止一秒都不该变', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
 
