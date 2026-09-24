@@ -13,6 +13,7 @@
     "e2e/indicator-crosshair.spec.ts",
     "e2e/limit-orders.spec.ts",
     "e2e/marker-render.spec.ts",
+    "e2e/mobile.spec.ts",
     "e2e/multi-chart-sync.spec.ts",
     "e2e/new-features.spec.ts",
     "e2e/partial-close.spec.ts",
@@ -37,7 +38,7 @@
     "e2e/chart-ready.spec.ts": "本例要的就是「真实 klines 请求迟到」，依赖币安实时 REST；CI 运行器出网不可靠",
     "e2e/feature-gaps-live.spec.ts": "G4 榜单族两条：数的是全市场 ticker 行（market-row-*），?perf 只合成图表蜡烛不改榜单，必须真打行情端点",
     "e2e/market-tape.spec.ts": "成交明细面板数据来自实时逐笔成交流（aggTrade WS），CI 运行器收不到",
-    "e2e/mobile.spec.ts": "真机口径的移动端冒烟：18 处 goto('/') 走线上数据，且含截图/滚动等易抖断言",
+    "e2e/mobile-live.spec.ts": "只留「行情全屏浮层点行换交易对」那一段：判的是 market-row-* 行数 >50 且点 SOL 行能把主图换成 SOL/USDT，而 useTickerList.ts:50 在 isPerfMode() 下 setRows([]) 后直接 return——?perf 里浮层开得到但一行都没有。同一屏的「打开 + ✕ 关闭」不吃行数据，已留在 mobile.spec.ts 走 ?perf 进 ci",
     "e2e/sentiment-live.spec.ts": "情绪面板数值渲染：useSentiment 在 isPerfMode() 下直接 return，?perf 下 panel 里等不到任何百分比值，必须真打 fapi（同时是直连 CORS 回归闸）",
     "e2e/smoke-live.spec.ts": "只留「资金费率」那一条：它来自 useMarketStats，而该 hook 在 isPerfMode() 下直接 return（stats 按设计为空），必须真打行情 REST",
     "e2e/smoke-mobile-live.spec.ts": "只留「行情列表侧栏」那一条：它数的是 [data-testid^=market-row-] 且要 >50 行，而 useTickerList.ts:50 在 isPerfMode() 下 setRows([]) 后直接 return——?perf 里一行榜单都没有。同文件其余 18 例不读 ticker 行，已整批迁 ?perf 进 ci"

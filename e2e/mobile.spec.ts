@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
+/**
+ * 移动端 390×844 冒烟族。**19 例全部走 `?perf=600`**，只有「行情全屏浮层点行换交易对」那一半
+ * 真吃线上数据（`useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，?perf 里榜单是空的），
+ * 已拆到 `mobile-live.spec.ts`。原先 localOnly 的理由是「18 处 goto('/') 走线上数据，且含截图/
+ * 滚动等易抖断言」—— 那是数 URL 数出来的；实测换 perf 后 19 例只红 2 条，一条是上面的榜单，
+ * 另一条是基线取早了（见 `两次快速拖动不误判双击复位` 那条的注释）。
+ *
+ * 迁这一族时会反复踩到同一条 `?perf` 契约：**价格轴会在蜡烛首次上屏后约 0.42s 再做一次离散
+ * 重缩放**（实测整条画线一次跳 27.6px，跳完才稳；线上数据看不到，因为网络请求本身就把测试
+ * 推过了那个时刻）。所以 `waitCandlesRendered` 只是「像素有了」的门，不是「图表落定了」的门 ——
+ * 凡「扫像素 → 照坐标做手势」或「取像素当基线」的，都要按结果重试或等轴静止，
+ * 详见 `smoke-mobile.spec.ts` 文件头（含变异实测数字）。
+ */
+
 // 注意：不用 isMobile（会锁定文档滚动，无法验证「拖动图表不滚动页面」）；hasTouch 已提供触摸事件
 test.use({
   viewport: { width: 390, height: 844 },
@@ -45,7 +59,7 @@ async function waitCandlesRendered(page: import('@playwright/test').Page) {
 test('移动端：K 线渲染 + 触摸拖动图表不滚动页面', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'CDP 触摸派发仅 Chromium（跨浏览器触摸拖拽覆盖由 chromium 承担）')
 
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   const canvas = page.locator('canvas').first()
   await expect(canvas).toBeVisible({ timeout: 15_000 })
@@ -86,7 +100,7 @@ test('移动端：K 线渲染 + 触摸拖动图表不滚动页面', async ({ pag
 test('移动端：切换周期/指标按钮可点（触摸友好）', async ({ page }) => {
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await page.getByRole('button', { name: '1分' }).tap()
   await page.waitForTimeout(800)
@@ -101,7 +115,7 @@ test('移动端：切换周期/指标按钮可点（触摸友好）', async ({ p
 })
 
 test('移动端：周期条换行展示——无横向滚动条、全部周期可见、末尾周期可点', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   const bar = page.getByTestId('period-bar')
   await expect(bar).toBeVisible()
@@ -133,7 +147,7 @@ test('移动端：触屏拖动十字光标（OHLC 可读；松手保留 2s，轻
 
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   // 等蜡烛渲染（出现涨跌色像素）；冷启动直连慢时刷新重试一次
   const hasCandles = () =>
@@ -300,7 +314,7 @@ test('移动端：两次快速拖动不误判双击复位（pointer capture 提�
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const box = await page.locator('main div').first().boundingBox()
@@ -369,7 +383,24 @@ test('移动端：两次快速拖动不误判双击复位（pointer capture 提�
       }
       return count ? rect.top + sum / count : null
     })
-  await expect.poll(lineY, { timeout: 5000 }).not.toBeNull()
+  // 基线要等价格轴自己不再动之后才取。?perf 的价格轴会在蜡烛首次上屏后约 0.42s 再做一次
+  // 离散重缩放（`smoke-mobile.spec.ts` 文件头有实测：整条线一次跳 27.6px），在这之前取到的
+  // `before` 会把「与手势无关的轴变化」算进下面的位移里 —— 本例线上 19/19 绿、换 ?perf 就报
+  // 21.5px，就是这个量级，而不是误触发复位的量级。
+  // 这里用「连续两次采样一致」当静默判据是安全的：真正误触发 fitContent 会让水平线跳几百 px
+  // 并且停在那里，属于「动得很大」而不是「还在动」，被一条可收敛的等待掩盖不掉。
+  await expect
+    .poll(
+      async () => {
+        const a = await lineY()
+        if (a === null) return -1
+        await page.waitForTimeout(150)
+        const b = await lineY()
+        return b === null ? -1 : Math.abs(a - b)
+      },
+      { timeout: 8_000, message: '等价格轴停止重缩放（?perf 有一次约 0.42s 的迟到落位）才取基线' },
+    )
+    .toBeLessThan(0.5)
   const before = (await lineY())!
 
   // 关键回归场景：触摸 pointer capture 在 touchend 前释放，两次拖动间隔仅 30ms。
@@ -399,7 +430,7 @@ test('移动端：捏合残留单指不产生十字线、不误触发双击复�
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   const chart = page.locator('main div').first()
   const box = await chart.boundingBox()
@@ -485,7 +516,7 @@ test('移动端：五语 UI 完整（html lang 同步 + MobileHeader 弹层无 i
     /\b(?:common|status|chartType|group|period|lang|theme|layout|fullscreen|panel|sentiment|share|replay|drawing|symbol|indicator|stats|position|alert|tooltip|depth|orderBook|trade|quickOrder|volumeProfile|offline|errorBoundary|shortcuts|app)\.[a-zA-Z0-9_.]+\b/
 
   for (const [code, htmlLang, moreLabel] of LANGS) {
-    await page.goto('/')
+    await page.goto('/?perf=600')
     await page.evaluate((l) => localStorage.setItem('kline-buty:lang', l), code)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
@@ -516,7 +547,7 @@ test('移动端：五语 UI 完整（html lang 同步 + MobileHeader 弹层无 i
 test('移动端：更多面板切价格坐标轴（线性 → 对数）→ 持久化', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   // 打开更多面板 → 点「线性」切到「对数」
   await page.getByTestId('mobile-more').tap()
@@ -539,7 +570,7 @@ test('移动端：触屏拖拽绘制水平线 → 落库 + overlay 渲染 → �
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   // 等蜡烛渲染（出现涨跌色像素）
   await page.waitForFunction(
@@ -648,7 +679,7 @@ test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   // 等蜡烛渲染（出现涨跌色像素）
   await page.waitForFunction(
@@ -736,7 +767,7 @@ test('移动端：触屏拖拽绘制通道 → 落库（2 锚点）+ overlay 渲
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await page.waitForFunction(
     () => {
@@ -844,7 +875,7 @@ test('移动端：触屏拖拽区域截图 → 导出选区 PNG + 手势结束�
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
 
@@ -899,7 +930,7 @@ test('移动端：OHLC 十字光标浮层防溢出——长按底部区域翻转
 
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await expect
     .poll(
@@ -984,7 +1015,7 @@ test('移动端：回看历史 → 「回到最新」按钮出现 → 点击回�
 
   const errs: string[] = []
   page.on('pageerror', (e) => errs.push(e.message))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   const canvas = page.locator('canvas').first()
@@ -1016,36 +1047,25 @@ test('移动端：回看历史 → 「回到最新」按钮出现 → 点击回�
   expect(errs).toHaveLength(0)
 })
 
-test('移动端：更多 → 行情全屏浮层 → 点行切交易对并自动关闭 → ✕ 关闭', async ({ page }) => {
+test('移动端：更多 → 行情全屏浮层打开 → ✕ 关闭', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('BTC/USDT', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('canvas').first()).toBeVisible({ timeout: 15_000 })
 
-  // 更多面板 → 「行情」
-  await page.getByTestId('mobile-more').tap()
-  await page.waitForTimeout(600)
-  await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
-
-  // 全屏浮层出现，行数据已加载
-  await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 15_000 })
-  await expect(page.locator('[data-testid^="market-row-"]').first()).toBeVisible({ timeout: 20_000 })
-  const rowCount = await page.locator('[data-testid^="market-row-"]').count()
-  expect(rowCount).toBeGreaterThan(50)
-
-  // 点 SOL 行 → 主图切为 SOL/USDT + 浮层自动关闭
-  await page.getByTestId('market-row-SOLUSDT').tap()
-  await expect(page.getByText('SOL/USDT', { exact: false }).first()).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
-
-  // 再开 → ✕ 手动关闭
+  // 更多面板 → 「行情」→ 全屏浮层出现
+  // 这条刻意**不读任何一行 ticker**：`useTickerList.ts:50` 在 `isPerfMode()` 下 `setRows([])`，
+  // 所以浮层在 ?perf 里是「开得到、里面是空的」。开合本身（含 ✕ 的落点）与行数据无关，
+  // 值得留在 CI；「点行换交易对 + 自动关闭」那一半必须吃线上榜单，拆到 `mobile-live.spec.ts`。
   await page.getByTestId('mobile-more').tap()
   await page.waitForTimeout(600)
   await page.getByTestId('mobile-panel-more').getByRole('button', { name: '行情' }).tap()
   await expect(page.getByTestId('market-list-overlay')).toBeVisible({ timeout: 10_000 })
+
+  // ✕ 手动关闭
   await page.getByTestId('market-list-collapse').tap()
-  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0)
+  await expect(page.getByTestId('market-list-overlay')).toHaveCount(0, { timeout: 10_000 })
   expect(errors).toHaveLength(0)
 })
 
@@ -1054,7 +1074,7 @@ test('移动端：触屏三点绘制三角形 → 手势间隙保留预览 → �
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
@@ -1180,7 +1200,7 @@ test('移动端：触屏三点绘制贝塞尔曲线 → 落库 3 锚点保序 �
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
@@ -1287,7 +1307,7 @@ test('移动端：系统取消指针 → 三角形不误提交，已确认锚点
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  await page.goto('/')
+  await page.goto('/?perf=600')
   await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
   await waitCandlesRendered(page)
   await page.evaluate(() => localStorage.removeItem('kline-buty:drawings'))
