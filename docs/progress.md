@@ -9,7 +9,8 @@
 - main 现状：**v0.5.33 已发布**（tag `v0.5.33` @ 00055f9，Pages 部署完成后线上抽查通过）。
   本版批次 = **#198 → a4b653f**、**#200 → 63755fb**、**#203 → a754f4d**、**#204 → 839d28c**、
   **#205 → 5a1b5ea**、**#206 → 3d4c0f2**、**#207 → b1b941d**，release 提交 **PR #208 → 00055f9**
-- 待合并：无（#201 已合并但带进去的是 rebase 前的旧账，真正的内容由 **#209** 重落；两轮 docs 都已完成）
+- 待合并：**#216**（smoke 拆 live）、**#217**（smoke-depth 拆 sentiment-live）、**#218**（smoke-drawings 重落），
+  三条各自基在 main 上、只共用 `e2e/ci-specs.json` 且 hunk 不重叠，先合谁都行
 - 已合并：**#204**（收口 issue **#199**）quad 里换一格周期会把其余三格的可视窗口甩走。
     合并 → main **839d28c**，issue #199 随之关闭。**口径裁定：既不选 A 也不选 B**
     —— 换周期那一刻本格报出的视角本来就是「自己换数据的中间态」，不该外传；联动改由**手势归属**驱动
@@ -104,20 +105,45 @@
   3. **squash 合并会把多提交正文留在 main 的提交信息里**：PR #206 的 body 因 `-F body=@<不存在的文件>`
      变成那串字面量本身（14 个字符，就是一行路径），但 `git log -1 3d4c0f2` 仍是完整取证记录。
      用文件传 body 之后要校验落库长度（`gh pr view --json body -q '.body|length'`），别默认它挂上了。
+  4. **堆叠分支 + squash 合并 = 下一条必然带冲突，而且冲突只在 `merge-tree` 里看得见。**
+     本轮一天之内踩两次（#213→#215、#214→#218）：B 分支基在 A 分支上，A 以 squash 进 main 之后，
+     三方合并的 base 仍是 A 之前的那个提交，于是 A 的内容在 B 侧被当成「你这边的新增」重放一遍，
+     `git merge-tree` 直接报 `CONFLICT (content)`，把 `<<<<<<<` 写进 `e2e/ci-specs.json`。
+     判据不是「PR 页面显示可合并」，而是开合之前跑一次
+     `git merge-tree --write-tree origin/main origin/<分支>` 看有没有 `CONFLICT` 行。
+     禁 force-push 的前提下只有一条干净路：`git rebase --onto origin/main <A的tip> <分支>` 重落到
+     **新分支名**、开新 PR、旧 PR 留一条指过去的判词再关闭 —— 变基途中 git 会把已进 main 的提交
+     判为 `patch contents already upstream` 自动丢弃，这是正常的，不是丢了活。
+  5. **一条断言「精简后红、逐字版绿」不等于找到了因果。** sentiment-live 拆出去时我删掉三条标题断言，
+     `getByText(/%/)` 就等满 20s 不出现；原样不动 989ms 就过。听起来像「那三条是同步点」，
+     但标题都是静态文本、三条 `toBeVisible` 合计不到一个毫秒，这个因果站不住；更硬的混淆项是
+     我自己反复本地跑把 fapi 打到限流。所以文件头只记现象与「保持逐字」这个稳妥结论，
+     不把猜测写成机制 —— 写错的机制比没写更贵。
 - 版本判断：**已定 v0.5.33**（#198/#200/#204 是用户可见的图表行为修复，#203/#205/#206/#207 是同批测试面），
   不逐条发版
 - 下一项：#191 需要一次产品口径裁定（唯一开口，且阻塞在产品决定，不在代码）。
-  裁定之外，本会话已把「给换周期两拍补 e2e 确定性覆盖」这条走到底并**否掉**了（见上：坏版本上照样绿，
-  失效条件是个 1/4 概率的时刻重合，e2e 等不到就只是碰巧没测）。那一侧不必重做：装载分支已有
-  `ChartView.render.test.tsx` 三条单测钉住（「末根时刻重合的换周期必须整窗换新数据」/
-  「外部指令落过笔之后整窗换了数据必须再落一次」/「尾沿长一根的增量装载不该重落」）。
-  真正的待办是另一件：**把 `localOnly` 那一族从「依赖线上行情」迁到 `?perf` 合成契约上，好让它们能进 CI**。
-  这轮全量核过它们是 132 例全绿，但「绿」没有任何自动化保证 —— 账本只保证登记过，不保证还跑得动，
-  这个仓库为此付过两次账：PR **#182** 把 `period-crosshair` 的混周期那条从假绿改写成能红，
-  PR **#187** 清掉 32 个「有钩子没用例」的死钩子并把账本本身变成 CI 的红条件。
-  这正是 AGENTS.md「In Scope」里那条 *E2E flake source-convergence（synthetic ?perf data contracts）*，
-  可分文件推进：`smoke-drawings`（40 例逐条像素校验）与 `feature-gaps*` 一族价值最高、也最可能已在腐化。
-- 更新日：2026-09-24
+  裁定之外，本轮把「`localOnly` 迁 `?perf`」这条从计划做成了事实，并且**证伪了大半条账本**：
+  原先 12 个挂 `localOnly` 的文件里，只有 5 个的理由经得起实测，其余 7 个的「依赖实时行情」是抄来的。
+  CI 覆盖因此从 **432 tests / 22 files** 推到 **609 tests / 28 files**（#212 → #215 → 本条 #218，
+  再加在途的 #216/#217），`localOnly` 从 12 个文件缩到 7 个。
+  逐条判据都落在具体机制上，不是「跑绿了所以行」：`useDepth` 在 perf 下走
+  `generateSyntheticDepth(perfMid)` 合成档位、`useMarketStats`/`useSentiment` 在 `isPerfMode()`
+  下直接 `return`（这两处是真 live 依赖）、`useTickerList` 在 perf 下 `setRows([])` 把侧栏清空
+  但交易对下拉不受影响。三处「先读代码推断、后被实测推翻」记在对应文件头：
+  `live-price` 在 perf 下照样跳动（8 次采样 8 个不同值）、「自选收藏」不依赖 `market-row-*`、
+  情绪面板的四类标题与「多/空」标签在 perf 下照样渲染（只有数值不是）。
+  三条拆分各留一个 live 尾巴（`smoke.spec.ts` 拆出 `smoke-live`、`smoke-depth` 拆出 `sentiment-live`），
+  所以 #216/#217/#218 全合完之后 `localOnly` 仍是 7 个文件、CI 到 **690 tests / 30 files**：
+  `chart-ready`（要的就是真实 klines 请求迟到）、`feature-gaps-live`（全市场 ticker 行）、
+  `market-tape`（aggTrade WS）、`smoke-live`（资金费率）、`sentiment-live`（fapi 数值）、
+  以及 `mobile` 与 `smoke-mobile` —— 后两条**尚未逐条判定**，是下一步，且它们的理由
+  （「18/19 处 goto('/') 走线上数据」）只是数了一下 goto 的个数，跟这轮被证伪的那 7 条同一种形状。
+  方法论沿用这个仓库为此付过的两次账：PR **#182**（把假绿改写成能红）、PR **#187**
+  （清掉 32 个死钩子并把账本本身变成 CI 的红条件）—— 账本只保证登记过，不保证还跑得动。
+  另有两条被**否掉**而没有落地：给换周期两拍补 e2e 确定性覆盖（坏版本上照样绿，失效条件是
+  1/4 概率的时刻重合），以及把 `smoke-drawings` 里一条不承重的断言当门用；装载分支的覆盖已由
+  `ChartView.render.test.tsx` 三条单测钉住，那一侧不必重做。
+- 更新日：2026-09-24（`localOnly → ?perf` 迁移轮）
 
 **里程碑 v0.5.33 发布完成（2026-09-24）**
 - 版本号：**0.5.33**（package.json / package-lock 根两处 / index.html meta `app-version`，共 4 行改动）
