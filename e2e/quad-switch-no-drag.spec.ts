@@ -15,6 +15,11 @@ import { expect, test, type Page } from '@playwright/test'
  * 这件事一起放宽成要求，而本条要守的恰恰是**不联动**。容差给三根本格的 K 线（900s），
  * 缺陷量级是小时到天，不存在把红判成绿的余地；前提是视角已经被拖离最新（离了尾沿，
  * 实时补根就不会合法地挪动任何一格），并由「四格都看得到回到最新」把这个前提钉住。
+ *
+ * 容差的量纲要说清楚：`drift` 是 `|Δfrom| + |Δto|`（两边之和），所以对**纯平移**而言
+ * 真实容忍度只有 900/2 = 450s = **1.5 根** 5m，不是字面读起来的 3 根。这里刻意不把
+ * 指标改成单边 —— 单边会漏掉「两边反向动 = 跨度被压」那一类缺陷，而压跨度正是 #199
+ * 的原始形态。宁可紧，不可漏；但判词会把平移距离与跨度变化分开报，免得读日志的人再乘一次二。
  */
 
 const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
@@ -154,7 +159,18 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
         }
         if (drift > worst) {
           worst = drift
-          detail = `${sym} 被挪走 ${drift}s（起 ${base[sym].from}→${w.from}，止 ${base[sym].to}→${w.to}）`
+          // 判词必须把「两条边之和」与「实际挪走了多久」分开写：drift 是 |Δfrom|+|Δto|，
+          // 一次纯平移会被读成两倍量级（CI 上那次报 2400s，实际整片只平移了 1200s）。
+          // span 是否为 0 决定这是「整片平移」还是「视角被压/涨」，两者修法完全不同。
+          const fromShift = w.from - base[sym].from!
+          const toShift = w.to - base[sym].to!
+          const span = w.to - w.from
+          const baseSpan = base[sym].to! - base[sym].from!
+          const shape =
+            fromShift === toShift
+              ? `整片平移 ${Math.abs(fromShift)}s（跨度未变，${baseSpan}s）`
+              : `跨度 ${baseSpan}s→${span}s（起偏 ${fromShift}s、止偏 ${toShift}s）`
+          detail = `${sym} ${shape}；drift=${drift}s（=|Δfrom|+|Δto|，非平移距离）起 ${base[sym].from}→${w.from}，止 ${base[sym].to}→${w.to}`
         }
       }
       await page.waitForTimeout(700)
