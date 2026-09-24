@@ -104,6 +104,14 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
   // `Could not find profile folder`，与用例无关，连 docs.spec 也一样失败），CI 是唯一取证面。
   // 绿 = 这条 skip 是多余的，A4c 白得一个浏览器；红 = 真实口径大概是「四格联动的拖拽不可靠」
   // 而不是「拖不动」，把实测结果记回来再恢复 skip。两种结果都算收获。
+  //
+  // **裁定：绿，skip 已永久去掉（2026-09-24，PR #229）。** 定案的不是「跑绿了」，而是两次同清单
+  // 运行的计数对照 —— #227（skip 还在）`Running 744 / 56 skipped / 687 passed / 1 flaky`，
+  // #229（去掉 skip）`Running 744 / 55 skipped / 687 passed / 2 flaky`：总数与通过数一字不动，
+  // skipped 正好少 1，就是 firefox 这一例从「跳过」搬进「执行」。它也不在 flaky 名单里
+  // （那两条都是 `[webkit]` 的 smoke-depth / smoke-drawings），所以是 attempt 1 直接过的。
+  // 之所以要这样对照：本条的前提是**观测量**（四格都出现「回到最新」才继续），拖不动会红在前提
+  // 那一步、不会静默放行 —— 真正需要排除的是「firefox 压根没跑这一例」，而那只看得动计数。
   test('三格 5m 视角定在历史中段，把第四格换成 1h：它们的起止一秒都不该变', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
@@ -160,6 +168,13 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     const startedAt = Date.now()
     let worst = 0
     let detail = ''
+    let worstSym = ''
+    // 逐拍轨迹只记接收格：CI 上那几次「整片平移 600~1200s」本机 webkit 14/14 复现不出来
+    // （其中一次是 CPU 抢占尝试，实测每拍耗时与空闲时同档，等于没抢到），而光看
+    // 「最坏那一拍」定不了方向 —— 第 1 拍就不为 0（基线读早了，视角还没停）和中途从 0 变成
+    // 非 0（广播之后被人挪了一次）是两种完全不同的病，判词必须能分开它们。
+    const traces: Record<string, string[]> = {}
+    for (const sym of CELLS) traces[sym] = []
     let samples = 0
     let solMoved = 0
     let solWindow: { from: number; to: number } | null = null
@@ -178,6 +193,7 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
         const w = now[sym]
         if (w.from === null || w.to === null) {
           if (!detail) detail = `${sym} 的可视区间在观测中消失了`
+          traces[sym].push('—')
           continue
         }
         const drift = Math.abs(w.to - base[sym].to!) + Math.abs(w.from - base[sym].from!)
@@ -186,8 +202,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
           if (drift > 0) solMoved++
           continue
         }
+        traces[sym].push(`${w.from - base[sym].from!}/${w.to - base[sym].to!}`)
         if (drift > worst) {
           worst = drift
+          worstSym = sym
           // 判词必须把「两条边之和」与「实际挪走了多久」分开写：drift 是 |Δfrom|+|Δto|，
           // 一次纯平移会被读成两倍量级（CI 上那次报 2400s，实际整片只平移了 1200s）。
           // span 是否为 0 决定这是「整片平移」还是「视角被压/涨」，两者修法完全不同。
@@ -241,7 +259,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
-      `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位`,
+      `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位` +
+        (worstSym
+          ? `；${worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${traces[worstSym].join(' ')}`
+          : ''),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
