@@ -691,7 +691,11 @@ test('移动端：触屏绘制文本标注 → 移动端浮层输入 → 确定 
   await page.waitForTimeout(400)
 
   // 移动端文本编辑浮层出现 → 输入 → 确定
-  await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 5000 })
+  // 预算 20s 不是随手加的：单独跑这条 2.7~3.1s 就过，但在 38 例串行里它实测跑到 7.1s
+  // 并把原来那 5s 等满 —— 同文件里可比对的浮层等待本来就是 20s（全文 22 处）/30s（6 处），
+  // 5s 是这个文件里仅剩的两处离群值之一。抬到 20s 之后仍要能红：把 testid 换成不存在的那个，
+  // 它会在 20s 后报 `element(s) not found`，也就是说这只是把「机器忙」让位给「功能坏」，没让断言变钝。
+  await expect(page.getByTestId('mobile-text-editor')).toBeVisible({ timeout: 20_000 })
   await page.getByTestId('mobile-text-input').fill('关键位')
   await page.getByTestId('mobile-text-confirm').tap()
   await page.waitForTimeout(300)
