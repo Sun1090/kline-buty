@@ -168,6 +168,13 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     const startedAt = Date.now()
     let worst = 0
     let detail = ''
+    let worstSym = ''
+    // 逐拍轨迹只记接收格：CI 上那几次「整片平移 600~1200s」本机 webkit 14/14 复现不出来
+    // （其中一次是 CPU 抢占尝试，实测每拍耗时与空闲时同档，等于没抢到），而光看
+    // 「最坏那一拍」定不了方向 —— 第 1 拍就不为 0（基线读早了，视角还没停）和中途从 0 变成
+    // 非 0（广播之后被人挪了一次）是两种完全不同的病，判词必须能分开它们。
+    const traces: Record<string, string[]> = {}
+    for (const sym of CELLS) traces[sym] = []
     let samples = 0
     let solMoved = 0
     let solWindow: { from: number; to: number } | null = null
@@ -186,6 +193,7 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
         const w = now[sym]
         if (w.from === null || w.to === null) {
           if (!detail) detail = `${sym} 的可视区间在观测中消失了`
+          traces[sym].push('—')
           continue
         }
         const drift = Math.abs(w.to - base[sym].to!) + Math.abs(w.from - base[sym].from!)
@@ -194,8 +202,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
           if (drift > 0) solMoved++
           continue
         }
+        traces[sym].push(`${w.from - base[sym].from!}/${w.to - base[sym].to!}`)
         if (drift > worst) {
           worst = drift
+          worstSym = sym
           // 判词必须把「两条边之和」与「实际挪走了多久」分开写：drift 是 |Δfrom|+|Δto|，
           // 一次纯平移会被读成两倍量级（CI 上那次报 2400s，实际整片只平移了 1200s）。
           // span 是否为 0 决定这是「整片平移」还是「视角被压/涨」，两者修法完全不同。
@@ -249,7 +259,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
-      `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位`,
+      `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位` +
+        (worstSym
+          ? `；${worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${traces[worstSym].join(' ')}`
+          : ''),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
