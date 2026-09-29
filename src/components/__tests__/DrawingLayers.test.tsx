@@ -4,6 +4,7 @@ import { render, fireEvent, screen, cleanup, act, waitFor } from '@testing-libra
 import { DrawingLayers } from '../DrawingLayers'
 import { createDrawing, type Drawing } from '../../drawings/logic'
 import { createTemplate } from '../../drawings/templates'
+import { runA11yAudit } from '../../utils/a11yAudit'
 
 afterEach(cleanup)
 
@@ -271,6 +272,16 @@ describe('DrawingLayers（图层管理面板）', () => {
     // h1 被选中 → 首行 aria-selected=true
     expect(options[0].getAttribute('aria-selected')).toBe('true')
     expect(options[1].getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('行内图标按钮带 aria-label：title 不能作图标钮唯一名称（a11y 规则 icon-only-name）', () => {
+    setup({ drawings: [h1], selectedId: 'h1' })
+    for (const id of ['drawing-layer-rename', 'drawing-layer-eye', 'drawing-layer-lock', 'drawing-layer-delete']) {
+      const btn = screen.getByTestId(id)
+      expect(btn.getAttribute('aria-label')).toBeTruthy()
+    }
+    // 全树审计无 error：rowBtn 的 👁/🔒/🗑/✎ 均已可读
+    expect(runA11yAudit(screen.getByTestId('drawing-layers')).errors).toEqual([])
   })
 
   it('I15 搜索：按类型标签过滤图层树', () => {

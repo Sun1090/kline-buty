@@ -919,7 +919,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
             <PanelButton onClick={props.onToggleFullscreen} title={props.isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')} active={props.isFullscreen}>
               {props.isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
             </PanelButton>
-            <PanelButton onClick={props.onToggleShortcuts} title={t('shortcuts.hint')} active={props.shortcutsActive} testId="shortcuts-toggle">
+            <PanelButton onClick={props.onToggleShortcuts} title={t('shortcuts.hint')} ariaLabel={t('shortcuts.hint')} active={props.shortcutsActive} testId="shortcuts-toggle">
               ?
             </PanelButton>
             <PanelButton onClick={props.onCycleLang} title={t('lang.switchTo')}>

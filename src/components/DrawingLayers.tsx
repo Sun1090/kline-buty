@@ -941,6 +941,7 @@ function rowBtn(
       data-testid={testId}
       data-active={active}
       title={title}
+      aria-label={title}
       aria-pressed={active}
       onClick={onClick}
       style={{

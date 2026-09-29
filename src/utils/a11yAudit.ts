@@ -7,6 +7,7 @@
  *
  * 覆盖的关键模式（均为无 JSX-a11y 规则也可静态判定的）：
  * - 交互控件可访问名称（aria-label / aria-labelledby / title / 文本 / label / placeholder）
+ * - 图标按钮（children 仅 emoji/符号/SVG）必须带显式 aria-label / aria-labelledby（title 不算数）
  * - aria-pressed / aria-expanded / aria-selected / aria-checked 取值合法性
  * - 互斥切换组 aria-pressed 一致性（恰一个按下；独立开关组不误报）
  * - aria-label 唯一性（默认「同父兄弟」作用域，避免误报如多个「收藏切换」星标）
@@ -25,6 +26,7 @@ export type A11ySeverity = 'error' | 'warning'
 
 export type A11yRule =
   | 'interactive-name'
+  | 'icon-only-name'
   | 'aria-state-value'
   | 'unique-aria-label'
   | 'tabindex-range'
@@ -136,7 +138,34 @@ export function auditInteractiveName(container: Element, selector: string = INTE
 }
 
 /**
- * 规则二：aria-pressed / aria-expanded / aria-selected / aria-checked 取值必须合法。
+ * 规则二：图标按钮必须带显式 aria-label / aria-labelledby。
+ * 「图标按钮」= 可见文本不含任何字母/数字/汉字（只有 emoji、几何符号、标点或纯 SVG）。
+ * title 不能作图标按钮的唯一名称来源：部分屏幕阅读器默认不朗读 title，触屏上更是完全不可见。
+ * 完全无名称的控件由规则一覆盖，这里不再重复点名。
+ */
+export function isIconOnlyButton(el: Element): boolean {
+  const text = el.textContent ?? ''
+  return !/[\p{L}\p{N}]/u.test(text)
+}
+
+export function auditIconOnlyName(container: Element): A11yFinding[] {
+  const out: A11yFinding[] = []
+  for (const el of collectInteractive(container, BUTTON_SELECTOR)) {
+    if (!isIconOnlyButton(el)) continue
+    if (el.getAttribute('aria-label')?.trim() || el.getAttribute('aria-labelledby')) continue
+    if (!getAccessibleName(el)) continue // 规则一已按「完全无名称」报过
+    out.push({
+      rule: 'icon-only-name',
+      severity: 'error',
+      target: describeEl(el),
+      message: '图标按钮缺少 aria-label/aria-labelledby：仅靠 title 不满足屏读与触屏的可读名称',
+    })
+  }
+  return out
+}
+
+/**
+ * 规则三：aria-pressed / aria-expanded / aria-selected / aria-checked 取值必须合法。
  * 合法值：true / false；pressed、checked、selected 额外允许 mixed（三态）。
  */
 export function auditAriaStateValues(container: Element): A11yFinding[] {
@@ -161,7 +190,7 @@ export function auditAriaStateValues(container: Element): A11yFinding[] {
 }
 
 /**
- * 规则三：互斥切换组 aria-pressed 一致性——组内 ≥2 个按钮带 aria-pressed 时，
+ * 规则四：互斥切换组 aria-pressed 一致性——组内 ≥2 个按钮带 aria-pressed 时，
  * 必须恰好一个为 true。只检查显式传入的组根（避免把独立开关误当互斥组）。
  *
  * @param groupRoot  组容器（如 role="toolbar" / 排序按钮行）
@@ -198,7 +227,7 @@ export interface UniqueLabelOptions {
 }
 
 /**
- * 规则四：aria-label 唯一性。
+ * 规则五：aria-label 唯一性。
  * 默认仅检查「同父兄弟重复」（同一互斥组/同一工具栏内同名会无法区分），
  * 跨区重复（如多个「收藏切换」星标）不误报；需要全局扫可传 scope: 'all'。
  */
@@ -253,7 +282,7 @@ export interface TabIndexOptions {
   max?: number
 }
 
-/** 规则五：tabindex 必须在 [min, max] 内（默认 -1..0） */
+/** 规则六：tabindex 必须在 [min, max] 内（默认 -1..0） */
 export function auditTabIndexRange(container: Element, options: TabIndexOptions = {}): A11yFinding[] {
   const min = options.min ?? -1
   const max = options.max ?? 0
@@ -273,7 +302,7 @@ export function auditTabIndexRange(container: Element, options: TabIndexOptions 
   return out
 }
 
-/** 规则六：role="region" 容器必须有 aria-label（键盘可聚焦滚动面板的语义） */
+/** 规则七：role="region" 容器必须有 aria-label（键盘可聚焦滚动面板的语义） */
 export function auditRegion(el: Element): A11yFinding[] {
   const out: A11yFinding[] = []
   if (el.getAttribute('role') !== 'region') {
@@ -286,7 +315,7 @@ export function auditRegion(el: Element): A11yFinding[] {
 }
 
 export interface A11yAuditOptions {
-  /** 需要执行的容器级规则；缺省为全部四条 */
+  /** 需要执行的容器级规则；缺省为全部五条 */
   rules?: A11yRule[]
   /** 交互控件选择器；默认 BUTTON_SELECTOR（本阶段聚焦按钮控件） */
   interactiveSelector?: string
@@ -311,10 +340,13 @@ export interface A11yAuditResult {
 
 /** 组合执行容器级规则 + 显式组/区域检查，返回分类结果 */
 export function runA11yAudit(container: Element, options: A11yAuditOptions = {}): A11yAuditResult {
-  const rules = options.rules ?? (['interactive-name', 'aria-state-value', 'unique-aria-label', 'tabindex-range'] as A11yRule[])
+  const rules = options.rules ?? (['interactive-name', 'icon-only-name', 'aria-state-value', 'unique-aria-label', 'tabindex-range'] as A11yRule[])
   const findings: A11yFinding[] = []
   if (rules.includes('interactive-name')) {
     findings.push(...auditInteractiveName(container, options.interactiveSelector ?? BUTTON_SELECTOR))
+  }
+  if (rules.includes('icon-only-name')) {
+    findings.push(...auditIconOnlyName(container))
   }
   if (rules.includes('aria-state-value')) {
     findings.push(...auditAriaStateValues(container))

@@ -476,6 +476,7 @@ export function MobileHeader(props: MobileHeaderProps) {
             onClick={props.onReplay}
             disabled={props.replayDisabled}
             title={props.replayDisabled ? t('status.replayNotEnough') : t('replay.title')}
+            aria-label={props.replayDisabled ? t('status.replayNotEnough') : t('replay.title')}
             style={{
               ...triggerStyle(false, props.replayActive),
               ...(props.replayDisabled ? { opacity: 0.4, cursor: 'default' } : {}),
@@ -486,6 +487,7 @@ export function MobileHeader(props: MobileHeaderProps) {
           <button
             onClick={props.onToggleFullscreen}
             title={props.isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
+            aria-label={props.isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter')}
             style={triggerStyle(false, props.isFullscreen)}
           >
             {'⛶'}

@@ -2,6 +2,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { render, fireEvent, screen, cleanup } from '@testing-library/react'
 import { MobileHeader } from '../MobileHeader'
+import { runA11yAudit } from '../../utils/a11yAudit'
 import type { Period } from '../../chart/types'
 import type { ChartType, MainIndicatorKind, SubIndicatorKind } from '../ChartView'
 import type { DrawingTool } from '../../drawings/logic'
@@ -301,5 +302,16 @@ describe('MobileHeader（移动端工具栏整合）', () => {
     expect(a.getAttribute('href')).toBe('/knowledge/')
     expect(a.getAttribute('target')).toBe('_blank')
     expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+  })
+
+  it('图标按钮（⏸/⛶）带 aria-label：title 不能作图标钮唯一名称（a11y 规则 icon-only-name）', () => {
+    // 播放中（children 只有 ⏸）与全屏态（children 只有 ⛶）都是纯图标按钮
+    setup({ replayActive: true, isFullscreen: true })
+    const header = document.querySelector('header')!
+    const r = runA11yAudit(header)
+    const iconOnly = r.errors.filter((f) => f.rule === 'icon-only-name')
+    expect(iconOnly, iconOnly.map((f) => `${f.target}: ${f.message}`).join('\n')).toEqual([])
+    expect(screen.getByTitle('历史逐根回放').getAttribute('aria-label')).toBe('历史逐根回放')
+    expect(screen.getByTitle('退出全屏').getAttribute('aria-label')).toBe('退出全屏')
   })
 })
