@@ -5,6 +5,27 @@
 
 ## 当前阶段
 
+**a11y 图标按钮名称收口（2026-09-29，feat/a11y-icon-only-labels）**
+- 来源：`docs/10-无障碍审计报告.md` 残余项 1（图标按钮仅靠 `title` 作可访问名称，E11 审计时记为可选增强）。
+- 做法：给自研审计库 `src/utils/a11yAudit.ts` 新增 `icon-only-name` 规则并接入 `runA11yAudit`
+  默认规则集 —— 可见文本不含字母/数字/汉字（emoji/几何符号/纯 SVG）的按钮必须带显式
+  `aria-label`/`aria-labelledby`，仅靠 `title` 报 error（title 在部分屏读器默认不朗读、触屏不可见）；
+  完全无名称的仍由 `interactive-name` 一条管，不重复点名。图标按钮的「title 回退」从约定变成红条件。
+- 规则点名的修复（11 处，全部 `aria-label` 与 `title` 同源 i18n，无新文案）：
+  DrawingLayers `rowBtn` 工厂 1 处（覆盖 👁/🔒/🗑/✎ 6 个调用点）、MobileHeader 回放 ⏸/全屏 ⛶、
+  DesktopHeader 快捷键 `?`（复用 `PanelButton` 已有的 `ariaLabel` prop）、
+  AlertPanel 方向筛选 ≥/≤ —— 后三处是规则跑进 O9 组件审计后**当场抓出的漏网**，不在原清点名单里，
+  说明「清单靠人工枚举、规则靠测试兜底」这个顺序是对的。
+- 测试：`src/utils/__tests__/a11yAudit.test.ts` 补 5 组纯函数用例（判定边界：`⏸`/`←`/SVG 是图标，
+  `15分`/`确定` 不是；aria-label/labelledby 通过；规则接入默认集）；DrawingLayers 补「行内图标钮全带
+  aria-label + 全树审计无 error」；MobileHeader 补播放中 ⏸ 与全屏态 ⛶ 的图标态审计。
+- 验证：`npm test` → **2042 passed / 175 files**（+7）；`npm run coverage` → 85.78/80.33/78.7/88.5，
+  高于门禁 83/76/75/85；`tsc -b --noEmit`、`eslint` 0 errors。
+- 变更文件：`src/utils/a11yAudit.ts`、`src/components/{DrawingLayers,MobileHeader,DesktopHeader,AlertPanel}.tsx`
+  及 3 个对应测试、`docs/10-无障碍审计报告.md`（残余项 1 与「建议纳入 CI」两节改为已收口）。
+- 风险/回滚：纯属性添加 + 单测新增，无行为/构建面改动；回滚 = revert 本提交。
+- 更新日：2026-09-29
+
 **v0.5.33 发布后质量收口（2026-09-25）**
 - main 现状：**v0.5.33 已发布**（tag `v0.5.33` @ 00055f9，Pages 部署完成后线上抽查通过）。
   发布后已合并并进入 main 的收口提交：**#240 → c11b69e**（修正 RSI Wilder 种子）、

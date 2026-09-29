@@ -674,6 +674,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           onClick={() => setFilterDir('above')}
           aria-pressed={filterDir === 'above'}
           title={t('alert.above')}
+          aria-label={t('alert.above')}
           style={{
             padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
             background: filterDir === 'above' ? 'rgba(41,98,255,0.18)' : 'transparent',
@@ -687,6 +688,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           onClick={() => setFilterDir('below')}
           aria-pressed={filterDir === 'below'}
           title={t('alert.below')}
+          aria-label={t('alert.below')}
           style={{
             padding: '2px 6px', fontSize: 11, border: 'none', borderRadius: 4, cursor: 'pointer',
             background: filterDir === 'below' ? 'rgba(41,98,255,0.18)' : 'transparent',

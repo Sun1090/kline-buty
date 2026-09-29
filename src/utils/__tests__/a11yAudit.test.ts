@@ -2,12 +2,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   auditAriaStateValues,
+  auditIconOnlyName,
   auditInteractiveName,
   auditPressedGroup,
   auditRegion,
   auditTabIndexRange,
   auditUniqueAriaLabels,
   getAccessibleName,
+  isIconOnlyButton,
   runA11yAudit,
 } from '../a11yAudit'
 
@@ -65,6 +67,47 @@ describe('auditInteractiveName（交互控件必须有可访问名称）', () =>
     expect(auditInteractiveName(c)).toEqual([]) // 默认按钮聚焦
     expect(auditInteractiveName(c, 'input')).toEqual([]) // input 有 placeholder
     expect(auditInteractiveName(host('<input />'))).toHaveLength(1) // 空 input 缺名称
+  })
+})
+
+describe('auditIconOnlyName（图标按钮必须带显式 aria-label/aria-labelledby）', () => {
+  it('isIconOnlyButton：emoji/符号/SVG 判图标；字母数字汉字判文本', () => {
+    expect(isIconOnlyButton(host('<button>⏸</button>').firstElementChild!)).toBe(true)
+    expect(isIconOnlyButton(host('<button>🗑</button>').firstElementChild!)).toBe(true)
+    expect(isIconOnlyButton(host('<button>←</button>').firstElementChild!)).toBe(true)
+    expect(isIconOnlyButton(host('<button><svg /></button>').firstElementChild!)).toBe(true)
+    expect(isIconOnlyButton(host('<button>确定</button>').firstElementChild!)).toBe(false)
+    expect(isIconOnlyButton(host('<button>15分</button>').firstElementChild!)).toBe(false)
+  })
+
+  it('图标按钮仅靠 title → error（title 屏读可能不朗读、触屏不可见）', () => {
+    const c = host('<button title="删除">🗑</button>')
+    const f = auditIconOnlyName(c)
+    expect(f).toHaveLength(1)
+    expect(f[0].rule).toBe('icon-only-name')
+    expect(f[0].severity).toBe('error')
+  })
+
+  it('图标按钮带 aria-label / aria-labelledby → 通过', () => {
+    const c = host(
+      '<button aria-label="删除">🗑</button>' +
+        '<button aria-labelledby="lbl">🔒</button><span id="lbl">锁定</span>',
+    )
+    expect(auditIconOnlyName(c)).toEqual([])
+  })
+
+  it('文本按钮不点名（含数字/字母/汉字）；完全无名称的交给规则一，不重复报', () => {
+    expect(auditIconOnlyName(host('<button>回放</button>'))).toEqual([])
+    const noName = host('<button><svg /></button>')
+    // 图标且无任何名称：规则一已报 interactive-name，规则二跳过
+    expect(auditIconOnlyName(noName)).toEqual([])
+    expect(auditInteractiveName(noName)).toHaveLength(1)
+  })
+
+  it('runA11yAudit 默认规则集包含 icon-only-name', () => {
+    const r = runA11yAudit(host('<button title="眼睛">👁</button>'))
+    expect(r.byRule['icon-only-name']).toHaveLength(1)
+    expect(r.clean).toBe(false)
   })
 })
 
