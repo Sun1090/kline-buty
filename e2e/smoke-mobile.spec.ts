@@ -272,61 +272,59 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await expect.poll(() => findDrawnLineCenter(page), { timeout: 5000 }).not.toBeNull()
 
     /**
-     * 「tap 选中 + 整线拖动」重试，且**每轮重扫像素**。
-     * ?perf 的价格轴会在蜡烛首次上屏后约 0.42s 再做一次离散重缩放：实测整条线从 y=422.3
-     * 一次跳到 y=449.9（27.6px），跳完就不再动。照着跳之前扫到的坐标 tap 会落在空白上，
-     * 选中压根没建立，于是随后整次编辑整条落空（四个增量全 0）。
-     * 这里刻意不用「加一个固定 sleep 跨过那个时刻」：一次性迟到的重缩放，睡多久都证明不了
-     * 它已经过去；而「看得到地真的挪动了才收工」是按结果收敛的，迟到几次都吃得住。
+     * 整线拖动的抓手**不用质心**：质心是「所有画线墨迹」的均值，可以落在真实墨迹之外
+     * （趋势线在 webkit 上实测偏到 7.9px，离 8px 命中阈值只差 0.1px）。交给
+     * hitDrawnPixelUntil：逐个候选**真实墨迹**像素做完整触屏拖动，以「落库坐标真的动了」
+     * 为命中判据，轮与轮之间重扫也顺带消化 ?perf 价格轴那次一次性迟到的重缩放
+     * （实测一次性跳 27.6px 后才稳——「看得到地真的挪动了才收工」，睡多久都证明不了它已过去）。
      * 多拖一次不影响本例判据 —— 断的是两个锚点动得一致，不是移动量。
      */
-    // used 记进判词：CI 上红了要能一眼看出是「三轮都没选中」还是「第一轮没选中、没再试」
-    type Deltas = { used: number; sameId: boolean; dT0: number; dT1: number; dP0: number; dP1: number }
-    let delta: Deltas | null = null
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const center = await findDrawnLineCenter(page)
-      expect(center, `第 ${attempt} 轮：画线质心扫不到`).not.toBeNull()
-      if (!center) break
-      await page.touchscreen.tap(center.x, center.y)
-      await page.waitForTimeout(300)
-
-      // 触屏整线拖动：从线中心向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
+    const dragBody = async (start: { x: number; y: number }) => {
+      // 触屏整线拖动：从墨迹像素向下拖 70px（编辑由 pointer 事件驱动，触屏事件不再显示十字光标）
       cdp = await page.context().newCDPSession(page)
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: center.x, y: center.y }] })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: start.x, y: start.y }] })
       for (let i = 1; i <= 7; i++) {
         await cdp.send('Input.dispatchTouchEvent', {
           type: 'touchMove',
-          touchPoints: [{ x: center.x, y: center.y + i * 10 }] })
+          touchPoints: [{ x: start.x, y: start.y + i * 10 }] })
         await page.waitForTimeout(25)
       }
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
       await page.waitForTimeout(400)
-
-      const after = await readFirst()
-      if (!after || after.points.length !== 2) continue
-      const d: Deltas = {
-        used: attempt,
-        sameId: after.id === before!.id,
-        dT0: after.points[0].time - before!.points[0].time,
-        dT1: after.points[1].time - before!.points[1].time,
-        dP0: after.points[0].price - before!.points[0].price,
-        dP1: after.points[1].price - before!.points[1].price,
-      }
-      delta = d
-      if (Math.abs(d.dT0) > 0.5 || Math.abs(d.dP0) > 0.01) break
     }
-    // 判词把四个增量带出来：原来的 expect.poll 返回 bool，红了只有
-    // 「Expected true / Received false」，证不出塌掉的是「一致」还是「真的动了」那一半。
+    const moved = async () => {
+      const after = await readFirst()
+      if (!after || after.points.length !== 2) return false
+      return (
+        after.id === before!.id &&
+        (Math.abs(after.points[0].time - before!.points[0].time) > 0.5 ||
+          Math.abs(after.points[0].price - before!.points[0].price) > 0.01)
+      )
+    }
+    const hit = await hitDrawnPixelUntil(page, moved, {}, dragBody)
+    expect(hit, '画线真实墨迹上没有一轮拖动把两锚点挪动（hit = 命中的墨迹像素；null = 逐像素试拖全落空）').not.toBeNull()
+
+    const after = await readFirst()
+    expect(after, '命中拖动后落库里应有且仅有这一条两点画线').not.toBeNull()
+    expect(after!.points).toHaveLength(2)
+    // 判词把四个增量带出来：红了要能证不出塌掉的是「一致」还是「真的动了」那一半。
+    const delta = {
+      sameId: after!.id === before!.id,
+      dT0: after!.points[0].time - before!.points[0].time,
+      dT1: after!.points[1].time - before!.points[1].time,
+      dP0: after!.points[0].price - before!.points[0].price,
+      dP1: after!.points[1].price - before!.points[1].price,
+    }
     expect(
       [
-        delta?.sameId === true,
-        delta ? delta.dT0 === delta.dT1 : false,
-        delta ? delta.dP0 === delta.dP1 : false,
-        delta ? Math.abs(delta.dT0) > 0.5 || Math.abs(delta.dP0) > 0.01 : false,
+        delta.sameId,
+        delta.dT0 === delta.dT1,
+        delta.dP0 === delta.dP1,
+        Math.abs(delta.dT0) > 0.5 || Math.abs(delta.dP0) > 0.01,
       ],
-      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（used = 第几轮真的选中；null = 三轮 tap+拖动一次都没选中）`,
+      `[sameId, Δt 两锚点一致, Δp 两锚点一致, 真的挪动了]；实测 ${JSON.stringify(delta)}（命中的墨迹像素 ${JSON.stringify(hit)}）`,
     ).toEqual([true, true, true, true])
     expect(errors).toHaveLength(0)
   })
@@ -390,11 +388,14 @@ test.describe('移动端（390×844 触屏视口）', () => {
     for (let attempt = 0; attempt < 4 && !tailMoved; attempt++) {
       const anchor = await findDrawingAnchor(page, 'max')
       if (!anchor) {
-        const center = await findDrawnLineCenter(page)
-        if (center) {
-          await page.touchscreen.tap(center.x, center.y)
-          await page.waitForTimeout(300)
-        }
+        // 选中态丢了 → 点真实墨迹重新选中。质心可能落在真实墨迹之外（点空等于白跑一轮），
+        // 逐个候选像素 tap，以「尾锚点簇重新出现」为命中判据；没抓回来下一轮重扫再试
+        await hitDrawnPixelUntil(
+          page,
+          async () => !!(await findDrawingAnchor(page, 'max')),
+          {},
+          (q) => page.touchscreen.tap(q.x, q.y),
+        )
         await page.waitForTimeout(300)
         continue
       }
