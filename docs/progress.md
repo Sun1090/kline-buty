@@ -21,6 +21,11 @@
   aria-label + 全树审计无 error」；MobileHeader 补播放中 ⏸ 与全屏态 ⛶ 的图标态审计。
 - 验证：`npm test` → **2042 passed / 175 files**（+7）；`npm run coverage` → 85.78/80.33/78.7/88.5，
   高于门禁 83/76/75/85；`tsc -b --noEmit`、`eslint` 0 errors。
+  PR CI（#251）十项全绿 attempt 1：Typecheck+Lint / Unit+Coverage / Production build /
+  E2E 三浏览器（30m42s）/ CodeQL / KB validation / Dependency audit / Vercel 预览部署。
+- 顺带完成一笔无自动化报坏的验证（progress 里明确警告过「这组没有自动化会告诉你是谁坏了」）：
+  `localOnly` 7 个 e2e 文件本机补跑（chromium、--workers=1、--retries=0，前提 api.binance.com ping=200）
+  → **11 passed / 2.5m 零红**（上次全量补跑 2026-09-24，本轮隔 5 天再核一次仍全绿）。
 - 变更文件：`src/utils/a11yAudit.ts`、`src/components/{DrawingLayers,MobileHeader,DesktopHeader,AlertPanel}.tsx`
   及 3 个对应测试、`docs/10-无障碍审计报告.md`（残余项 1 与「建议纳入 CI」两节改为已收口）。
 - 风险/回滚：纯属性添加 + 单测新增，无行为/构建面改动；回滚 = revert 本提交。
