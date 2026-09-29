@@ -3,6 +3,30 @@
 > 按版本与阶段记录主要功能交付。提交均出自 `sun1090`（无 AI 署名）。
 > 完整提交历史见 `git log`；阶段任务明细见 `docs/04-排期计划.md`、`docs/06-开发任务清单.md`、`docs/07-P3P4-任务清单.md`、`docs/13-下一版本任务清单.md`。
 
+## [v0.5.34] 数据正确性收口 + 可访问性收口（2026-09-29）
+
+v0.5.33 发布后的收口批次：一条指标引擎的数据正确性缺陷修复、一条可访问性增强，
+以及「画线质心不能当抓手」这条判据的最后两处同族写法收口。
+
+- **RSI Wilder 种子修正**（PR #240 → main `c11b69e`）：RSI 初始 Wilder 种子漏掉第 `period` 次变动，
+  低数据量窗口读数偏差。纯计算修复，由单测钉住。
+- **图标按钮可访问名称收口**（PR #251 → main `3dd52a8`）：自研 a11y 审计库新增 `icon-only-name` 规则
+  并接入 `runA11yAudit` 默认规则集 —— 可见文本不含字母/数字/汉字的按钮必须带显式
+  `aria-label`/`aria-labelledby`，仅靠 `title` 报 error（title 在部分屏读器默认不朗读、触屏不可见）。
+  据此修复 11 处（DrawingLayers 行内图标钮 6 个调用点、MobileHeader 回放/全屏、
+  DesktopHeader 快捷键、AlertPanel 方向筛选 ≥/≤），其中 AlertPanel/DesktopHeader 的 5 处
+  是规则跑进组件审计后**当场抓出的漏网**，不在人工清点名单里。图标按钮的「title 回退」从约定变成红条件。
+- **「质心当抓手」最后两处收口**（PR #238 → `7ddeb9f`、PR #252 → main `20baf9a`）：趋势线桌面拖拽
+  与 smoke-mobile 的整线拖动 / 尾锚点重选 fallback 全部迁 `hitDrawnPixelUntil`——扫真实墨迹像素、
+  按结果重试，不再按「所有墨迹的均值」碰运气（实测质心可偏离真实墨迹 9.6px，越过 8px 命中阈值）。
+- **测试/CI 面**：三浏览器偶发名单证据更新（PR #239 → `32a5aae`）；覆盖率门提高到
+  83/76/75/85（PR #241 → `ee78a8d`，实测 85.78/80.33/78.7/88.5）；`localOnly` 7 个 e2e 文件
+  （真实行情依赖，CI 不跑）本机补跑 11 passed 零红。
+- 依赖：dependabot 例行批（eslint / typescript-eslint / jsdom / vite 工具链组，均为 devDependencies）。
+- 门禁：`npm test` → 2042 passed / 175 files；`node scripts/run-ci-e2e.mjs --list` → 801 tests in 32 files；
+  `tsc -b --noEmit`、`eslint` 0 errors；PR CI 十项（含三浏览器 E2E）attempt 1 全绿。
+- 升级与回滚：无数据迁移、无设置快照变更（`SNAPSHOT_VERSION` 仍为 2）；回滚 = revert release 提交 + 删 tag `v0.5.34`。
+
 ## [v0.5.33] 换周期时「那一片数据到底进没进图表」（2026-09-24）
 
 v0.5.32 把四图联动的口径从索引改成时间之后，紧接着的一批全部落在同一条链上：**换一格周期**。

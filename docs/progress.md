@@ -5,6 +5,18 @@
 
 ## 当前阶段
 
+**RELEASE_FREEZE：v0.5.34 发布中（2026-09-29，release/v0.5.34）**
+- 版本号：**0.5.34**（package.json / package-lock 根两处 / index.html meta `app-version`，共 4 行）
+- 发布判据：自 v0.5.33 以来积了**一条数据正确性缺陷修复**（RSI Wilder 种子，PR #240）与
+  **一条可访问性增强**（图标按钮 aria-label 收口，PR #251）→ 按「bug fix → patch」定 patch；
+  e2e 收口（#238/#252）、覆盖率门（#241）、dependabot 批随版记录，不逐条发版。
+- CHANGELOG 已写 `[v0.5.34]` 段；迁移检查：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；
+  回滚 = revert release 提交 + 删 tag `v0.5.34`。
+- 定档门禁（release 工作区实测）：`npm test` → **2042 passed / 175 files**；`npm run build` 成功；
+  `tsc -b --noEmit`、`eslint` 0 errors；`npm run coverage` → 85.78/80.33/78.7/88.5（高于门禁）；
+  `node scripts/run-ci-e2e.mjs --list` → **801 tests in 32 files**。
+- 更新日：2026-09-29
+
 **smoke-mobile 剩余两处「质心当抓手」收口（2026-09-29，test/smoke-mobile-ink-handle）**
 - 上一条判据（画线质心可落在真实墨迹之外）的最后两处同族写法，按 #235/#237/#238 同一模式迁
   `hitDrawnPixelUntil`：整线拖动（`:219` 用例）改为逐候选**真实墨迹**像素做完整触屏拖动，
