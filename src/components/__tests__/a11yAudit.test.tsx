@@ -14,7 +14,7 @@ import type { AlertsApi } from '../../hooks/usePriceAlerts'
 import type { PriceAlert } from '../../alerts/engine'
 import type { Position } from '../../position/pnl'
 import {
-  BUTTON_SELECTOR,
+  INTERACTIVE_SELECTOR,
   auditPressedGroup,
   auditRegion,
   runA11yAudit,
@@ -24,7 +24,7 @@ import {
 afterEach(cleanup)
 
 function expectAuditClean(container: Element, opts: A11yAuditOptions = {}) {
-  const r = runA11yAudit(container, opts)
+  const r = runA11yAudit(container, { interactiveSelector: INTERACTIVE_SELECTOR, ...opts })
   const detail = r.errors.map((f) => `- [${f.rule}] ${f.target}: ${f.message}`).join('\n')
   expect(r.errors, detail).toEqual([])
 }
@@ -57,7 +57,7 @@ describe('M1 面板 Tab 可达性审计', () => {
   })
 })
 
-/** O9 纯函数断言库对按钮交互控件的系统化审计：aria-pressed 一致性 / 唯一 aria-label / tabindex 范围 / 可访问名称 */
+/** O9/E11 纯函数断言库系统化审计：aria-pressed 一致性 / 唯一 aria-label / tabindex 范围 / 可访问名称（interactiveSelector 全量，E11 残余项收口 2026-09-30） */
 describe('O9 组件 a11y 审计：PeriodBar', () => {
   it('工具栏按钮：全可访问名称 + 互斥 pressed 恰一个 + roving tabindex 恰一个 0', () => {
     const { container } = render(<PeriodBar value="1m" onChange={vi.fn()} />)
@@ -119,7 +119,7 @@ function makeAlertsApi(overrides: Partial<AlertsApi> = {}): AlertsApi {
   }
 }
 
-/** O9 组件 a11y 审计：AlertPanel */
+/** O9 组件 a11y 审计：AlertPanel（E11 收口：import file input 带 aria-label，文本输入行改真实 <label>） */
 describe('O9 组件 a11y 审计：AlertPanel', () => {
   it('区域语义 + 按钮可访问名称 + 排序互斥组', () => {
     const { container } = render(<AlertPanel symbol="BTCUSDT" currentPrice={63000} alertsApi={makeAlertsApi()} />)
@@ -142,7 +142,7 @@ describe('O9 组件 a11y 审计：AlertPanel', () => {
 const longPosition: Position = { entry: 100, quantity: 2, direction: 'long', takeProfit: 103, stopLoss: 98 }
 const shortPosition: Position = { entry: 100, quantity: 3, direction: 'short', takeProfit: 97, stopLoss: 103 }
 
-/** O9 组件 a11y 审计：PositionPanel */
+/** O9/E11 组件 a11y 审计：PositionPanel（E11 残余项收口 2026-09-30：quantity/tpPct/slPct 等输入行已改真实 <label>，审计升到全量 INTERACTIVE_SELECTOR） */
 describe('O9 组件 a11y 审计：PositionPanel', () => {
   it('区域语义 + 杠杆/模式互斥组 + 平仓按钮可访问名称', () => {
     const { container } = render(
@@ -158,9 +158,7 @@ describe('O9 组件 a11y 审计：PositionPanel', () => {
     const panel = container.firstChild as HTMLElement
     const leverageRoot = screen.getByText('1x').closest('div')!
     const modeRoot = screen.getByText('百分比').closest('div')!
-    // 输入框（quantity/tpPct/slPct）暂缺程序化 <label>，本轮聚焦按钮控件（E11 残余项）
     expectAuditClean(container, {
-      interactiveSelector: BUTTON_SELECTOR,
       regions: [panel],
       pressedGroups: [leverageRoot, modeRoot],
     })
@@ -301,7 +299,7 @@ function setup(overrides: Record<string, unknown> = {}) {
   return { handlers, container }
 }
 
-/** O9 组件 a11y 审计：DesktopHeader */
+/** O9/E11 组件 a11y 审计：DesktopHeader（E11 收口：文本草稿 textarea / 布局方案名 / 设置导入 file input 均有可访问名称） */
 describe('O9 组件 a11y 审计：DesktopHeader', () => {
   it('默认态：全按钮可访问名称 + aria 状态合法 + tabindex 范围，无 error', () => {
     const { container } = setup()

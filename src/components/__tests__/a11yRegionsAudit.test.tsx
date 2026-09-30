@@ -13,6 +13,9 @@
  * VolumeProfileChart 无既有测试，按组件 props 类型构造最小合法 props。
  * RecentTrades / PinnedPanel 的 hook vi.mock 亦照抄各自测试文件。
  * 每个组件一条 it：面板根过 auditRegion 无 error + 整容器 runA11yAudit 无 error。
+ *
+ * E11 残余项收口（2026-09-30）：runA11yAudit 从 BUTTON_SELECTOR 升级为 INTERACTIVE_SELECTOR，
+ * input/textarea/select 一并纳入可访问名称审计（此前仅审按钮）。
  */
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
@@ -41,7 +44,7 @@ import type { SentimentData } from '../../hooks/useSentiment'
 import type { PendingOrder } from '../../trade/pending'
 import type { TradeRecord } from '../../hooks/usePaperAccount'
 import type { Candle } from '../../chart/types'
-import { auditRegion, runA11yAudit } from '../../utils/a11yAudit'
+import { auditRegion, INTERACTIVE_SELECTOR, runA11yAudit } from '../../utils/a11yAudit'
 
 // 照抄 RecentTrades.test.tsx：hook mock（组件内订阅行情流，jsdom 下必须桩掉）
 vi.mock('../../hooks/useRecentTrades', () => ({ useRecentTrades: vi.fn(() => []) }))
@@ -61,7 +64,7 @@ afterEach(() => {
 beforeEach(() => localStorage.clear())
 
 function expectAuditClean(container: Element) {
-  const r = runA11yAudit(container)
+  const r = runA11yAudit(container, { interactiveSelector: INTERACTIVE_SELECTOR })
   const detail = r.errors.map((f) => `- [${f.rule}] ${f.target}: ${f.message}`).join('\n')
   expect(r.errors, detail).toEqual([])
 }

@@ -296,6 +296,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
                   if (e.key === 'Escape') props.onCancelText()
                 }}
                 placeholder={t('drawing.textPlaceholder')}
+                aria-label={t('drawing.textPlaceholder')}
                 autoFocus
                 rows={2}
                 style={{
@@ -763,6 +764,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
               placeholder={t('layout.presetName')}
+              aria-label={t('layout.presetName')}
               style={{
                 width: 90,
                 padding: '3px 6px',
@@ -851,6 +853,7 @@ export function DesktopHeader(props: DesktopHeaderProps) {
               accept="application/json,.json"
               style={{ display: 'none' }}
               data-testid="settings-import-file"
+              aria-label={t('settings.snapshotImportTitle')}
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (!file) return

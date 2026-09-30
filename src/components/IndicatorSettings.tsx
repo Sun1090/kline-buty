@@ -299,11 +299,12 @@ export function IndicatorSettings({
       )}
       {fields.length === 0 && <div style={{ color: 'var(--text-faint)' }}>{t('indicator.noParams')}</div>}
       {fields.map((f) => (
-        <div key={String(f.key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+        <label key={String(f.key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
           <span style={{ color: 'var(--text-dim)' }}>{f.label}</span>
           {f.kind === 'list' ? (
             <input
               style={{ ...inputStyle, width: 110 }}
+              aria-label={f.label}
               value={draft.maPeriods.join(',')}
               onChange={(e) =>
                 apply({
@@ -317,6 +318,7 @@ export function IndicatorSettings({
           ) : f.kind === 'boolean' ? (
             <input
               type="checkbox"
+              aria-label={f.label}
               checked={Boolean(draft[f.key] as boolean)}
               onChange={(e) => apply({ [f.key]: e.target.checked } as Partial<IndicatorParams>)}
               style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent)' }}
@@ -341,11 +343,12 @@ export function IndicatorSettings({
             <input
               style={inputStyle}
               type="number"
+              aria-label={f.label}
               value={draft[f.key] as number}
               onChange={(e) => apply({ [f.key]: Number(e.target.value) } as Partial<IndicatorParams>)}
             />
           )}
-        </div>
+        </label>
       ))}
       {onLineColorChange && editableLines.length > 0 && (
         <div style={{ marginTop: 12, borderTop: '1px solid #2a2e39', paddingTop: 8 }}>
@@ -494,7 +497,7 @@ export function IndicatorSettings({
             accept="application/json"
             data-testid="indicator-import-input"
             style={{ display: 'none' }}
-            aria-hidden="true"
+            aria-label={t('indicator.importParams')}
             onChange={(e) => {
               const f = e.target.files?.[0]
               if (f) importParamsFile(f)
