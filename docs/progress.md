@@ -5,16 +5,38 @@
 
 ## 当前阶段
 
-**RELEASE_FREEZE：v0.5.34 发布中（2026-09-29，release/v0.5.34）**
+**A4c「未复现」被推翻：main CI 出现带逐拍轨迹的 webkit 红 + 规格补在场性观测（2026-09-29，test/a4c-btl-instrumentation）**
+- v0.5.34 squash 合并后 main 首跑（run 36593434161，`b4d5116`）E2E 三浏览器 **2 failed**（同 diff 在
+  PR #253 的 CI 全绿，与 #222 原有「PR 绿 / main 红」形态一致）：
+  ① `quad-switch-no-drag` webkit attempt 1/2/3 全红——**关键读数：三次落点完全相同**
+  （1790656800..1790683200）而三次基线各不相同（恰差整 300s 倍数）；若是基线读早/视角未停，
+  落点应散在各自基线附近。落点是确定性窗口（26400s = 5m 默认跨度，跨 3 次独立页面加载一字不差
+  ⇒ perf 末端锚定是固定网格），平移量 900/1200/1500s = 3/4/5 根 = 基线与该窗口的距离。
+  **「基线竞态」一支排掉**；形态假设（未经插桩不写成机制）：接收格被一次性甩回/甩到规范视角。
+  证据已落 [#222 评论](https://github.com/Sun1090/kline-buty/issues/222#issuecomment-5901572852)。
+  ② `smoke-drawings` 趋势线拖拽 webkit ×3（#238 迁移后首个 CI 红，命中家族，另行观察）。
+- 处置按 #222 既定顺序：先补观测量不动产品逻辑——规格在观测窗内逐拍采样各接收格
+  `back-to-latest` 按钮在场性（1=在/0=不在/—=读不到），失败判词随轨迹输出。下一次红将自证：
+  被甩到的窗口是否就是「回到最新」、甩动发生在 SOL 落位（第 5 拍）之前还是之后。
+- 采样器已用一次性探针验证实值：初始 btl=false（视角在最新）→ 拖进历史 btl=true、平移 1800s 跨度不变，
+  方向语义正确（探针用完即删，不入库）。
+- 验证：e2e typecheck 干净；chromium repeat 2/2、webkit repeat 3/3 全绿（本机依旧不复现红，与历史一致）。
+- 更新日：2026-09-29
+
+**RELEASE_FREEZE：v0.5.34 发布完成（2026-09-29）**
 - 版本号：**0.5.34**（package.json / package-lock 根两处 / index.html meta `app-version`，共 4 行）
-- 发布判据：自 v0.5.33 以来积了**一条数据正确性缺陷修复**（RSI Wilder 种子，PR #240）与
-  **一条可访问性增强**（图标按钮 aria-label 收口，PR #251）→ 按「bug fix → patch」定 patch；
-  e2e 收口（#238/#252）、覆盖率门（#241）、dependabot 批随版记录，不逐条发版。
-- CHANGELOG 已写 `[v0.5.34]` 段；迁移检查：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；
-  回滚 = revert release 提交 + 删 tag `v0.5.34`。
-- 定档门禁（release 工作区实测）：`npm test` → **2042 passed / 175 files**；`npm run build` 成功；
-  `tsc -b --noEmit`、`eslint` 0 errors；`npm run coverage` → 85.78/80.33/78.7/88.5（高于门禁）；
-  `node scripts/run-ci-e2e.mjs --list` → **801 tests in 32 files**。
+- 发布 PR：**#253**（squash 合并 → main **b4d5116**，合并后即删远端分支）；CI 十项全绿 attempt 1
+  （E2E 三浏览器 30m38s）。发布判据：自 v0.5.33 以来积了 RSI Wilder 种子修正（#240，数据正确性）
+  与图标按钮 aria-label 收口（#251，可访问性）→ 按「bug fix → patch」定 patch
+- tag：**v0.5.34 @ b4d5116**，由 Release Tag workflow 自动创建（`git ls-remote` 实证）；惯例 tag-only 不建 GitHub Release
+- 部署：Deploy to GitHub Pages run 36593433841 **success**；线上 Pages `meta[app-version]` 实测 **0.5.34**（curl 抽查）；
+  Vercel 生产部署对 b4d5116 **success**（GitHub deployments API `environment: Production` 实证——
+  本机网络到 vercel.app 不通（curl 000 反复），域名侧抽查以 GitHub 状态为准）
+- 本版收录见 CHANGELOG `[v0.5.34]` 段；门禁：2042 passed/175 files、coverage 85.78/80.33/78.7/88.5、
+  e2e 账本 801 tests/32 files、build/tsc/eslint 干净
+- 迁移与回滚：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.34`
+- ⚠️ 发布后 main 首跑 CI 的 E2E **2 failed**（A4c webkit ×3 + smoke-drawings 趋势线 webkit ×3）——
+  同 diff 在 PR CI 全绿，属偶发家族而非本版回归；已按 #222 流程取证（见上条）
 - 更新日：2026-09-29
 
 **smoke-mobile 剩余两处「质心当抓手」收口（2026-09-29，test/smoke-mobile-ink-handle）**
