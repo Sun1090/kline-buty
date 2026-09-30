@@ -92,4 +92,11 @@ describe('SentimentPanel', () => {
     render(<SentimentPanel data={EMPTY} />)
     expect(screen.getByTestId('sentiment-panel')).toBeDefined()
   })
+
+  it('面板根有 role=region + aria-label（O9/E11 region 全树审计补齐）', () => {
+    render(<SentimentPanel data={EMPTY} />)
+    const region = screen.getByTestId('sentiment-panel')
+    expect(region.getAttribute('role')).toBe('region')
+    expect(region.getAttribute('aria-label')).toBeTruthy()
+  })
 })

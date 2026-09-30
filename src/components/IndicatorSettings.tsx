@@ -247,6 +247,7 @@ export function IndicatorSettings({
           </button>
           <button
             onClick={onClose}
+            aria-label={t('common.close')}
             style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13 }}
           >
             ✕
@@ -372,6 +373,7 @@ export function IndicatorSettings({
                 {lineColors[id] !== undefined && (
                   <button
                     onClick={() => onLineColorChange(id, '')}
+                    aria-label={t('indicator.lineColorReset')}
                     title={t('indicator.lineColorReset')}
                     style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12 }}
                   >

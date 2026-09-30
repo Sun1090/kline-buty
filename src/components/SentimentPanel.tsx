@@ -132,6 +132,8 @@ export function SentimentPanel({ data }: SentimentPanelProps) {
   return (
     <div
       data-testid="sentiment-panel"
+      role="region"
+      aria-label={t('panel.sentimentTitle')}
       style={{
         display: 'flex',
         flexWrap: 'wrap',

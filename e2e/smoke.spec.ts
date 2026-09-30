@@ -699,8 +699,9 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     const rsiInput = page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')
     await expect(rsiInput).toHaveValue('14')
     await rsiInput.fill('7')
-    await page.getByRole('button', { name: '✕', exact: true }).click()
-    // 参数浮层在顶栏之外：点 ✕ 时「点击外部收起」会把更多面板一起收起 → 重新展开再切全指标
+    // 语义名称而非字形：✕ 关闭钮的可访问名称是 aria-label「关闭」（#255 起），字形不再算名称
+    await page.getByRole('button', { name: '关闭', exact: true }).click()
+    // 参数浮层在顶栏之外：点关闭时「点击外部收起」会把更多面板一起收起 → 重新展开再切全指标
     await openMore(page)
     // 全指标切换无异常（含新接线参数的 WR/OBV/ATR/DMI/CCI/PSY/SAR/Ichimoku）
     for (const name of ['WR', 'OBV', 'ATR', 'DMI', 'CCI', 'PSY', 'STOCH', 'ROC', 'MOM']) {
@@ -717,7 +718,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     await openMore(page)
     await page.getByRole('button', { name: '参数', exact: true }).click()
     await expect(page.locator('xpath=//span[text()="RSI 周期"]/following-sibling::input')).toHaveValue('7')
-    await page.getByRole('button', { name: '✕', exact: true }).click()
+    await page.getByRole('button', { name: '关闭', exact: true }).click()
     expect(errors).toHaveLength(0)
   })
 
