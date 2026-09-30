@@ -121,10 +121,14 @@ export function calcDMI(candles: Candle[], n = 14): DmiPoint[] {
     mdm.push(down > up && down > 0 ? down : 0)
   }
 
-  // Wilder 平滑累计（前 n 根种子，之后递减式滚动）
+  // Wilder 平滑累计（前 n 根种子，之后递减式滚动）。
+  // 种子/滚动与出点必须在**同一个**循环里逐拍推进：若先跑完整个累计循环再从 i=n−1 读
+  // sp/sm/satr，读到的永远是最后一根的终值——历史每拍全被最后值覆盖（实测整条 DMI 三线恒定）。
+  const out: DmiPoint[] = []
   let sp = 0
   let sm = 0
   let satr = 0
+  let prevAdx = 0
   for (let i = 0; i < candles.length; i++) {
     if (i === n - 1) {
       for (let j = 0; j < n; j++) {
@@ -136,12 +140,7 @@ export function calcDMI(candles: Candle[], n = 14): DmiPoint[] {
       sp = sp - sp / n + pdm[i]
       sm = sm - sm / n + mdm[i]
       satr = satr - satr / n + trs[i]
-    }
-  }
-
-  const out: DmiPoint[] = []
-  let prevAdx = 0
-  for (let i = n - 1; i < candles.length; i++) {
+    } else continue
     const pdi = satr === 0 ? 0 : (sp / satr) * 100
     const mdi = satr === 0 ? 0 : (sm / satr) * 100
     const dx = pdi + mdi === 0 ? 0 : (Math.abs(pdi - mdi) / (pdi + mdi)) * 100
