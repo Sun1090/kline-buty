@@ -33,21 +33,27 @@ const BASE_PERIOD = '5m'
 const BASE_SECONDS = 300
 const SWITCHED = 'SOLUSDT'
 
-/** 每格可视区间的**原始秒**（A11 条上的 data-visible-from/to）；拿不到为 null */
-function cellWindows(page: Page): Promise<Record<string, { from: number | null; to: number | null }>> {
+/** 每格可视区间的**原始秒**（A11 条上的 data-visible-from/to）+ 数据首根时刻（data-first-candle） */
+function cellWindows(page: Page): Promise<Record<string, { from: number | null; to: number | null; head: number | null }>> {
   return page.evaluate((syms) => {
-    const out: Record<string, { from: number | null; to: number | null }> = {}
+    const out: Record<string, { from: number | null; to: number | null; head: number | null }> = {}
     for (const sym of syms) {
       const sel = document.querySelector(`[data-testid="quad-period-${sym}"]`)
       let node: HTMLElement | null = sel ? (sel.parentElement as HTMLElement | null) : null
       let el: Element | null = null
-      while (node && !el) {
-        el = node.querySelector('[data-testid="chart-visible-range"]')
-        if (!el) node = node.parentElement
+      let head: number | null = null
+      while (node && (el === null || head === null)) {
+        if (el === null) el = node.querySelector('[data-testid="chart-visible-range"]')
+        if (head === null) {
+          const c = node.querySelector('[data-first-candle]')
+          const raw = c?.getAttribute('data-first-candle') ?? ''
+          if (raw !== '') head = Number(raw)
+        }
+        node = node.parentElement
       }
       const f = el?.getAttribute('data-visible-from') ?? null
       const t = el?.getAttribute('data-visible-to') ?? null
-      out[sym] = { from: f === null ? null : Number(f), to: t === null ? null : Number(t) }
+      out[sym] = { from: f === null ? null : Number(f), to: t === null ? null : Number(t), head }
     }
     return out
   }, CELLS)
@@ -204,6 +210,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     // 「回到最新」在场性逐拍轨迹（接收格）：1=按钮在（视角离最新）、0=不在（视角在最新）、—=读不到
     const btl: Record<string, string[]> = {}
     for (const sym of CELLS) if (sym !== SWITCHED) btl[sym] = []
+    // 数据首根时刻 Δ（接收格，秒，相对换前基线）：视角平移时头部同拍同量前移 ⇒ 数据头增长链路；
+    // 头部不动而视角动 ⇒ 显式平移（查广播/重落）。#222 的两支判据。
+    const heads: Record<string, string[]> = {}
+    for (const sym of CELLS) if (sym !== SWITCHED) heads[sym] = []
     let samples = 0
     let solMoved = 0
     let solWindow: { from: number; to: number } | null = null
@@ -221,7 +231,12 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
       let solNow: { from: number; to: number } | null = null
       for (const sym of CELLS) {
         const w = now[sym]
-        if (sym !== SWITCHED) btl[sym].push(btlNow[sym] === null ? '—' : btlNow[sym] ? '1' : '0')
+        if (sym !== SWITCHED) {
+          btl[sym].push(btlNow[sym] === null ? '—' : btlNow[sym] ? '1' : '0')
+          const h = w.head
+          const bh = base[sym].head
+          heads[sym].push(h === null || bh === null ? '—' : String(h - bh))
+        }
         if (w.from === null || w.to === null) {
           if (!detail) detail = `${sym} 的可视区间在观测中消失了`
           traces[sym].push('—')
@@ -295,6 +310,9 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
           ? `；${worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${traces[worstSym].join(' ')}`
           : '') +
         `；回到最新在场性（1=在/0=不在/—=读不到）：${Object.entries(btl)
+          .map(([s, t]) => `${s} ${t.join(' ')}`)
+          .join('；')}` +
+        `；数据首根 Δ秒（相对换前基线）：${Object.entries(heads)
           .map(([s, t]) => `${s} ${t.join(' ')}`)
           .join('；')}`,
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
