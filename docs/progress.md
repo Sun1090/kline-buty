@@ -5,6 +5,20 @@
 
 ## 当前阶段
 
+**O9 全树审计扩到全部 14 个 region 面板（2026-09-30，#255 已合并 → main）**
+- 新建 `a11yRegionsAudit.test.tsx`（16 it）：此前 O9 全树审计只盖 6 个组件，本轮补齐其余 14 个
+  带 region 的面板（props 逐字抄各自既有测试 setup；VolumeProfileChart 无测试，按 Props 构造）。
+- 规则当场抓出 3 处并修复（修组件不放宽规则）：IndicatorSettings ✕ 关闭钮**完全无可访问名称**、
+  ↺ 重置色仅靠 title、**SentimentPanel 根节点根本没有 role=region**（docs/10 的声明与实际不符）。
+- 连带收口一条旧耦合：语义名称落地后 e2e 两处按字形 `✕` 选关闭钮的用例失配（PR 首跑 CI
+  smoke.spec.ts:666 三浏览器同点超时——正是审计要暴露的「字形当名称」），改按
+  `getByRole` name「关闭」并注释来源。字形从此在单测与 E2E 两层都不再是名称。
+- 验证：全套 **2060 passed / 176 files**（+18/+1）；tsc/eslint 干净；PR CI 十项全绿
+  （E2E 三浏览器 28m29s；首跑那条 3 failed 是本 PR 打破的旧耦合，修复后重跑全绿；
+  同 run 的 1 flaky 为已知 B1 firefox 家族）。
+- 风险/回滚：revert 本 PR；SentimentPanel/IndicatorSettings 的改动均为纯属性添加。
+- 更新日：2026-09-30
+
 **A4c「未复现」被推翻：main CI 出现带逐拍轨迹的 webkit 红 + 规格补在场性观测（2026-09-29，#254 已合并 → main `771962a`）**
 - v0.5.34 squash 合并后 main 首跑（run 36593434161，`b4d5116`）E2E 三浏览器 **2 failed**（同 diff 在
   PR #253 的 CI 全绿，与 #222 原有「PR 绿 / main 红」形态一致）：
