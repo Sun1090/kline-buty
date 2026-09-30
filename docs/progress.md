@@ -5,6 +5,19 @@
 
 ## 当前阶段
 
+**E11 残余项收口：表单控件可访问名称（2026-09-30，#256 已合并 → main）**
+- 审计从只扫按钮升级 `INTERACTIVE_SELECTOR`，20 个面板全量扫出 5 处完全无名称
+  （4 个隐藏导入 file input + PositionPanel 数量框）+ 19 处仅靠 placeholder/value 的弱名称，
+  全部修复（可见文案行 div→真实 `<label>` 样式不变；其余补语义同源 `aria-label`；
+  零新增 i18n key；placeholder/testid 保留，e2e 依赖实证不受影响）。
+  顺带删掉 IndicatorSettings 导入 input 上 display:none + aria-hidden 的矛盾写法。
+- 两审计调用升 INTERACTIVE_SELECTOR，PositionPanel 的 BUTTON_SELECTOR 豁免与旧注释删除——
+  表单控件与按钮同一标准：无名称即红。`docs/10` 已记「表单控件收口」节。
+- 验证：全量 **2060 passed / 176 files**；tsc/eslint 干净；e2e 抽查 limit-orders +
+  alerts-features 21 passed 零红；PR CI 十项全绿。
+- 风险/回滚：revert 本 PR；纯属性/标签语义变化。
+- 更新日：2026-09-30
+
 **O9 全树审计扩到全部 14 个 region 面板（2026-09-30，#255 已合并 → main）**
 - 新建 `a11yRegionsAudit.test.tsx`（16 it）：此前 O9 全树审计只盖 6 个组件，本轮补齐其余 14 个
   带 region 的面板（props 逐字抄各自既有测试 setup；VolumeProfileChart 无测试，按 Props 构造）。

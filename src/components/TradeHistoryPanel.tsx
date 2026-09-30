@@ -317,7 +317,7 @@ export function TradeHistoryPanel({
         </div>
       )}
       {/* D14 收益目标：输入目标 → 进度条 + 达成提示 */}
-      <div
+      <label
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, flexWrap: 'wrap' }}
       >
         <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{t('trade.target')}</span>
@@ -349,7 +349,7 @@ export function TradeHistoryPanel({
             )}
           </>
         )}
-      </div>
+      </label>
       {/* D5/D8 交易设置：吃单费率 + 市价滑点（百分比输入，持久化） */}
       <div
         style={{ display: 'flex', gap: 10, padding: '2px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 8, alignItems: 'center' }}
@@ -419,6 +419,7 @@ export function TradeHistoryPanel({
           accept="application/json,.json"
           style={{ display: 'none' }}
           data-testid="trade-history-import-file"
+          aria-label={t('paper.importJson')}
           onChange={(e) => {
             handleImportFile(e.target.files?.[0])
             e.target.value = ''
@@ -432,6 +433,7 @@ export function TradeHistoryPanel({
           data-testid="trade-snapshot-name"
           value={snapshotName}
           placeholder={t('paper.snapshotName')}
+          aria-label={t('paper.snapshotName')}
           onChange={(e) => setSnapshotName(e.target.value)}
           style={{ width: 72, padding: '2px 4px', fontSize: 11, borderRadius: 4, border: '1px solid #2a2e39', background: 'var(--bg)', color: 'var(--text)' }}
         />

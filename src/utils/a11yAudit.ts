@@ -55,8 +55,9 @@ export const INTERACTIVE_SELECTOR = [
 ].join(',')
 
 /**
- * 本阶段聚焦按钮交互控件（O9 范围），输入框的 <label> 覆盖留待 E11 残余项。
- * 需要扩展到输入框时给 auditInteractiveName 传 INTERACTIVE_SELECTOR。
+ * E11 收口（2026-09-30）前本阶段仅聚焦按钮交互控件（O9 范围）；
+ * 组件审计测试现已显式传 INTERACTIVE_SELECTOR 纳入 input/textarea/select。
+ * 库默认值保持 BUTTON_SELECTOR，供未升级的旧调用方（DrawingLayers/MobileHeader 等）沿用。
  */
 export const BUTTON_SELECTOR = 'button, a[href], [role="button"]'
 

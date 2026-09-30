@@ -726,7 +726,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
         ))}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.entry')}</span>
         <input style={inputStyle} value={entry} placeholder={currentPrice ? fmtPricePrecise(currentPrice) : t('common.price')} onChange={(e) => setEntry(e.target.value)} onFocus={fillPrice} />
         <button
@@ -735,11 +735,11 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
         >
           {t('position.market')}
         </button>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.quantity')}</span>
         <input style={inputStyle} value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-      </div>
+      </label>
       {/* 止盈/止损模式切换：百分比参考价 vs 手动输入价位 */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
         {(['pct', 'price'] as const).map((m) => (
@@ -765,18 +765,18 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
 
       {levelMode === 'pct' ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPct')}</span>
             <input style={inputStyle} type="number" value={tpPct} onChange={(e) => setTpPct(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPct')}</span>
             <input style={inputStyle} type="number" value={slPct} onChange={(e) => setSlPct(e.target.value)} />
-          </div>
+          </label>
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.tpPrice')}</span>
             <input
               style={inputStyle}
@@ -785,8 +785,8 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               placeholder={levels ? fmtPricePrecise(levels.takeProfit) : t('common.price')}
               onChange={(e) => setTpPrice(e.target.value)}
             />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ color: 'var(--text-dim)', width: 52 }}>{t('position.slPrice')}</span>
             <input
               style={inputStyle}
@@ -795,7 +795,7 @@ export function PositionPanel({ positions, currentPrice, balance, onChange, othe
               placeholder={levels ? fmtPricePrecise(levels.stopLoss) : t('common.price')}
               onChange={(e) => setSlPrice(e.target.value)}
             />
-          </div>
+          </label>
         </>
       )}
 

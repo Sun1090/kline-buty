@@ -408,6 +408,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           accept="application/json,.json"
           style={{ display: 'none' }}
           data-testid="alert-import-file"
+          aria-label={t('paper.importJson')}
           onChange={(e) => {
             handleImportFile(e.target.files?.[0])
             e.target.value = ''
@@ -441,6 +442,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         <input
           style={inputStyle}
           placeholder={currentPrice ? fmtPricePrecise(currentPrice) : t('common.price')}
+          aria-label={t('common.price')}
           value={price}
           aria-invalid={!valid && price !== ''}
           onChange={(e) => setPrice(e.target.value)}
@@ -516,7 +518,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
       </label>
       {/* K10 重复间隔（分钟）：repeat 开启时显示，0=不限 */}
       {repeat && (
-        <div data-testid="alert-repeat-interval" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <div data-testid="alert-repeat-interval" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span>{t('alert.repeatInterval')}</span>
           <input
             data-testid="alert-repeat-interval-input"
@@ -527,7 +530,8 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
             style={{ ...inputStyle, width: 56 }}
           />
           <span>{t('alert.minutes')}</span>
-        </div>
+        </label>
+      </div>
       )}
       {/* I6 波动率自适应：以当前价 ± ATR% 波动带计算阈值 */}
       <label
@@ -541,7 +545,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
         )}
       </label>
       {/* K2 提醒分组：可选命名分组 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.group')}</span>
         <input
           data-testid="alert-group-input"
@@ -550,9 +554,9 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           placeholder={t('alert.groupPlaceholder')}
           style={{ ...inputStyle, width: 110 }}
         />
-      </div>
+      </label>
       {/* E15 备注字段 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.note')}</span>
         <input
           data-testid="alert-note-input"
@@ -561,7 +565,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           placeholder={t('alert.notePlaceholder')}
           style={{ ...inputStyle, width: 170 }}
         />
-      </div>
+      </label>
       {/* E6 到期时间：datetime-local，空=永久有效 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--text-dim)' }}>
         <span>{t('alert.expiresAt')}</span>
@@ -600,6 +604,7 @@ export function AlertPanel({ symbol, currentPrice, alertsApi, volatilityPct = 0 
           value={templateName}
           onChange={(e) => setTemplateName(e.target.value)}
           placeholder={t('alert.templateName')}
+          aria-label={t('alert.templateName')}
           style={{ ...inputStyle, width: 76 }}
         />
         <button
