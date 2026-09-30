@@ -53,6 +53,32 @@ function cellWindows(page: Page): Promise<Record<string, { from: number | null; 
   }, CELLS)
 }
 
+/**
+ * 每格「回到最新」按钮的在场性（从各自周期下拉向上爬到本格容器）。
+ * #222 的 CI 红实测：接收格换周期后三次都落在**同一个确定性窗口**（基线各不相同），
+ * 形状上就是「被甩回默认/最新视角」。本观测把这一步自证化：若某接收格的按钮
+ * 在第 k 拍从有变无 = 它回到了最新；始终无 = 被平移到了历史中另一处。两种修法不同。
+ */
+function backToLatestByCell(page: Page): Promise<Record<string, boolean | null>> {
+  return page.evaluate((syms) => {
+    const out: Record<string, boolean | null> = {}
+    for (const sym of syms) {
+      const sel = document.querySelector(`[data-testid="quad-period-${sym}"]`)
+      let node: HTMLElement | null = sel ? (sel.parentElement as HTMLElement | null) : null
+      let found: boolean | null = null
+      while (node && found === null) {
+        const btn = node.querySelector('[data-testid="back-to-latest"]')
+        // 到达包含本格可视范围条的容器之后再往下找一层，避免爬过格边界把邻居的按钮算进来
+        if (btn) found = true
+        else if (node.querySelector('[data-testid="chart-visible-range"]')) found = false
+        else node = node.parentElement
+      }
+      out[sym] = found
+    }
+    return out
+  }, CELLS)
+}
+
 async function closeMorePanel(page: Page) {
   const more = page.getByTestId('header-more')
   if ((await more.getAttribute('aria-expanded')) === 'true') {
@@ -175,6 +201,9 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     // 非 0（广播之后被人挪了一次）是两种完全不同的病，判词必须能分开它们。
     const traces: Record<string, string[]> = {}
     for (const sym of CELLS) traces[sym] = []
+    // 「回到最新」在场性逐拍轨迹（接收格）：1=按钮在（视角离最新）、0=不在（视角在最新）、—=读不到
+    const btl: Record<string, string[]> = {}
+    for (const sym of CELLS) if (sym !== SWITCHED) btl[sym] = []
     let samples = 0
     let solMoved = 0
     let solWindow: { from: number; to: number } | null = null
@@ -187,10 +216,12 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     let capped = false
     do {
       const now = await cellWindows(page)
+      const btlNow = await backToLatestByCell(page)
       samples++
       let solNow: { from: number; to: number } | null = null
       for (const sym of CELLS) {
         const w = now[sym]
+        if (sym !== SWITCHED) btl[sym].push(btlNow[sym] === null ? '—' : btlNow[sym] ? '1' : '0')
         if (w.from === null || w.to === null) {
           if (!detail) detail = `${sym} 的可视区间在观测中消失了`
           traces[sym].push('—')
@@ -262,7 +293,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
       `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位` +
         (worstSym
           ? `；${worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${traces[worstSym].join(' ')}`
-          : ''),
+          : '') +
+        `；回到最新在场性（1=在/0=不在/—=读不到）：${Object.entries(btl)
+          .map(([s, t]) => `${s} ${t.join(' ')}`)
+          .join('；')}`,
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
