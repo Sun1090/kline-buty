@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { IndicatorSettings } from '../IndicatorSettings'
 import { DEFAULT_INDICATOR_PARAMS, type IndicatorParams } from '../../indicators/params'
 import type { MainIndicatorKind, SubIndicatorKind } from '../ChartView'
+import { runA11yAudit } from '../../utils/a11yAudit'
 
 afterEach(cleanup)
 beforeEach(() => localStorage.clear())
@@ -212,6 +213,25 @@ describe('IndicatorSettings', () => {
     expect(onLineColorChange).toHaveBeenCalledWith('MA5', '#00ff00')
     fireEvent.click(screen.getByTitle('恢复默认色'))
     expect(onLineColorChange).toHaveBeenCalledWith('MA5', '')
+  })
+
+  it('行内图标按钮带 aria-label：title 不能作图标钮唯一名称（a11y 规则 icon-only-name）', () => {
+    // ✕ 关闭钮无文本名称、↺ 恢复默认色钮仅靠 title —— 均补 aria-label（与 title 同源 i18n key）
+    const { container } = render(
+      <IndicatorSettings
+        params={DEFAULT_INDICATOR_PARAMS}
+        mainIndicator="ma"
+        subIndicator="rsi"
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+        lineColors={{ MA5: '#ff0000' }}
+        onLineColorChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('✕').getAttribute('aria-label')).toBe('关闭')
+    expect(screen.getByTitle('恢复默认色').getAttribute('aria-label')).toBe('恢复默认色')
+    // 全树审计无 error
+    expect(runA11yAudit(container).errors).toEqual([])
   })
 })
 
