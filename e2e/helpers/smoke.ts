@@ -607,21 +607,35 @@ export async function findDrawnPixels(
   }, { xMin: win.xMin ?? -Infinity, xMax: win.xMax ?? Infinity, yMin: win.yMin ?? -Infinity, yMax: win.yMax ?? Infinity, max: opts.max ?? 8, minGap: opts.minGap ?? 10 })
 }
 
+/** 失败诊断：判词要能分开「根本没扫到候选像素」与「扫到了但拖/点不中」——修法完全不同 */
+export interface HitPixelDiag {
+  rounds: number
+  /** 每轮扫到的候选像素数 */
+  candidatesPerRound: number[]
+  /** 实际派发过拖/点的坐标（verify 全不成立才走到这里） */
+  attempts: { x: number; y: number }[]
+}
+
 /**
  * 逐个尝试候选像素直到 verify 成立，返回真正命中的那个点（全部落空返回 null）。
  * 触屏用例传入自己的派发函数；verify 里可以顺带把选中态读回来（例如再点开工具菜单确认）。
+ * `onFail` 在全部落空时收到诊断（轮数/每轮候选数/派发明细），供判词细分失败形态。
  */
 export async function hitDrawnPixelUntil(
   page: Page,
   verify: () => Promise<boolean>,
   win: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } = {},
   dispatch?: (p: { x: number; y: number }) => Promise<void>,
+  onFail?: (diag: HitPixelDiag) => void,
 ): Promise<{ x: number; y: number } | null> {
   const tap = dispatch ?? ((p: { x: number; y: number }) => page.mouse.click(p.x, p.y))
   // 分轮重扫：刚提交/刚移动的画线要等下一帧才上屏，一轮扫描可能什么都扫不到；
   // 轮与轮之间重扫也顺带消化了实时行情带来的位移
+  const candidatesPerRound: number[] = []
+  const attempts: HitPixelDiag['attempts'] = []
   for (let round = 0; round < 3; round++) {
     const cands = await findDrawnPixels(page, win)
+    candidatesPerRound.push(cands.length)
     // 先试离整体中心最近的候选：文字标注的可点区域以其锚点（绘制中心）为准，
     // 行优先扫到的最左像素常在容差之外，先点它等于白跑一轮
     const focus = cands.length > 1 ? await findDrawnLineCenter(page) : null
@@ -632,9 +646,11 @@ export async function hitDrawnPixelUntil(
         if (await verify()) return c
         await page.waitForTimeout(120)
       }
+      attempts.push({ x: c.x, y: c.y })
     }
     await page.waitForTimeout(400)
   }
+  onFail?.({ rounds: 3, candidatesPerRound, attempts })
   return null
 }
 
