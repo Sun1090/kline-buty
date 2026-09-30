@@ -5,12 +5,27 @@
 
 ## 当前阶段
 
-**RELEASE_FREEZE：v0.5.35 发布中（2026-09-30，release/v0.5.35）**
-- 版本号：**0.5.35**（package.json / package-lock 根两处 / index.html meta，共 4 行）
-- 发布判据：自 v0.5.34 起积了**一条用户可见数据正确性缺陷修复**（DMI 历史值全线错误，#257）
-  与两条 a11y 收口（#255 面板审计 + #256 表单控件）→ patch
-- CHANGELOG 已写 `[v0.5.35]` 段；`SNAPSHOT_VERSION` 仍为 2，无迁移；回滚 = revert + 删 tag
-- 定档门禁：2062 passed/176 files、coverage 85.78/80.33/78.7/88.5、e2e 账本 801/32、build/tsc/eslint 干净
+**RELEASE_FREEZE：v0.5.35 发布完成（2026-09-30）**
+- 版本号：**0.5.35**（4 处）；发布 PR **#258**（squash → main **8024e94**，合并后删远端分支）；
+  tag **v0.5.35 @ 8024e94**（Release Tag workflow 自动创建，`git ls-remote` 实证）
+- 部署：Pages run success，线上 `meta[app-version]` 实测 **0.5.35**；Vercel Production 对 8024e94
+  **success**（GitHub deployments API 实证；本机网络到 vercel.app 仍不通，以 GitHub 状态为准）
+- 本版收录：**DMI 历史值全线错误修复**（#257，数据正确性）、O9 全量面板审计 + 3 处缺口（#255）、
+  表单控件 a11y 收口（#256）、A4c 取证与两条观测（#254/#259）
+- ⚠️ 发布过程被 **webkit 趋势线拖拽 flake** 挡了两次（PR #258/#259 首跑 E2E 硬红，重跑/重试即绿；
+  连同 09-29 main 首跑共 **3 次 CI 硬红**，本机 webkit 每次 repeat 均绿）。
+  已知账：`hitDrawnPixelUntil` 的失败判词**不区分「扫不到像素」与「拖了不动」**（error-context
+  确认页面完好、画线在库），判词细分是下一步的第一刀；不建允许名单、不放宽容差。
+- 回滚：revert release 提交 + 删 tag `v0.5.35`；`SNAPSHOT_VERSION` 仍为 2
+- 更新日：2026-09-30
+
+**A4c 判别证据之二（2026-09-30，#259 已合并 → main `47f3dfa`）**
+- run 36776824478：A4c webkit 再 flake（重试后过），**#254 的 btl 观测首次生效**——
+  三个接收格「回到最新」按钮全程 20 拍全为 `1`，**「被甩回最新」排除**。
+  形态收敛：切换后第 1 拍整片平移整数根 5m（本次 900s=3 根）、跨度不变、此后冻结、仍在历史。
+- 剩两支假设（数据头增长+索引重落 vs 显式平移）。#259 给 ChartView 加 `data-first-candle`
+  观测面 + 观测窗逐拍记录数据头 Δ秒：下次红自证两支（同拍同量前移⇒数据头链路；头不动⇒显式平移）。
+- 证据已落 [#222 评论](https://github.com/Sun1090/kline-buty/issues/222#issuecomment-5920191629)。
 - 更新日：2026-09-30
 
 **fix(indicators)：DMI 历史每拍值被终值覆盖（2026-09-30，#257 已合并 → main `a737fab`）**
