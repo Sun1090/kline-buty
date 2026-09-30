@@ -1287,8 +1287,10 @@ export function ChartView({
       }}
     >
       {/* data-candles：已入仓的 K 线根数。画布上有红绿像素不等于「图表可用」——首根 WS tick 先到、
-          历史 K 线还在路上时同样有像素，而此时的手势与断言都落在只有一两根柱子的图上 */}
-      <div ref={containerRef} className="chart-container" data-candles={candles.length} style={{ width: '100%', height: '100%' }} />
+          历史 K 线还在路上时同样有像素，而此时的手势与断言都落在只有一两根柱子的图上。
+          data-first-candle：数据首根时刻（原始秒）。#222 的判别观测：接收格视角被整片平移时，
+          「数据头是否同拍前移」把「数据头增长 + 索引重落」与「显式平移」分开。 */}
+      <div ref={containerRef} className="chart-container" data-candles={candles.length} data-first-candle={candles[0]?.time ?? ''} style={{ width: '100%', height: '100%' }} />
       {candles.length === 0 && (
         <div
           style={{
