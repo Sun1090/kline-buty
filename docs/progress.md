@@ -5,6 +5,15 @@
 
 ## 当前阶段
 
+**hitDrawnPixelUntil 判词细分（2026-09-30，#260 已合并 → main）**
+- webkit 趋势线拖拽 flake 的下一刀落地：helper 加可选 `onFail` 诊断回调（`HitPixelDiag`：
+  轮数 / 每轮候选数 / 派发坐标清单），签名向后兼容（8 处既有调用点不动）；
+  趋势线整线拖动用例接入，诊断 JSON 进 expect 消息。
+- 判词从此能分两形态：candidatesPerRound 全 0 = 没扫到像素（上屏/颜色/视口）；
+  有候选但 attempts 全落空 = 拖/点没生效（事件派发或选中链路）。修法完全不同。
+- 验证：e2e typecheck 干净；趋势线用例 chromium 本地绿；PR CI 十项全绿（E2E 30m39s）。
+- 更新日：2026-09-30
+
 **RELEASE_FREEZE：v0.5.35 发布完成（2026-09-30）**
 - 版本号：**0.5.35**（4 处）；发布 PR **#258**（squash → main **8024e94**，合并后删远端分支）；
   tag **v0.5.35 @ 8024e94**（Release Tag workflow 自动创建，`git ls-remote` 实证）
