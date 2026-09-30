@@ -5,7 +5,24 @@
 
 ## 当前阶段
 
-**E11 残余项收口：表单控件可访问名称（2026-09-30，#256 已合并 → main）**
+**RELEASE_FREEZE：v0.5.35 发布中（2026-09-30，release/v0.5.35）**
+- 版本号：**0.5.35**（package.json / package-lock 根两处 / index.html meta，共 4 行）
+- 发布判据：自 v0.5.34 起积了**一条用户可见数据正确性缺陷修复**（DMI 历史值全线错误，#257）
+  与两条 a11y 收口（#255 面板审计 + #256 表单控件）→ patch
+- CHANGELOG 已写 `[v0.5.35]` 段；`SNAPSHOT_VERSION` 仍为 2，无迁移；回滚 = revert + 删 tag
+- 定档门禁：2062 passed/176 files、coverage 85.78/80.33/78.7/88.5、e2e 账本 801/32、build/tsc/eslint 干净
+- 更新日：2026-09-30
+
+**fix(indicators)：DMI 历史每拍值被终值覆盖（2026-09-30，#257 已合并 → main `a737fab`）**
+- 指标引擎审计（#240 同族排查）抓出真实缺陷：`calcDMI` 的 Wilder 累计循环先跑完全部 K 线，
+  输出循环才从 i=n−1 读 sp/sm/satr——整条 +DI/−DI/ADX 历史输出恒等于最新一拍（首三拍逐字
+  冻结是线索）。只有当前值碰巧正确，取末值的下游未暴露。修法：累计与出点合成同一循环。
+- 同批补种子级测试：ATR 手算断言 + DMI 逐拍对照测试内独立参考实现——**修复前确实红**
+  （20.44 vs 10.09），牙齿是真的。vortex/其余指标同族排查无解耦循环形态。
+- 验证：2062 passed/176 files（+2）；tsc/eslint/build 干净；指标切换 e2e 本地绿；PR CI 十项全绿。
+- 更新日：2026-09-30
+
+**E11 残余项收口：表单控件可访问名称（2026-09-30，#256 已合并 → main `10911bc`）**
 - 审计从只扫按钮升级 `INTERACTIVE_SELECTOR`，20 个面板全量扫出 5 处完全无名称
   （4 个隐藏导入 file input + PositionPanel 数量框）+ 19 处仅靠 placeholder/value 的弱名称，
   全部修复（可见文案行 div→真实 `<label>` 样式不变；其余补语义同源 `aria-label`；
