@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-**A4c「未复现」被推翻：main CI 出现带逐拍轨迹的 webkit 红 + 规格补在场性观测（2026-09-29，test/a4c-btl-instrumentation）**
+**A4c「未复现」被推翻：main CI 出现带逐拍轨迹的 webkit 红 + 规格补在场性观测（2026-09-29，#254 已合并 → main `771962a`）**
 - v0.5.34 squash 合并后 main 首跑（run 36593434161，`b4d5116`）E2E 三浏览器 **2 failed**（同 diff 在
   PR #253 的 CI 全绿，与 #222 原有「PR 绿 / main 红」形态一致）：
   ① `quad-switch-no-drag` webkit attempt 1/2/3 全红——**关键读数：三次落点完全相同**
