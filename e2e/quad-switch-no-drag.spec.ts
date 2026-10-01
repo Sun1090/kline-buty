@@ -147,9 +147,16 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
   test('三格 5m 视角定在历史中段，把第四格换成 1h：它们的起止一秒都不该变', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
+    // #222 诊断：同步链路两写点（上报逃逸 / 接收应用）的门控日志，收进失败判词——
+    // 下一次红将带出「谁在第一拍写了接收格」
+    const viewWrites: string[] = []
+    page.on('console', (msg) => {
+      const t = msg.text()
+      if (t.startsWith('debugViewWrites:')) viewWrites.push(t)
+    })
 
     await page.addInitScript(() => localStorage.clear())
-    await page.goto('/?perf=1500')
+    await page.goto('/?perf=1500&debugViewWrites')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 30_000 })
     await page.getByTestId('header-more').click()
     await page.getByTestId('layout-toggle').click()
@@ -314,7 +321,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
           .join('；')}` +
         `；数据首根 Δ秒（相对换前基线）：${Object.entries(heads)
           .map(([s, t]) => `${s} ${t.join(' ')}`)
-          .join('；')}`,
+          .join('；')}` +
+        (viewWrites.length
+          ? `；视角写点日志（tail 60）：\n${viewWrites.slice(-60).join('\n')}`
+          : '；视角写点日志：无（flag 未生效或无写发生）'),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
