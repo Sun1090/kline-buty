@@ -619,7 +619,15 @@ export interface HitPixelDiag {
 /**
  * 逐个尝试候选像素直到 verify 成立，返回真正命中的那个点（全部落空返回 null）。
  * 触屏用例传入自己的派发函数；verify 里可以顺带把选中态读回来（例如再点开工具菜单确认）。
- * `onFail` 在全部落空时收到诊断（轮数/每轮候选数/派发明细），供判词细分失败形态。
+ * `onFail` 在全部落空时收到诊断（扫描次数/每次候选数/派发明细），供判词细分失败形态。
+ *
+ * `opts.rescanPerAttempt`：每次**按压落空后重扫**再取下一候选。只给会平移图表的**拖拽流**开——
+ * 落空的拖拽会把「拖空 = 平移图表」，画线在屏幕上已经换位，同一次扫描里的其余候选坐标
+ * 全部作废，CI webkit 实测 [8,0,0] 就是这么来的（8 次连锁平移把画线推出视口，后续轮次
+ * 再也扫不到）。点击流（tap/select）不开：实测每按重扫会扰动「轻点选中 → 开菜单查删除」
+ * 这类有状态的 verify 流程（:584 二分坐实），默认保持旧的三轮批量扫描。
+ * 按压总数封顶 MAX_ATTEMPTS（沿用旧三轮写法的上界量级），防止「扫得到但永远抓不中」
+ * 的画线把用例拖到超时。
  */
 export async function hitDrawnPixelUntil(
   page: Page,
@@ -627,30 +635,39 @@ export async function hitDrawnPixelUntil(
   win: { xMin?: number; xMax?: number; yMin?: number; yMax?: number } = {},
   dispatch?: (p: { x: number; y: number }) => Promise<void>,
   onFail?: (diag: HitPixelDiag) => void,
+  opts?: { rescanPerAttempt?: boolean },
 ): Promise<{ x: number; y: number } | null> {
+  const MAX_ATTEMPTS = 24
   const tap = dispatch ?? ((p: { x: number; y: number }) => page.mouse.click(p.x, p.y))
-  // 分轮重扫：刚提交/刚移动的画线要等下一帧才上屏，一轮扫描可能什么都扫不到；
-  // 轮与轮之间重扫也顺带消化了实时行情带来的位移
-  const candidatesPerRound: number[] = []
+  const candidatesPerScan: number[] = []
   const attempts: HitPixelDiag['attempts'] = []
-  for (let round = 0; round < 3; round++) {
-    const cands = await findDrawnPixels(page, win)
-    candidatesPerRound.push(cands.length)
+  const sortByFocus = async (cands: { x: number; y: number }[]) => {
     // 先试离整体中心最近的候选：文字标注的可点区域以其锚点（绘制中心）为准，
     // 行优先扫到的最左像素常在容差之外，先点它等于白跑一轮
     const focus = cands.length > 1 ? await findDrawnLineCenter(page) : null
     if (focus) cands.sort((a, b) => Math.hypot(a.x - focus.x, a.y - focus.y) - Math.hypot(b.x - focus.x, b.y - focus.y))
-    for (const c of cands) {
+    return cands
+  }
+  for (let round = 0; round < 3 && attempts.length < MAX_ATTEMPTS; round++) {
+    let cands = await findDrawnPixels(page, win)
+    candidatesPerScan.push(cands.length)
+    cands = await sortByFocus(cands)
+    while (cands.length && attempts.length < MAX_ATTEMPTS) {
+      const c = cands.shift()!
       await tap(c)
       for (let i = 0; i < 4; i++) {
         if (await verify()) return c
         await page.waitForTimeout(120)
       }
       attempts.push({ x: c.x, y: c.y })
+      if (!opts?.rescanPerAttempt || !cands.length) continue
+      const fresh = await findDrawnPixels(page, win)
+      if (!fresh.length) break // 画线不在视口了（被连锁平移推出等），交给下一轮等待重扫
+      cands = await sortByFocus(fresh)
     }
     await page.waitForTimeout(400)
   }
-  onFail?.({ rounds: 3, candidatesPerRound, attempts })
+  onFail?.({ rounds: 3, candidatesPerRound: candidatesPerScan, attempts })
   return null
 }
 
