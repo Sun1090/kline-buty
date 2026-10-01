@@ -2161,7 +2161,7 @@ test.describe('画线工具', () => {
       await page.mouse.up()
     }, (d) => {
       diag = d
-    })
+    }, { rescanPerAttempt: true })
     // 判据本身就是落库结果：同一 id、两个锚点增量一致（整线平移）、且确实动了
     expect(grabbed, `扫了三轮真实画线像素、逐个按落库判据试拖，仍没能把这条趋势线整体拖动；诊断 ${JSON.stringify(diag)}（candidatesPerRound 全 0 = 没扫到像素；有候选但 attempts 全落空 = 派发没生效）`).not.toBeNull()
 
