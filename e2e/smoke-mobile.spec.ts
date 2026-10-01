@@ -1101,6 +1101,11 @@ test.describe('移动端（390×844 触屏视口）', () => {
     await page.getByTestId('mobile-text-confirm').tap()
     await expect(page.getByTestId('mobile-text-editor')).toHaveCount(0)
 
+    // 长按质心打开编辑器。⚠️ 曾尝试迁移「逐候选真实墨迹像素长按」（2026-09-30）：
+    // 本地 chromium repeat 稳定 ~50% 红（每轮候选数恒 8，排除没扫到墨迹；候选全落空
+    // 且失败后选中/迟到编辑器两个假设都被否掉），而原质心单发写法在 CI 历史上稳定——
+    // 怀疑与 ?perf 每 600ms 追加蜡烛导致锚定便签在扫描与按压之间平移有关，未插桩不定论。
+    // 迁移已回滚；此处保留质心（移动端命中容差 16px，文本质心实测贴近墨迹），别再无证据重试。
     const center = await findDrawnLineCenter(page)
     expect(center).not.toBeNull()
     if (!center) return
