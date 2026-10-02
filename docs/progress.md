@@ -5,6 +5,19 @@
 
 ## 当前阶段
 
+**A4c 产品侧插桩落地（2026-10-01，#263 已合并 → main `8d9a29a`）**
+- 按证据三的既定下一步：新增 `src/utils/debugViewWrites.ts`（URL `?debugViewWrites` 门控，
+  不开零开销；2 条单测），ChartView 两个写点接日志——上报侧（逃逸的广播 + **被门挡下的上报**
+  都记，owned/trusted 反例同样是证据）与接收侧（externalRange 应用的
+  extFrom/extTo/ownSec/fromIdx/toIdx/base）。A4c 规格带 flag 并把 console 日志
+  （tail 60）收进失败判词——**下一次红自证「谁在第一拍写了接收格」**，随后对症修。
+- 悬念（写点定位时的矛盾）：接收格应用的 `floorIndexByTime` 按本格网格取整可解释整根早移
+  （0~11 根，实测 2~5 根在内），但上报门（trusted && viewOwnedByUserRef）理论应挡住 SOL
+  （测试里从未被手势接管）——谁放行了广播，等日志。
+- 零行为变化；验证：单测 2064 passed/177 files（+2）、tsc（app+e2e）干净、eslint 0 errors、
+  A4c chromium 本地绿、PR CI 十项全绿。
+- 更新日：2026-10-01
+
 **两条 flake 证据链同时收账（2026-10-01，#262 已合并 → main `70098fc`）**
 - **趋势线 webkit flake 破译**：#260 的判词细分首次收账——CI 诊断 `[8,0,0]`（run 36808592447）：
   第 1 轮 8 个候选全拖空，第 2/3 轮像素归零。机制：落空的拖拽把「拖空=平移图表」，
