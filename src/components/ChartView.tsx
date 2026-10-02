@@ -9,6 +9,7 @@ import type { Drawing, DrawingTool } from '../drawings/logic'
 import type { SnapMode } from '../drawings/snap'
 import { anchorRangeForSwitch, cullWindow, floorIndexByTime, localRange, nextCullWindow, shouldCull, windowCovers, type CullRange, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
+import { debugViewWritesEnabled, logViewWrite } from '../utils/debugViewWrites'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
@@ -305,6 +306,8 @@ export function ChartView({
    * 程序化落位把它交给机器，指针/滚轮/触摸/键盘回到这一格时才交还给用户。
    */
   const viewOwnedByUserRef = useRef(false)
+  /** #222 诊断门控（?debugViewWrites）：多图视角同步两写点的日志开关 */
+  const debugWritesRef = useRef(debugViewWritesEnabled())
   /**
    * 换周期时用户想看的那**一段时间**（右缘时刻 + 时间跨度），带 key 防串到别的品种/周期。
    * 数据比 key 晚一拍：第一拍 `period` 已经是新周期、图表里装着的却还是旧周期那一片，
@@ -447,6 +450,11 @@ export function ChartView({
     const left = toIdx <= fromIdx ? Math.max(0, toIdx - 1) : fromIdx
     // 执行别人的指令不是「用户动了本格」：吸附后的落点往往和请求差几根（各格网格不同），
     // 再广播回去就成了一条越收越窄的乒乓链（实测混周期四格会被压到只剩 1～2 根可视）
+    logViewWrite(
+      'apply',
+      { sym: symbol, extFrom: externalRange.from, extTo: externalRange.to, ownSec, fromIdx, toIdx, base },
+      debugWritesRef.current,
+    )
     withSilentView(() => apiRef.current?.setVisibleRange({ from: left - base, to: toIdx - base }))
   }, [externalRange])
 
@@ -590,7 +598,13 @@ export function ChartView({
       // 用户既然已经接管了视角，换周期那份时间意图也就到此作废。
       if (trusted && viewOwnedByUserRef.current) {
         switchIntentRef.current = null
-        if (tFrom != null && tTo != null) onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
+        if (tFrom != null && tTo != null) {
+          logViewWrite('report', { sym: symbol, from: tFrom, to: tTo, owned: true, trusted }, debugWritesRef.current)
+          onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
+        }
+      } else if (tFrom != null && tTo != null) {
+        // 被门挡下的上报也记一笔：#222 要抓「第一拍窗口里谁放行了广播」，反例同样是证据
+        logViewWrite('report', { sym: symbol, from: tFrom, to: tTo, owned: viewOwnedByUserRef.current, trusted }, debugWritesRef.current)
       }
     }
     applyRangeRef.current = onVisibleRange
