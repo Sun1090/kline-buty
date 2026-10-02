@@ -149,7 +149,17 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
       .poll(async () => (await cellRangeTexts(page))[CELLS[0]], { timeout: 15_000 })
       .not.toBe(before[CELLS[0]])
     const draggedSpan = await spanMinutes(page, CELLS[0])
-    expect(draggedSpan).toBeGreaterThan(beforeSpan * 0.6)
+    // 判词带上下文：CI webkit 实测过一次「拖完跨度 1490→55 分钟」（run 36792431549，
+    // 压缩 27 倍）——形态指向窗格迁移（cull）重落视角按索引锚定的 #199 同族压缩，
+    // 但单次红不定论。前后可视文本 + 数据根数让下一次红能读出「压到哪段了」。
+    const draggedText = (await cellRangeTexts(page))[CELLS[0]]
+    const candles = await page.evaluate(() =>
+      Number(document.querySelector('.chart-container')?.getAttribute('data-candles') ?? -1),
+    )
+    expect(
+      draggedSpan,
+      `拖后跨度 ${draggedSpan} 分钟（拖前 ${beforeSpan}；拖前文本 ${before[CELLS[0]]}；拖后文本 ${draggedText}；data-candles ${candles}）`,
+    ).toBeGreaterThan(beforeSpan * 0.6)
     expect(draggedSpan).toBeLessThan(beforeSpan * 1.6)
 
     // 其余三格跟上：① 每格都得相对自己「动过」——只比相等会被假绿钻空子（四格一动不动也相等）；
