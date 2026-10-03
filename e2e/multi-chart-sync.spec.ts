@@ -148,19 +148,25 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     await expect
       .poll(async () => (await cellRangeTexts(page))[CELLS[0]], { timeout: 15_000 })
       .not.toBe(before[CELLS[0]])
-    const draggedSpan = await spanMinutes(page, CELLS[0])
-    // 判词带上下文：CI webkit 实测过一次「拖完跨度 1490→55 分钟」（run 36792431549，
-    // 压缩 27 倍）——形态指向窗格迁移（cull）重落视角按索引锚定的 #199 同族压缩，
-    // 但单次红不定论。前后可视文本 + 数据根数让下一次红能读出「压到哪段了」。
-    const draggedText = (await cellRangeTexts(page))[CELLS[0]]
+    // 跨度断言看**落定态**而不是文本一变就单次读数：平移若触发窗格迁移（cull），
+    // 重载是两拍过渡——beat-1 按旧间距换算会瞬时压缩、beat-2 才纠正（#199 同族形态，
+    // CI webkit 实测读到过 1490→55 分钟的瞬态）。轮询跨度进带；持续压缩（真缺陷）
+    // 会超时红且 Received 带实测值。判词附拖前文本与数据根数。
     const candles = await page.evaluate(() =>
       Number(document.querySelector('.chart-container')?.getAttribute('data-candles') ?? -1),
     )
-    expect(
-      draggedSpan,
-      `拖后跨度 ${draggedSpan} 分钟（拖前 ${beforeSpan}；拖前文本 ${before[CELLS[0]]}；拖后文本 ${draggedText}；data-candles ${candles}）`,
-    ).toBeGreaterThan(beforeSpan * 0.6)
-    expect(draggedSpan).toBeLessThan(beforeSpan * 1.6)
+    await expect
+      .poll(
+        async () => {
+          const s = await spanMinutes(page, CELLS[0])
+          return s >= beforeSpan * 0.6 && s <= beforeSpan * 1.6 ? 'in-band' : `out:${s}`
+        },
+        {
+          timeout: 10_000,
+          message: `拖后跨度未落回量级（拖前 ${beforeSpan} 分钟；拖前文本 ${before[CELLS[0]]}；data-candles ${candles}）`,
+        },
+      )
+      .toBe('in-band')
 
     // 其余三格跟上：① 每格都得相对自己「动过」——只比相等会被假绿钻空子（四格一动不动也相等）；
     // ② 四格的视角起止落在同一段，按**分钟**比而不是逐字比文本。容差放一根周期起步：接收格现在要把
