@@ -306,6 +306,8 @@ export function ChartView({
    * 程序化落位把它交给机器，指针/滚轮/触摸/键盘回到这一格时才交还给用户。
    */
   const viewOwnedByUserRef = useRef(false)
+  /** 滚轮手势的 150ms 静默定时器（wheel 没有「结束事件」，末次事件起 150ms 后视为手势结束） */
+  const claimTimerRef = useRef<number | null>(null)
   /** #222 诊断门控（?debugViewWrites）：多图视角同步两写点的日志开关 */
   const debugWritesRef = useRef(debugViewWritesEnabled())
   /**
@@ -404,10 +406,10 @@ export function ChartView({
   // 各格周期不同，同一个索引对应的时间跨度能差几十倍，所以先按本格数据换算再落位
   // （全局索引 → 局部索引要减裁剪窗口起点 base）。
   const lastExternalRef = useRef('')
-  /**
-   * 把视角交给机器：这一次落位（以及它随后异步补发的那些事件）都不算「用户改了本格」。
-   * 用户的手势会把视角要回去，见 effect 里的 `viewOwnedByUserRef.current = true`。
-   */
+  /** 把视角交给机器：这一次落位（以及它随后异步补发的那些事件）都不算「用户改了本格」。
+   *  owned 归属归事件层管（pointerup/touchend/keyup/blur/wheel 静默 150ms 清归属）。
+   *  本函数在「程序化落位」处把 owned 清掉——拖动过程中 cull 迁移也走这里，说明灌范式是把
+   *  整个程序落位段归属视为「机器」，而非用户手势，避免它被广播门误判成用户改了本格（issue #222）。 */
   const withSilentView = (run: () => void) => {
     viewOwnedByUserRef.current = false
     run()
@@ -417,19 +419,43 @@ export function ChartView({
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
+    // 归属只在「手势序列」内为 true：pointerdown 抬起，pointerup/pointercancel/touchend/
+    // keyup/失焦后即清掉。此前 owned 在 pointerdown 后永久为 true——拖完鼠标之后，
+    // 换周期触发的程序化重落（withSilentView 设 owned=false 只在那一拍，随后的可见区间
+    // 回调又被 owned=true 接住）会被广播门误判成「用户改了本格」广播给兄弟格（issue #222）。
     const claim = () => {
       viewOwnedByUserRef.current = true
     }
+    const release = () => {
+      viewOwnedByUserRef.current = false
+    }
+    // wheel 没有「结束事件」：末次事件 150ms 后视为手势结束
+    const wheelClaim = () => {
+      viewOwnedByUserRef.current = true
+      if (claimTimerRef.current !== null) window.clearTimeout(claimTimerRef.current)
+      claimTimerRef.current = window.setTimeout(release, 150)
+    }
     const opts = { capture: true, passive: true } as const
     root.addEventListener('pointerdown', claim, opts)
-    root.addEventListener('wheel', claim, opts)
+    root.addEventListener('wheel', wheelClaim, opts)
     root.addEventListener('touchstart', claim, opts)
     root.addEventListener('keydown', claim, opts)
+    window.addEventListener('pointerup', release, opts)
+    window.addEventListener('pointercancel', release, opts)
+    window.addEventListener('touchend', release, opts)
+    window.addEventListener('keyup', release, opts)
+    window.addEventListener('blur', release, opts)
     return () => {
       root.removeEventListener('pointerdown', claim, opts)
-      root.removeEventListener('wheel', claim, opts)
+      root.removeEventListener('wheel', wheelClaim, opts)
       root.removeEventListener('touchstart', claim, opts)
       root.removeEventListener('keydown', claim, opts)
+      window.removeEventListener('pointerup', release, opts)
+      window.removeEventListener('pointercancel', release, opts)
+      window.removeEventListener('touchend', release, opts)
+      window.removeEventListener('keyup', release, opts)
+      window.removeEventListener('blur', release, opts)
+      if (claimTimerRef.current !== null) window.clearTimeout(claimTimerRef.current)
     }
   }, [])
   useEffect(() => {
