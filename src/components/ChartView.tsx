@@ -306,6 +306,10 @@ export function ChartView({
    * 程序化落位把它交给机器，指针/滚轮/触摸/键盘回到这一格时才交还给用户。
    */
   const viewOwnedByUserRef = useRef(false)
+  /** 归属过期兜底时长：手势序列超过该时长且无新事件即归还（issue #222） */
+  const OWNED_MAX_MS = 3_000
+  /** 末次用户手势（claim）时刻，配合 OWNED_MAX_MS 做归属过期兜底 */
+  const lastClaimAtRef = useRef(0)
   /** 滚轮手势的 150ms 静默定时器（wheel 没有「结束事件」，末次事件起 150ms 后视为手势结束） */
   const claimTimerRef = useRef<number | null>(null)
   /** #222 诊断门控（?debugViewWrites）：多图视角同步两写点的日志开关 */
@@ -423,15 +427,21 @@ export function ChartView({
     // keyup/失焦后即清掉。此前 owned 在 pointerdown 后永久为 true——拖完鼠标之后，
     // 换周期触发的程序化重落（withSilentView 设 owned=false 只在那一拍，随后的可见区间
     // 回调又被 owned=true 接住）会被广播门误判成「用户改了本格」广播给兄弟格（issue #222）。
-    const claim = () => {
+    const claim = (e: Event) => {
       viewOwnedByUserRef.current = true
+      lastClaimAtRef.current = Date.now()
+      logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
     }
-    const release = () => {
+    const release = (e: Event) => {
+      if (viewOwnedByUserRef.current)
+        logViewWrite('release', { sym: symbol, type: e.type }, debugWritesRef.current)
       viewOwnedByUserRef.current = false
     }
     // wheel 没有「结束事件」：末次事件 150ms 后视为手势结束
-    const wheelClaim = () => {
+    const wheelClaim = (e: Event) => {
       viewOwnedByUserRef.current = true
+      lastClaimAtRef.current = Date.now()
+      logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
       if (claimTimerRef.current !== null) window.clearTimeout(claimTimerRef.current)
       claimTimerRef.current = window.setTimeout(release, 150)
     }
@@ -577,6 +587,12 @@ export function ChartView({
      */
     const onVisibleRange = (from: number, to: number, trusted = true) => {
       const now = Date.now()
+      // 归属过期兜底（issue #222）：webkit 的合成鼠标序列可能不派发 pointerup，
+      // owned 会粘 true 并把程序落位当用户意图广播。手势序列超 3s 无新事件 → 归属自动归还。
+      if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
+        logViewWrite('release', { sym: symbol, type: 'expired' }, debugWritesRef.current)
+        viewOwnedByUserRef.current = false
+      }
       // 整窗 setData 期间图表会同步补发一条按**旧切片**索引算出的可见区间：此刻 loadedRef 已是新切片，
       // 换算得到的是一条被 clamp 的窄假视角，写进视角状态后会被窗口迁移/重载回放，真的把视野压扁。
       // 装载完成后我们总会显式设定视角（setVisibleRange / fitContent），那条通知才是可信的。

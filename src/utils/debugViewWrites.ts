@@ -8,7 +8,7 @@ export function debugViewWritesEnabled(search: string = typeof location === 'und
 }
 
 /** 带 flag 时的日志出口（前缀固定，e2e 按前缀收集） */
-export function logViewWrite(kind: 'report' | 'apply', detail: Record<string, unknown>, enabled: boolean): void {
+export function logViewWrite(kind: 'report' | 'apply' | 'claim' | 'release', detail: Record<string, unknown>, enabled: boolean): void {
   if (!enabled) return
   console.debug(`debugViewWrites: ${kind} ${JSON.stringify(detail)}`)
 }
