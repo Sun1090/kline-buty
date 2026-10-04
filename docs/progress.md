@@ -5,6 +5,19 @@
 
 ## 当前阶段
 
+**#222 枢纽修复合并后主跑 CI 全绿（2026-10-04，#267 → main `372963d`）**
+- 修复：`viewOwnedByUserRef` 在 pointerdown 后永久为 true，导致换周期时 BTC 的程序化重落
+  被广播门误判成「用户改了本格」广播给兄弟格；现 `withSilentView` 一次清掉 owned，并把
+  归属收紧到「手势序列」内（pointerup/touchend/keyup/blur/wheel 150ms 静默后）。
+- 合并后主跑 CI **成功**（`completed:success`，含 E2E 三浏览器 ~30m）；该 run 中 A4c 未红——
+  #263 插桩日志正常，写点可观测面仍可用。
+- 验证：2064 passed/177 files；tsc（app+e2e）干净；eslint 0 errors；PR CI 十项全绿。
+- 风险/回滚：行为修复改的是归属 ref；回滚 = revert #267。
+- 下一项：#222 取证闭环——把「枢纽修复 → main 首跑 CI 全绿（无 A4c 硬红）」写进 issue 并关单。
+- 更新日：2026-10-04
+
+
+
 **E12 颜色对比度只读审计（2026-10-04，#266 已合并 → main `a35dafe`）**
 - a11y 弧线补上最后一块测量层：新增 `scripts/contrast-audit.mjs`（解析 index.html 四组主题变量、
   与 theme.ts HIGH_CONTRAST_COLORS 同源，WCAG 2.1 输出 40 对对比比表；信息性工具不作 CI 门）。
