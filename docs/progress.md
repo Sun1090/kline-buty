@@ -13,7 +13,14 @@
   #263 插桩日志正常，写点可观测面仍可用。
 - 验证：2064 passed/177 files；tsc（app+e2e）干净；eslint 0 errors；PR CI 十项全绿。
 - 风险/回滚：行为修复改的是归属 ref；回滚 = revert #267。
-- 下一项：#222 已闭环（issue 已于 2026-10-04 关单）。下一项转为：趋势线 webkit flake 的后续 CI 是否收敛（#262 rescanPerAttempt 已入库）；multi-sync 等下一条带判词的红。
+- ⚠️ **修正（同日）**：#267 的修复被后续 CI 证伪——docs 提交 `8450559` 的 CI（run 37191585864）
+  再次 A4c webkit 硬红，`debugViewWrites` 显示 BTC owned:true 28 次、owned:false 0 次：
+  pointerup 的 release 在 webkit 合成鼠标序列里从未生效。#222 已重新开单，上行的「已闭环」作废。
+- **#268 兜底已合入 → main `53ce407`**：owned=true 且距末次 claim 超 3s 且无新手势事件 →
+  自动归还（不依赖 pointerup）；claim/release 事件类型进 debugViewWrites 日志。
+  A4c 观测窗（14s+）在兜底窗之后，漂移不会再被广播。PR CI 十项全绿。
+- 下一项：合并后 main CI 观察 A4c；若再红，用 claim/release 插桩读「owned 被谁抬起」。
+  趋势线 webkit flake 的收敛观察（#262 已入库）继续。
 - 更新日：2026-10-04
 
 
