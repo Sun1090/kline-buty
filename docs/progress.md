@@ -13,7 +13,7 @@
   #263 插桩日志正常，写点可观测面仍可用。
 - 验证：2064 passed/177 files；tsc（app+e2e）干净；eslint 0 errors；PR CI 十项全绿。
 - 风险/回滚：行为修复改的是归属 ref；回滚 = revert #267。
-- 下一项：#222 取证闭环——把「枢纽修复 → main 首跑 CI 全绿（无 A4c 硬红）」写进 issue 并关单。
+- 下一项：#222 已闭环（issue 已于 2026-10-04 关单）。下一项转为：趋势线 webkit flake 的后续 CI 是否收敛（#262 rescanPerAttempt 已入库）；multi-sync 等下一条带判词的红。
 - 更新日：2026-10-04
 
 
