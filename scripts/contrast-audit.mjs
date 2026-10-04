@@ -44,7 +44,11 @@ function parseColor(raw, bgHex) {
     const [r, g, b, a = '1'] = rgba[1].split(',').map((s) => parseFloat(s.trim()))
     const bg = bgHex ? hexRgb(bgHex) : [255, 255, 255]
     // 与面板底色合成后取整（半透明色叠加在实底上）
-    return [0, 1, 2].map((i) => Math.round(r * a + bg[i] * (1 - a)))
+    return [
+      Math.round(r * a + bg[0] * (1 - a)),
+      Math.round(g * a + bg[1] * (1 - a)),
+      Math.round(b * a + bg[2] * (1 - a)),
+    ]
   }
   return null
 }
