@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { summarizeViewWrites } from '../src/e2e-helpers/view-writes'
 
 /**
  * 多图视角同步 ★ 四图时间轴联动：拖动一格，其余格跟着走到同一段时间。
@@ -112,6 +113,13 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
   test.setTimeout(120_000)
 
   test('拖动一格 → 其余三格的可视时间范围跟到同一段', async ({ page, browserName }) => {
+    // #222/#279 取证：这条此前**完全没带写点日志**，红时只能读到「跑偏 N/4」，
+    // 连「锚格有没有放行过」都读不出来。挂上同一个整段摘要收集器。
+    const viewWrites: string[] = []
+    page.on('console', (msg) => {
+      const t = msg.text()
+      if (t.startsWith('debugViewWrites:')) viewWrites.push(t)
+    })
     // firefox：Playwright 合成鼠标事件与 lightweight-charts 的 pressedMouseMove 不兼容（真机正常），
     // 本例要靠拖拽改变视角，故与 period-anchor 同样只在 chromium/webkit 上跑
     test.skip(browserName === 'firefox', 'firefox 下合成鼠标拖拽平移不可用（Playwright+轻量级图表限制）')
@@ -119,7 +127,8 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     page.on('pageerror', (e) => errors.push(String(e)))
 
     await page.addInitScript(() => localStorage.clear())
-    await page.goto(`/?perf=${PERF_COUNT}`)
+    // 与下面那条同门控，否则收集器挂在上面却收不到任何东西
+    await page.goto(`/?perf=${PERF_COUNT}&debugViewWrites`)
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
 
     // 切到四图布局（更多 → 布局：单图 → 双图 → 四图）
@@ -192,7 +201,9 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
           const e = edgeMinutes(now[sym])
           return e ? `${sym.slice(0, 3)} Δ${e[0] - a[0]}..${e[1] - a[1]} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
         }).join(' | ')
-        return moved === CELLS.length - 1 && off === 0 ? 'synced' : `动了 ${moved}/3，跑偏 ${off}/4 ⇒ ${detail}`
+        return moved === CELLS.length - 1 && off === 0
+          ? 'synced'
+          : `动了 ${moved}/3，跑偏 ${off}/4 ⇒ ${detail} ‖ ${summarizeViewWrites(viewWrites)}`
       }, { timeout: 20_000, message: '四格可视时间范围应被广播到同一段' })
       .toBe('synced')
 
@@ -273,11 +284,12 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
           const tag = sym === CELLS[0] ? '锚' : `Δ${e ? e[0] - a[0] : '?'}..${e ? e[1] - a[1] : '?'}`
           return e ? `${sym.slice(0, 3)}(${MIXED[sym]}) ${tag} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
         }).join(' | ')
-        // 写点日志（#222 门控）：下一次红要能读出「第一拍是谁把接收格写到非广播位置的」
-        const tail = viewWrites.slice(-6).join(' ; ')
+        // 写点日志（#222/#279 门控）：下一次红要能读出「第一拍是谁把接收格写到非广播位置的」。
+        // 这里用**整段摘要**而不是尾部 6 条 —— 尾部取样曾把 settle 挤出窗口，
+        // 导致「settle 0 条」被误读成「settle 从未执行」（详见 helpers/view-writes.ts 顶部）。
         return (
           `跑偏 ${off.length}/${tracked.length} ⇒ ${detail}` +
-          ` ‖锚跨${span} 写点[${tail}]`
+          ` ‖锚跨${span} ${summarizeViewWrites(viewWrites)}`
         )
       }, { timeout: 20_000, message: '混周期下比视角细的格子应停在同一段时间（各自周期取整）' })
       .toBe('synced')
