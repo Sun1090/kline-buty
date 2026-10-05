@@ -341,8 +341,37 @@ export function ChartView({
    * 于是「谁在这一格动手」与「广播哪一段」各归各的：迁移那拍不播，最终落点由手势结束那一拍说了算。
    */
   const lastBroadcastRef = useRef<{ from: number; to: number } | null>(null)
+  /**
+   * 「手势刚结束、最终落点待定」标记（issue #222 第三层）。
+   *
+   * 抬手那一拍读到的往往还是手势最后一报的区间，兜底落空；此后**任何**一次可见区间事件
+   * 若落点与上次广播不同，就由 `onVisibleRange` 以落定广播补上并销号。
+   * 走事件而不是轮询：迁移重载何时落地取决于装载，CI 高负载下可能晚到任意时刻，
+   * 任何有界的轮询窗口都是在赌它够快。标记由下一轮 claim 或超时回收，不跨手势生效。
+   */
+  const pendingSettleRef = useRef(false)
   /** 手势结束时落定广播的定时器（wheel 150ms 静默那条也要用到） */
   const settleTimerRef = useRef<number | null>(null)
+  /** 「落点待定」标记的回收定时器（与落定那一拍分开存，两条定时器互不覆盖） */
+  const pendingSettleTimerRef = useRef<number | null>(null)
+  /** 落定标记的最长存活：手势结束后的惯性/迁移重载都在这一段内落地，超时即弃 */
+  const SETTLE_ATTEMPTS_MS = 3_000
+  /** 销掉「落点待定」标记并回收它的定时器（新一次手势、落定成功、超时都走这里） */
+  const clearPendingSettle = () => {
+    pendingSettleRef.current = false
+    if (pendingSettleTimerRef.current !== null) window.clearTimeout(pendingSettleTimerRef.current)
+    pendingSettleTimerRef.current = null
+  }
+  /** 以「手势真正停住的那一段」为准发一次广播；与上次相同则不发（`via` 只进诊断日志）。
+   *  @returns 是否真的发出去了 —— 调用方据此决定要不要销掉「落点待定」标记 */
+  const broadcastSettle = (from: number, to: number, via: 'pointerup' | 'late-event'): boolean => {
+    const prev = lastBroadcastRef.current
+    if (prev && prev.from === from && prev.to === to) return false
+    logViewWrite('settle', { sym: symbol, from, to, via }, debugWritesRef.current)
+    lastBroadcastRef.current = { from, to }
+    onViewRangeChangeRef.current?.({ from, to })
+    return true
+  }
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
   const lastVisibleTimeRef = useRef<{ toTime: number; spanMs: number } | null>(null)
   /** A11 可视起止时间戳（随缩放/平移更新），用于图表角落显示 */
@@ -450,6 +479,11 @@ export function ChartView({
     const claim = (e: Event) => {
       viewOwnedByUserRef.current = true
       lastClaimAtRef.current = Date.now()
+      // 新一轮手势把上一轮的「落点待定」作废：归属在场时那一挪本来就按用户意图播出去，
+      // 留着旧标记只会让收尾那一挪走错分支（issue #222 第三层）。
+      if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current)
+      settleTimerRef.current = null
+      clearPendingSettle()
       logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
     }
     /**
@@ -458,6 +492,16 @@ export function ChartView({
      * 落定那一拍读的是图表此刻真实的可见区间（而不是手势过程中某一拍的中间值），
      * 所以「拖动途中迁移重落算出来的落点」不参与广播——它本来就是机器的中间态。
      * 与上一次广播相同则不发，避免手势末尾多出一条无意义的兄弟格落位。
+     *
+     * **兜底必须盖住「迁移比一次宏任务晚到」**（issue #222 第三层，CI webkit 判词
+     * `BTC Δ0..0 跨55 | ETH/SOL/BNB Δ9..9 跨55`）：抬手那一刻图表往往还没做迁移重载，
+     * 单次 `setTimeout(0)` 快照读到的仍是被手势最后一拍上报过的同一段 → 与上次广播相等 →
+     * 整条兜底空转；等迁移真落下，归属早已归还，那一挪永远静默。
+     *
+     * 所以兜底**不靠轮询**（轮询窗口是拍的，CI 负载下迁移可能晚到窗口之外），
+     * 而是挂一个「手势刚结束、落点待定」的标记：随后**任何**一次可见区间事件
+     * （无论来自用户惯性、迁移重载还是装载收尾）若落点与上次广播不同，就以落定广播补上，
+     * 并当场销掉标记。新一次手势的 claim 会把标记顶掉，所以它不会跨手势生效。
      */
     const release = (e: Event) => {
       const wasOwned = viewOwnedByUserRef.current
@@ -466,7 +510,8 @@ export function ChartView({
       viewOwnedByUserRef.current = false
       if (!wasOwned) return
       if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current)
-      settleTimerRef.current = window.setTimeout(() => {
+      if (pendingSettleTimerRef.current !== null) window.clearTimeout(pendingSettleTimerRef.current)
+      const settleOnce = () => {
         settleTimerRef.current = null
         const api = apiRef.current
         const all = allCandlesRef.current
@@ -480,12 +525,19 @@ export function ChartView({
         const from = all[gFrom]?.time
         const to = all[gTo]?.time
         if (from == null || to == null) return
-        const prev = lastBroadcastRef.current
-        if (prev && prev.from === from && prev.to === to) return
-        logViewWrite('settle', { sym: symbol, from, to }, debugWritesRef.current)
-        lastBroadcastRef.current = { from, to }
-        onViewRangeChangeRef.current?.({ from, to })
-      }, 0)
+        // 与上次广播一致 = 此刻还没迁移（抬手那一拍读到的仍是手势最后一报）。
+        // **此时不能销掉标记**：迁移重载往往就在下一拍落下来，那一挪才是手势真正停住的那一段。
+        // 早先一版在这里就把标记清掉，等于把整条兜底从题面里删掉——它不是「没触发」，是「被自己作废」。
+        if (broadcastSettle(from, to, 'pointerup')) clearPendingSettle()
+      }
+      // 先按此刻的可见区间落定一次（手势原本就停在这一段，这一拍多半就是答案）；
+      // 落空或之后又被迁移挪走时，pendingSettle 标记接住晚到的那一拍。
+      pendingSettleRef.current = true
+      settleTimerRef.current = window.setTimeout(settleOnce, 0)
+      pendingSettleTimerRef.current = window.setTimeout(() => {
+        pendingSettleTimerRef.current = null
+        pendingSettleRef.current = false
+      }, SETTLE_ATTEMPTS_MS)
     }
     // wheel 没有「结束事件」：末次事件 150ms 后视为手势结束
     const wheelClaim = (e: Event) => {
@@ -695,6 +747,12 @@ export function ChartView({
           lastBroadcastRef.current = { from: tFrom, to: tTo }
           onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
         }
+      } else if (tFrom != null && tTo != null && pendingSettleRef.current) {
+        // 手势已结束、最终落点待定，而这一挪与上次广播不同：它就是手势真正停住的那一段，
+        // 以落定广播补出去（issue #222 第三层）。迁移重落/惯性都走这里 —— 它们自身静默，
+        // 若不在这里补，接收格就停在拖动途中那一段上（CI webkit 实测三格齐刷刷落后一整段）。
+        clearPendingSettle()
+        broadcastSettle(tFrom, tTo, 'late-event')
       } else if (tFrom != null && tTo != null) {
         // 被门挡下的上报也记一笔：#222 要抓「第一拍窗口里谁放行了广播」，反例同样是证据
         logViewWrite('report', { sym: symbol, from: tFrom, to: tTo, owned: viewOwnedByUserRef.current, trusted }, debugWritesRef.current)

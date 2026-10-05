@@ -368,6 +368,52 @@ describe('多图视角同步的单位（issue #186）', () => {
     }
   })
 
+  it('手势结束后才落地的迁移重落，落定广播要补上那一段（issue #222 第三层）', () => {
+    // CI webkit 三次 retry 的实测判词：`BTC Δ0..0 跨55 | ETH/SOL/BNB Δ9..9 跨55`
+    // ——三格彼此一致、却齐刷刷落后锚格一整段。这说明**广播发出过**，但发的是**过期**的那一段：
+    // 锚格在最后一次归属内的上报之后又被机器挪走了（迁移重落静默），而落定广播没补上。
+    //
+    // 成因：落定那一拍是 `setTimeout(0)` 里的**单次快照**。抬手那一刻图表还没做迁移重载，
+    // 于是 visibleRange() 读到的仍是被手势最后一拍上报过的同一段 → 与 lastBroadcastRef 相等
+    // → 提前 return；等迁移重载真的落下来，归属早已归还，这一挪就永远静默了。
+    // 换句话说：只要迁移比一次宏任务晚到，落定广播这条兜底就整条失效（它不是"没触发"，是"触发得太早"）。
+    const oneMin = makeCandles(800)
+    const onViewRangeChange = vi.fn()
+    harness.echo = true
+    harness.range = { from: 200, to: 240 }
+    vi.useFakeTimers()
+    try {
+      render(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />)
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => harness.fire!(200, 240, true))
+      expect(onViewRangeChange, '手势途中必须照常广播').toHaveBeenCalled()
+
+      // 抬手：落定那一拍读到的还是同一段（迁移尚未发生）
+      onViewRangeChange.mockClear()
+      fireEvent.pointerUp(window)
+      // 只推进一个宏任务，别用 runAllTimers —— 那会把「落点待定」标记的回收定时器
+      // 一并跑掉，标记提前作废就等于把这道兜底从题面里删了。真实时间也不会瞬移 3s。
+      act(() => {
+        vi.advanceTimersByTime(0)
+      })
+      expect(onViewRangeChange, '此刻还没迁移，不该凭空广播').not.toHaveBeenCalled()
+
+      // 迁移重载此刻才落地：机器把视角挪到 260..300（静默，归属已在抬手时归还）
+      act(() => harness.fire!(260, 300, true))
+
+      // 兜底必须补上这一段，否则三格接收者就停在拖动途中那一段上（CI 实测形态）
+      expect(onViewRangeChange, '晚到的迁移重落必须当场由落定广播补上').toHaveBeenCalledTimes(1)
+      expect(onViewRangeChange, '手势结束后才落地的迁移重落必须由落定广播补上').toHaveBeenCalledTimes(1)
+      const settled = onViewRangeChange.mock.calls[0][0]
+      expect(settled.from).toBe(oneMin[260].time)
+      expect(settled.to).toBe(oneMin[300].time)
+    } finally {
+      vi.useRealTimers()
+      harness.echo = false
+      harness.views.length = 0
+    }
+  })
+
   it('程序化落位（执行兄弟格指令）不再广播回去', () => {
     const oneMin = makeCandles(800)
     const onViewRangeChange = vi.fn()
