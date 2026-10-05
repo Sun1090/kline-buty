@@ -306,6 +306,15 @@ export function ChartView({
    * 程序化落位把它交给机器，指针/滚轮/触摸/键盘回到这一格时才交还给用户。
    */
   const viewOwnedByUserRef = useRef(false)
+  /**
+   * 手势序列**正在进行中**（pointerdown 已发生、结束事件还没来）。
+   *
+   * 与 `viewOwnedByUserRef` 分开记，因为它回答的是另一个问题：归属是「这份视角归谁」，
+   * 而这一位是「此刻有没有手指/指针正按在这一格上」。程序化落位（换周期重落、裁剪窗口迁移
+   * 后的按时间重落）在手势进行中发生时**不该**夺走归属——那份视角仍是用户正在拖出来的意图；
+   * 手势不在进行中时，它才是机器的活（issue #222 取证五）。
+   */
+  const gestureActiveRef = useRef(false)
   /** 归属过期兜底时长：手势序列超过该时长且无新事件即归还（issue #222） */
   const OWNED_MAX_MS = 3_000
   /** 末次用户手势（claim）时刻，配合 OWNED_MAX_MS 做归属过期兜底 */
@@ -412,10 +421,22 @@ export function ChartView({
   const lastExternalRef = useRef('')
   /** 把视角交给机器：这一次落位（以及它随后异步补发的那些事件）都不算「用户改了本格」。
    *  owned 归属归事件层管（pointerup/touchend/keyup/blur/wheel 静默 150ms 清归属）。
-   *  本函数在「程序化落位」处把 owned 清掉——拖动过程中 cull 迁移也走这里，说明灌范式是把
-   *  整个程序落位段归属视为「机器」，而非用户手势，避免它被广播门误判成用户改了本格（issue #222）。 */
-  const withSilentView = (run: () => void) => {
-    viewOwnedByUserRef.current = false
+   *  程序化落位处清掉归属，避免被广播门误判成用户改了本格（issue #222）。
+   *
+   *  三种「机器的活」必须分开，issue #222 取证五（2026-10-05）：
+   *  - `machine`（默认）：换周期两拍的按时间重落、fitContent 等。**永远清归属**——
+   *    换周期是本格的内部重排，不是用户对本格的改动（R16 那两条用例就钉这一条）。
+   *  - `foreign`：执行**兄弟格**的指令。永远清归属，即使此刻有手势按着这一格——
+   *    各格网格不同，吸附后的落点与请求差几根，传回去就是一条越收越窄的乒乓链。
+   *  - `self`：**拖动途中**因裁剪窗口迁移而做的整窗装载后重落。手势正在进行中时**不清**：
+   *    那份视角仍是用户正在拖出来的意图。此前它与上面两种走同一条无条件清的路径，
+   *    于是拖到一半的那一拍把归属弄丢，余下整段拖动都不再广播——接收格停在拖动早期的
+   *    位置上，越拖越远。CI webkit 实测（run 37246887024）：拖动全程只有 `owned:false`
+   *    的 report、一条 `owned:true` 都没有，混周期三格相对锚点的偏移随重试递增
+   *    （Δ41 → Δ51 → Δ70 分钟）。手势不在进行中时，它才是机器的活。
+   */
+  const withSilentView = (run: () => void, mode: 'machine' | 'foreign' | 'self' = 'machine') => {
+    if (mode !== 'self' || !gestureActiveRef.current) viewOwnedByUserRef.current = false
     run()
   }
   // 手势把视角要回给用户：指针/滚轮/触摸/键盘落在这一格（含格内「回到最新」这类按钮）之后，
@@ -429,10 +450,12 @@ export function ChartView({
     // 回调又被 owned=true 接住）会被广播门误判成「用户改了本格」广播给兄弟格（issue #222）。
     const claim = (e: Event) => {
       viewOwnedByUserRef.current = true
+      gestureActiveRef.current = true
       lastClaimAtRef.current = Date.now()
       logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
     }
     const release = (e: Event) => {
+      gestureActiveRef.current = false
       if (viewOwnedByUserRef.current)
         logViewWrite('release', { sym: symbol, type: e.type }, debugWritesRef.current)
       viewOwnedByUserRef.current = false
@@ -440,6 +463,7 @@ export function ChartView({
     // wheel 没有「结束事件」：末次事件 150ms 后视为手势结束
     const wheelClaim = (e: Event) => {
       viewOwnedByUserRef.current = true
+      gestureActiveRef.current = true
       lastClaimAtRef.current = Date.now()
       logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
       if (claimTimerRef.current !== null) window.clearTimeout(claimTimerRef.current)
@@ -491,7 +515,7 @@ export function ChartView({
       { sym: symbol, extFrom: externalRange.from, extTo: externalRange.to, ownSec, fromIdx, toIdx, base },
       debugWritesRef.current,
     )
-    withSilentView(() => apiRef.current?.setVisibleRange({ from: left - base, to: toIdx - base }))
+    withSilentView(() => apiRef.current?.setVisibleRange({ from: left - base, to: toIdx - base }), 'foreign')
   }, [externalRange])
 
   // G8 外部十字光标时间指令（多图同步）：与本图最近上报值相同则跳过（防回环）
@@ -1155,7 +1179,13 @@ export function ChartView({
         withSilentView(() => api.setVisibleRange({ from: intentView.from - windowBase, to: intentView.to - windowBase }))
       } else if (cur) {
         const v = lastVisibleRef.current
-        if (v) withSilentView(() => api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase }))
+        // 走到这里且**没有**换周期意图 = 裁剪窗口在拖动途中迁移了：这份视角是用户正拖出来的，
+        // 归属不能被机器收走（'self'），否则余下整段拖动不再广播（issue #222 取证五）。
+        if (v)
+          withSilentView(
+            () => api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase }),
+            'self',
+          )
         if (replay) withSilentView(() => api.scrollToRealTime())
       } else if (replay) {
         withSilentView(() => api.fitContent())
