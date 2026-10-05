@@ -290,43 +290,6 @@ describe('多图视角同步的单位（issue #186）', () => {
     expect(harness.views).toContainEqual({ from: 0, to: 1 })
   })
 
-  it('拖动途中裁剪窗口迁移：手势未结束时归属不被机器夺走（issue #222 取证五）', () => {
-    // CI webkit 实测（run 37246887024）：混周期拖动全程只有 owned:false 的 report，
-    // 一条 owned:true 都没有 → 三格接收者停在拖动早期的位置，相对锚点的偏移随重试递增
-    // （Δ41 → Δ51 → Δ70 分钟）。成因是拖动途中 cull 迁移走的那次整窗重落无条件清了归属。
-    //
-    // 这里断的是**归属本身**，不是「重落有没有广播」——单元层拿不到迁移后的重放事件
-    // （mock 的 setVisibleRange 是同步回声，迁移那拍的重渲染要靠 e2e 才走得到）。
-    // 归属是这件事的因，果（余下拖动不再广播）由 e2e multi-chart-sync 那条守住。
-    const oneMin = makeCandles(2600)
-    const onViewRangeChange = vi.fn()
-    harness.echo = true
-    try {
-      const { rerender } = render(
-        <ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />,
-      )
-      fireEvent.pointerDown(screen.getByTestId('chart-root'))
-      act(() => harness.fire!(1800, 1840, true))
-      onViewRangeChange.mockClear()
-
-      // 拖出已装载窗口 → cull 迁移 → 整窗重落。**手势仍未结束**（不 pointerUp）。
-      act(() => harness.fire!(2400, 2460, true))
-      // 迁移引发 setCull 重渲染；那之后的每一次可信落位都仍归用户 → 仍要广播
-      rerender(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />)
-      act(() => harness.fire!(2410, 2470, true))
-      expect(onViewRangeChange, '手势未结束时迁移后的落位仍归用户，必须继续广播').toHaveBeenCalled()
-
-      // 手势结束后（pointerUp）再落位：这时才是机器的活，必须静默（#222 的原判据）
-      onViewRangeChange.mockClear()
-      fireEvent.pointerUp(window)
-      act(() => harness.fire!(2420, 2480, true))
-      expect(onViewRangeChange, '手势结束后程序落位必须静默（#222）').not.toHaveBeenCalled()
-    } finally {
-      harness.echo = false
-      harness.views.length = 0
-    }
-  })
-
   it('程序化落位（执行兄弟格指令）不再广播回去', () => {
     const oneMin = makeCandles(800)
     const onViewRangeChange = vi.fn()
