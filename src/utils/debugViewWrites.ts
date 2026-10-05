@@ -7,8 +7,14 @@ export function debugViewWritesEnabled(search: string = typeof location === 'und
   return new URLSearchParams(search).has('debugViewWrites')
 }
 
-/** 带 flag 时的日志出口（前缀固定，e2e 按前缀收集） */
-export function logViewWrite(kind: 'report' | 'apply' | 'claim' | 'release', detail: Record<string, unknown>, enabled: boolean): void {
+/** 带 flag 时的日志出口（前缀固定，e2e 按前缀收集）
+ *  `settle`：手势结束那一拍的落定广播（issue #222 第二层——迁移重落的落点不参与广播，
+ *  最终落点由这一拍说了算，所以它必须能被 e2e 单独认出来）。 */
+export function logViewWrite(
+  kind: 'report' | 'apply' | 'claim' | 'release' | 'settle',
+  detail: Record<string, unknown>,
+  enabled: boolean,
+): void {
   if (!enabled) return
   console.debug(`debugViewWrites: ${kind} ${JSON.stringify(detail)}`)
 }
