@@ -203,9 +203,16 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     test.skip(browserName === 'firefox', 'firefox 下合成鼠标拖拽平移不可用（Playwright+轻量级图表限制）')
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
+    // #222 诊断：同步链路两写点（上报逃逸 / 接收应用）的门控日志，收进失败判词——
+    // 混周期这条红过三次（CI webkit），每次都只带得出「哪格跑偏」，读不出「谁写的」。
+    const viewWrites: string[] = []
+    page.on('console', (msg) => {
+      const t = msg.text()
+      if (t.startsWith('debugViewWrites:')) viewWrites.push(t)
+    })
 
     await page.addInitScript(() => localStorage.clear())
-    await page.goto(`/?perf=${PERF_COUNT}`)
+    await page.goto(`/?perf=${PERF_COUNT}&debugViewWrites`)
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 30_000 })
     await page.getByTestId('header-more').click()
     const layout = page.getByTestId('layout-toggle')
@@ -254,7 +261,24 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
           const slack = PERIOD_MINUTES[MIXED[sym]] + 2
           return !e || Math.abs(e[0] - a[0]) > slack || Math.abs(e[1] - a[1]) > slack
         })
-        return off.length === 0 ? 'synced' : `跑偏 ${off.map((s) => `${s}=${now[s]}`).join(' ')}`
+        if (off.length === 0) return 'synced'
+        // 判词必须能分出两种病，它们该修的地方完全不同（与上面那条同源判据）：
+        //   各接收格两缘**同向**偏（Δ0、Δ1 同号且量级接近彼此周期）= 锚点自己被挪走了，
+        //     该去查发起格为什么停在非广播出去的那个位置（CI 三次 retry 的实测形态：
+        //     ETH/SOL 恰好各自停在自己的网格上、且相对锚点同向平移一整个身位）。
+        //   两缘**反向**偏（跨度被压窄/撑宽）= 某个接收格落地偏窄，是回声往返（issue #194 形态）。
+        // 只列「跑偏 SYM=文本」时这两种是同一句话，红了也不知道该读哪条链路。
+        const detail = CELLS.map((sym) => {
+          const e = edgeMinutes(now[sym])
+          const tag = sym === CELLS[0] ? '锚' : `Δ${e ? e[0] - a[0] : '?'}..${e ? e[1] - a[1] : '?'}`
+          return e ? `${sym.slice(0, 3)}(${MIXED[sym]}) ${tag} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
+        }).join(' | ')
+        // 写点日志（#222 门控）：下一次红要能读出「第一拍是谁把接收格写到非广播位置的」
+        const tail = viewWrites.slice(-6).join(' ; ')
+        return (
+          `跑偏 ${off.length}/${tracked.length} ⇒ ${detail}` +
+          ` ‖锚跨${span} 写点[${tail}]`
+        )
       }, { timeout: 20_000, message: '混周期下比视角细的格子应停在同一段时间（各自周期取整）' })
       .toBe('synced')
 
