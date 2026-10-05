@@ -290,6 +290,84 @@ describe('多图视角同步的单位（issue #186）', () => {
     expect(harness.views).toContainEqual({ from: 0, to: 1 })
   })
 
+  it('拖动途中裁剪窗口迁移不夺走归属：手势未结束时仍继续广播（issue #222 第一层）', () => {
+    // CI webkit 实测（run 37246887024）：混周期拖动全程只有 owned:false 的 report，
+    // 一条 owned:true 都没有 → 一次广播都没发出去，三格接收者停在拖动早期的位置上。
+    // 成因：迁移重落走 withSilentView 无条件清了归属。
+    //
+    // fixture **必须**超过 CULL_THRESHOLD（2000），否则裁剪迁移根本不发生、这条就是空转
+    // ——第一版写 800 根时，变异后仍然绿（恒真的判据比没有判据更坏）。
+    const oneMin = makeCandles(2600)
+    const onViewRangeChange = vi.fn()
+    harness.echo = true
+    try {
+      const { rerender } = render(
+        <ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />,
+      )
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => harness.fire!(1800, 1840, true))
+      onViewRangeChange.mockClear()
+
+      // 拖出已装载窗口 → cull 迁移 → 整窗重落。**手势仍未结束**（不 pointerUp）。
+      act(() => harness.fire!(2400, 2460, true))
+      rerender(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />)
+      act(() => harness.fire!(2410, 2470, true))
+      expect(onViewRangeChange, '手势未结束时迁移后的落位仍归用户，必须继续广播').toHaveBeenCalled()
+
+      // 手势结束后程序落位必须静默（#222 的原判据，两条既有用例之外的第三道）
+      onViewRangeChange.mockClear()
+      fireEvent.pointerUp(window)
+      act(() => harness.fire!(2420, 2480, true))
+      expect(onViewRangeChange, '手势结束后程序落位必须静默（#222）').not.toHaveBeenCalled()
+    } finally {
+      harness.echo = false
+      harness.views.length = 0
+    }
+  })
+
+  it('手势结束时落定广播一次：与末次广播不同才发（issue #222 第二层）', () => {
+    // 拖动途中裁剪窗口迁移的重落落点是机器算的，照旧静默；但手势真正停住的那一段必须
+    // 成为权威落点——否则兄弟格停在拖动早期/机器中间态的位置上（同周期四格实测三格齐刷刷 Δ11..11）。
+    const oneMin = makeCandles(800)
+    const onViewRangeChange = vi.fn()
+    harness.echo = true
+    harness.range = { from: 200, to: 240 }
+    vi.useFakeTimers()
+    try {
+      render(<ChartView {...base} period="1m" candles={oneMin} onViewRangeChange={onViewRangeChange} />)
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => harness.fire!(200, 240, true))
+      const duringDrag = onViewRangeChange.mock.calls.length
+      expect(duringDrag).toBeGreaterThanOrEqual(1)
+
+      // 手势结束：图表此刻停在别处（迁移/惯性留下的最终位置），落定那一拍要把它播出去
+      harness.range = { from: 260, to: 300 }
+      onViewRangeChange.mockClear()
+      fireEvent.pointerUp(window)
+      act(() => {
+        vi.runAllTimers()
+      })
+      expect(onViewRangeChange, '手势结束应按图表此刻的可见区间落定广播').toHaveBeenCalledTimes(1)
+      const settled = onViewRangeChange.mock.calls[0][0]
+      expect(settled.from).toBe(oneMin[260].time)
+      expect(settled.to).toBe(oneMin[300].time)
+
+      // 再来一次手势但**没有真的动**（末次可见区间与上次广播相同）→ 不该重复广播
+      onViewRangeChange.mockClear()
+      harness.range = { from: 260, to: 300 }
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      fireEvent.pointerUp(window)
+      act(() => {
+        vi.runAllTimers()
+      })
+      expect(onViewRangeChange, '末次落点没变就不该再发一条').not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+      harness.echo = false
+      harness.views.length = 0
+    }
+  })
+
   it('程序化落位（执行兄弟格指令）不再广播回去', () => {
     const oneMin = makeCandles(800)
     const onViewRangeChange = vi.fn()

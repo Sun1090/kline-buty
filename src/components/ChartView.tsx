@@ -327,6 +327,22 @@ export function ChartView({
   const switchIntentRef = useRef<{ key: string; toTime: number; spanMs: number; atTail: boolean } | null>(null)
   /** 最近一次可见区间（全局坐标），窗口重载后恢复视角用 */
   const lastVisibleRef = useRef<{ from: number; to: number } | null>(null)
+  /**
+   * 本格**最近一次真的广播出去**的时间区间（issue #222 第二层，2026-10-05）。
+   *
+   * 归属与「要不要广播」是两个问题，一个 ref 同时干两件事就是三轮反复的根：
+   *  - 拖动途中裁剪窗口迁移的那次重落，**归属**不能被夺走（否则余下整段拖动都不广播，
+   *    接收格停在拖动早期的位置上——第一层，CI 实测 `放行 0`）；
+   *  - 但那次重落的**落点是机器算的**，与用户手势真正停住的那一段并不一致，
+   *    广播出去就是让兄弟格去一个用户没要求的位置（同周期四格实测三格齐刷刷 `Δ11..11`）。
+   *
+   * 所以：**迁移重落照旧静默**（只是不夺归属），再在手势结束时做一次**落定广播**——
+   * 拿图表此刻真实的可见区间去对一次，与 `lastBroadcastRef` 不同才发。
+   * 于是「谁在这一格动手」与「广播哪一段」各归各的：迁移那拍不播，最终落点由手势结束那一拍说了算。
+   */
+  const lastBroadcastRef = useRef<{ from: number; to: number } | null>(null)
+  /** 手势结束时落定广播的定时器（wheel 150ms 静默那条也要用到） */
+  const settleTimerRef = useRef<number | null>(null)
   /** G2 周期切换锚定：最近可见区间的（右缘时间戳, 时间跨度），跨周期换算恢复视角用 */
   const lastVisibleTimeRef = useRef<{ toTime: number; spanMs: number } | null>(null)
   /** A11 可视起止时间戳（随缩放/平移更新），用于图表角落显示 */
@@ -413,9 +429,13 @@ export function ChartView({
   /** 把视角交给机器：这一次落位（以及它随后异步补发的那些事件）都不算「用户改了本格」。
    *  owned 归属归事件层管（pointerup/touchend/keyup/blur/wheel 静默 150ms 清归属）。
    *  本函数在「程序化落位」处把 owned 清掉——拖动过程中 cull 迁移也走这里，说明灌范式是把
-   *  整个程序落位段归属视为「机器」，而非用户手势，避免它被广播门误判成用户改了本格（issue #222）。 */
-  const withSilentView = (run: () => void) => {
-    viewOwnedByUserRef.current = false
+   *  整个程序落位段归属视为「机器」，而非用户手势，避免它被广播门误判成用户改了本格（issue #222）。
+   *
+   *  `keepOwned` 只给**一种**调用用：拖动途中的裁剪窗口迁移重落。它仍**不广播**
+   *  （那一步的落点是机器算的，见 settle 那一段），只是不夺走归属。
+   */
+  const withSilentView = (run: () => void, keepOwned = false) => {
+    if (!keepOwned) viewOwnedByUserRef.current = false
     run()
   }
   // 手势把视角要回给用户：指针/滚轮/触摸/键盘落在这一格（含格内「回到最新」这类按钮）之后，
@@ -432,10 +452,40 @@ export function ChartView({
       lastClaimAtRef.current = Date.now()
       logViewWrite('claim', { sym: symbol, type: e.type }, debugWritesRef.current)
     }
+    /**
+     * 手势结束：归还归属，并**落定广播**一次。
+     *
+     * 落定那一拍读的是图表此刻真实的可见区间（而不是手势过程中某一拍的中间值），
+     * 所以「拖动途中迁移重落算出来的落点」不参与广播——它本来就是机器的中间态。
+     * 与上一次广播相同则不发，避免手势末尾多出一条无意义的兄弟格落位。
+     */
     const release = (e: Event) => {
-      if (viewOwnedByUserRef.current)
+      const wasOwned = viewOwnedByUserRef.current
+      if (wasOwned)
         logViewWrite('release', { sym: symbol, type: e.type }, debugWritesRef.current)
       viewOwnedByUserRef.current = false
+      if (!wasOwned) return
+      if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current)
+      settleTimerRef.current = window.setTimeout(() => {
+        settleTimerRef.current = null
+        const api = apiRef.current
+        const all = allCandlesRef.current
+        if (!api || all.length === 0) return
+        const v = api.visibleRange()
+        if (!v) return
+        const { base } = loadedRef.current
+        const last = Math.max(0, all.length - 1)
+        const gFrom = Math.min(base + Math.max(0, Math.floor(v.from)), last)
+        const gTo = Math.max(gFrom, Math.min(base + Math.floor(v.to), last))
+        const from = all[gFrom]?.time
+        const to = all[gTo]?.time
+        if (from == null || to == null) return
+        const prev = lastBroadcastRef.current
+        if (prev && prev.from === from && prev.to === to) return
+        logViewWrite('settle', { sym: symbol, from, to }, debugWritesRef.current)
+        lastBroadcastRef.current = { from, to }
+        onViewRangeChangeRef.current?.({ from, to })
+      }, 0)
     }
     // wheel 没有「结束事件」：末次事件 150ms 后视为手势结束
     const wheelClaim = (e: Event) => {
@@ -642,6 +692,7 @@ export function ChartView({
         switchIntentRef.current = null
         if (tFrom != null && tTo != null) {
           logViewWrite('report', { sym: symbol, from: tFrom, to: tTo, owned: true, trusted }, debugWritesRef.current)
+          lastBroadcastRef.current = { from: tFrom, to: tTo }
           onViewRangeChangeRef.current?.({ from: tFrom, to: tTo })
         }
       } else if (tFrom != null && tTo != null) {
@@ -1155,7 +1206,16 @@ export function ChartView({
         withSilentView(() => api.setVisibleRange({ from: intentView.from - windowBase, to: intentView.to - windowBase }))
       } else if (cur) {
         const v = lastVisibleRef.current
-        if (v) withSilentView(() => api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase }))
+        // 走到这里且**没有**换周期意图 = 裁剪窗口在拖动途中迁移了。这一步的落点是机器按
+        // 上一片切片的索引还原的，与用户手势真正停住的那一段并不一致，所以**照旧静默**
+        // （不广播）；但它也不该夺走归属——否则余下整段拖动都不再广播，接收格会停在
+        // 拖动早期的位置上（issue #222 第一层，CI 实测 `放行 0`）。最终落点由手势结束
+        // 那一次的落定广播负责。
+        if (v)
+          withSilentView(
+            () => api.setVisibleRange({ from: v.from - windowBase, to: v.to - windowBase }),
+            true,
+          )
         if (replay) withSilentView(() => api.scrollToRealTime())
       } else if (replay) {
         withSilentView(() => api.fitContent())
