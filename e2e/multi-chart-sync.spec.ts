@@ -273,15 +273,11 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
           const tag = sym === CELLS[0] ? '锚' : `Δ${e ? e[0] - a[0] : '?'}..${e ? e[1] - a[1] : '?'}`
           return e ? `${sym.slice(0, 3)}(${MIXED[sym]}) ${tag} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
         }).join(' | ')
-        // 写点日志（#222 门控）：下一次红要能读出「到底有没有广播出去过」。
-        // 计数比尾部若干条更管用：只列最后几条时，看不出「全程一条 owned:true 都没有」
-        //（= 一次都没广播，接收格停在拖前）与「广播过、之后锚点自己又挪走」这两种病的分别。
-        const owned = viewWrites.filter((w) => w.includes('"owned":true')).length
-        const applied = viewWrites.filter((w) => w.startsWith('debugViewWrites: apply')).length
-        const tail = viewWrites.slice(-3).join(' ; ')
+        // 写点日志（#222 门控）：下一次红要能读出「第一拍是谁把接收格写到非广播位置的」
+        const tail = viewWrites.slice(-6).join(' ; ')
         return (
           `跑偏 ${off.length}/${tracked.length} ⇒ ${detail}` +
-          ` ‖锚跨${span} 写点[共${viewWrites.length} 放行${owned} 接收${applied} 尾:${tail}]`
+          ` ‖锚跨${span} 写点[${tail}]`
         )
       }, { timeout: 20_000, message: '混周期下比视角细的格子应停在同一段时间（各自周期取整）' })
       .toBe('synced')
