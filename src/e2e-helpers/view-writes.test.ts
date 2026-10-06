@@ -50,6 +50,39 @@ describe('summarizeViewWrites', () => {
     expect(summarizeViewWrites([line('claim'), line('release')])).not.toContain('手势未结束')
   })
 
+  // ↓ issue #279 的教训：release 必须按成因分开数。
+  // `release(pointerup)` 是手势正常收尾，`release(expired)` 是归属 3s 超时被兜底收回 ——
+  // 两者在判词里长得一模一样时，就分不清末位 report 的 `owned=false` 是「迁移夺走归属」
+  // 还是「拖太久被超时收走」。#279 第一次用整段摘要时就是这样读不出结论的。
+  it('release 按 type 分开数：pointerup 与 expired 不混为一谈', () => {
+    const s = summarizeViewWrites([line('claim'), line('release', { type: 'pointerup' })])
+    expect(s).toContain('pointerup×1')
+    expect(s).not.toContain('expired')
+  })
+
+  it('release(expired) 出现时明说归属曾被超时兜底收回', () => {
+    const s = summarizeViewWrites([line('claim'), line('release', { type: 'expired' })])
+    expect(s).toContain('expired×1')
+    expect(s, '这条是 #279 判词里缺的那句关键线索').toContain('归属曾被超时兜底收回')
+  })
+
+  it('两种 release 混合时各自计数（总数相同、成因不同，必须都读得出来）', () => {
+    const s = summarizeViewWrites([
+      line('claim'),
+      line('release', { type: 'pointerup' }),
+      line('claim'),
+      line('release', { type: 'expired' }),
+    ])
+    expect(s).toContain('pointerup×1')
+    expect(s).toContain('expired×1')
+  })
+
+  it('只数总数、把成因丢掉的老写法必须被本组判据排除', () => {
+    // 对照：两次 release 但只有总数时读不出成因 —— 正是 #279 卡住的地方
+    const onlyCount = summarizeViewWrites([line('claim'), line('release'), line('release')])
+    expect(onlyCount).not.toContain('expired')
+  })
+
   it('settle 的 via 分布把 pointerup 与 late-event 分开数', () => {
     const s = summarizeViewWrites([
       line('settle', { via: 'pointerup' }),

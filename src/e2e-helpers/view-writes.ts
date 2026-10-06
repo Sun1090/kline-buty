@@ -35,6 +35,8 @@ export interface ViewWrite {
   from?: number
   to?: number
   via?: string
+  /** `release` 的成因：`pointerup` = 手势正常结束；`expired` = 归属 3s 超时兜底 */
+  type?: string
 }
 
 /** 判词里摘要的最大字符数（超了截断并标出被截掉多少） */
@@ -60,6 +62,7 @@ export function parseViewWrite(line: string): ViewWrite | null {
       from: typeof raw.from === 'number' ? raw.from : undefined,
       to: typeof raw.to === 'number' ? raw.to : undefined,
       via: typeof raw.via === 'string' ? raw.via : undefined,
+      type: typeof raw.type === 'string' ? raw.type : undefined,
     }
   } catch {
     return null
@@ -86,9 +89,31 @@ export function summarizeViewWrites(lines: readonly string[]): string {
     .join(' | ')
 
   // ③ claim / release 配对：claim 多于 release = 手势没结束（归属粘住）
+  //
+  // **release 必须按成因分开数**（issue #279 的教训）：`release(pointerup)` 与
+  // `release(expired)` 含义相反 —— 前者是手势正常收尾，后者是归属 3s 超时被兜底收回
+  // （`OWNED_MAX_MS`）。只数总数时，这两种在判词里长得一模一样，于是「末位 report 是
+  // `owned=false`、说明归属在拖动途中被收走了」这个关键线索**读不出来**。
+  // #279 第一次用整段摘要时就是这样：只能看到 `claim1/release1`，无法判断那一次 release
+  // 是手势结束还是超时兜底，于是分不清是「迁移夺走归属」还是「超时收走归属」。
   const claims = counts.claim ?? 0
+  const releaseByType: Record<string, number> = {}
+  for (const w of parsed) {
+    if (w.kind !== 'release') continue
+    const t = w.type ?? '(无 type)'
+    releaseByType[t] = (releaseByType[t] ?? 0) + 1
+  }
   const releases = counts.release ?? 0
-  const pairing = `claim${claims}/release${releases}${claims > releases ? '(手势未结束!)' : ''}`
+  const releaseBreakdown = Object.entries(releaseByType)
+    .map(([t, n]) => `${t}×${n}`)
+    .join('+')
+  let pairing =
+    `claim${claims}/release${releases}${claims > releases ? '(手势未结束!)' : ''}` +
+    (releaseBreakdown ? `(${releaseBreakdown})` : '')
+  // 归属是否被超时兜底收走过：有 expired 就说明拖动途中归属被收走，末位 report 自然是 owned=false
+  if ((releaseByType.expired ?? 0) > 0) {
+    pairing += ' ⚠归属曾被超时兜底收回'
+  }
 
   // ④ settle 的 via 分布：`pointerup` 那一拍 vs `late-event` 补的那一拍
   const settleVia = parsed.filter((w) => w.kind === 'settle')
