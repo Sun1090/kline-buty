@@ -1,4 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import {
+  edgeDeltaMinutes,
+  formatCellRanges,
+  readCellRanges,
+  spanMinutes,
+  type CellRange,
+} from '../src/e2e-helpers/cell-range'
 import { summarizeViewWrites } from '../src/e2e-helpers/view-writes'
 
 /**
@@ -22,22 +29,12 @@ const PERF_COUNT = 1_500
 /** 每格周期折算分钟：混周期下允许各格停在自己网格上，取整误差不能超过一根 */
 const PERIOD_MINUTES: Record<string, number> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60 }
 
-/** A11 文本 → 视角起止分钟数（同一天的相对分钟，只用来比距离，不去解析绝对日期） */
-function edgeMinutes(text: string): [number, number] | null {
-  const hits = [...text.matchAll(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/g)].map(
-    (m) => (Number(m[1]) * 31 + Number(m[2])) * 1440 + Number(m[3]) * 60 + Number(m[4]),
-  )
-  return hits.length >= 2 ? [hits[0], hits[hits.length - 1]] : null
-}
-
-/** A11 文本 → 跨度分钟数（只用来判「这是一次真平移」，不去解析绝对时间） */
-async function spanMinutes(page: Page, symbol: string): Promise<number> {
-  const t = (await cellRangeTexts(page))[symbol] ?? ''
-  const e = edgeMinutes(t)
-  return e ? e[1] - e[0] : -1
-}
-
-/** 每格的 A11 可视时间范围文本（格内查，避免拿到别的格/别的图表） */
+/**
+ * A11 文本（每格一条，格内查避免拿到别的格）。
+ *
+ * 文本**只进失败判词**给人读；一切判定走 `readCellRanges` 的原始秒
+ * （见 `src/e2e-helpers/cell-range.ts` 顶部：文本口径在跨月界上会把 120 分钟读成 1560）。
+ */
 function cellRangeTexts(page: Page): Promise<Record<string, string>> {
   return page.evaluate((syms) => {
     const out: Record<string, string> = {}
@@ -53,6 +50,26 @@ function cellRangeTexts(page: Page): Promise<Record<string, string>> {
     }
     return out
   }, CELLS)
+}
+
+/**
+ * 每格区间（秒）。缺格/未上报区间 → `null`（判词显式报「无区间」，不静默算成 0）。
+ * `missingAttr` 一并带回：A11 条在、但原始秒属性读不出来 = 构建里属性被改名/没写，
+ * 那是**接线坏了**而不是瞬态，判词必须把它单独喊出来（否则只会轮询到超时）。
+ */
+function cellRanges(page: Page) {
+  return readCellRanges(page, CELLS)
+}
+
+/** 把「A11 接线坏了」这个真缺陷提到判词最前面 —— 它一旦出现，后面怎么比都没有意义 */
+function missingAttrHint(state: { missingAttr: string[] }): string | null {
+  return state.missingAttr.length > 0 ? `A11 接线坏：读不到 ${state.missingAttr.join('/')} 的原始秒属性` : null
+}
+
+/** 跨度（分钟）；无区间 → -1（与旧口径同形，判词里带 -1 就是「读不到」） */
+function spanOf(ranges: Record<string, CellRange | null>, sym: string): number {
+  const r = ranges[sym]
+  return r ? spanMinutes(r) : -1
 }
 
 /** 把四格周期统一到 1m（默认可能各不相同，索引空间不同就没法逐字比） */
@@ -148,9 +165,18 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
       )
       .toBe(CELLS.length)
 
+    // A11 接线的前置门：四格都得能读出**原始秒**。读不到文本不一定是坏（文本是空的
+    // 也可能只是还没上报），但读不到秒属性只可能是属性没写/被改名 —— 那时后面两条
+    // 判据全都退化成「读不到 → 算偏」，只会给出一句无信息量的超时红。
+    const precheck = await cellRanges(page)
+    expect(
+      missingAttrHint(precheck),
+      `四格都该读出 data-visible-from/to（读到的：${formatCellRanges(precheck.ranges, CELLS[0])}）`,
+    ).toBeNull()
+
     const before = await cellRangeTexts(page)
-    const beforeSpan = await spanMinutes(page, CELLS[0])
-    expect(beforeSpan).toBeGreaterThan(0)
+    const beforeSpan = spanOf(precheck.ranges, CELLS[0])
+    expect(beforeSpan, `拖前锚格跨度（判词：${formatCellRanges(precheck.ranges, CELLS[0])}）`).toBeGreaterThan(0)
     await panCell(page, CELLS[0], 260)
 
     // 被拖那格确实平移进了历史：文本变了，且跨度仍是同一个量级
@@ -167,7 +193,10 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     await expect
       .poll(
         async () => {
-          const s = await spanMinutes(page, CELLS[0])
+          const state = await cellRanges(page)
+          const hint = missingAttrHint(state)
+          if (hint) return hint
+          const s = spanOf(state.ranges, CELLS[0])
           return s >= beforeSpan * 0.6 && s <= beforeSpan * 1.6 ? 'in-band' : `out:${s}`
         },
         {
@@ -184,26 +213,28 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     await expect
       .poll(async () => {
         const now = await cellRangeTexts(page)
-        const anchor = now[CELLS[0]]
-        if (!anchor || anchor === before[CELLS[0]]) return `源格未平移：${JSON.stringify(now)}`
+        const state = await cellRanges(page)
+        const hint = missingAttrHint(state)
+        if (hint) return hint
+        const ranges = state.ranges
+        const anchorSym = CELLS[0]
+        const anchor = ranges[anchorSym]
+        if (!anchor) return `锚格无区间：${formatCellRanges(ranges, anchorSym)}`
+        if (now[anchorSym] === before[anchorSym]) return `源格未平移：${JSON.stringify(now)}`
         const moved = CELLS.slice(1).filter((sym) => now[sym] !== before[sym]).length
-        const a = edgeMinutes(anchor)
-        if (!a) return `源格文本解析失败：${anchor}`
         const off = CELLS.filter((sym) => {
-          const e = edgeMinutes(now[sym])
-          return !e || Math.abs(e[0] - a[0]) > 5 || Math.abs(e[1] - a[1]) > 5
+          const r = ranges[sym]
+          if (!r) return true // 读不到区间一律算偏：宁可红，也不放过「没读数」
+          const [d0, d1] = edgeDeltaMinutes(r, anchor)
+          return Math.abs(d0) > 5 || Math.abs(d1) > 5
         }).length
         // 判词带上「每格相对锚点的两缘位移 + 自己的跨度」，红的时候直接分得出两种病：
         //   Δ0..0 跨53 三格 + 一格 Δ6..4 跨51 ⇒ 只有某个接收格落地偏窄 = 回声往返（issue #194 实测形态）
         //   四缘齐刷刷同向偏 ⇒ 锚点自己被人挪走 = 广播侧的问题，该去查发起格
         // 只写「跑偏 N/4」时这两种是同一句话，而它们该修的地方完全不同。
-        const detail = CELLS.map((sym) => {
-          const e = edgeMinutes(now[sym])
-          return e ? `${sym.slice(0, 3)} Δ${e[0] - a[0]}..${e[1] - a[1]} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
-        }).join(' | ')
         return moved === CELLS.length - 1 && off === 0
           ? 'synced'
-          : `动了 ${moved}/3，跑偏 ${off}/4 ⇒ ${detail} ‖ ${summarizeViewWrites(viewWrites)}`
+          : `动了 ${moved}/3，跑偏 ${off}/4 ⇒ ${formatCellRanges(ranges, anchorSym)} ‖ ${summarizeViewWrites(viewWrites)}`
       }, { timeout: 20_000, message: '四格可视时间范围应被广播到同一段' })
       .toBe('synced')
 
@@ -244,10 +275,16 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     await expect
       .poll(
         async () => {
-          const now = await cellRangeTexts(page)
-          const thin = CELLS.map((sym) => [sym, edgeMinutes(now[sym])] as const)
-            .filter(([, e]) => !e || e[1] - e[0] < 10)
-            .map(([sym, e]) => `${sym}(${MIXED[sym]})跨度=${e ? e[1] - e[0] : '解析失败'}`)
+          const state = await cellRanges(page)
+          const hint = missingAttrHint(state)
+          if (hint) return hint
+          const ranges = state.ranges
+          const thin = CELLS.map((sym) => [sym, ranges[sym]] as const)
+            .filter(([, r]) => !r || spanMinutes(r) < 10)
+            .map(
+              ([sym, r]) =>
+                `${sym}(${MIXED[sym]})跨度=${r ? Math.round(spanMinutes(r)) : '无区间（读不到 A11 原始秒）'}`,
+            )
           return thin.length === 0 ? 'ok' : `被挤扁：${thin.join(' ')}`
         },
         { timeout: 20_000, message: '混周期下每格都该看得见一段时间，而不是被索引窗口压扁' },
@@ -262,15 +299,22 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
     await expect
       .poll(async () => {
         const now = await cellRangeTexts(page)
-        const a = edgeMinutes(now[CELLS[0]])
-        if (!a) return `源格文本解析失败：${now[CELLS[0]]}`
-        if (now[CELLS[0]] === before[CELLS[0]]) return `源格未平移：${now[CELLS[0]]}`
-        const span = a[1] - a[0]
+        const state = await cellRanges(page)
+        const hint = missingAttrHint(state)
+        if (hint) return hint
+        const ranges = state.ranges
+        const anchorSym = CELLS[0]
+        const a = ranges[anchorSym]
+        if (!a) return `源格无区间：${formatCellRanges(ranges, anchorSym)}`
+        if (now[anchorSym] === before[anchorSym]) return `源格未平移：${now[anchorSym]}`
+        const span = spanMinutes(a)
         const tracked = CELLS.slice(1).filter((sym) => PERIOD_MINUTES[MIXED[sym]] * 2 <= span)
         const off = tracked.filter((sym) => {
-          const e = edgeMinutes(now[sym])
+          const r = ranges[sym]
+          if (!r) return true // 读不到区间一律算偏
           const slack = PERIOD_MINUTES[MIXED[sym]] + 2
-          return !e || Math.abs(e[0] - a[0]) > slack || Math.abs(e[1] - a[1]) > slack
+          const [d0, d1] = edgeDeltaMinutes(r, a)
+          return Math.abs(d0) > slack || Math.abs(d1) > slack
         })
         if (off.length === 0) return 'synced'
         // 判词必须能分出两种病，它们该修的地方完全不同（与上面那条同源判据）：
@@ -280,9 +324,10 @@ test.describe('多图视角同步（四图时间轴联动）', () => {
         //   两缘**反向**偏（跨度被压窄/撑宽）= 某个接收格落地偏窄，是回声往返（issue #194 形态）。
         // 只列「跑偏 SYM=文本」时这两种是同一句话，红了也不知道该读哪条链路。
         const detail = CELLS.map((sym) => {
-          const e = edgeMinutes(now[sym])
-          const tag = sym === CELLS[0] ? '锚' : `Δ${e ? e[0] - a[0] : '?'}..${e ? e[1] - a[1] : '?'}`
-          return e ? `${sym.slice(0, 3)}(${MIXED[sym]}) ${tag} 跨${e[1] - e[0]}` : `${sym.slice(0, 3)} 无文本`
+          const r = ranges[sym]
+          if (!r) return `${sym.slice(0, 3)}(${MIXED[sym]}) 无区间`
+          const tag = sym === anchorSym ? '锚' : `Δ${edgeDeltaMinutes(r, a).join('..')}`
+          return `${sym.slice(0, 3)}(${MIXED[sym]}) ${tag} 跨${Math.round(spanMinutes(r))}`
         }).join(' | ')
         // 写点日志（#222/#279 门控）：下一次红要能读出「第一拍是谁把接收格写到非广播位置的」。
         // 这里用**整段摘要**而不是尾部 6 条 —— 尾部取样曾把 settle 挤出窗口，
