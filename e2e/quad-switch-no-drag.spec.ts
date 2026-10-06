@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { summarizeViewWrites } from '../src/e2e-helpers/view-writes'
 
 /**
  * #199 换掉一格的周期，不许把其余三格的视角挪走。
@@ -31,6 +32,85 @@ const CELLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']
 /** 四格统一到 5m：同周期才允许逐秒比，换周期那格随后单独改成 1h（比值 12） */
 const BASE_PERIOD = '5m'
 const BASE_SECONDS = 300
+
+/**
+ * 落位跟踪：一拍区间与上一拍**一字不差**才算稳定。
+ * 区间读不到（null）时稳定计数必须清零 —— 装载过程中 data-visible-from 会短暂消失，
+ * 沿用上一次读数当基线会把闪烁当成「一直没变」，落位被提前判定。
+ */
+function trackSettle(
+  now: { from: number; to: number } | null,
+  prev: { from: number; to: number } | null,
+  stable: number,
+): { prev: { from: number; to: number } | null; stable: number } {
+  if (now === null) return { prev: null, stable: 0 }
+  const same = prev !== null && prev.from === now.from && prev.to === now.to
+  return { prev: now, stable: same ? stable + 1 : 0 }
+}
+
+/**
+ * 最远那一格的位移描述。**形状必须分两种报**：整片平移 vs 跨度被压/涨 ——
+ * 两者修法完全不同，而 `drift`（两边之和）会把纯平移读成两倍量级。
+ */
+function describeShift(
+  sym: string,
+  drift: number,
+  w: { from: number; to: number },
+  b: { from: number; to: number },
+): string {
+  const fromShift = w.from - b.from!
+  const toShift = w.to - b.to!
+  const span = w.to - w.from
+  const baseSpan = b.to! - b.from!
+  const shape =
+    fromShift === toShift
+      ? `整片平移 ${Math.abs(fromShift)}s（跨度未变，${baseSpan}s）`
+      : `跨度 ${baseSpan}s→${span}s（起偏 ${fromShift}s、止偏 ${toShift}s）`
+  return `${sym} ${shape}；drift=${drift}s（=|Δfrom|+|Δto|，非平移距离）起 ${b.from}→${w.from}，止 ${b.to}→${w.to}`
+}
+
+/**
+ * 逐拍序列 → `BTCUSDT 0 0 -30 -30` 这样的可读串。
+ *
+ * 元素类型放宽到 `string | number`：在场性那一路会记「读不到」（`—`），
+ * 数据首根那一路是纯数字。原来签名写死 `number[]`，编译不过只能把判词整段内联回去 ——
+ * 内联的代价是把「整片平移 vs 跨度被压涨」这个区分埋回 expect 的参数里。
+ */
+function fmtSeq(m: Record<string, (string | number)[]>): string {
+  return Object.entries(m)
+    .map(([s, t]) => `${s} ${t.join(' ')}`)
+    .join('；')
+}
+
+/**
+ * 「其余三格被挪走」这条红 的完整判词。
+ *
+ * 规则 1：观测量必须覆盖总体。原先这里是 `viewWrites.slice(-60)`，观测量比总体小 ——
+ * 换周期本身会追加大量写点，把**开头**那几条（恰好是「换周期第一拍按新周期在旧序列上
+ * 算根数」那两次广播）挤出窗口，于是红的时候判词恰好读不到成因。
+ * 本机实测：82 条里 `slice(-60)` 只看得见 `settle×60`，两次 `report` 全被挤掉；
+ * 整段摘要则是 `report×2 settle×80`。定位真缺陷要靠的就是那两条。
+ */
+function worstDriftVerdict(i: {
+  detail: string
+  solReport: string
+  settledSample: number | null
+  samples: number
+  worstSym: string | null
+  traces: Record<string, string[]>
+  btl: Record<string, (string | number)[]>
+  heads: Record<string, (string | number)[]>
+  viewWrites: readonly string[]
+}): string {
+  return (
+    `其余三格中挪得最远的一格：${i.detail}；观测窗跑了 ${i.solReport}，` +
+    `${SWITCHED} 于第 ${i.settledSample ?? i.samples} 拍落位` +
+    (i.worstSym ? `；${i.worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${i.traces[i.worstSym].join(' ')}` : '') +
+    `；回到最新在场性（1=在/0=不在/—=读不到）：${fmtSeq(i.btl)}` +
+    `；数据首根 Δ秒（相对换前基线）：${fmtSeq(i.heads)}` +
+    `；视角写点整段摘要：${summarizeViewWrites(i.viewWrites)}`
+  )
+}
 const SWITCHED = 'SOLUSDT'
 
 /** 每格可视区间的**原始秒**（A11 条上的 data-visible-from/to）+ 数据首根时刻（data-first-candle） */
@@ -259,18 +339,23 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
         if (drift > worst) {
           worst = drift
           worstSym = sym
+          // `w.from/to` 已由上面那个 `if (… === null) continue` 收窄成 number，但**属性收窄
+          // 不会收窄对象本身** —— 直接把 `w` 传进去仍然带着 `number | null`（CI 的
+          // Typecheck + Lint 就是这么红的，而本机 `tsc -p tsconfig.e2e.json` 也红）。
+          const wFrom = w.from
+          const wTo = w.to
+          const bFrom = base[sym].from
+          const bTo = base[sym].to
+          // 基线读不到时上面 `Math.abs(... - undefined)` 得到 NaN，`NaN > worst` 恒假，
+          // 所以进不到这个分支；显式判一次是为了让类型和运行时都不再依赖那层巧合。
+          if (bFrom === null || bTo === null) {
+            detail = `${sym} 的基线区间读不到（换周期前就没上报）`
+            continue
+          }
           // 判词必须把「两条边之和」与「实际挪走了多久」分开写：drift 是 |Δfrom|+|Δto|，
           // 一次纯平移会被读成两倍量级（CI 上那次报 2400s，实际整片只平移了 1200s）。
           // span 是否为 0 决定这是「整片平移」还是「视角被压/涨」，两者修法完全不同。
-          const fromShift = w.from - base[sym].from!
-          const toShift = w.to - base[sym].to!
-          const span = w.to - w.from
-          const baseSpan = base[sym].to! - base[sym].from!
-          const shape =
-            fromShift === toShift
-              ? `整片平移 ${Math.abs(fromShift)}s（跨度未变，${baseSpan}s）`
-              : `跨度 ${baseSpan}s→${span}s（起偏 ${fromShift}s、止偏 ${toShift}s）`
-          detail = `${sym} ${shape}；drift=${drift}s（=|Δfrom|+|Δto|，非平移距离）起 ${base[sym].from}→${w.from}，止 ${base[sym].to}→${w.to}`
+          detail = describeShift(sym, drift, { from: wFrom, to: wTo }, { from: bFrom, to: bTo })
         }
       }
       const elapsed = Date.now() - startedAt
@@ -279,16 +364,11 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
       // 那会让窗口在广播到来之前就收工。
       // 这一格读不到区间时必须把稳定计数清零：装载过程中 data-visible-from 会短暂消失，
       // 若沿用上一次的读数当基线，闪烁会被当成「一直没变」，落位于是被提前判定。
-      if (!solNow) {
-        solMissing++
-        solStable = 0
-        solPrev = null
-      } else {
-        if (solPrev && solPrev.from === solNow.from && solPrev.to === solNow.to) solStable++
-        else solStable = 0
-        solPrev = solNow
-        solWindow = solNow
-      }
+      const st = trackSettle(solNow, solPrev, solStable)
+      solPrev = st.prev
+      solStable = st.stable
+      if (solNow === null) solMissing++
+      else solWindow = solNow
       if (solStable >= SETTLE_STABLE && solSettledSample === null) solSettledSample = samples
       settled = elapsed >= FLOOR_MS && solWindow !== null && solStable >= SETTLE_STABLE
       if (!settled && elapsed >= CAP_MS) {
@@ -312,19 +392,7 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
-      `其余三格中挪得最远的一格：${detail}；观测窗跑了 ${solReport}，${SWITCHED} 于第 ${solSettledSample ?? samples} 拍落位` +
-        (worstSym
-          ? `；${worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${traces[worstSym].join(' ')}`
-          : '') +
-        `；回到最新在场性（1=在/0=不在/—=读不到）：${Object.entries(btl)
-          .map(([s, t]) => `${s} ${t.join(' ')}`)
-          .join('；')}` +
-        `；数据首根 Δ秒（相对换前基线）：${Object.entries(heads)
-          .map(([s, t]) => `${s} ${t.join(' ')}`)
-          .join('；')}` +
-        (viewWrites.length
-          ? `；视角写点日志（tail 60）：\n${viewWrites.slice(-60).join('\n')}`
-          : '；视角写点日志：无（flag 未生效或无写发生）'),
+      worstDriftVerdict({ detail, solReport, settledSample: solSettledSample, samples, worstSym, traces, btl, heads, viewWrites }),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
