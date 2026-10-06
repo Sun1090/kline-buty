@@ -149,6 +149,32 @@ const base = {
  * 整段抓 `debugViewWrites:` 日志并**按 kind 计数**。
  * 刻意不取尾部样本 —— 见文件头「为什么用整段计数而不是尾部取样」。
  */
+/**
+ * 按 `release` 的 **type** 计数。`expired` 不是独立的 kind —— 它是
+ * `release` 的一种成因（`ChartView.tsx:643`），只看 kind 会把它算进普通 release，
+ * 于是「归属被超时收走」与「手势正常结束」又混成一团。
+ */
+function captureReleaseTypes(run: () => void): Record<string, number> {
+  const counts: Record<string, number> = {}
+  const spy = vi.spyOn(console, 'debug').mockImplementation((...args: unknown[]) => {
+    const line = String(args[0] ?? '')
+    if (!line.startsWith('debugViewWrites: release ')) return
+    try {
+      const body = JSON.parse(line.slice('debugViewWrites: release '.length)) as { type?: string }
+      const t = body.type ?? '(无 type)'
+      counts[t] = (counts[t] ?? 0) + 1
+    } catch {
+      /* 坏 JSON 不该让判据炸掉 */
+    }
+  })
+  try {
+    run()
+  } finally {
+    spy.mockRestore()
+  }
+  return counts
+}
+
 function captureKinds(run: () => void): Record<string, number> {
   const counts: Record<string, number> = {}
   const spy = vi.spyOn(console, 'debug').mockImplementation((...args: unknown[]) => {
@@ -298,6 +324,67 @@ describe('#222 第二层：settle 落定广播的整段计数判据', () => {
     expect(
       counts.settle ?? 0,
       '迁移拖动结束时落定广播仍要发出（第二层没被第一层掐掉）',
+    ).toBe(1)
+  })
+})
+
+describe('#222/#279：手势超过 OWNED_MAX_MS 时归属被超时兜底收走（CI 判词实证）', () => {
+  // 判词原文（PR #283 的 E2E run 37392234039，chromium 三次尝试一致）：
+  //   claim1/release1(expired×1) ⚠归属曾被超时兜底收回 settle×0
+  //   末位落点: BTC report owned=false | ETH/SOL/BNB report owned=false
+  // 即：锚格最后那一拍的广播**被广播门挡下**，而归属是被 3s 超时兜底收回的，
+  // 不是被 cull 迁移夺走的。根因：`lastClaimAtRef` 只在 pointerdown 更新一次，
+  // 手势途中不再刷新 —— 于是 OWNED_MAX_MS 实际是「手势时长上限 3 秒」，
+  // 而不是一个「空闲超时」。e2e 的 `panCell` 有 24 次串行 mouse.move，
+  // 在 CI 上轻易超过 3 秒墙钟。
+  it('手势持续超过 3 秒时，归属不应被超时兜底收回（末位 report 应仍 owned=true）', () => {
+    vi.useFakeTimers()
+    const counts = captureReleaseTypes(() => {
+      render(<ChartView {...base} candles={makeCandles(800)} onViewRangeChange={vi.fn()} />)
+      harness.range = { from: 200, to: 240 }
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => {
+        harness.fire!(200, 240, true)
+      })
+      // 手势仍在继续，但已经过了 OWNED_MAX_MS（3s）：此时**又来了一帧**用户拖动
+      act(() => {
+        vi.advanceTimersByTime(3_500)
+        harness.fire!(180, 220, true)
+      })
+    })
+
+    // 这一帧仍然是「用户正在拖动」，不该因为耗时超过 3s 就被当成手势已放弃
+    expect(
+      counts.expired ?? 0,
+      '手势仍在进行时不应触发归属超时兜底——否则慢一点的拖动会被判成放弃',
+    ).toBe(0)
+  })
+
+  // 反向对照：兜底**不能**被顺延逻辑顺手废掉。webkit 的合成鼠标序列可能压根不派发
+  // pointerup（issue #222 的起因），此时没有任何用户事件来顺延计时器，
+  // 归属必须仍然自动归还、程序落位不许被当成用户意图广播。
+  it('手势真正静止（无任何后续用户事件）时，归属仍须被超时兜底收回', () => {
+    vi.useFakeTimers()
+    const counts = captureReleaseTypes(() => {
+      render(<ChartView {...base} candles={makeCandles(800)} onViewRangeChange={vi.fn()} />)
+      harness.range = { from: 200, to: 240 }
+      fireEvent.pointerDown(screen.getByTestId('chart-root'))
+      act(() => {
+        harness.fire!(200, 240, true)
+      })
+      // 手势**停住**：只有时间流逝，没有任何新的用户驱动事件
+      act(() => {
+        vi.advanceTimersByTime(3_500)
+      })
+      // 此刻来的是程序化落位（trusted=false），不是用户拖动
+      act(() => {
+        harness.fire!(180, 220, false)
+      })
+    })
+
+    expect(
+      counts.expired ?? 0,
+      '手势静止后必须仍然超时兜底——否则 #222 的修复（程序落位不广播）就废了',
     ).toBe(1)
   })
 })
