@@ -10,6 +10,7 @@
     "e2e/feature-gaps-more3.spec.ts",
     "e2e/feature-gaps-more4.spec.ts",
     "e2e/feature-gaps.spec.ts",
+    "e2e/gesture-idle-timeout.spec.ts",
     "e2e/indicator-crosshair.spec.ts",
     "e2e/limit-orders.spec.ts",
     "e2e/marker-render.spec.ts",
