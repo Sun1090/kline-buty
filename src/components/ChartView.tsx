@@ -638,7 +638,24 @@ export function ChartView({
     const onVisibleRange = (from: number, to: number, trusted = true) => {
       const now = Date.now()
       // 归属过期兜底（issue #222）：webkit 的合成鼠标序列可能不派发 pointerup，
-      // owned 会粘 true 并把程序落位当用户意图广播。手势序列超 3s 无新事件 → 归属自动归还。
+      // owned 会粘 true 并把程序落位当用户意图广播。**手势静止超 3s** → 归属自动归还。
+      //
+      // 「静止」不是「手势开始至今」：`lastClaimAtRef` 原先只在 pointerdown 写一次，
+      // 拖动途中不再刷新，于是 OWNED_MAX_MS 实际成了**手势时长上限**而不是空闲超时
+      // ——一次超过 3 秒的正常慢拖动会被判成「手势已放弃」，归属当场收回，
+      // 之后每一帧的 report 都因 owned=false 被广播门挡下，兄弟格就此停在旧位置。
+      // CI 判词实证（issue #279 / PR #283 run 37392234039，chromium 三次尝试一致）：
+      //   claim1/release1(expired×1) ⚠归属曾被超时兜底收回 settle×0
+      //   末位落点: BTC/ETH/SOL/BNB report owned=false
+      // e2e 的 panCell 有 24 次串行 mouse.move，在 CI 上轻易超过 3 秒墙钟，
+      // 于是这条**稳定复现**。所以这里必须按「距上一次用户事件」计时：
+      // 用户驱动的可见区间事件本身就是「手势仍在进行」的新证据。
+      // 「静止」的判据是「距上一次**用户手势事件**超过 3s」，所以**用户驱动的可见区间
+      // 事件本身就是手势仍在进行的证据**：它先于超时判定顺延计时器，再判超时。
+      // 顺序很重要——反过来写的话，超时那一帧会把计时器推回去，兜底永远不触发，
+      // 而这正是本条要修的那个 bug（原先根本没有顺延，只有 pointerdown 写过一次）。
+      const userDriving = trusted && viewOwnedByUserRef.current
+      if (userDriving) lastClaimAtRef.current = now
       if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
         logViewWrite('release', { sym: symbol, type: 'expired' }, debugWritesRef.current)
         viewOwnedByUserRef.current = false
