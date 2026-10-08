@@ -430,17 +430,23 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 
 ## 当前阶段
 
-**进入 RELEASE_FREEZE：v0.5.36（2026-10-08，分支 `chore/release-v0.5.36`，待 PR 合并）**
+**RELEASE_FREEZE：v0.5.36 发布完成（2026-10-08）**
 
-- 自 v0.5.35 积的是 #222 多图表同步归属/广播拆开（main `e580a52`，迁移重落静默但不夺归属 +
-  手势结束落定广播）与 #279 归属超时改按「手势静止」计时（main `b58bcc8`，慢拖动不再被判成放弃）。
-  两者都是产品行为修复 → 按 bug fix 定 **patch：0.5.35 → 0.5.36**。
-- 版本 4 处：`package.json` / `package-lock.json`（根 + packages[""]）/ `index.html` meta `app-version`。
-- CHANGELOG 增 `[v0.5.36]` 段；`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
-- 本地门禁复验（node v24，`npm ci`）：typecheck(app+e2e) 0 / lint 0 errors（33 warnings = 基线）/
-  单测 2101 passed / 181 files / `npm run build` 成功（dist meta 实测 0.5.36）。
-- ⚠️ #222 / #279 **保持 OPEN**（规则 3，单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
-- tag / Pages / Vercel / smoke test 在合并后核验，届时补记本条。
+- 版本号：**0.5.36**（package.json / package-lock 根两处 / index.html meta `app-version`，共 4 行）
+- 发布 PR：**#294**（squash 合并 → main **4ee3d82**，合并后即删远端分支）；CI 十项全绿 attempt 1
+  （E2E 三浏览器 ~35m）。发布判据：自 v0.5.35 以来积的是 #222/#279 两笔产品行为修复
+  （归属/广播拆开 `e580a52`、归属超时按手势静止计时 `b58bcc8`）→ 按「bug fix → patch」定 patch。
+- tag：**v0.5.36 @ 4ee3d82**，由 Release Tag workflow 自动创建（`git ls-remote --tags` 实证）；惯例 tag-only 不建 GitHub Release。
+- 部署：Deploy to GitHub Pages run 37797186256 **success**；线上 Pages `meta[app-version]` 实测 **0.5.36**（curl 抽查）；
+  入口 JS `index-4Bho7SFl.js` HTTP 200；PR #294 的 Vercel 门对 head 提交 **SUCCESS**（GitHub deployments API 实证——
+  本机网络到 vercel.app 不通，域名侧抽查以 GitHub 状态为准）。
+- **smoke test（浏览器实跑线上 Pages）**：标题「Kline Buty · 实时 K 线」、`hasCanvas=true`、行情列表已渲染、
+  **console errors 0**（仅 1 条 ResizeObserver 良性警告，lightweight-charts 常见噪声）。
+- 本版收录见 CHANGELOG `[v0.5.36]` 段；门禁：本地 2101 passed/181 files、typecheck/lint(0 errors)/build 干净；
+  合并后 main 五道（CI/Release Tag/Pages/CodeQL/android-apk）全绿。
+- 迁移与回滚：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
+- ⚠️ #222 / #279 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+- 下一项：发布后重新检查仓库，推进可执行的下一主题（见「当前阶段」小结与「恢复入口」）。
 - 更新日：2026-10-08
 
 ---
