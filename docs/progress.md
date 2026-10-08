@@ -508,16 +508,22 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
   - 平移发生在第 2 拍，而换周期的 SOL 第 5 拍才落位 ⇒ **平移早于换格落位**。
   - **ETH 与 BNB（两个不同品种）末位落在同一个绝对窗 `1791443700→1791470100`**；SOL 落 `1791446400→1791468000`
     ⇒ 两格落同一窗只能来自**同一次广播**。
-  - 写点摘要 `BTC 放行 46 次`、三接收格 report `owned=false`、`claim×1/release×1` 配平。
+  - 三接收格末位 report `owned=false`、`claim×1/release×1` 配平。
+    ⚠️ 别把摘要里的 `BTC 放行 46 次` 当「换格后锚格还在广播」的证据——按 `view-writes.ts:101`
+    该计数是**整段累计**（锚格 `owned===true` 的 `report` 条数），而换格前 `panIntoHistory` 就发 24 帧拖动
+    （`spec.ts:204`，每帧 `owned=true`），46 次几乎全来自这段拖拽。**规则 1 的老坑：整段计数 ≠ 子窗口事件**。
+    唯一站得住的「有广播发生」信号是上面那条 **ETH+BNB 末位落同一绝对窗**。
 - **已定位到的范围**：sync 广播/接收链路（不是超时、不是数据头、不是压窄）。#222 状态 = **已复现 + 判词已指向 sync 链路，待根因**。
-- **给下一个接手的人的可执行下一步（先读代码、别先改）**：本条用例换 `SOL→1h` 之后再没拖任何一格，
-  可判词显示 **BTC 广播放行了 46 次（owned=true 路径）**——无拖动阶段锚格为何仍以「用户改的本格」广播？
-  顺读 `src/components/ChartView.tsx:708-713`（`trusted && viewOwnedByUserRef.current` 才广播）与
-  `:522-545`（接收格 `apply` 用 `externalRange` 写 `setVisibleRange`）：换 SOL 周期时
-  `useChartSync` 的 `broadcast`（`src/hooks/useChartSync.ts:14-31`，把值灌进**除发起格外所有格**）
-  是否经由「程序化重落 → `onVisibleRange` 被当 `trusted=true` → BTC 再广播」形成一条把 ETH/BNB
-  一起挪到同一窗的回声/串联。**区分手段（#224 已提、仍未做）**：给观测窗一个**确定性同步点**
-  （等 `switchIntent` 消费完再进窗），而非拉长 `OBSERVE_MS`。
+- **给下一个接手的人的可执行下一步（先读代码、别先改）**：站得住的硬证据是
+  **两个不同品种（ETH/BNB）末位落在同一个绝对窗 `1791443700→1791470100`** —— 两格周期/网格不同，
+  落同一窗只能来自一次把它们一起挪过去的 `apply`（`ChartView.tsx:522-545`），而接收格自己 `owned=false`，
+  说明挪动源自**别处的一次广播**。问题收敛为：**换 `SOL→1h` 这一拍，是谁、以什么 `from/to` 触发了那次广播？**
+  候选链路：换周期触发的程序化重落（`anchorFromIntent` / 整窗装载）是否在某拍把 `trusted` 判成 `true`
+  并进 `ChartView.tsx:708-713` 的广播门（`trusted && viewOwnedByUserRef.current`）；或 `useChartSync.broadcast`
+  （`src/hooks/useChartSync.ts:14-31`，把值灌进**除发起格外所有格**）的回声串联。
+  下一步应**先扩插桩**（把 `apply` 的来源格、以及换格那一拍的 `settle/report` 具体 `from/to` 记全），
+  让下一次红能直接读出「是谁在换格后那一拍广播了那个窗」，再谈改。**区分手段（#224 已提、仍未做）**：
+  给观测窗一个**确定性同步点**（等 `switchIntent` 消费完再进窗），而非拉长 `OBSERVE_MS`。
 - 本机 webkit `--repeat-each=5 --retries=0` **5/5 绿**（`pw install webkit` 补装后实跑），复现仍依赖 CI 慢 runner；
   照规则 8，任何本机造不出的复现，改动前必须能在 CI 判词自证（`expired` 仍应为 0、平移拍次应被同步点挪走）。
 - 更新日：2026-10-08
