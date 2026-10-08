@@ -35,6 +35,14 @@ export interface ViewWrite {
   from?: number
   to?: number
   via?: string
+  /** `apply` 携带：接收格这次执行的外部指令窗口（**广播源**发出的原始 from/to，未吸附） */
+  extFrom?: number
+  extTo?: number
+  /** `apply` 携带：吸附后落到本格的索引（相对本格数据） */
+  fromIdx?: number
+  toIdx?: number
+  /** `apply` 携带：装载基准偏移 */
+  base?: number
 }
 
 /** 判词里摘要的最大字符数（超了截断并标出被截掉多少） */
@@ -60,10 +68,63 @@ export function parseViewWrite(line: string): ViewWrite | null {
       from: typeof raw.from === 'number' ? raw.from : undefined,
       to: typeof raw.to === 'number' ? raw.to : undefined,
       via: typeof raw.via === 'string' ? raw.via : undefined,
+      extFrom: typeof raw.extFrom === 'number' ? raw.extFrom : undefined,
+      extTo: typeof raw.extTo === 'number' ? raw.extTo : undefined,
+      fromIdx: typeof raw.fromIdx === 'number' ? raw.fromIdx : undefined,
+      toIdx: typeof raw.toIdx === 'number' ? raw.toIdx : undefined,
+      base: typeof raw.base === 'number' ? raw.base : undefined,
     }
   } catch {
     return null
   }
+}
+
+/**
+ * 一次广播的候选源：`report owned=true`（用户在发起格动手，广播门放行，见 `ChartView.tsx:708-713`）
+ * 或 `settle`（手势落定那一拍，`ChartView.tsx:485-487`）。两者都带**原始秒**的 from/to，
+ * 就是发起格广播出去的那个窗——接收格 `apply` 里看到的 `extFrom/extTo` 与它**逐字相等**
+ * （`useChartSync.broadcast` 把 `{from,to}` 原样灌进别的格，见 `src/hooks/useChartSync.ts:14-31`）。
+ */
+function isBroadcastSource(w: ViewWrite): boolean {
+  return (w.kind === 'report' && w.owned === true) || w.kind === 'settle'
+}
+
+/**
+ * 归因**换格之后**每一个接收格末次 `apply` 的来源广播：
+ *   `switchIndex` = 换格那一刻 `viewWrites` 已收条数（由 spec 在 selectOption 之前记一次长度）——
+ *   本函数**只看这之后的写点**，否则 pan 阶段那些合法的 owned=true report 会把因果链污染
+ *   （规则 1 的老坑：整段计数 ≠ 子窗口事件；这条把「子窗口」明确成「换格之后」）。
+ *
+ * 对**别的格**（源 sym ≠ 接收 sym）取匹配：`sources.find(s => s.from === a.extFrom && s.to === a.extTo)`。
+ * 找到就归因（谁、哪种广播、什么窗），没找到明写「源不可见」——**不猜、也不当「没广播」**；
+ * 「源不可见」本身就是可执行的读数：说明这次 apply 不是从这条链路上的任何一次广播来的
+ * （要么是被广播门挡下的上报里挑了不该挑的窗，要么是 externalRange 状态被别的东西塞进来了）。
+ *
+ * 现有摘要为什么读不出成因：`BTC 放行 46 次` 是整段累计（`view-writes.ts` ⑤，见规则 1 老坑），
+ * 把「换格之后有没有广播、广播了什么窗」这两件必须分开的事混成一件——这条把它们拆开。
+ *
+ * 摘要长度只随**接收格种类数**（quad 里 ≤4）增长，不随事件条数增长。
+ */
+export function attributeBroadcasts(lines: readonly string[], switchIndex: number): string {
+  const postSwitch = lines
+    .slice(switchIndex)
+    .map(parseViewWrite)
+    .filter((w): w is ViewWrite => w !== null)
+  if (postSwitch.length === 0) return '广播归因[换格后无写点]'
+  const sources = postSwitch.filter(isBroadcastSource)
+  const lastApply: Record<string, ViewWrite> = {}
+  for (const w of postSwitch) {
+    if (w.kind === 'apply' && w.sym && w.extFrom !== undefined && w.extTo !== undefined) lastApply[w.sym] = w
+  }
+  const receivers = Object.entries(lastApply)
+  if (receivers.length === 0) return '广播归因[换格后无 apply]'
+  const parts = receivers.map(([sym, a]) => {
+    const hit = sources.find((s) => s.sym && s.sym !== sym && s.from === a.extFrom && s.to === a.extTo)
+    const wStr = `${a.extFrom}→${a.extTo}`
+    const r = sym.slice(0, 3)
+    return hit ? `${r}←${hit.sym!.slice(0, 3)} ${hit.kind}(${wStr})` : `${r} 源不可见(${wStr})`
+  })
+  return `广播归因 ${parts.join(' | ')}`
 }
 
 /** 整段摘要：kind 计数 + 每格末位落点 + claim/release 配对 + settle 的 via 分布 */
