@@ -485,9 +485,42 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
   只记一个总耗时数据点供慢机假设对照）；Release Tag / Pages / CodeQL 均 success；
   线上 Pages `meta[app-version]` 实测 **0.5.36**、入口 JS HTTP 200（docs 合并不改产物，回归抽查确认）。
   恢复入口现状：唯一仍 OPEN 的 issue = **#222**（等下次 CI 红按判词读数定位），
-  **#191** 待人工拍板（PR #293 十项全绿），E12 对比度三选项亦待产品决策——均非本会话可自动执行。
+   **#191** 待人工拍板（PR #293 十项全绿），E12 对比度三选项亦待产品决策——均非本会话可自动执行。
 
 ---
+
+**#297 收账 + #222 第一次真复现的判词读数（2026-10-08，本会话）**
+
+- **PR #297（纯 markdown）已带证据合并 → main `1e960a1`**：`src/`+`e2e/` 的 diff 为 0 文件，
+  E2E 唯一红的是 `[webkit] quad-switch-no-drag:227`（A4c，attempt 1/2/3 全红、720 passed）。
+  处置**不重跑赌运气**：仓库对该 flake 家族的既定态度（#224/#291 同型、#280「环境门不冒充代码门」）
+  是——零产品改动 PR 撞已知环境 flake，重跑无信息量，**带证据合并**。判词读数已落
+  [#222 comment 6068566827](https://github.com/Sun1090/kline-buty/issues/222#issuecomment-6068566827)
+  （落笔前用 exact-id readback 核过：author Sun1090、created 2026-10-08T20:35:32Z、在 issue 222 上——
+  上一轮我曾「声称已发但没落地」，本轮按规则 7 真正发并读回确认）。
+- **合并后 main 回归核查通过**：run 37840857695（main `1e960a1`）**六项全绿**（E2E 三浏览器 20:37→21:06 success），
+  A4c webkit 这次 attempt 1 未复现红——与「环境 flake、非代码回归」一致（规则 3：绿一次也不构成「问题不存在」，
+  #222 保持 OPEN）。Release Tag / Pages / CodeQL 同批 success。
+- **#222 这次复现的判词读数（#288/#292 整段摘要 + 原始秒口径第一次读出成因）**：
+  - `expired×0` ⇒ **排除 #285 超时口径这一族**（归属超时兜底没触发）。
+  - 数据首根 Δ秒（BTC/ETH/BNB）**全 0** ⇒ **排除 #254「数据头增长→索引重落」那一支**。
+  - 跨度未变（26400s）、两缘同号同量、第 2 拍跳到位后冻结 18~19 拍 ⇒ **一次显式整片平移**，非 #194 压窄。
+  - 平移发生在第 2 拍，而换周期的 SOL 第 5 拍才落位 ⇒ **平移早于换格落位**。
+  - **ETH 与 BNB（两个不同品种）末位落在同一个绝对窗 `1791443700→1791470100`**；SOL 落 `1791446400→1791468000`
+    ⇒ 两格落同一窗只能来自**同一次广播**。
+  - 写点摘要 `BTC 放行 46 次`、三接收格 report `owned=false`、`claim×1/release×1` 配平。
+- **已定位到的范围**：sync 广播/接收链路（不是超时、不是数据头、不是压窄）。#222 状态 = **已复现 + 判词已指向 sync 链路，待根因**。
+- **给下一个接手的人的可执行下一步（先读代码、别先改）**：本条用例换 `SOL→1h` 之后再没拖任何一格，
+  可判词显示 **BTC 广播放行了 46 次（owned=true 路径）**——无拖动阶段锚格为何仍以「用户改的本格」广播？
+  顺读 `src/components/ChartView.tsx:708-713`（`trusted && viewOwnedByUserRef.current` 才广播）与
+  `:522-545`（接收格 `apply` 用 `externalRange` 写 `setVisibleRange`）：换 SOL 周期时
+  `useChartSync` 的 `broadcast`（`src/hooks/useChartSync.ts:14-31`，把值灌进**除发起格外所有格**）
+  是否经由「程序化重落 → `onVisibleRange` 被当 `trusted=true` → BTC 再广播」形成一条把 ETH/BNB
+  一起挪到同一窗的回声/串联。**区分手段（#224 已提、仍未做）**：给观测窗一个**确定性同步点**
+  （等 `switchIntent` 消费完再进窗），而非拉长 `OBSERVE_MS`。
+- 本机 webkit `--repeat-each=5 --retries=0` **5/5 绿**（`pw install webkit` 补装后实跑），复现仍依赖 CI 慢 runner；
+  照规则 8，任何本机造不出的复现，改动前必须能在 CI 判词自证（`expired` 仍应为 0、平移拍次应被同步点挪走）。
+- 更新日：2026-10-08
 
 **本轮收尾（2026-10-06）：#222 判词整段摘要 + #279 判词换原始秒，均已开 PR**
 
