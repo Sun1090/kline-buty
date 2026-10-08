@@ -53,7 +53,9 @@ Prefer what's already installed over hand-rolled code: check `package.json` for 
 
 ## Product Boundaries (thesis → queue, not checklist)
 
-Boundaries derive from the project thesis above: a free, no-API-key open-source real-time chart backed by Binance public data — implying no backend, no account system, no native-engineering commitments. Queues derive from this boundary; parked ideas are not backlog items unless their entry conditions are met.
+Boundaries derive from the project thesis above: a free, no-API-key open-source real-time chart backed by Binance public data — implying no backend, no account system, and no native chart engine. Queues derive from this boundary; parked ideas are not backlog items unless their entry conditions are met.
+
+Note on native: `app-shell/` (Capacitor 8 wrapper, merged in `6129f8b`) is an **accepted, existing commitment**. It is a thin packaging shell around the unchanged web build — no native chart engine, no SaaS. Its CI (`android-app.yml` / `ios-app.yml`) failures count as blocking; keep shell changes inside `app-shell/` per its README hard rules.
 
 ### In Scope (thesis-internal queue)
 
@@ -64,7 +66,7 @@ Boundaries derive from the project thesis above: a free, no-API-key open-source 
 ### Out of Scope (parking; every item carries entry conditions)
 
 - I3 multi-device cloud sync: entry = decision to go SaaS + backend/KV cost accepted (H7/H8 settings-snapshot JSON remains the manual web equivalent)
-- I11 mobile Widget: entry = Capacitor shell project merge decision + native maintenance commitment (PWA remains the web equivalent)
+- I11 mobile Widget: entry = native maintenance commitment (the Capacitor shell merge condition is already met — `app-shell/` lives on `main`); PWA remains the web equivalent
 
 ### Upstream Blocked (blocked maintenance, NOT parking)
 
