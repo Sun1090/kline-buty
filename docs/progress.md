@@ -445,9 +445,39 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - 本版收录见 CHANGELOG `[v0.5.36]` 段；门禁：本地 2101 passed/181 files、typecheck/lint(0 errors)/build 干净；
   合并后 main 五道（CI/Release Tag/Pages/CodeQL/android-apk）全绿。
 - 迁移与回滚：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
-- ⚠️ #222 / #279 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+- ⚠️ #222 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+  **【规则 7 订正，2026-10-08】**：本条发布收账原写「#222 / #279 保持 OPEN」有误——`gh issue view 279`
+  实测 **#279 已由 #292 关闭**（2026-10-06，根因「超时口径」在产物代码 `b58bcc8` 修掉、判词换原始秒读，
+  属带修复的收口）。#294/#295 的 CHANGELOG 与本条同步订正。
 - 下一项：发布后重新检查仓库，推进可执行的下一主题（见「当前阶段」小结与「恢复入口」）。
 - 更新日：2026-10-08
+
+---
+
+**发布后巡检（2026-10-08）：E 阶段「E2E 验证中」陈旧账目收口 + 恢复入口重写**
+
+- 巡检结论：main 五道全绿（CI run 37797186353 success，含三浏览器 E2E）；无 TODO/FIXME 于 `src/`；
+  dependabot 无开放 PR；CodeQL 开放告警 0；本地 `npm run lint` 0 errors（33 warnings = 基线）；
+  `src/trade/pending.ts` 的 marketable limit 费率归属正确（`fillFeeRate`：下单即跨价差按 Taker）；
+  成交价 `fillPrice` 取「市场价优于挂单价则按市场价」的价格改善，**不叠加不利滑点**——因模拟撮合层
+  只有单一最新价、没有可穿的多档盘口，这是模拟器的既有简化（与市价单 `estimateOrder` 的可配滑点分属
+  两条路径），**保持为已知简化、不在此轮改判为缺陷或增强**（要建模吃穿多档需引入 depth，属新范围）。
+  低价币提醒 `pricePrecision ?? 2`
+  显示成 `0.00` 那条遗留已修（代码里无 `?? 2` 残留，`fmtPriceWithPrecision` 已生效）。
+- 收口一条陈旧账目：「待办审计」区与「阶段 E」状态行仍写「E2E 验证中」——实际
+  `e2e/alerts-features.spec.ts`（9 用例）早已登记进 `e2e/ci-specs.json` 的 `ci` 清单，随每次 PR CI
+  三浏览器跑；本次本机 chromium 复跑 **9/9 PASS（111s）**，据此把状态改为「已验证闭合」，
+  并按规则 7 在落笔前把 spec 文件名、用例数、ci 账本登记逐条 grep 核对过。
+- 重写「恢复入口」：A–I 功能清单 + E/F 阶段均已闭合，剩余可执行主题只剩
+  ①**#222** flake（成因已修、判词已整段化，**等下一次 CI 红**才动手，写明读数顺序）、
+  ②#191 产品口径裁定（PR #293 待人工拍板）、③新需求先核对 Product Boundaries。
+- **发现并订正一条规则 7 的错**：本会话发布收账（#294 CHANGELOG / #295 progress）与恢复入口均写
+  「#222 / #279 保持 OPEN」，但 `gh issue view 279` 实测 **#279 已由 #292 于 2026-10-06 关闭**——
+  混周期族的根因（归属超时按手势时长误判）已在**产物代码** `b58bcc8` 修掉、判词换原始秒读，属带根因
+  修复 + 变异可转红判据的收口，不是「绿一次就宣称修好」。落笔前没逐条 `gh issue view` 核对 issue 实际
+  state，是我第四次栽在「把意图/旧印象写成已完成/当前状态」这一形状上。#222 仍 OPEN 不变。
+- 变更文件：`CHANGELOG.md`（订正 v0.5.36 段遗留状态）、`docs/progress.md`（订正发布收账/巡检段/恢复入口）。
+- 阻塞：无。更新日：2026-10-08
 
 ---
 
@@ -2103,7 +2133,9 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - E13 提醒快捷键 ✅（toggle-alerts 按 a + 帮助面板）
 - E14 提醒导入/导出 ✅（export/importAlertsJson 严格校验）
 - E15 提醒备注字段 ✅（note 输入与行内展示）
-- 状态：E 批一已提交（f38d594），E2E 验证中
+- 状态：E 批一 f38d594；E2E 已闭合 —— `e2e/alerts-features.spec.ts` 9 用例在 ci 账本，
+  随每次 PR CI 三浏览器跑（v0.5.36 发布 PR #294 三浏览器 E2E 全绿 attempt 1）；
+  2026-10-08 本机 chromium 复跑 9/9 PASS（111s）。
 
 ## 已完成（本会话 v0.4 推进，全部带提交）
 
@@ -2139,9 +2171,17 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
   MA 金叉/死叉：页内重算 MA5/MA10 交叉数确定性 >2 + 主图截图基线 ma-cross-markers + pageerror 守卫；
   SAR 圆点：开启 + 十字光标漫游无异常冒烟。基线 e2e/marker-render.spec.ts-snapshots/ 入库，chromium 维护）
 - C 阶段：v0.3 O8 E2E 已覆盖图层/截图/坐标角标 ✓
-- E 批一：E2E 验证中（recent-features 吸附陈旧断言已修正 ohlc→grid→off→time）
+- E 批一：E2E 已验证闭合（`alerts-features.spec.ts` 9/9 绿，ci 账本；见上「阶段 E」状态行）
 
 ## 恢复入口
 1. `git log --oneline -5` 确认已提交边界
-2. `docs/progress.md`「当前阶段」继续 E 阶段（批二审计/补测 或 F 阶段）
+2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
+   A–I 功能清单与 E/F 阶段均已闭合，可执行工作只剩：
+    - **#222 flake**（唯一仍 OPEN 的 issue，`gh issue view 222` 实证）：成因已修、判词已整段化并按原始秒读；
+      **等下一次 CI 红**才动手，判词读数顺序：`claim>release`→手势未结束查归属超时；`expired≥1`→重查 #285 族；
+      `drift` 整片平移→同 #199 形态查索引换算。（#279 已于 2026-10-06 由 #292 关闭——根因 `b58bcc8` 修在产物代码、
+      判词换原始秒读，是带修复的收口。）
+   - **#191 产品口径裁定**：PR #293（`feat/191-boundary-app-shell-wording`）十项全绿，
+     等人工拍板合并/改走「恢复边界」路线。
+   - 新需求先回 `docs/13` 与 AGENTS.md「Product Boundaries」核对在/不在论文范围内。
 3. 每批：实现 → 补单测 → typecheck/lint/unit → 本地 commit；大阶段全绿后 push → 查 CI/Pages/CodeQL/依赖扫描
