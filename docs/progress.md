@@ -489,6 +489,26 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 
 ---
 
+**#222 广播归因插桩落地（2026-10-08，PR #299 → main `046a6e5`）**
+
+把 #298/「本轮收尾」里那条「先扩插桩、再谈改」的可执行下一步做实。**零产品代码**（纯 e2e helper + spec）：
+
+- `src/e2e-helpers/view-writes.ts`：`parseViewWrite` 抽出 `apply` 已带的 `extFrom/extTo`（incoming 原始窗）；
+  新增 `attributeBroadcasts(lines, switchIndex)`——只看**换格分界之后**的写点（规则 1「整段计数 ≠ 子窗口」明确化），
+  对每个接收格**末次** `apply` 的 `extFrom/extTo`，去**别的格**里找 `owned=true` 的 `report` 或 `settle`
+  中 from/to **一字相等**的那条 → 命中归因（谁、哪种、什么窗），找不到写「源不可见」（不猜、不当「没广播」）。
+- `e2e/quad-switch-no-drag.spec.ts`：换 SOL→1h 前等 300ms 冲干净 pan 写点、记 `switchIndex`；判词尾部加「广播归因」一行。
+- **为什么这是对的插桩**（不是恒真判据）：归因走绿路径不进 expect，牙齿由 11 条 fixture + **三个变异各自只杀一条**证明（规则 5/8）：
+  去掉 `owned===true` → 4 条红（含「挡下的上报不背锅」反例）；去掉 `s.sym !== sym` → 「自广播不背锅」红；
+  去掉 `.slice(switchIndex)` → 「换格前不参与归因」+「越界空」两条红。
+- 验证：单测 2112/181 files（+11 归因 fixture）；e2e tsc 0；lint 0 errors(33=基线)；build ok；
+  `quad-switch-no-drag` chromium 本机 1/1 PASS；**PR #299 CI 十项 attempt 1 全绿**（本次 webkit A4c 未复现红，
+  归因行随绿路径不进判词——规则 3：单次绿不构成成因消失，但也不构成插桩有回归）。
+- **现在 #222 的下一次红**：判词会直接给出 `广播归因 ETH←BTC report(W) | BNB←BTC report(W)`（谁把哪个窗广播出去的）
+  或 `源不可见(W)`（那次的 apply 不是来自这条链路任何一次广播）——把「再猜成因」变成「照归因读数查链路」。
+- #222 保持 OPEN；不 skip、不放宽。远端主题分支已删（仅 `feat/191-boundary-app-shell-wording` 留待 #293 人工裁定）。
+- 更新日：2026-10-08
+
 **#297 收账 + #222 第一次真复现的判词读数（2026-10-08，本会话）**
 
 - **PR #297（纯 markdown）已带证据合并 → main `1e960a1`**：`src/`+`e2e/` 的 diff 为 0 文件，
