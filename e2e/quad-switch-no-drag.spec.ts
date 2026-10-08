@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { summarizeViewWrites } from '../src/e2e-helpers/view-writes'
+import { attributeBroadcasts, summarizeViewWrites } from '../src/e2e-helpers/view-writes'
 
 /**
  * #199 换掉一格的周期，不许把其余三格的视角挪走。
@@ -101,6 +101,7 @@ function worstDriftVerdict(i: {
   btl: Record<string, (string | number)[]>
   heads: Record<string, (string | number)[]>
   viewWrites: readonly string[]
+  switchIndex: number
 }): string {
   return (
     `其余三格中挪得最远的一格：${i.detail}；观测窗跑了 ${i.solReport}，` +
@@ -108,7 +109,8 @@ function worstDriftVerdict(i: {
     (i.worstSym ? `；${i.worstSym} 逐拍 Δ起/Δ止（相对基线，单位秒）：${i.traces[i.worstSym].join(' ')}` : '') +
     `；回到最新在场性（1=在/0=不在/—=读不到）：${fmtSeq(i.btl)}` +
     `；数据首根 Δ秒（相对换前基线）：${fmtSeq(i.heads)}` +
-    `；视角写点整段摘要：${summarizeViewWrites(i.viewWrites)}`
+    `；视角写点整段摘要：${summarizeViewWrites(i.viewWrites)}` +
+    `；${attributeBroadcasts(i.viewWrites, i.switchIndex)}`
   )
 }
 const SWITCHED = 'SOLUSDT'
@@ -268,6 +270,12 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     const baseSwitched = base[SWITCHED]
     const baseSwitchedSpan = baseSwitched.to! - baseSwitched.from!
 
+    // 广播归因的**换格分界索引**：先等 300ms 让 pan 阶段的写点（24 帧 report、可能还有尾帧
+    // 补读）冲干净，再记 `viewWrites.length`，此后 selectOption 引发的所有写点都属于「换格那一拍」。
+    // 规则 1 的老坑：拿整段 owned=true 计数（`BTC 放行 46 次`）当「换格之后还在广播」的证据——
+    // 46 里 24 以上来自换格前的 pan。分界之后只看这段窗口，因果链才干净。
+    await page.waitForTimeout(300)
+    const switchIndex = viewWrites.length
     await page.getByTestId(`quad-period-${SWITCHED}`).selectOption('1h')
 
     // **观测窗**，不是「采样一次看是否干净」：换周期引发的广播落在那之后的几百毫秒～数秒
@@ -392,7 +400,7 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
-      worstDriftVerdict({ detail, solReport, settledSample: solSettledSample, samples, worstSym, traces, btl, heads, viewWrites }),
+      worstDriftVerdict({ detail, solReport, settledSample: solSettledSample, samples, worstSym, traces, btl, heads, viewWrites, switchIndex }),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
