@@ -90,39 +90,57 @@ function isBroadcastSource(w: ViewWrite): boolean {
 }
 
 /**
- * 归因**换格之后**每一个接收格末次 `apply` 的来源广播：
- *   `switchIndex` = 换格那一刻 `viewWrites` 已收条数（由 spec 在 selectOption 之前记一次长度）——
- *   本函数**只看这之后的写点**，否则 pan 阶段那些合法的 owned=true report 会把因果链污染
- *   （规则 1 的老坑：整段计数 ≠ 子窗口事件；这条把「子窗口」明确成「换格之后」）。
+ * 归因每一个**在 base 快照之后落地的** `apply` 的来源广播，并区分两种成因。
  *
- * 对**别的格**（源 sym ≠ 接收 sym）取匹配：`sources.find(s => s.from === a.extFrom && s.to === a.extTo)`。
- * 找到就归因（谁、哪种广播、什么窗），没找到明写「源不可见」——**不猜、也不当「没广播」**；
- * 「源不可见」本身就是可执行的读数：说明这次 apply 不是从这条链路上的任何一次广播来的
- * （要么是被广播门挡下的上报里挑了不该挑的窗，要么是 externalRange 状态被别的东西塞进来了）。
+ * 两个锚点（由 spec 分别记 `viewWrites.length`）：
+ *  - `baseIndex`：读取「其余三格此刻的窗口」（判词里的 base）**同一时刻**的分界。
+ *    这条窗口从 baseIndex 起算，**不是**从 selectOption 起算 ——
+ *    因为 #299 首跑读到的 `广播归因[换格后无 apply]` 是**假阴性**：pan 阶段的尾帧
+ *    `report owned=true` 会在 base 读完之后、selectOption 之前那几百毫秒里陆续落进
+ *    接收格（迟到 echo），把 ETH/BNB 挪走；旧逻辑把这些 apply 切在窗口之外，于是
+ *    「明明被挪走了，却读出无 apply」。**窗口必须从 base 那一刻起算，否则漏掉真凶。**
+ *  - `switchIndex`：selectOption 那一拍的分界，只用来**分类**每个 apply 落在哪一侧：
+ *    `apply` 在 [baseIndex, switchIndex) ⇒ **迟到 echo**（pan 的尾巴，不是换格造成的）；
+ *    `apply` 在 [switchIndex, end) ⇒ **换格广播**（selectOption 引发的两拍造成的）。
  *
- * 现有摘要为什么读不出成因：`BTC 放行 46 次` 是整段累计（`view-writes.ts` ⑤，见规则 1 老坑），
- * 把「换格之后有没有广播、广播了什么窗」这两件必须分开的事混成一件——这条把它们拆开。
+ * 源广播：`report owned=true`（广播门放行，`ChartView.tsx:708-713`）或 `settle`（落定那一拍，
+ * `:485-487`），带的 from/to 与接收格 `apply` 的 `extFrom/extTo` **一字相等**
+ * （`useChartSync.broadcast` 原样透传 `{from,to}`，见 `src/hooks/useChartSync.ts:14-31`）。
+ * 源可以早于 baseIndex（这正是迟到 echo 的形态：源在 base 前发出、apply 在 base 后落地），
+ * 所以**源在全量里按 applyIndex 之前回溯**，不受 baseIndex 限制。
  *
- * 摘要长度只随**接收格种类数**（quad 里 ≤4）增长，不随事件条数增长。
+ * 找不到源时写「源不可见」而不是猜——把「读不到」当「没广播」是错的（规则 2）：
+ * 可能是被广播门挡下的上报里挑了不该挑的窗，也可能是 externalRange 被别的东西塞进来。
+ *
+ * 摘要长度只随接收格种类数增长（quad 里 ≤4），不随事件条数增长（规则 1 长度纪律）。
  */
-export function attributeBroadcasts(lines: readonly string[], switchIndex: number): string {
-  const postSwitch = lines
-    .slice(switchIndex)
-    .map(parseViewWrite)
-    .filter((w): w is ViewWrite => w !== null)
-  if (postSwitch.length === 0) return '广播归因[换格后无写点]'
-  const sources = postSwitch.filter(isBroadcastSource)
-  const lastApply: Record<string, ViewWrite> = {}
-  for (const w of postSwitch) {
-    if (w.kind === 'apply' && w.sym && w.extFrom !== undefined && w.extTo !== undefined) lastApply[w.sym] = w
+export function attributeBroadcasts(
+  lines: readonly string[],
+  baseIndex: number,
+  switchIndex: number,
+): string {
+  const parsed = lines.map(parseViewWrite).filter((w): w is ViewWrite => w !== null)
+  // 记录每个 apply 在其所属格**最后一次**出现时的索引与 incoming 窗
+  const lastApply: Record<string, { idx: number; from?: number; to?: number }> = {}
+  for (let i = baseIndex; i < parsed.length; i++) {
+    const w = parsed[i]
+    if (w.kind === 'apply' && w.sym && w.extFrom !== undefined && w.extTo !== undefined) {
+      lastApply[w.sym] = { idx: i, from: w.extFrom, to: w.extTo }
+    }
   }
   const receivers = Object.entries(lastApply)
-  if (receivers.length === 0) return '广播归因[换格后无 apply]'
+  if (receivers.length === 0) return `广播归因[base 之后无 apply]（baseIndex=${baseIndex}，整段 ${parsed.length} 条）`
+  // 源广播：owned=true 的 report 或 settle，全量收集（可早于 baseIndex）
+  const sources = parsed
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => isBroadcastSource(w))
   const parts = receivers.map(([sym, a]) => {
-    const hit = sources.find((s) => s.sym && s.sym !== sym && s.from === a.extFrom && s.to === a.extTo)
-    const wStr = `${a.extFrom}→${a.extTo}`
+    const hit = sources.find(({ w, i }) => i < a.idx && w.sym && w.sym !== sym && w.from === a.from && w.to === a.to)
+    const wStr = `${a.from}→${a.to}`
     const r = sym.slice(0, 3)
-    return hit ? `${r}←${hit.sym!.slice(0, 3)} ${hit.kind}(${wStr})` : `${r} 源不可见(${wStr})`
+    if (!hit) return `${r} 源不可见(${wStr})`
+    const cause = a.idx < switchIndex ? '迟到echo' : '换格广播'
+    return `${r}←${hit.w.sym!.slice(0, 3)} ${hit.w.kind}·${cause}(${wStr})`
   })
   return `广播归因 ${parts.join(' | ')}`
 }
