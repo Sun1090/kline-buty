@@ -478,6 +478,14 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
   state，是我第四次栽在「把意图/旧印象写成已完成/当前状态」这一形状上。#222 仍 OPEN 不变。
 - 变更文件：`CHANGELOG.md`（订正 v0.5.36 段遗留状态）、`docs/progress.md`（订正发布收账/巡检段/恢复入口）。
 - 阻塞：无。更新日：2026-10-08
+- **#296 合并收账（2026-10-08）**：巡检 PR #296 十项 attempt 1 全绿后 squash 合并 → main `9ebf401`，
+  远端/本地主题分支已删、`git fetch --prune` 回收。合并后 main CI（run 37818212557）全绿：
+  E2E job 总耗时 17:39→18:17 ≈ **38m**（setup/npm ci/装浏览器约 11m + `E2E tests` step 27m，
+  **step 本身在正常 27–30m 区间内**，attempt 1 一次过、无 retry——不能据此判为 flake，
+  只记一个总耗时数据点供慢机假设对照）；Release Tag / Pages / CodeQL 均 success；
+  线上 Pages `meta[app-version]` 实测 **0.5.36**、入口 JS HTTP 200（docs 合并不改产物，回归抽查确认）。
+  恢复入口现状：唯一仍 OPEN 的 issue = **#222**（等下次 CI 红按判词读数定位），
+  **#191** 待人工拍板（PR #293 十项全绿），E12 对比度三选项亦待产品决策——均非本会话可自动执行。
 
 ---
 
