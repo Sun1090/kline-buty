@@ -445,7 +445,10 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - 本版收录见 CHANGELOG `[v0.5.36]` 段；门禁：本地 2101 passed/181 files、typecheck/lint(0 errors)/build 干净；
   合并后 main 五道（CI/Release Tag/Pages/CodeQL/android-apk）全绿。
 - 迁移与回滚：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
-- ⚠️ #222 / #279 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+- ⚠️ #222 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+  **【规则 7 订正，2026-10-08】**：本条发布收账原写「#222 / #279 保持 OPEN」有误——`gh issue view 279`
+  实测 **#279 已由 #292 关闭**（2026-10-06，根因「超时口径」在产物代码 `b58bcc8` 修掉、判词换原始秒读，
+  属带修复的收口）。#294/#295 的 CHANGELOG 与本条同步订正。
 - 下一项：发布后重新检查仓库，推进可执行的下一主题（见「当前阶段」小结与「恢复入口」）。
 - 更新日：2026-10-08
 
@@ -466,9 +469,14 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
   三浏览器跑；本次本机 chromium 复跑 **9/9 PASS（111s）**，据此把状态改为「已验证闭合」，
   并按规则 7 在落笔前把 spec 文件名、用例数、ci 账本登记逐条 grep 核对过。
 - 重写「恢复入口」：A–I 功能清单 + E/F 阶段均已闭合，剩余可执行主题只剩
-  ①#222/#279 flake（成因已修、判词已整段化+原始秒读，**等下一次 CI 红**才动手，写明读数顺序）、
+  ①**#222** flake（成因已修、判词已整段化，**等下一次 CI 红**才动手，写明读数顺序）、
   ②#191 产品口径裁定（PR #293 待人工拍板）、③新需求先核对 Product Boundaries。
-- 变更文件：`docs/progress.md`（3 处编辑）。
+- **发现并订正一条规则 7 的错**：本会话发布收账（#294 CHANGELOG / #295 progress）与恢复入口均写
+  「#222 / #279 保持 OPEN」，但 `gh issue view 279` 实测 **#279 已由 #292 于 2026-10-06 关闭**——
+  混周期族的根因（归属超时按手势时长误判）已在**产物代码** `b58bcc8` 修掉、判词换原始秒读，属带根因
+  修复 + 变异可转红判据的收口，不是「绿一次就宣称修好」。落笔前没逐条 `gh issue view` 核对 issue 实际
+  state，是我第四次栽在「把意图/旧印象写成已完成/当前状态」这一形状上。#222 仍 OPEN 不变。
+- 变更文件：`CHANGELOG.md`（订正 v0.5.36 段遗留状态）、`docs/progress.md`（订正发布收账/巡检段/恢复入口）。
 - 阻塞：无。更新日：2026-10-08
 
 ---
@@ -2169,9 +2177,10 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 1. `git log --oneline -5` 确认已提交边界
 2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
    A–I 功能清单与 E/F 阶段均已闭合，可执行工作只剩：
-   - **#222 / #279 flake**：成因已修、判词已整段化并按原始秒读；**等下一次 CI 红**才动手，
-     判词读数顺序：`claim>release`→手势未结束查归属超时；`expired≥1`→重查 #285 族；
-     `drift` 整片平移→同 #199 形态查索引换算。
+    - **#222 flake**（唯一仍 OPEN 的 issue，`gh issue view 222` 实证）：成因已修、判词已整段化并按原始秒读；
+      **等下一次 CI 红**才动手，判词读数顺序：`claim>release`→手势未结束查归属超时；`expired≥1`→重查 #285 族；
+      `drift` 整片平移→同 #199 形态查索引换算。（#279 已于 2026-10-06 由 #292 关闭——根因 `b58bcc8` 修在产物代码、
+      判词换原始秒读，是带修复的收口。）
    - **#191 产品口径裁定**：PR #293（`feat/191-boundary-app-shell-wording`）十项全绿，
      等人工拍板合并/改走「恢复边界」路线。
    - 新需求先回 `docs/13` 与 AGENTS.md「Product Boundaries」核对在/不在论文范围内。

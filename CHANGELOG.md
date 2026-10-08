@@ -30,9 +30,11 @@
 - **依赖升级**：vite、vitest、`@vitest/coverage-v8`、typescript-eslint、`@types/node` 等 dev 依赖小版本。
 - 门禁：`npm test` 全量绿；tsc(app+e2e)/eslint/build 干净；本地 multi-chart-sync + quad-switch-no-drag
   + A4c E2E 绿；各 PR CI 十项（含三浏览器 E2E）全绿。
-- ⚠️ #222 / #279 两条 flake **保持 OPEN**：成因已读出并修掉、判词已换成不受文本格式化影响的口径，
-  但规则 3——单次绿不构成「问题不存在」。若再红，判词里 `expired` 应为 0，仍非 0 则存在第二成因，
-  带着判词回 issue 即可定位。
+- ⚠️ 遗留 flake 现状（规则 7 复核，2026-10-08 订正——原写「#222 / #279 保持 OPEN」有误）：
+  **#279 已由 #292 关闭**（混周期族：根因「超时口径」由 `b58bcc8` 在产物代码修掉、判词换成原始秒读，
+  属带根因修复 + 变异可转红判据的收口，非「绿一次就宣称修好」）；**仅 #222 仍 OPEN**——成因已读出并
+  修掉、判词已整段化，但规则 3 下单次绿不构成「问题不存在」，等下一次 CI 红按 `expired`/`claim-release`
+  配对/`drift` 形状读数定位。
 - 升级与回滚：无数据迁移、无设置快照变更（`SNAPSHOT_VERSION` 仍为 2）；回滚 = revert release 提交 + 删 tag `v0.5.36`。
 
 ## [v0.5.35] DMI 历史值全线错误修复 + 可访问性双收口（2026-09-30）
