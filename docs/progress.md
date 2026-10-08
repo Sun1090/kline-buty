@@ -430,6 +430,21 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 
 ## 当前阶段
 
+**进入 RELEASE_FREEZE：v0.5.36（2026-10-08，分支 `chore/release-v0.5.36`，待 PR 合并）**
+
+- 自 v0.5.35 积的是 #222 多图表同步归属/广播拆开（main `e580a52`，迁移重落静默但不夺归属 +
+  手势结束落定广播）与 #279 归属超时改按「手势静止」计时（main `b58bcc8`，慢拖动不再被判成放弃）。
+  两者都是产品行为修复 → 按 bug fix 定 **patch：0.5.35 → 0.5.36**。
+- 版本 4 处：`package.json` / `package-lock.json`（根 + packages[""]）/ `index.html` meta `app-version`。
+- CHANGELOG 增 `[v0.5.36]` 段；`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
+- 本地门禁复验（node v24，`npm ci`）：typecheck(app+e2e) 0 / lint 0 errors（33 warnings = 基线）/
+  单测 2101 passed / 181 files / `npm run build` 成功（dist meta 实测 0.5.36）。
+- ⚠️ #222 / #279 **保持 OPEN**（规则 3，单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+- tag / Pages / Vercel / smoke test 在合并后核验，届时补记本条。
+- 更新日：2026-10-08
+
+---
+
 **本轮收尾（2026-10-06）：#222 判词整段摘要 + #279 判词换原始秒，均已开 PR**
 
 - 本轮两条主题分支：
