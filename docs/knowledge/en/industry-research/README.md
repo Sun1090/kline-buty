@@ -6,6 +6,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> Studying an industry is not recommending a stock: this chapter names no buy-and-sell target and promises no profit from “understanding the industry” — cycles turn, landscapes get rewritten and moats erode. Everything here is for learning and research only and does not constitute investment advice; all examples and figures are teaching approximations.
+
+---
+
 ## What This Chapter Is For
 
 The most common mistake retail investors make when researching stocks is studying the company without studying the industry: they run the financials through a full analysis while the industry has already entered decline; they see a company with a high gross margin but don't realize that a price hike upstream could punch straight through it at any time.

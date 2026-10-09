@@ -6,6 +6,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> No leverage and no forced liquidation do not mean no risk: altcoins can go to zero, markets can dry up in liquidity, exchanges can collapse, and crypto can be lost forever through stolen keys. Everything in this chapter is for learning and research only and does not constitute investment advice. Before any purchase, ask whether you can afford to lose that money.
+
+---
+
 ## How to Read This Chapter
 
 - Start with 01-Spot Trading Basics and get concepts like "spot vs futures" and "limit vs market" rock solid.

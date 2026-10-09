@@ -6,6 +6,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> Perpetual swaps can carry 100x leverage with 24/7 trading and no price limits, where a single wick can blow through your account to zero in seconds; funding rates and liquidation prices keep shifting. Everything in this chapter is for learning and research only and does not constitute investment advice — example prices and tiers are teaching approximations. The higher the leverage, the faster you die; never overextend.
+
+---
+
 ## Suggested Learning Path
 
 ```text

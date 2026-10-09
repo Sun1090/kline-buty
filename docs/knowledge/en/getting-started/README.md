@@ -4,6 +4,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> This chapter walks you to your first trade, but nothing in a market is a sure gain: leverage, margin and the liquidation price are real mechanisms that can knock you out. All example prices are shown only to demonstrate the math and do not constitute investment advice. Master position and money management before risking real capital.
+
+---
+
 ## What's in This Chapter
 
 ### 01 · Financial Market Overview
