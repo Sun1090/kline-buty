@@ -1,8 +1,8 @@
 # 08 · Pitfalls
 
-> This is the last stop of the knowledge base — and the least romantic one: it does not teach you how to make money, it teaches you how to **not lose money, not get scammed, and not go to jail**.
+> This is the last stop of the core learning path — and the least romantic one: it does not teach you how to make money, it teaches you how to **not lose money, not get scammed, and not go to jail**.
 >
-> The previous seven chapters taught you to understand the market, read charts, and build a system — but the reality is that the vast majority of retail traders lose not because of "insufficient skill" but because they **fall into traps**: losing to trading without a plan, losing to leverage, losing to scams, losing to compliance red lines. This chapter is your survival guide.
+> The previous seven chapters taught you to understand the market, read charts, and build a system — but the reality is that the vast majority of retail traders lose not because of "insufficient skill" but because they **fall into traps**: losing to trading without a plan, losing to leverage, losing to scams, losing to compliance red lines. This chapter is your survival guide. After it, the knowledge base still has advanced and deep-dive chapters to read.
 
 ---
 
