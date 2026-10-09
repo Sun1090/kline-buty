@@ -6,6 +6,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> All prices, ratios and figures in this chapter are shown only to demonstrate the math and do not constitute investment advice. Margin trading, options and cross-border tools are leveraged/derivative products that can amplify losses past your principal. Rules on price limits, fees and thresholds change at any time — defer to the latest exchange and regulator announcements.
+
+---
+
 ## Chapter Guide
 
 ### [Stock Basics](stock-basics.md) · The Foundation

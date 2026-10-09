@@ -6,6 +6,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> Indicators always lag price; a pattern is only a guess until it is confirmed, and false signals multiply in ranging markets. Everything in this chapter is for learning and research only and does not constitute investment advice — all example prices and parameters are teaching approximations. No signal deserves use until it carries an invalidation condition and position sizing.
+
+---
+
 ## What's in This Chapter
 
 ### 01 · Candlestick Patterns

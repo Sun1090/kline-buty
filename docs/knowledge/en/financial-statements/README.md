@@ -5,6 +5,12 @@
 
 ---
 
+> ⚠️ Risk Warning
+>
+> Report-reading methods help you rule out risks and sharpen judgment — they do not guarantee profit and do not decide your buys and sells. Every company and figure in this chapter's examples is fictional and shown only to demonstrate the math, not as investment advice. Markets carry risk; base any conclusion on your own independent research and the latest disclosures.
+
+---
+
 ## About Each Article
 
 ### 01 · Reading the Three Statements Closely
