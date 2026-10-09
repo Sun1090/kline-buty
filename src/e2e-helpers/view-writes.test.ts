@@ -27,20 +27,36 @@ describe('parseViewWrite', () => {
   })
 })
 
-// 广播归因（#222 下一步）：把「换格之后，谁把哪个窗广播给了接收格」钉死。
+// 广播归因（#222 下一步）：把「谁把哪个窗广播给了接收格、是迟到 echo 还是换格广播」钉死。
 // 接收格 apply 带的 extFrom/extTo 是 incoming 原始窗（broadcast 原样透传），源是**别的格**
-// owned=true 的 report 或 settle。第二个参数 switchIndex = 换格那一刻已收条数（只看之后的写点，
-// 否则 pan 阶段合法的 owned=true report 会污染因果链——正是规则 1「整段计数 ≠ 子窗口事件」那条坑）。
+// owned=true 的 report 或 settle。第 2、3 参 = baseIndex / switchIndex：
+//   - 归因窗口从 **baseIndex** 起算（含 base 之后、selectOption 之前落地的**迟到 echo**——
+//     #299 首跑把它切掉，导致「ETH/BNB 被挪走却读出 [换格后无 apply]」的假阴性）；
+//   - switchIndex 只用来**分类** apply 落在哪一侧（迟到echo / 换格广播）。
 const lineSym = (kind: string, sym: string, extra: Record<string, unknown> = {}) =>
   `debugViewWrites: ${kind} ${JSON.stringify({ sym, ...extra })}`
 
 describe('attributeBroadcasts', () => {
-  it('换格后接收格 apply 命中另一格 owned=true 的 report → 归因到那一格', () => {
+  // 这条是 #299 bug 的回归测试：源在 base 之前发出、apply 在 base 之后落地（迟到 echo）。
+  // 旧逻辑把窗口下界设在 selectOption(switchIndex) → 这条 apply 被切掉 → 读成「无 apply / 源不可见」。
+  // 新逻辑窗口下界是 baseIndex，源回溯不受 baseIndex 限制 → 抓到并标「迟到echo」。
+  // 把窗口下界错设回 switchIndex，这条必须转红。
+  it('迟到 echo：源在 base 前、apply 落在 base 与 switch 之间 → 归因并标「迟到echo」', () => {
+    const lines = [
+      lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: true, trusted: true }), // idx0, base 前
+      lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }), // idx1, base 之后 switch 之前
+    ]
+    // baseIndex=1（idx0 是 base 之前的写点，apply 在 base 之后）；switchIndex=2（selectOption 之前没新写点）
+    expect(attributeBroadcasts(lines, 1, 2)).toBe('广播归因 ETH←BTC report·迟到echo(1000→2000)')
+  })
+
+  it('换格广播：apply 落在 switchIndex 之后 → 标「换格广播」', () => {
     const lines = [
       lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: true, trusted: true }),
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH←BTC report(1000→2000)')
+    // switchIndex=1 ⇒ apply(idx1) 在换格之后
+    expect(attributeBroadcasts(lines, 0, 1)).toBe('广播归因 ETH←BTC report·换格广播(1000→2000)')
   })
 
   it('命中另一格的 settle → 归因 kind 记 settle', () => {
@@ -48,17 +64,17 @@ describe('attributeBroadcasts', () => {
       lineSym('settle', 'BTCUSDT', { from: 1000, to: 2000 }),
       lineSym('apply', 'BNBUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 BNB←BTC settle(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 2)).toBe('广播归因 BNB←BTC settle·迟到echo(1000→2000)')
   })
 
   // 关键反例：owned=false 的 report（被广播门挡下的上报）**不能**当源——
-  // 它落的是本格自己的中间态，没广播出去。去掉 owned===true 判据这条必须转红。
+  // 它落的是本格自己的中间态，没广播出去。去掉 isBroadcastSource 的 owned===true 判据这条必须转红。
   it('owned=false 的 report 不算广播源（挡下的上报不背锅）', () => {
     const lines = [
       lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: false, trusted: true }),
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH 源不可见(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 2)).toBe('广播归因 ETH 源不可见(1000→2000)')
   })
 
   it('没有匹配源时明写「源不可见」，不猜、不当「没广播」', () => {
@@ -66,29 +82,36 @@ describe('attributeBroadcasts', () => {
       lineSym('report', 'BTCUSDT', { from: 500, to: 900, owned: true, trusted: true }),
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH 源不可见(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 2)).toBe('广播归因 ETH 源不可见(1000→2000)')
   })
 
-  // 本格自己的广播不能算成「谁挪了我」的源。去掉 s.sym !== sym 判据这条必须转红。
+  // 本格自己的广播不能算成「谁挪了我」的源。去掉 w.sym !== sym 判据这条必须转红。
   it('源格与接收格同一格时不算（自广播不背锅）', () => {
     const lines = [
       lineSym('report', 'ETHUSDT', { from: 1000, to: 2000, owned: true, trusted: true }),
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH 源不可见(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 2)).toBe('广播归因 ETH 源不可见(1000→2000)')
   })
 
-  // 这条锁住 switchIndex 的意义：换格**之前** pan 阶段那一格合法 owned=true 的广播，
-  // 不能拿去归因换格**之后**接收格的 apply。去掉 slice(switchIndex) 这条必须转红。
-  it('换格之前的 owned=true 报告不参与归因（只看 switchIndex 之后）', () => {
+  // 源必须早于该 apply（i < a.idx）。去掉 i < a.idx，让「apply 之后才发生的广播」也能当源这条必须转红。
+  it('源必须在 apply 之前（之后的广播不是这条 apply 的因）', () => {
     const lines = [
-      lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: true, trusted: true }), // 换格前（pan）
-      lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }), // 换格后接收
+      lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
+      lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: true, trusted: true }), // apply 之后
     ]
-    // switchIndex=1 ⇒ 第一条被切掉，换格后只剩 apply、无源 → 源不可见
-    expect(attributeBroadcasts(lines, 1)).toBe('广播归因 ETH 源不可见(1000→2000)')
-    // switchIndex=0 ⇒ 第一条算源
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH←BTC report(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 2)).toBe('广播归因 ETH 源不可见(1000→2000)')
+  })
+
+  // baseIndex 之前的 apply 不参与归因（那是读取基线时点之前的事，不该被算进「被挪走」）。
+  // 把窗口下界从 baseIndex 改成 0，这条必须转红。
+  it('baseIndex 之前的 apply 不参与归因', () => {
+    const lines = [
+      lineSym('report', 'BTCUSDT', { from: 1000, to: 2000, owned: true, trusted: true }),
+      lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }), // idx1，base 之前
+    ]
+    // baseIndex=2 ⇒ idx1 的 apply 被排除 → 无 apply
+    expect(attributeBroadcasts(lines, 2, 2)).toBe('广播归因[base 之后无 apply]（baseIndex=2，整段 2 条）')
   })
 
   it('同一格有多次 apply 时取**末次**的 incoming 窗', () => {
@@ -98,7 +121,7 @@ describe('attributeBroadcasts', () => {
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
       lineSym('apply', 'ETHUSDT', { extFrom: 3000, extTo: 4000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH←SOL report(3000→4000)')
+    expect(attributeBroadcasts(lines, 0, 4)).toBe('广播归因 ETH←SOL report·迟到echo(3000→4000)')
   })
 
   it('多个接收格分别归因（长度随种类数，不随事件条数）', () => {
@@ -107,16 +130,12 @@ describe('attributeBroadcasts', () => {
       lineSym('apply', 'ETHUSDT', { extFrom: 1000, extTo: 2000 }),
       lineSym('apply', 'BNBUSDT', { extFrom: 1000, extTo: 2000 }),
     ]
-    expect(attributeBroadcasts(lines, 0)).toBe('广播归因 ETH←BTC report(1000→2000) | BNB←BTC report(1000→2000)')
+    expect(attributeBroadcasts(lines, 0, 3)).toBe('广播归因 ETH←BTC report·迟到echo(1000→2000) | BNB←BTC report·迟到echo(1000→2000)')
   })
 
-  it('整段（换格后）没有 apply → 归因空', () => {
-    expect(attributeBroadcasts([lineSym('report', 'BTCUSDT', { from: 1, to: 2, owned: true })], 0)).toBe('广播归因[换格后无 apply]')
-  })
-
-  it('switchIndex 越到末尾（换格后无任何写点）→ 归因空', () => {
+  it('base 之后没有任何 apply → 归因空（带上 baseIndex 与总条数）', () => {
     const lines = [lineSym('report', 'BTCUSDT', { from: 1, to: 2, owned: true })]
-    expect(attributeBroadcasts(lines, lines.length)).toBe('广播归因[换格后无写点]')
+    expect(attributeBroadcasts(lines, 0, 1)).toBe('广播归因[base 之后无 apply]（baseIndex=0，整段 1 条）')
   })
 })
 

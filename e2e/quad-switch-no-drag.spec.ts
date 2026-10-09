@@ -101,6 +101,7 @@ function worstDriftVerdict(i: {
   btl: Record<string, (string | number)[]>
   heads: Record<string, (string | number)[]>
   viewWrites: readonly string[]
+  baseIndex: number
   switchIndex: number
 }): string {
   return (
@@ -110,7 +111,7 @@ function worstDriftVerdict(i: {
     `；回到最新在场性（1=在/0=不在/—=读不到）：${fmtSeq(i.btl)}` +
     `；数据首根 Δ秒（相对换前基线）：${fmtSeq(i.heads)}` +
     `；视角写点整段摘要：${summarizeViewWrites(i.viewWrites)}` +
-    `；${attributeBroadcasts(i.viewWrites, i.switchIndex)}`
+    `；${attributeBroadcasts(i.viewWrites, i.baseIndex, i.switchIndex)}`
   )
 }
 const SWITCHED = 'SOLUSDT'
@@ -262,6 +263,11 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     // 下面那句「一秒都不该变」就成了一个随时序抖动的断言。
     await expect(page.getByTestId('back-to-latest')).toHaveCount(CELLS.length, { timeout: 20_000 })
 
+    // 归因窗口的**起算锚点**必须与 base 快照同一时刻：在 `cellWindows` 之前记 `baseIndex`，
+    // 让那次 await 里陆续落进来的 apply（迟到 echo）也算在内。#299 首跑把它记在 base **之后**、
+    // 又切在 selectOption 之后，于是「ETH/BNB 明明被挪走 -600s，归因却读出 [换格后无 apply]」——
+    // 那是**假阴性**：挪走它们的正是 base 读完之后、selectOption 之前那几百毫秒里落地的 pan 尾帧 echo。
+    const baseIndex = viewWrites.length
     const base = await cellWindows(page)
     for (const sym of CELLS) {
       const w = base[sym]
@@ -270,10 +276,9 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     const baseSwitched = base[SWITCHED]
     const baseSwitchedSpan = baseSwitched.to! - baseSwitched.from!
 
-    // 广播归因的**换格分界索引**：先等 300ms 让 pan 阶段的写点（24 帧 report、可能还有尾帧
-    // 补读）冲干净，再记 `viewWrites.length`，此后 selectOption 引发的所有写点都属于「换格那一拍」。
-    // 规则 1 的老坑：拿整段 owned=true 计数（`BTC 放行 46 次`）当「换格之后还在广播」的证据——
-    // 46 里 24 以上来自换格前的 pan。分界之后只看这段窗口，因果链才干净。
+    // selectOption 的分界：300ms 让 pan 尾帧 echo 先冲干净，此后归因窗里 [switchIndex, end) 的
+    // apply 才干净地属于「换格那一拍」。用 switchIndex 只做**分类**（迟到 echo vs 换格广播），
+    // 不再拿它当窗口下界——下界是 baseIndex。
     await page.waitForTimeout(300)
     const switchIndex = viewWrites.length
     await page.getByTestId(`quad-period-${SWITCHED}`).selectOption('1h')
@@ -400,7 +405,7 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     expect(capped, `观测窗跑到 CAP=${CAP_MS}ms 仍未收尾（下限 ${FLOOR_MS}ms；${solReport}）`).toBe(false)
     expect(
       worst,
-      worstDriftVerdict({ detail, solReport, settledSample: solSettledSample, samples, worstSym, traces, btl, heads, viewWrites, switchIndex }),
+      worstDriftVerdict({ detail, solReport, settledSample: solSettledSample, samples, worstSym, traces, btl, heads, viewWrites, baseIndex, switchIndex }),
     ).toBeLessThanOrEqual(BASE_SECONDS * 3)
 
     // 换的那一格自己：右缘仍锚在换之前那附近（一根新周期 K 线以内），
