@@ -430,6 +430,18 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 
 ## 当前阶段
 
+**2026-10-08：#191 口径裁定完成（分支 `feat/191-boundary-app-shell-wording`）**
+
+- AGENTS.md「Product Boundaries」与 `app-shell/` 矛盾的裁定：采纳「收窄表述」路线——
+  `app-shell/`（Capacitor 8 壳，`6129f8b` 落地）记为**已接受的既有承诺**，CI 失败即阻塞；
+  I11 入场条件相应收窄为「只剩原生维护承诺」。理由：仓库已 onboard 原生路径且 workflows
+  已在 main 上触发，恢复边界（移出主仓）的成本高于接受。
+- 变更文件：`AGENTS.md`（2 处编辑）。
+- 验证：纯文档改动，未跑完整门禁；`git diff` 复核。
+- 下一项：#191 PR 合并后关闭 issue；继续监控 #222 / #279 flake（规则 3）。
+
+---
+
 **RELEASE_FREEZE：v0.5.36 发布完成（2026-10-08）**
 
 - 版本号：**0.5.36**（package.json / package-lock 根两处 / index.html meta `app-version`，共 4 行）
