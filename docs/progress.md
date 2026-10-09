@@ -457,7 +457,7 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - 本版收录见 CHANGELOG `[v0.5.36]` 段；门禁：本地 2101 passed/181 files、typecheck/lint(0 errors)/build 干净；
   合并后 main 五道（CI/Release Tag/Pages/CodeQL/android-apk）全绿。
 - 迁移与回滚：`SNAPSHOT_VERSION` 仍为 2，无数据迁移；回滚 = revert release 提交 + 删 tag `v0.5.36`。
-- ⚠️ #222 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 口径裁定 PR #293 待人工拍板。
+- ⚠️ #222 **保持 OPEN**（规则 3：单次绿不构成「问题不存在」）；#191 已由 **PR #293 人工合并（01:10Z → main `6f83244`）自动关闭**。
   **【规则 7 订正，2026-10-08】**：本条发布收账原写「#222 / #279 保持 OPEN」有误——`gh issue view 279`
   实测 **#279 已由 #292 关闭**（2026-10-06，根因「超时口径」在产物代码 `b58bcc8` 修掉、判词换原始秒读，
   属带修复的收口）。#294/#295 的 CHANGELOG 与本条同步订正。
@@ -2297,12 +2297,17 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 ## 恢复入口
 1. `git log --oneline -5` 确认已提交边界
 2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
-   A–I 功能清单与 E/F 阶段均已闭合，可执行工作只剩：
+   A–I 功能清单与 E/F 阶段均已闭合；#191 已由人工裁定 PR #293（main `6f83244`）关闭；
+   可执行工作只剩：
     - **#222 flake**（唯一仍 OPEN 的 issue，`gh issue view 222` 实证）：成因已修、判词已整段化并按原始秒读；
-      **等下一次 CI 红**才动手，判词读数顺序：`claim>release`→手势未结束查归属超时；`expired≥1`→重查 #285 族；
-      `drift` 整片平移→同 #199 形态查索引换算。（#279 已于 2026-10-06 由 #292 关闭——根因 `b58bcc8` 修在产物代码、
-      判词换原始秒读，是带修复的收口。）
-   - **#191 产品口径裁定**：PR #293（`feat/191-boundary-app-shell-wording`）十项全绿，
-     等人工拍板合并/改走「恢复边界」路线。
-   - 新需求先回 `docs/13` 与 AGENTS.md「Product Boundaries」核对在/不在论文范围内。
+      **#301 之后归因逻辑已可信**——下一次 CI 红，判词尾部直接给出 `广播归因 <sym>←<src> report/settle·<迟到echo|换格广播>(from→to)`
+      或 `源不可见(from→to)`。读数顺序（优先级从高到低）：
+      ① 全是 `·迟到echo` ⇒ base 快照读早了，pan 尾帧 echo 才是真凶——**修测试时机**（把 base 快照
+         挪到 pan 尾巴冲干净之后再读），产品链路可能没错；
+      ② 出现 `·换格广播` ⇒ 换格两拍里真有人广播了那个窗——**是真产品缺陷**，顺着源格 report/settle
+         那一条查发起链路（`ChartView.tsx:708-713` 广播门 + `:485` 落定广播）；
+      ③ 若还带 `expired≥1` ⇒ 归属超时误判重现（重查 #285 族，本会话判词未见此形态）；
+      ④ 若 `claim>release` ⇒ 手势未结束（本会话判词未见此形态）。
+      归因逻辑本身的正确性由 13 条 fixture + 4 个单点变异证明（见「#299 广播归因插桩的 bug 修掉」节）。
+    - 新需求先回 `docs/13` 与 AGENTS.md「Product Boundaries」核对在/不在论文范围内。
 3. 每批：实现 → 补单测 → typecheck/lint/unit → 本地 commit；大阶段全绿后 push → 查 CI/Pages/CodeQL/依赖扫描
