@@ -519,7 +519,49 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - **现在 #222 的下一次红**：判词会直接给出 `广播归因 ETH←BTC report(W) | BNB←BTC report(W)`（谁把哪个窗广播出去的）
   或 `源不可见(W)`（那次的 apply 不是来自这条链路任何一次广播）——把「再猜成因」变成「照归因读数查链路」。
 - #222 保持 OPEN；不 skip、不放宽。远端主题分支已删（仅 `feat/191-boundary-app-shell-wording` 留待 #293 人工裁定）。
+- ⚠️ **本条首跑上 main 后暴露插桩自己的 bug，由 #301 修掉**（详见下节）——
+  窗口下界错设在 selectOption 之后，把 pan 尾帧迟到 echo 的 apply 整段切掉，
+  判词因此读出「换格后无 apply」的**假阴性**。原「11 条 fixture 全绿」不覆盖这个形态，
+  规则 5 意义上「牙齿不够」。
 - 更新日：2026-10-08
+
+---
+
+**#299 广播归因插桩的 bug 修掉（2026-10-09，PR #301 → main `d07d8e5`）**
+
+#299 落 main 后 CI 首次撞 A4c（run 37855352069，720 passed / 1 failed [webkit]）；三条 attempt 判词都读
+`广播归因[换格后无 apply]`。**判词没错，插桩错了**——#299 的归因窗口下界设在了 `switchIndex`（selectOption
+之后），把 pan 阶段最后几帧的 `report owned=true` 在 base 之后落进接收格的那批「迟到 echo」apply 整段
+切掉，于是明明是它们把 ETH/BNB 挪走 -600s，判词却读出「换格后无 apply」——**假阴性**（规则 2：读到的
+「无」必须是构造上不可能是别的原因，这条不满足）。
+
+- **修法**：窗口下界改成 `baseIndex`——spec 在 `cellWindows(page)` **之前**记一次 `viewWrites.length`，
+  让 base await 里陆续落进来的 apply 也在窗口内。`switchIndex` 降级为**分类锚**：每个 apply 落在
+  `[baseIndex, switchIndex)` ⇒ `·迟到echo`（pan 尾巴），`[switchIndex, end)` ⇒ `·换格广播`（selectOption
+  两拍）。**两种成因判词现在一眼分开**。
+- **源回溯不受 baseIndex 限制**：迟到 echo 形态就是「源在 base 前、apply 在 base 后」；只加 `i < a.idx`
+  保证源早于该 apply（防「apply 之后才发出的广播」被错当因）。
+- **判词直接指到下一步**：
+  - 全是 `·迟到echo` ⇒ 修 base 快照时机（等 pan 尾巴冲干净），**产品链路可能没错**；
+  - 出现 `·换格广播` ⇒ 换格两拍里真有人广播了那个窗，**是真产品缺陷**，查发起链路。
+- **变异验证（规则 8，每个单独做、各自只杀对应那条）**：
+  | 变异 | 红掉 |
+  |---|---|
+  | 窗口下界回 `switchIndex`（还原 #299 bug） | **8 条**红（迟到 echo 归因 + 全部 `·迟到echo` 分类） |
+  | 窗口下界回 0（丢 `baseIndex` 下界） | 「base 之前 apply 不参与归因」红 |
+  | 去掉 `i < a.idx`（允许源晚于 apply） | 「源必须在 apply 之前」红 |
+  | `a.idx < switchIndex` 改 `<=` | 「换格广播」分类红（边界一处） |
+- fixture 11→13 条覆盖三种新语义；`npm test` **2113 passed / 181 files**（+13 归因）；
+  e2e tsc 0；lint 0 errors（33 warn=基线）；build 成功；`quad-switch-no-drag` chromium 本机 1/1 PASS（98s）；
+  **PR #301 CI 十项 attempt 1 全绿**（run 37862094349，本次 A4c webkit 未复现——规则 3：单次绿不构成成因消失）。
+- 零产品代码；#222 保持 OPEN；GitHub Actions 计费未受影响（Pages/APK/Tag 均 success）。
+- **规则 7 自查再记一笔**：#299 落地时我在 progress 里写「归因走绿路径不进 expect、牙齿由 fixture 证明」——
+  那**是对的方向，但 fixture 少了一种形态**（base 之后 / switch 之前落 apply），所以我 #299 时「牙齿够」这句
+  在 #299 那批用例覆盖面上成立，在实际 CI 撞出的形态上被证伪。**「fixture 全绿」不等于「能覆盖真实事件顺序」**，
+  下一个接手的人扩判词时要把「真实事件到达顺序」列成一等公民，别只按 kind 组合枚举。
+- 更新日：2026-10-09（Asia/Shanghai）
+
+---
 
 **#297 收账 + #222 第一次真复现的判词读数（2026-10-08，本会话）**
 
