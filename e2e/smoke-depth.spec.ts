@@ -13,6 +13,24 @@ import { openMore, waitCandlesRendered, waitDepthReady, waitOrderBookReady } fro
  * 「面板开得出、四类标题在、关得掉」—— perf 下这四类标题和「多/空」标签照样渲染，是真覆盖不是摆设。
  */
 
+/**
+ * 稳取盘口档位行的包围盒：行按价格做 key，深度流每次更新都可能整行重建，
+ * `boundingBox()` 撞上重渲染瞬间会返回 null —— run 40065573721（PR #320）的 webkit
+ * `:103` 三条 retry 全死在 `box!.x` 的 null 解引用上。可见 ≠ 稳定：拿不到盒就等一拍重取，
+ * 上限 5s（行本就可见，重试只兜重渲染间隙）。
+ */
+async function rowBox(row: import('@playwright/test').Locator) {
+  await expect
+    .poll(async () => {
+      const box = await row.boundingBox()
+      return box
+    }, { timeout: 5_000, message: '盘口档位行 5s 内始终拿不到包围盒（行在可见前提下不应发生）' })
+    .not.toBeNull()
+  const box = await row.boundingBox()
+  if (!box) throw new Error('盘口档位行包围盒读不到（poll 已确认非空，理论不可达）')
+  return box
+}
+
 test.describe('盘口与深度面板', () => {
   test('深度/筹码面板开关', async ({ page }) => {
     await page.goto('/?perf=600')
@@ -92,8 +110,8 @@ test.describe('盘口与深度面板', () => {
         }
         return n
       })
-    const box = await row.boundingBox()
-    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+    const box = await rowBox(row)
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await expect.poll(() => accentPx(), { timeout: 10_000 }).toBeGreaterThan(200)
     // 移出盘口面板 → 参考线清除
     await page.mouse.move(10, 10)
@@ -119,13 +137,13 @@ test.describe('盘口与深度面板', () => {
         }
         return n
       })
-    const box = await row.boundingBox()
+    const box = await rowBox(row)
     // 点击第一档 → 标记线出现；移出鼠标后仍保留（区别于 hover 参考线）
-    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
     await page.mouse.move(10, 10)
     await expect.poll(() => accentPx(), { timeout: 10_000 }).toBeGreaterThan(200)
     // 再点同一档 → 标记线清除
-    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
     await page.mouse.move(10, 10)
     await expect.poll(() => accentPx(), { timeout: 10_000 }).toBeLessThan(50)
   })
@@ -139,8 +157,8 @@ test.describe('盘口与深度面板', () => {
     await waitOrderBookReady(page)
     const bid = page.getByTestId('ob-bid').first()
     const bidPrice = Number(await bid.getAttribute('data-price'))
-    const bidBox = await bid.boundingBox()
-    await page.mouse.move(bidBox!.x + bidBox!.width / 2, bidBox!.y + bidBox!.height / 2)
+    const bidBox = await rowBox(bid)
+    await page.mouse.move(bidBox.x + bidBox.width / 2, bidBox.y + bidBox.height / 2)
     await expect(bid.getByTestId('qo-buy')).toBeVisible({ timeout: 5000 })
     await bid.getByTestId('qo-buy').click()
     await expect(page.getByTestId('quick-order')).toBeVisible()
@@ -166,8 +184,8 @@ test.describe('盘口与深度面板', () => {
     await waitCandlesRendered(page)
     await waitOrderBookReady(page)
     const ask = page.getByTestId('ob-ask').first()
-    const askBox = await ask.boundingBox()
-    await page.mouse.move(askBox!.x + askBox!.width / 2, askBox!.y + askBox!.height / 2)
+    const askBox = await rowBox(ask)
+    await page.mouse.move(askBox.x + askBox.width / 2, askBox.y + askBox.height / 2)
     await expect(ask.getByTestId('qo-sell')).toBeVisible({ timeout: 5000 })
     await ask.getByTestId('qo-sell').click()
     await expect(page.getByTestId('quick-order')).toBeVisible()
