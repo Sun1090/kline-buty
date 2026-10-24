@@ -2319,6 +2319,27 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - 远端主题分支已删（#321 squash 自删 + #320 手动关）；本地同名分支已清。
 - 更新日：2026-10-24
 
+---
+
+### 三族 flake 收口：#324 落 main（2026-10-24，squash → main `2bdbfc1`）
+
+#321/#324 两轮把 2026-10-24 全天的 CI 红全部定性并修复（零产品行为变更）：
+
+1. **A4c**（`quad-switch-no-drag` webkit）：base 快照读早了——`waitForPanTailFlush` 写点流静默判停
+   （读数顺序①，run 39209513836 归因全 `·迟到echo`）。
+2. **smoke-depth**（`rowBox`）：盘口档位行按价格做 key，重渲染间隙 `boundingBox()` 返回 null——
+   poll 稳取 + TOCTOU 修复（复用 `expect.poll` 返回值，run 40083041212 `:151` 两读间隙红）。
+3. **画线多锚点**（`drawingClick`）：三层插桩（三写点 → 入口计数 → raw-down 捕获阶段）定性
+   **Playwright→webkit 派发层整次蒸发多锚点序列的后续 click**（`raw-down=1 down=1`，第 13 条）——
+   落地对账（`data-raw-down` 计数确认 + 重发 5 次上限）。产品判据零放宽。
+
+**插桩基建沉淀**：`?debugDrawingCommits`（三写点 + 六入口计数 + raw-down，adapter 纯观测门控）+
+`attachDrawingCommitCollector`/`drawingClick`（e2e 侧）。#322 三层弧线：先插桩拿读数、再修测试
+手势/时机——**7 次带读数的 CI 红，无一靠猜**。
+
+main 合并后首跑 CI（run 40095108608）在跑；绿则关闭 #322、继续 dependabot 9 个 PR。
+- 更新日：2026-10-24
+
 ## 恢复入口
 1. `git log --oneline -5` 确认已提交边界
 2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
