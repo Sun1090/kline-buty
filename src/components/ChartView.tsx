@@ -10,6 +10,7 @@ import type { SnapMode } from '../drawings/snap'
 import { anchorRangeForSwitch, cullWindow, floorIndexByTime, localRange, nextCullWindow, shouldCull, windowCovers, type CullRange, type CullWindow } from '../chart/cull'
 import { isAwayFromLatest } from '../chart/latest'
 import { debugViewWritesEnabled, logViewWrite } from '../utils/debugViewWrites'
+import { debugDrawingCommitsEnabled, logDrawingCommit } from '../utils/debugDrawingCommits'
 import { themeFor, type ColorPresetId } from '../theme'
 import { calcMA, calcEMA, calcSMA, type ValuePoint } from '../indicators/sma'
 import { calcBOLL, bollToLines } from '../indicators/boll'
@@ -613,7 +614,12 @@ export function ChartView({
     api.setDrawingCallbacks(
       onDrawingCommit || onDrawingSelect || onDrawingUpdate || onEditText
         ? {
-            onCommit: (d) => onDrawingCommitRef.current?.(d),
+            onCommit: (d) => {
+              // #322 插桩：提交链路第一写点——adapter 已把画线交出来。锚点数一并带出，
+              // 「点了 3 下只收到 2 锚点」（中间点击被吃）与「回调没触发」在这里分开。
+              logDrawingCommit('commit', { tool: d.type, points: d.points.length }, debugDrawingCommitsEnabled())
+              onDrawingCommitRef.current?.(d)
+            },
             onSelect: (id) => onDrawingSelectRef.current?.(id),
             onUpdate: (id, points) => onDrawingUpdateRef.current?.(id, points),
             onEditText: (id) => onEditTextRef.current?.(id),

@@ -187,6 +187,25 @@ export async function openMore(page: Page) {
 }
 
 /**
+ * #322 取证基建：收集 `debugDrawingCommits:` 门控日志（画线提交链路三写点）。
+ * 用例 goto 带 `&debugDrawingCommits` 后调用一次挂上收集器，落库 poll 红时把
+ * `drawingCommitsTail()` 接进判词——「commit/state/storage 断在哪一段」一眼可读：
+ *  无 commit = 回调没触发（或中间点击被吃，锚点数在 detail 里）；有 commit 无 state =
+ *  React 层吞了；有 state 无 storage = effect 没跑；三段齐 = 读取时机/键名问题。
+ */
+export function attachDrawingCommitCollector(page: Page) {
+  const lines: string[] = []
+  page.on('console', (msg) => {
+    const t = msg.text()
+    if (t.startsWith('debugDrawingCommits:')) lines.push(t)
+  })
+  return {
+    /** 整段摘要（一行；长度只随写点数增长，画线用例通常 ≤3 条） */
+    tail: () => (lines.length === 0 ? '提交写点[0 条]' : `提交写点: ${lines.join(' ‖ ')}`),
+  }
+}
+
+/**
  * 选一个画线工具并等工具面板真正收起。
  * 面板是 `position: absolute` 盖在图表上方的：React 还没卸载就发 pointer 事件，
  * 事件会打在面板上，画线根本没开始（实测约 1/5 撞到这个竞态，表现为「删除」不出现）。

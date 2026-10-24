@@ -19,7 +19,7 @@ test.describe('K 线应用冒烟', () => {
   test.use({ acceptDownloads: true })
 
   test('图表水印 + 免责声明可见', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 图表右下水印：交易对 · 周期
     const watermark = page.getByTestId('chart-watermark')
@@ -31,7 +31,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('图表水印开关：更多面板切换 → canvas 水印消失/恢复 + 持久化', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 默认开：更多面板内「图表水印」为激活态
@@ -61,7 +61,7 @@ test.describe('K 线应用冒烟', () => {
     expect(await isActive()).toBe(false)
   })
   test('导出截图：图表水印关闭后仍强制携带免责声明角标', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 用户可关闭图表水印；但外发截图必须保留合规声明
@@ -96,7 +96,7 @@ test.describe('K 线应用冒烟', () => {
   test('切换周期/指标/交易对无异常', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 等蜡烛真正渲染（canvas 涨跌色像素）
     await waitCandlesRendered(page)
@@ -114,7 +114,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('回放：进入 → 播放 → 游标推进 → 退出', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await openMore(page)
     await page.getByRole('button', { name: '回放', exact: true }).click()
@@ -130,7 +130,7 @@ test.describe('K 线应用冒烟', () => {
     // 启动只需一条导航（本文件同此写法）：context 每条用例新建，goto 之后存储本就干净；
     // 原先追加的 evaluate(localStorage.clear()) + reload 是 CI 上 webkit 的崩点，
     // 理由与实测（两种启动逐键相同）记在 alerts-features.spec.ts 的 beforeEach 上。
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByTestId('live-price')).toContainText(/[\d.,]+/, { timeout: 20_000 })
     await openMore(page)
@@ -159,7 +159,7 @@ test.describe('K 线应用冒烟', () => {
     if (browserName === 'chromium') {
       await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     }
-    await page.goto('/?perf=600&symbol=ETHUSDT&period=1h')
+    await page.goto('/?perf=600&symbol=ETHUSDT&period=1h&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // URL 参数已定位品种
     await expect(page.getByText('ETH/USDT', { exact: false }).first()).toBeVisible()
@@ -181,7 +181,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('CSV 导出：一键下载含当前指标列的 K 线文件', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 默认主图 MA（5/10/20）+ 副图 VOL → 头部应为 time,open,high,low,close,volume,MA5,MA10,MA20
@@ -203,7 +203,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('区域截图：框选拖拽 → 裁剪导出 PNG + 按钮状态恢复', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 进入框选模式：按钮高亮 + 顶部提示条出现
@@ -238,7 +238,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('键盘快捷键：⌘K 搜索 / 布局 1·2·3 / M 循环指标 / ? 帮助浮层 / F 全屏', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 主图/副图按钮已折叠进「更多」面板：提前展开，后续 M/N 循环与布局断言均可见
     await openMore(page)
@@ -306,7 +306,7 @@ test.describe('K 线应用冒烟', () => {
   test('主题色预设：切换红涨绿跌 → CSS 变量/图表联动 + 持久化', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 默认 classic：--up 为 #26a69a
@@ -331,7 +331,7 @@ test.describe('K 线应用冒烟', () => {
   })
 
   test('自选收藏：星标添加 → 置顶自选区 → 取消', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 打开交易对选择器（按钮文案 = 当前品种）
     await page.locator('button', { hasText: 'BTC/USDT' }).click()
@@ -347,7 +347,7 @@ test.describe('K 线应用冒烟', () => {
 
 test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止盈）→ 落库 3 锚点保序 → 像素校验三条蓝色水平线 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openDrawing(page)
@@ -444,7 +444,7 @@ test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止�
 
 test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落库 3 锚点保序 → 像素校验蓝色射线 → 删除', async ({ page }) => {
     test.setTimeout(90_000)
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     await openDrawing(page)
@@ -555,7 +555,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
   })
 
   test('i18n：5 语循环切换（中/EN/日本語/한국어/ES）→ 界面文案切换并持久化', async ({ page }) => {
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
     // 默认中文 → 点「中文」切英文（语言按钮在「更多」折叠内）
     await openMore(page)
@@ -603,7 +603,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
   test('主图指标：SAR 切换无异常 + Ichimoku 云带/线渲染', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 等蜡烛像素出现（不做 reload 重试：云带断言自带 15s 轮询，避免冷启动吃掉用例超时）
     await page.waitForFunction(
@@ -666,7 +666,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
   test('指标参数：RSI 改 7 即时生效 + 全指标切换无异常 + 参数持久化', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(String(e)))
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     // 轻量等待蜡烛像素出现（避免 reload 重试）
     await page.waitForFunction(
@@ -725,7 +725,7 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
   test('价格坐标轴：线性/对数切换 → 渲染无异常 + 持久化', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
-    await page.goto('/?perf=600')
+    await page.goto('/?perf=600&debugDrawingCommits')
     await expect(page.getByText('实时', { exact: false })).toBeVisible({ timeout: 20_000 })
     await waitCandlesRendered(page)
     // 缩放按钮在「更多」折叠内
