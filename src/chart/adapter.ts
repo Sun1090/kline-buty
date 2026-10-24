@@ -573,6 +573,23 @@ export class LightweightChartAdapter implements ChartApi {
     this.syncOverlaySize()
 
     container.addEventListener('pointermove', this.onPointerMove)
+    // #322 第 3 层插桩：捕获阶段最外沿的 raw-down——先于一切分支记「事件确实到了 container」。
+    // 与画线分支的 `down` 对读：raw-down 有而 down 无 = 事件进了 container 但没走画线分支
+    // （读 tool/状态快照）；raw-down 也没有 = 事件没到 container（被外层吃掉或根本没派发）。
+    if (this.debugCommits) {
+      container.addEventListener(
+        'pointerdown',
+        (e) => {
+          const target = e.target as HTMLElement | null
+          logDrawingCommit(
+            'raw-down',
+            { target: target?.tagName ?? '(null)', cls: target?.className?.toString().slice(0, 40) ?? '' },
+            this.debugCommits,
+          )
+        },
+        { capture: true },
+      )
+    }
     container.addEventListener('pointerdown', this.onPointerDown)
     container.addEventListener('pointerup', this.onPointerUp)
     // 系统手势/浏览器接管触摸时会发出 pointercancel；必须回滚进行中的交互，

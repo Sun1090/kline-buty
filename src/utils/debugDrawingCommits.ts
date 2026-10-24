@@ -24,6 +24,7 @@
 export type DrawingCommitKind =
   | 'commit' | 'state' | 'storage'
   | 'down' | 'down-null' | 'up' | 'up-miss' | 'cancel' | 'lost-capture'
+  | 'raw-down'
 export function debugDrawingCommitsEnabled(search: string = typeof location === 'undefined' ? '' : location.search): boolean {
   return new URLSearchParams(search).has('debugDrawingCommits')
 }

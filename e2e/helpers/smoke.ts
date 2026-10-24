@@ -209,7 +209,8 @@ export function attachDrawingCommitCollector(page: Page) {
       const count = (kind: string) => lines.filter((l) => l.includes(`: ${kind} #`)).length
       const entries =
         `入口计数: down=${count('down')} down-null=${count('down-null')} up=${count('up')} ` +
-        `up-miss=${count('up-miss')} cancel=${count('cancel')} lost-capture=${count('lost-capture')} ‖ `
+        `up-miss=${count('up-miss')} cancel=${count('cancel')} lost-capture=${count('lost-capture')} ` +
+        `raw-down=${count('raw-down')} ‖ `
       return `${entries}写点: ${lines.join(' ‖ ')}`
     },
   }
