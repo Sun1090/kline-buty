@@ -200,8 +200,18 @@ export function attachDrawingCommitCollector(page: Page) {
     if (t.startsWith('debugDrawingCommits:')) lines.push(t)
   })
   return {
-    /** 整段摘要（一行；长度只随写点数增长，画线用例通常 ≤3 条） */
-    tail: () => (lines.length === 0 ? '提交写点[0 条]' : `提交写点: ${lines.join(' ‖ ')}`),
+    /** 整段摘要：入口计数（down/up/up-miss/cancel/lost-capture/down-null）+ 三写点原文。
+     *  长度只随写点数增长（画线用例通常 ≤5 条）。读法：
+     *  up-miss>0 或 cancel/lost-capture>0 ⇒ 手势被系统入口清掉；down-null>0 ⇒ 点击落在数据区外；
+     *  down=N up=M 配平且有 commit ⇒ 链路正常（红因在别处）。 */
+    tail: () => {
+      if (lines.length === 0) return '提交写点[0 条]'
+      const count = (kind: string) => lines.filter((l) => l.includes(`: ${kind} #`)).length
+      const entries =
+        `入口计数: down=${count('down')} down-null=${count('down-null')} up=${count('up')} ` +
+        `up-miss=${count('up-miss')} cancel=${count('cancel')} lost-capture=${count('lost-capture')} ‖ `
+      return `${entries}写点: ${lines.join(' ‖ ')}`
+    },
   }
 }
 
