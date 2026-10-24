@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { countBandDiff, decodePng, openDrawing, openMore, readChartBand, waitCandlesRendered } from './helpers/smoke'
+import { countBandDiff, decodePng, drawingClick, openDrawing, openMore, readChartBand, waitCandlesRendered } from './helpers/smoke'
 /**
  * 主冒烟。数据源：`?perf=600` 合成蜡烛（19 处 goto 全换）。
  *
@@ -356,9 +356,9 @@ test('画线：风险回报 R:R → 三点点击（A 入场 / B 止损 / C 止�
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
     // 三点点击：A（左中，入场）→ B（中下，止损）→ C（中上，止盈）
-    await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.45)
-    await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.65)
-    await page.mouse.click(box!.x + box!.width * 0.5, box!.y + box!.height * 0.28)
+    await drawingClick(page, box!.x + box!.width * 0.3, box!.y + box!.height * 0.45)
+    await drawingClick(page, box!.x + box!.width * 0.55, box!.y + box!.height * 0.65)
+    await drawingClick(page, box!.x + box!.width * 0.5, box!.y + box!.height * 0.28)
     // 落库：type=rr，三点保留 A→B→C 原始点击顺序（方向敏感）
     await expect
       .poll(
@@ -453,9 +453,9 @@ test('画线：平行射线 → 三点点击（A/B 方向 + C 起点）→ 落�
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
     // 三点点击：A（左中）→ B（右上）→ C（中下，射线起点）
-    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height * 0.55)
-    await page.mouse.click(box!.x + box!.width * 0.62, box!.y + box!.height * 0.3)
-    await page.mouse.click(box!.x + box!.width * 0.4, box!.y + box!.height * 0.6)
+    await drawingClick(page, box!.x + box!.width * 0.25, box!.y + box!.height * 0.55)
+    await drawingClick(page, box!.x + box!.width * 0.62, box!.y + box!.height * 0.3)
+    await drawingClick(page, box!.x + box!.width * 0.4, box!.y + box!.height * 0.6)
     // 落库：type=parray，三点保留 A→B→C 原始点击顺序（方向敏感）
     await expect
       .poll(

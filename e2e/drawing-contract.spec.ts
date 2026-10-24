@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { attachDrawingCommitCollector, openDrawing, waitCandlesRendered } from './helpers/smoke'
+import { attachDrawingCommitCollector, drawingClick, openDrawing, waitCandlesRendered } from './helpers/smoke'
 import { DRAWING_TOOLS } from '../src/components/headerOptions'
 import type { DrawingTool } from '../src/drawings/logic'
 
@@ -127,7 +127,7 @@ async function drive(page: Page, box: { x: number; y: number; width: number; hei
   const n = ANCHOR_COUNT(tool)
   if (n === 1) {
     const p = anchorAt(box, 0, 1)
-    await page.mouse.click(p.x, p.y)
+    await drawingClick(page, p.x, p.y)
     return
   }
   if (n === 2) {
@@ -142,7 +142,7 @@ async function drive(page: Page, box: { x: number; y: number; width: number; hei
   for (let i = 0; i < n; i++) {
     const p = anchorAt(box, i, n)
     if (tool === 'polyline' && i === n - 1) await finishPolyline(page, p.x, p.y)
-    else await page.mouse.click(p.x, p.y)
+    else await drawingClick(page, p.x, p.y)
   }
 }
 

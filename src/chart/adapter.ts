@@ -581,6 +581,9 @@ export class LightweightChartAdapter implements ChartApi {
         'pointerdown',
         (e) => {
           const target = e.target as HTMLElement | null
+          // e2e 落地对账读这个 DOM 属性（drawingClick 重发判据）：计数比 console 日志更稳
+          const seqAttr = Number(container.getAttribute('data-raw-down') ?? 0) + 1
+          container.setAttribute('data-raw-down', String(seqAttr))
           logDrawingCommit(
             'raw-down',
             { target: target?.tagName ?? '(null)', cls: target?.className?.toString().slice(0, 40) ?? '' },

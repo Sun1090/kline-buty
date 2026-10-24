@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { attachDrawingCommitCollector, dragContainerPointer, dragSelectedAnchorUntil, findDrawnLineCenter, findDrawnPixels, hitDrawnPixelUntil, openDrawing, pickDrawingTool, findHorizontalBandAnchor, findHorizontalLineAnchor, findVerticalBandAnchor, waitCandlesRendered, type HitPixelDiag } from './helpers/smoke'
+import { attachDrawingCommitCollector, dragContainerPointer, dragSelectedAnchorUntil, drawingClick, findDrawnLineCenter, findDrawnPixels, hitDrawnPixelUntil, openDrawing, pickDrawingTool, findHorizontalBandAnchor, findHorizontalLineAnchor, findVerticalBandAnchor, waitCandlesRendered, type HitPixelDiag } from './helpers/smoke'
 /**
  * 画线工具端到端覆盖（自 smoke.spec.ts 拆出）：绘制 → 落库 → 像素校验 → 删除。
  * 锚点寻找与像素带比对来自 e2e/helpers/smoke.ts。
@@ -1648,9 +1648,10 @@ test.describe('画线工具', () => {
     const box = await chart.boundingBox()
     expect(box).not.toBeNull()
     // 三点点击：A（左下）→ B（右上）→ C（中上，第二平行线位置）
-    await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.7)
-    await page.mouse.click(box!.x + box!.width * 0.6, box!.y + box!.height * 0.25)
-    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.4)
+    // drawingClick：#322 实证 webkit 会整次蒸发多锚点序列里的后续 down（run 40089071797）
+    await drawingClick(page, box!.x + box!.width * 0.2, box!.y + box!.height * 0.7)
+    await drawingClick(page, box!.x + box!.width * 0.6, box!.y + box!.height * 0.25)
+    await drawingClick(page, box!.x + box!.width * 0.45, box!.y + box!.height * 0.4)
     await expect
       .poll(
         () =>
@@ -2549,10 +2550,11 @@ test.describe('画线工具', () => {
 
     // 多段线：依次点击 3 个顶点，最后双击收尾提交
     // （Playwright 合成点击的 pointerdown.detail 恒为 0，双击收尾用 detail=2 的合成 PointerEvent 模拟真实浏览器双击）
+    // 点击走 drawingClick：#322 实证 webkit 会整次蒸发多锚点序列里的后续 down（run 40089071797）
     await pickDrawingTool(page, '多段线')
-    await page.mouse.click(box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
-    await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.5)
-    await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.35)
+    await drawingClick(page, box!.x + box!.width * 0.2, box!.y + box!.height * 0.3)
+    await drawingClick(page, box!.x + box!.width * 0.45, box!.y + box!.height * 0.5)
+    await drawingClick(page, box!.x + box!.width * 0.7, box!.y + box!.height * 0.35)
     await page.evaluate(
       ({ x, y }) => {
         const el = document.elementFromPoint(x, y) ?? document.body

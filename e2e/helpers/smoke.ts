@@ -217,6 +217,29 @@ export function attachDrawingCommitCollector(page: Page) {
 }
 
 /**
+ * 带落地对账的画线点击：发一次 click 后确认 adapter 的捕获阶段计数器涨了（`data-raw-down`，
+ * `?debugDrawingCommits` 门控下 adapter 在 container 捕获阶段维护），没涨就重发。
+ *
+ * #322 第 13 条读数（run 40089071797，head=7faee00）：多锚点工具的三点点击在 webkit 上
+ * `raw-down=1 down=1`——**只有第一次 click 有 pointerdown 到达 container**，后续 click 整次蒸发
+ * （捕获阶段最外沿都没响 = 事件派发层丢的，与产品代码无关；cancel/lost-capture/数据区外全排除）。
+ * 重发把「静默丢一次点击」变成「最多 4 次重试 + 超限显式红」；产品侧判据不放宽，
+ * 落库 poll 仍以「真的集满锚点提交」为准。不开 flag 时计数属性不存在（恒 -1），
+ * 调用方对这类 URL 不用本函数。
+ */
+export async function drawingClick(page: Page, x: number, y: number) {
+  const read = () =>
+    page.evaluate(() => Number(document.querySelector('.chart-container')?.getAttribute('data-raw-down') ?? -1))
+  const before = await read()
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.mouse.click(x, y)
+    await page.waitForTimeout(60)
+    if ((await read()) > before) return
+  }
+  throw new Error(`drawingClick 5 次重发后事件仍未到达 chart container（x=${x} y=${y}；计数 ${before} 未增长）`)
+}
+
+/**
  * 选一个画线工具并等工具面板真正收起。
  * 面板是 `position: absolute` 盖在图表上方的：React 还没卸载就发 pointer 事件，
  * 事件会打在面板上，画线根本没开始（实测约 1/5 撞到这个竞态，表现为「删除」不出现）。
