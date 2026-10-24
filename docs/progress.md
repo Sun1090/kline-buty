@@ -2298,19 +2298,43 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - E 批一：E2E 已验证闭合（`alerts-features.spec.ts` 9/9 绿，ci 账本；见上「阶段 E」状态行）
 
 ## 恢复入口
+### A4c 那次红按读数顺序①收账：修测试时机（2026-10-24，分支 `test/222-pan-tail-flush`）
+
+- **触发的红**：PR #315（dependabot typescript-eslint，纯 dev 工具链、与运行时无因果）E2E job
+  run 39209513836 webkit `quad-switch-no-drag` 三条 attempt 全红（719 passed / 1 failed）。
+  依赖升级的 PR 撞出 #222 等的那次红——按 #222 档案口径「不 skip、不放宽、下次红按判词读数」处理。
+- **判词读数**（照恢复入口的顺序走，不猜）：
+  - attempt 1/3：`广播归因 ETH←BTC report·迟到echo(1792350600→1792377000) | SOL←BTC report·迟到echo(...) | BNB←BTC report·迟到echo(...)`——**全是 `·迟到echo`**；
+  - attempt 2：`广播归因[base 之后无 apply]`（同一形态的另一种读法：末次 apply 的 incoming 窗口对不上，见下）；
+  - 逐拍轨迹：ETH 从**第 1 拍**起恒定 `-600/-900s`、21 拍不归零；`回到最新` 在场性恒 1
+    （没被甩回最新，与 2026-09-29 那次的「确定性窗口甩回」不同族）；数据首根 Δ 全 0（非数据头）。
+- **定性（读数顺序①的原文条件全中）**：真凶是 pan 尾帧的 `report owned=true` 在 **base 快照
+  读完之后**陆续落进接收格（迟到 echo），base 读早了——**产品链路可能没错，修测试时机**。
+  attempt 2 的 `[base 之后无 apply]` 也自洽：末次 apply 的 `extFrom/extTo` 是各接收格被
+  clamp 后的窗（ETH/SOL/BNB 各自网格不同），与 BTC 广播的原始窗逐字比对对不上，于是
+  「源不可见」链路读不出、归因整体退化——那 21 拍里 apply 只有换格后 1~2 条，
+  平移本身发生在 base 读取与归因窗口之间，不是换格造成的。
+- **修法**（只动 `e2e/quad-switch-no-drag.spec.ts`，零产品代码）：
+  新增 `waitForPanTailFlush`——连续 3 拍（150ms/拍）`viewWrites` 不再增长才算写点流静默，
+  FLOOR 600ms、CAP 8s；在**记 baseIndex / 读 base 之前**与 **selectOption 记 switchIndex 之前**
+  各等一次静默（替换原 300ms 固定等待）。判停用写点流而不是固定 sleep：写点什么时候停
+  取决于机器快慢（规则 9），300ms 在 CI 慢机不够、在本机又是白等。
+- **验证**：e2e tsc 0；lint 0 errors（33 warn=基线）；build 后 chromium 1/1 PASS（18.9s）；
+  repeat-each=3 chromium 3/3 PASS（本机对这条历来不复现红——本机绿只当冒烟，规则 3）；
+  **真正的验收是落 main 后 CI 不再红**。变异方向（回退成固定 300ms）在本机不转红
+  （同上，本机难复现），故不构成「变异被杀」的证据，如实记录、不冒充。
+- 零产品代码；#222 保持 OPEN（等落 main 后的 CI 观察轮次）。
+- 更新日：2026-10-24
+
+---
+
 1. `git log --oneline -5` 确认已提交边界
 2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
    A–I 功能清单与 E/F 阶段均已闭合；#191 已由人工裁定 PR #293（main `6f83244`）关闭；
    可执行工作只剩：
-    - **#222 flake**（唯一仍 OPEN 的 issue，`gh issue view 222` 实证）：成因已修、判词已整段化并按原始秒读；
-      **#301 之后归因逻辑已可信**——下一次 CI 红，判词尾部直接给出 `广播归因 <sym>←<src> report/settle·<迟到echo|换格广播>(from→to)`
-      或 `源不可见(from→to)`。读数顺序（优先级从高到低）：
-      ① 全是 `·迟到echo` ⇒ base 快照读早了，pan 尾帧 echo 才是真凶——**修测试时机**（把 base 快照
-         挪到 pan 尾巴冲干净之后再读），产品链路可能没错；
-      ② 出现 `·换格广播` ⇒ 换格两拍里真有人广播了那个窗——**是真产品缺陷**，顺着源格 report/settle
-         那一条查发起链路（`ChartView.tsx:708-713` 广播门 + `:485` 落定广播）；
-      ③ 若还带 `expired≥1` ⇒ 归属超时误判重现（重查 #285 族，本会话判词未见此形态）；
-      ④ 若 `claim>release` ⇒ 手势未结束（本会话判词未见此形态）。
-      归因逻辑本身的正确性由 13 条 fixture + 4 个单点变异证明（见「#299 广播归因插桩的 bug 修掉」节）。
+    - **#222 flake**（唯一仍 OPEN 的 issue，`gh issue view 222` 实证）：**2026-10-24 已按读数顺序①
+      定性并落地修测试时机**（见「A4c 那次红按读数顺序①收账」节）——剩余工作是等该修复落 main 后
+      观察 CI 是否复红：复红且归因读出 `·换格广播`/`源不可见` 才回到产品链路；持续绿则按 #222 档案
+      口径（规则 3）再观察若干轮后谈收口。
     - 新需求先回 `docs/13` 与 AGENTS.md「Product Boundaries」核对在/不在论文范围内。
 3. 每批：实现 → 补单测 → typecheck/lint/unit → 本地 commit；大阶段全绿后 push → 查 CI/Pages/CodeQL/依赖扫描

@@ -208,6 +208,41 @@ async function panIntoHistory(page: Page, at: { cx: number; cy: number }) {
   await page.mouse.up()
 }
 
+/**
+ * 等 pan 尾帧写点冲干净：连续 `QUIET_POLLS` 拍 `viewWrites` 不再增长才算静默。
+ *
+ * #222 读数顺序①的落地（2026-10-24）：A4c 那次 CI 红（run 39209513836，PR #315）三条 attempt
+ * 归因读出 `ETH←BTC report·迟到echo` / `[base 之后无 apply]`，且 ETH 逐拍 Δ 从第 1 拍起恒定
+ * -600/-900s、21 拍不归零、在场性恒 1、数据首根 Δ 全 0 —— 按既定读法，真凶是 pan 尾帧的
+ * `report owned=true` 在 **base 快照读完之后** 陆续落进接收格（迟到 echo），base 读早了，
+ * 产品链路没有错。旧流程在「回到最新 ×4」出现后立刻读 base，而拖动写点还要再落几百毫秒。
+ *
+ * 判停条件是**写点流静默**而不是固定 sleep：写点什么时候停取决于机器快慢（规则 9），
+ * 300ms 在 CI 慢机上不够、在本机上又是白等。连续 3 拍（150ms/拍）无新写点 = 至少 300ms
+ * 静默才放行，比旧值更严；FLOOR 保证采样本身的节奏，CAP 到点就带着现状继续——
+ * 后面 `solMoved`/归因判据仍会把真缺陷钉出来，这里不静默放行也不假红。
+ */
+async function waitForPanTailFlush(page: Page, viewWrites: string[]) {
+  const SAMPLE_MS = 150
+  const QUIET_POLLS = 3
+  const FLOOR_MS = 600
+  const CAP_MS = 8_000
+  const startedAt = Date.now()
+  let quiet = 0
+  let last = viewWrites.length
+  do {
+    await page.waitForTimeout(SAMPLE_MS)
+    const now = viewWrites.length
+    if (now === last) quiet++
+    else {
+      quiet = 0
+      last = now
+    }
+  } while (quiet < QUIET_POLLS && Date.now() - startedAt < CAP_MS)
+  const remaining = FLOOR_MS - (Date.now() - startedAt)
+  if (remaining > 0) await page.waitForTimeout(remaining)
+}
+
 test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', () => {
   test.setTimeout(150_000)
 
@@ -263,6 +298,11 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     // 下面那句「一秒都不该变」就成了一个随时序抖动的断言。
     await expect(page.getByTestId('back-to-latest')).toHaveCount(CELLS.length, { timeout: 20_000 })
 
+    // #222 读数顺序①：pan 尾帧的 report 会在 base 之后落进接收格（迟到 echo），
+    // 把 base 读走之前先等写点流静默 —— 否则 base 与基线之间隔着几百毫秒的尾巴，
+    // ETH/BNB 已被挪走，判词却把锅扣给换格。
+    await waitForPanTailFlush(page, viewWrites)
+
     // 归因窗口的**起算锚点**必须与 base 快照同一时刻：在 `cellWindows` 之前记 `baseIndex`，
     // 让那次 await 里陆续落进来的 apply（迟到 echo）也算在内。#299 首跑把它记在 base **之后**、
     // 又切在 selectOption 之后，于是「ETH/BNB 明明被挪走 -600s，归因却读出 [换格后无 apply]」——
@@ -276,10 +316,10 @@ test.describe('A4c 换一格周期不许挪走其余三格的视角（quad）', 
     const baseSwitched = base[SWITCHED]
     const baseSwitchedSpan = baseSwitched.to! - baseSwitched.from!
 
-    // selectOption 的分界：300ms 让 pan 尾帧 echo 先冲干净，此后归因窗里 [switchIndex, end) 的
-    // apply 才干净地属于「换格那一拍」。用 switchIndex 只做**分类**（迟到 echo vs 换格广播），
-    // 不再拿它当窗口下界——下界是 baseIndex。
-    await page.waitForTimeout(300)
+    // selectOption 的分界：写点再次静默（换 base 之后落进来的 echo 冲完）让归因窗里
+    // [switchIndex, end) 的 apply 才干净地属于「换格那一拍」。用 switchIndex 只做**分类**
+    // （迟到 echo vs 换格广播），不再拿它当窗口下界——下界是 baseIndex。
+    await waitForPanTailFlush(page, viewWrites)
     const switchIndex = viewWrites.length
     await page.getByTestId(`quad-period-${SWITCHED}`).selectOption('1h')
 
