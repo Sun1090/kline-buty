@@ -200,9 +200,43 @@ export function attachDrawingCommitCollector(page: Page) {
     if (t.startsWith('debugDrawingCommits:')) lines.push(t)
   })
   return {
-    /** 整段摘要（一行；长度只随写点数增长，画线用例通常 ≤3 条） */
-    tail: () => (lines.length === 0 ? '提交写点[0 条]' : `提交写点: ${lines.join(' ‖ ')}`),
+    /** 整段摘要：入口计数（down/up/up-miss/cancel/lost-capture/down-null）+ 三写点原文。
+     *  长度只随写点数增长（画线用例通常 ≤5 条）。读法：
+     *  up-miss>0 或 cancel/lost-capture>0 ⇒ 手势被系统入口清掉；down-null>0 ⇒ 点击落在数据区外；
+     *  down=N up=M 配平且有 commit ⇒ 链路正常（红因在别处）。 */
+    tail: () => {
+      if (lines.length === 0) return '提交写点[0 条]'
+      const count = (kind: string) => lines.filter((l) => l.includes(`: ${kind} #`)).length
+      const entries =
+        `入口计数: down=${count('down')} down-null=${count('down-null')} up=${count('up')} ` +
+        `up-miss=${count('up-miss')} cancel=${count('cancel')} lost-capture=${count('lost-capture')} ` +
+        `raw-down=${count('raw-down')} ‖ `
+      return `${entries}写点: ${lines.join(' ‖ ')}`
+    },
   }
+}
+
+/**
+ * 带落地对账的画线点击：发一次 click 后确认 adapter 的捕获阶段计数器涨了（`data-raw-down`，
+ * `?debugDrawingCommits` 门控下 adapter 在 container 捕获阶段维护），没涨就重发。
+ *
+ * #322 第 13 条读数（run 40089071797，head=7faee00）：多锚点工具的三点点击在 webkit 上
+ * `raw-down=1 down=1`——**只有第一次 click 有 pointerdown 到达 container**，后续 click 整次蒸发
+ * （捕获阶段最外沿都没响 = 事件派发层丢的，与产品代码无关；cancel/lost-capture/数据区外全排除）。
+ * 重发把「静默丢一次点击」变成「最多 4 次重试 + 超限显式红」；产品侧判据不放宽，
+ * 落库 poll 仍以「真的集满锚点提交」为准。不开 flag 时计数属性不存在（恒 -1），
+ * 调用方对这类 URL 不用本函数。
+ */
+export async function drawingClick(page: Page, x: number, y: number) {
+  const read = () =>
+    page.evaluate(() => Number(document.querySelector('.chart-container')?.getAttribute('data-raw-down') ?? -1))
+  const before = await read()
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.mouse.click(x, y)
+    await page.waitForTimeout(60)
+    if ((await read()) > before) return
+  }
+  throw new Error(`drawingClick 5 次重发后事件仍未到达 chart container（x=${x} y=${y}；计数 ${before} 未增长）`)
 }
 
 /**

@@ -69,6 +69,7 @@ import {
   type SegmentLine,
 } from '../drawings/logic'
 import { snapToCandle, type SnapMode } from '../drawings/snap'
+import { debugDrawingCommitsEnabled, logDrawingCommit } from '../utils/debugDrawingCommits'
 import { themeFor, THEMES, type ChartTheme, type ColorPresetId, type ThemeMode } from '../theme'
 import { chartLabelsFor, DEFAULT_LANG, type ChartLabels, type Lang } from '../i18n/messages'
 import { fmtAxisPrice, fmtPricePrecise } from '../utils/format'
@@ -423,6 +424,8 @@ export class LightweightChartAdapter implements ChartApi {
   private periodSeconds = 60
   /** 最近一次 pointerdown 的点击次数（多段折线双击收尾用） */
   private lastDownDetail = 1
+  /** #322 插桩：`?debugDrawingCommits` 门控，构造时求值一次（纯观测面，不开零开销） */
+  private readonly debugCommits = debugDrawingCommitsEnabled()
   private dragHandler: ((key: PositionLineKey, price: number) => number | null | void) | null = null
   private dragKey: PositionLineKey | null = null
   private hoverKey: PositionLineKey | null = null
@@ -570,6 +573,26 @@ export class LightweightChartAdapter implements ChartApi {
     this.syncOverlaySize()
 
     container.addEventListener('pointermove', this.onPointerMove)
+    // #322 第 3 层插桩：捕获阶段最外沿的 raw-down——先于一切分支记「事件确实到了 container」。
+    // 与画线分支的 `down` 对读：raw-down 有而 down 无 = 事件进了 container 但没走画线分支
+    // （读 tool/状态快照）；raw-down 也没有 = 事件没到 container（被外层吃掉或根本没派发）。
+    if (this.debugCommits) {
+      container.addEventListener(
+        'pointerdown',
+        (e) => {
+          const target = e.target as HTMLElement | null
+          // e2e 落地对账读这个 DOM 属性（drawingClick 重发判据）：计数比 console 日志更稳
+          const seqAttr = Number(container.getAttribute('data-raw-down') ?? 0) + 1
+          container.setAttribute('data-raw-down', String(seqAttr))
+          logDrawingCommit(
+            'raw-down',
+            { target: target?.tagName ?? '(null)', cls: target?.className?.toString().slice(0, 40) ?? '' },
+            this.debugCommits,
+          )
+        },
+        { capture: true },
+      )
+    }
     container.addEventListener('pointerdown', this.onPointerDown)
     container.addEventListener('pointerup', this.onPointerUp)
     // 系统手势/浏览器接管触摸时会发出 pointercancel；必须回滚进行中的交互，
@@ -2499,13 +2522,18 @@ export class LightweightChartAdapter implements ChartApi {
     if (this.drawingTool !== 'none') {
       const time = this.timeAtPixel(x)
       const price = this.mainSeries.coordinateToPrice(y)
-      if (time !== null && price !== null) {
-        this.drawingDown = this.snapPoint(Number(time), Number(price))
-        this.drawingPreview = this.drawingDown
-        this.container.setPointerCapture?.(e.pointerId)
-        this.setPanEnabled(false)
-        this.draw()
+      // #322 入口计数：time/price 读不到时这里静默 return——下一次点击消失，判词靠 down-null 区分
+      // 「点击落在数据区外」与「事件被 cancel 族清掉」两种成因。
+      if (time === null || price === null) {
+        logDrawingCommit('down-null', { tool: this.drawingTool, x, y }, this.debugCommits)
+        return
       }
+      logDrawingCommit('down', { tool: this.drawingTool }, this.debugCommits)
+      this.drawingDown = this.snapPoint(Number(time), Number(price))
+      this.drawingPreview = this.drawingDown
+      this.container.setPointerCapture?.(e.pointerId)
+      this.setPanEnabled(false)
+      this.draw()
       return
     }
 
@@ -2692,6 +2720,7 @@ export class LightweightChartAdapter implements ChartApi {
 
     // 画线完成 → 提交（按工具所需锚点数分批收集）
     if (this.drawingDown) {
+      logDrawingCommit('up', { tool: this.drawingTool }, this.debugCommits)
       const tool = this.drawingTool as Drawing['type']
       const need = requiredPoints(tool)
       const final = this.drawingPreview ?? this.drawingDown
@@ -2723,6 +2752,15 @@ export class LightweightChartAdapter implements ChartApi {
         }
       }
       return
+    }
+    // #322 入口计数：走到这里 = pointerup 时 drawingDown 已不在（被 cancel/capture 丢失清掉）
+    // ⇒ 一次手势整段蒸发的实锤。多锚点工具进行中（drawingPoints 已有锚点）时尤其致命。
+    if (this.drawingTool !== 'none' && (this.drawingPoints.length > 0 || this.drawingPreview !== null)) {
+      logDrawingCommit(
+        'up-miss',
+        { tool: this.drawingTool, points: this.drawingPoints.length },
+        this.debugCommits,
+      )
     }
     this.drawingDown = null
     this.drawingPreview = null
@@ -2799,6 +2837,10 @@ export class LightweightChartAdapter implements ChartApi {
    */
   private onPointerCancel = () => {
     this.cancelTouchInertia()
+    // #322 入口计数：画线进行中被系统取消 = 手势蒸发候选入口之一
+    if (this.drawingTool !== 'none' && (this.drawingDown !== null || this.drawingPoints.length > 0)) {
+      logDrawingCommit('cancel', { tool: this.drawingTool, points: this.drawingPoints.length }, this.debugCommits)
+    }
     this.drawingDown = null
     this.dragPreview = null
     this.dragEdit = null
@@ -2822,6 +2864,11 @@ export class LightweightChartAdapter implements ChartApi {
 
   /** 捕获丢失是系统取消的兜底信号：只清理当前按下点，不重复回滚已完成状态 */
   private onLostPointerCapture = (e: PointerEvent) => {
+    // #322 入口计数：画线进行中捕获丢失 = 手势蒸发候选入口之一（webkit 上 setPointerCapture
+    // 的丢失时序与合成 click 序列交叠是本次取证的重点怀疑对象）
+    if (this.drawingTool !== 'none' && this.drawingDown !== null) {
+      logDrawingCommit('lost-capture', { tool: this.drawingTool }, this.debugCommits)
+    }
     this.drawingDown = null
     // 触摸拖动会先释放 pointer 捕获、再派发 touchend；这里若清掉拖动标记，
     // touchend 会把两次快速拖动误判成双击复位，因此只在鼠标手势时重置。
