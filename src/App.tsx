@@ -39,6 +39,7 @@ import { usePositionSettlement } from './hooks/usePositionSettlement'
 import type { TpSlExit } from './trade/tpsl'
 import { createPendingOrder, ORDERS_PER_SYMBOL_MAX } from './trade/pending'
 import { useScheduledTheme } from './hooks/useScheduledTheme'
+import { debugDrawingCommitsEnabled, logDrawingCommit } from './utils/debugDrawingCommits'
 import { tradeStats } from './trade/stats'
 import { todayRealizedPnl } from './trade/daily'
 import { tradeMarkersFor } from './trade/markers'
@@ -733,6 +734,8 @@ export function App() {
   const commitDrawing = (d: { type: Drawing['type']; points: { time: number; price: number }[] }) => {
     const created = { ...createDrawing(d.type, d.points), color: drawingColor || undefined }
     mutateDrawings((prev) => [...prev, created])
+    // #322 插桩：第二写点——state 队列已排进新画线（storage 写由 usePersistedState 的 effect 异步跟上）
+    logDrawingCommit('state', { tool: d.type, id: created.id }, debugDrawingCommitsEnabled())
     setSelectedDrawingId(created.id)
     // 移动端画线完成自动切回「鼠标」只读模式：避免再次轻点误建画线，
     // 且可直接触屏拖拽编辑（桌面端保持工具不切，连续画线）

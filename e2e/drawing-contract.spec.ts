@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openDrawing, waitCandlesRendered } from './helpers/smoke'
+import { attachDrawingCommitCollector, openDrawing, waitCandlesRendered } from './helpers/smoke'
 import { DRAWING_TOOLS } from '../src/components/headerOptions'
 import type { DrawingTool } from '../src/drawings/logic'
 
@@ -99,7 +99,7 @@ async function finishPolyline(page: Page, x: number, y: number) {
 
 async function openPerfChart(page: Page) {
   await page.addInitScript(() => localStorage.setItem('kline-buty:drawingSnap', '"off"'))
-  await page.goto('/?perf=600')
+  await page.goto('/?perf=600&debugDrawingCommits')
   await waitCandlesRendered(page)
 }
 
@@ -168,6 +168,8 @@ test.describe('画线工具全表契约', () => {
     if (tool === 'none') continue
     test(`${tool}：手势 → 锚点契约`, async ({ page }) => {
       test.setTimeout(45_000)
+      // #322 取证：落库 poll 红时判词带出提交链路三写点（commit/state/storage 断在哪一段）
+      const commits = attachDrawingCommitCollector(page)
       await openPerfChart(page)
       const labels = await toolLabels(page)
       await page.getByRole('button', { name: labels[tool] ?? tool, exact: true }).click()
@@ -177,9 +179,17 @@ test.describe('画线工具全表契约', () => {
       expect(box).not.toBeNull()
       await drive(page, box!, tool)
 
-      await expect
-        .poll(() => readDrawings(page).then((d) => d.length), { message: `${tool} 未提交画线`, timeout: 5_000 })
-        .toBe(1)
+      // #322：poll 红时把提交链路写点带进错误信息——静态 message 做不到动态插值，
+      // 改成「poll 到点还没落库就抛带读数的错」。
+      try {
+        await expect
+          .poll(() => readDrawings(page).then((d) => d.length), { timeout: 5_000 })
+          .toBe(1)
+      } catch (e) {
+        const wrapped = new Error(`${tool} 未提交画线（${commits.tail()}）`)
+        if (e instanceof Error) wrapped.stack = `${wrapped.message}\n[cause] ${e.message}`
+        throw wrapped
+      }
       const [drawing] = await readDrawings(page)
       expect(drawing?.type).toBe(tool)
       const points = drawing?.points ?? []

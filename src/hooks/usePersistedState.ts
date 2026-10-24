@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
+import { logDrawingCommit, debugDrawingCommitsEnabled } from '../utils/debugDrawingCommits'
 
 const PREFIX = 'kline-buty:'
 
 type Setter<T> = (v: T | ((prev: T) => T)) => void
+
+/** #322 插桩：`drawings` 键的 storage 写点——链路第三段。有 state 无这条 = effect 没跑（页面被卸载等）。 */
+function isDrawingsKey(key: string): boolean {
+  return key === 'drawings'
+}
 
 /** localStorage 持久化 state：初始化读取，变化即写，解析失败回退默认 */
 export function usePersistedState<T>(key: string, initial: T): [T, Setter<T>] {
@@ -33,6 +39,7 @@ export function usePersistedState<T>(key: string, initial: T): [T, Setter<T>] {
     } catch {
       /* noop */
     }
+    if (isDrawingsKey(key)) logDrawingCommit('storage', {}, debugDrawingCommitsEnabled())
   }, [key, value])
 
   return [value, setPersisted]
