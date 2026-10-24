@@ -2297,6 +2297,28 @@ if (viewOwnedByUserRef.current && now - lastClaimAtRef.current > OWNED_MAX_MS) {
 - C 阶段：v0.3 O8 E2E 已覆盖图层/截图/坐标角标 ✓
 - E 批一：E2E 已验证闭合（`alerts-features.spec.ts` 9/9 绿，ci 账本；见上「阶段 E」状态行）
 
+---
+
+### A4c 修复 + smoke-depth 修复 + #322 插桩落 main（2026-10-24，PR #321 → main `8f7c7e4`）
+
+- **三个主题一个 PR**（同链路取证串成一线，squash 合并；#320 关闭——其两个提交已随 #321 落地）：
+  1. **A4c 读数顺序①收账**：`waitForPanTailFlush`（写点流静默判停，替换固定 300ms sleep）——
+     触发的红是 PR #315 run 39209513836，归因全是 `·迟到echo`（详见上方收账节）。
+  2. **smoke-depth `rowBox`**：盘口档位包围盒 poll 稳取（行按价格做 key，重渲染瞬间
+     `boundingBox()` 返回 null）——run 40076890403 前身 40065573721 的 webkit `:103` ×3 null 解引用。
+  3. **#322 三写点插桩**（`?debugDrawingCommits`）：commit/state/storage 门控日志 + e2e 收集器。
+- **#322 插桩首战读数（定性）**：`pitchfork 未提交画线（提交写点: storage #1）`×3 attempt 一字不差
+  ——零 commit、零 state ⇒ **onCommit 从未触发**，成因收敛为「三点点击中间一步 pointerup 没计入，
+  `drawingPoints` 凑不满 3 ⇒ 永不提交」。「提交时序慢」假设被证伪（没有迟到的 commit，根本没有）。
+  候选根因：`onPointerCancel`/`onLostPointerCapture` 清 `drawingDown`（adapter.ts:2800/:2824）或
+  `timeAtPixel` 返回 null 静默 return（:2502）——**改前必须再拿一次带读数的红区分**（当前候选多个，
+  一次红只证明「没 commit」，没证明是哪个入口）。
+- **#321 合并路径**：首 E2E 红（pitchfork ×3 + smoke-depth:121 像素残留）→ failed-job 重跑绿；
+  第二轮 push 插桩后 E2E 红（同 pitchfork）→ 重跑绿。两轮红的用例都属 #322 家族、与改动无关。
+- **main 首跑 CI**：run 40083041212 在跑（三修复联合验证）。
+- 远端主题分支已删（#321 squash 自删 + #320 手动关）；本地同名分支已清。
+- 更新日：2026-10-24
+
 ## 恢复入口
 1. `git log --oneline -5` 确认已提交边界
 2. 看「当前阶段」——v0.5.36 已发布收账（PR #294 → main `4ee3d82`，tag `v0.5.36`）；
