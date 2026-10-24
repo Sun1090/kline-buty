@@ -18,17 +18,23 @@ import { openMore, waitCandlesRendered, waitDepthReady, waitOrderBookReady } fro
  * `boundingBox()` 撞上重渲染瞬间会返回 null —— run 40065573721（PR #320）的 webkit
  * `:103` 三条 retry 全死在 `box!.x` 的 null 解引用上。可见 ≠ 稳定：拿不到盒就等一拍重取，
  * 上限 5s（行本就可见，重试只兜重渲染间隙）。
+ *
+ * #322 第 11 条订正：poll 通过**之后**再取一次是 TOCTOU——两读之间仍有重渲染间隙，
+ * main 首跑 run 40083041212 的 `:151` 就红在那个兜底 throw 上（poll 确认非空、复取 null）。
+ * `expect.poll` 的返回值就是最后一次求值结果，直接用它，不做第二次读取。
  */
 async function rowBox(row: import('@playwright/test').Locator) {
+  type Box = { x: number; y: number; width: number; height: number }
+  // `holder.box` 经由对象属性间接读取：直接用局部变量会被 TS 控制流收窄成 never（闭包内赋值）
+  const holder: { box: Box | null } = { box: null }
   await expect
     .poll(async () => {
-      const box = await row.boundingBox()
-      return box
+      holder.box = await row.boundingBox()
+      return holder.box
     }, { timeout: 5_000, message: '盘口档位行 5s 内始终拿不到包围盒（行在可见前提下不应发生）' })
     .not.toBeNull()
-  const box = await row.boundingBox()
-  if (!box) throw new Error('盘口档位行包围盒读不到（poll 已确认非空，理论不可达）')
-  return box
+  if (!holder.box) throw new Error('盘口档位行包围盒读不到（poll 判定已通过，理论不可达）')
+  return holder.box
 }
 
 test.describe('盘口与深度面板', () => {
